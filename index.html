@@ -570,15 +570,36 @@
         const DiscussionView = ({ onBack, user }) => {
             const [msg, setMsg] = useState('');
             const [showProfile, setShowProfile] = useState(null);
-            const [chats, setChats] = useState([
-                { id: 1, name: "Rahul Singh", tgId: "8472910", username: "rahul_s", text: "Bhai mole concept ka DPP 2 ka answer key hai kisi ke paas?", time: "10:12 AM" },
-                { id: 2, name: "ATAXY Mentor", admin: true, tgId: "00001", username: "ataxy_admin", text: "Focus on your studies guys. Next live class starts at 2 PM.", time: "10:20 AM" }
-            ]);
+            const [chats, setChats] = useState(() => {
+                const stored = localStorage.getItem('ataxy_discussion');
+                if (stored) {
+                    try { return JSON.parse(stored); } catch (err) { console.warn(err); }
+                }
+                return [
+                    { id: 1, name: "Rahul Singh", tgId: "8472910", username: "rahul_s", text: "Bhai mole concept ka DPP 2 ka answer key hai kisi ke paas?", time: "10:12 AM" },
+                    { id: 2, name: "ATAXY Mentor", admin: true, tgId: "00001", username: "ataxy_admin", text: "Focus on your studies guys. Next live class starts at 2 PM.", time: "10:20 AM" }
+                ];
+            });
+
+            useEffect(() => {
+                const syncChats = (event) => {
+                    if (event.key === 'ataxy_discussion' && event.newValue) {
+                        try { setChats(JSON.parse(event.newValue)); } catch (err) { console.warn(err); }
+                    }
+                };
+                window.addEventListener('storage', syncChats);
+                return () => window.removeEventListener('storage', syncChats);
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('ataxy_discussion', JSON.stringify(chats));
+            }, [chats]);
 
             const sendMsg = (e) => {
                 e.preventDefault();
                 if (!msg.trim()) return;
-                setChats([...chats, { id: Date.now(), name: user.first_name, tgId: user.id || "00000", username: user.username || "student", text: msg, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+                const message = { id: Date.now(), name: user.first_name, tgId: user.id || "00000", username: user.username || "student", text: msg, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+                setChats(prev => [...prev, message]);
                 setMsg('');
             };
 
@@ -652,6 +673,16 @@
           const [activePlatform, setActivePlatform] = useState(null);
           const [activePracticeSubject, setActivePracticeSubject] = useState(null);
           const [activePracticeChapter, setActivePracticeChapter] = useState(null);
+          const [practiceAttempts, setPracticeAttempts] = useState(() => {
+              const stored = localStorage.getItem('ataxy_practice_attempts');
+              return stored ? JSON.parse(stored) : {};
+          });
+          const [watchedLectureIds, setWatchedLectureIds] = useState(() => {
+              const stored = localStorage.getItem('ataxy_watched_lectures');
+              return stored ? JSON.parse(stored) : [];
+          });
+          const [showPerformance, setShowPerformance] = useState(false);
+          const [performanceTab, setPerformanceTab] = useState('batch');
           
           const [activePdf, setActivePdf] = useState(null); 
           const [showChat, setShowChat] = useState(false);
@@ -668,6 +699,20 @@
               if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
           }, []);
 
+          useEffect(() => {
+              localStorage.setItem('ataxy_practice_attempts', JSON.stringify(practiceAttempts));
+          }, [practiceAttempts]);
+
+          useEffect(() => {
+              localStorage.setItem('ataxy_watched_lectures', JSON.stringify(watchedLectureIds));
+          }, [watchedLectureIds]);
+
+          useEffect(() => {
+              if (activeVideo && activeVideo.id && !watchedLectureIds.includes(activeVideo.id)) {
+                  setWatchedLectureIds(prev => [...prev, activeVideo.id]);
+              }
+          }, [activeVideo]);
+
           const handleBack = () => {
             if (activeVideo) setActiveVideo(null);
             else if (activeChapter) setActiveChapter(null);
@@ -678,6 +723,56 @@
             else if (activePracticeChapter) setActivePracticeChapter(null);
             else if (activePracticeSubject) setActivePracticeSubject(null);
             else if (activePlatform) setActivePlatform(null);
+          };
+
+          const findPracticeQuestionById = (qId) => {
+              for (const subject of ALIEN_QBANK) {
+                  for (const chapter of subject.chapters) {
+                      for (const topic of chapter.topics) {
+                          const question = topic.questions.find(q => q.id === qId);
+                          if (question) {
+                              return {
+                                  ...question,
+                                  topicId: topic.id,
+                                  topicName: topic.name,
+                                  chapterId: chapter.id,
+                                  chapterName: chapter.name,
+                                  subjectId: subject.subjectId,
+                                  subjectName: subject.subjectName
+                              };
+                          }
+                      }
+                  }
+              }
+              return null;
+          };
+
+          const getAllPracticeActivities = () => {
+              return Object.entries(practiceAttempts)
+                .map(([qId, attempt]) => {
+                    const question = findPracticeQuestionById(qId);
+                    if (!question) return null;
+                    return {
+                        q: question,
+                        optionIdx: attempt.optionIdx,
+                        time: attempt.time,
+                        isCorrect: attempt.optionIdx === question.correct
+                    };
+                })
+                .filter(Boolean)
+                .sort((a, b) => b.time - a.time);
+          };
+
+          const handlePracticeAttempt = (chapterId, qId, optionIdx) => {
+              setPracticeAttempts(prev => ({ ...prev, [qId]: { chapterId, optionIdx, time: Date.now() } }));
+          };
+
+          const handlePracticeClear = (qId) => {
+              setPracticeAttempts(prev => {
+                  const next = { ...prev };
+                  delete next[qId];
+                  return next;
+              });
           };
 
           if (!isVerified) return <Gatekeeper onVerify={(user) => { setTgUser(user); setIsVerified(true); }} />;
@@ -826,9 +921,8 @@
           };
 
           // --- 🆕 ADVANCED NEETPREP PRACTICE HUB ---
-          const PracticeTestView = ({ chapter }) => {
+const PracticeTestView = ({ chapter, attempts, onAttempt, onClear }) => {
               const [selectedTopic, setSelectedTopic] = useState(null); 
-              const [attempts, setAttempts] = useState({});
               const [showPalette, setShowPalette] = useState(false);
 
               // Flatten questions & assign global index
@@ -842,9 +936,12 @@
               }, [chapter]);
 
               const displayedQuestions = selectedTopic ? allQuestions.filter(q => q.topicId === selectedTopic) : allQuestions;
+              const chapterAttempts = allQuestions.filter(q => attempts[q.id] !== undefined);
+              const correctCount = chapterAttempts.filter(q => attempts[q.id].optionIdx === q.correct).length;
+              const accuracy = chapterAttempts.length ? Math.round((correctCount / chapterAttempts.length) * 100) : 0;
 
-              const handleAttempt = (qId, optionIdx) => { setAttempts({...attempts, [qId]: optionIdx}); };
-              const handleClear = (qId) => { const newAttempts = {...attempts}; delete newAttempts[qId]; setAttempts(newAttempts); };
+              const handleAttempt = (qId, optionIdx) => onAttempt(chapter.id, qId, optionIdx);
+              const handleClear = (qId) => onClear(qId);
 
               const scrollToQuestion = (id) => {
                   setShowPalette(false);
@@ -858,7 +955,31 @@
                           <button onClick={() => setActivePracticeChapter(null)} className="w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-900 dark:text-white"><i className="fa-solid fa-arrow-left"></i></button>
                           <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{chapter.name}</h2>
                       </div>
-                      
+
+                      {chapterAttempts.length > 0 ? (
+                          <div className="px-4 mt-4">
+                              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-3xl p-4 border border-blue-100 dark:border-blue-800 shadow-sm">
+                                  <div className="flex items-center justify-between gap-4 mb-3">
+                                      <div>
+                                          <p className="text-xs uppercase tracking-[0.25em] text-blue-600 dark:text-blue-300 font-bold">Chapter Performance</p>
+                                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{chapterAttempts.length} attempted</h3>
+                                      </div>
+                                      <div className="text-right text-sm text-gray-500 dark:text-gray-300">
+                                          <div>{correctCount} correct</div>
+                                          <div>{chapterAttempts.length - correctCount} wrong</div>
+                                      </div>
+                                  </div>
+                                  <div className="text-sm text-gray-600 dark:text-gray-300">Accuracy: <span className="font-bold text-blue-700 dark:text-blue-300">{accuracy}%</span></div>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="px-4 mt-4">
+                              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 text-sm text-gray-500 dark:text-gray-400 shadow-sm">
+                                  No attempts yet in this chapter. Start answering questions to see your performance summary here.
+                              </div>
+                          </div>
+                      )}
+                       
                       {/* Topic Filter Pills */}
                       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-3 sticky top-[60px] z-10 shadow-sm overflow-x-auto whitespace-nowrap flex gap-2 no-scrollbar">
                           <button onClick={() => setSelectedTopic(null)} className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors ${selectedTopic === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-700'}`}>All Topics</button>
@@ -869,7 +990,7 @@
 
                       <div className="px-4 mt-5 max-w-2xl mx-auto">
                           {displayedQuestions.map((q) => (
-                              <QuestionCard key={q.id} q={q} attemptIdx={attempts[q.id]} onAttempt={handleAttempt} onClear={handleClear} />
+                              <QuestionCard key={q.id} q={q} attemptIdx={attempts[q.id]?.optionIdx} onAttempt={handleAttempt} onClear={handleClear} />
                           ))}
                       </div>
 
@@ -889,7 +1010,7 @@
                                   <div className="grid grid-cols-5 gap-3">
                                       {allQuestions.map(q => {
                                           const isAns = attempts[q.id] !== undefined;
-                                          const isCorrect = isAns && attempts[q.id] === q.correct;
+                                          const isCorrect = isAns && attempts[q.id].optionIdx === q.correct;
                                           let bgClass = "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-transparent";
                                           if (isAns) bgClass = isCorrect ? "bg-green-500 text-white border-green-600" : "bg-red-500 text-white border-red-600";
                                           return (
@@ -907,7 +1028,13 @@
           }
 
           const renderQuestionsView = () => {
-             if (activePracticeChapter) return <PracticeTestView chapter={activePracticeChapter} />;
+             if (activePracticeChapter) return <PracticeTestView chapter={activePracticeChapter} attempts={practiceAttempts} onAttempt={handlePracticeAttempt} onClear={handlePracticeClear} />;
+
+             const practiceActivity = getAllPracticeActivities();
+             const totalPracticeAttempts = practiceActivity.length;
+             const totalCorrectPractice = practiceActivity.filter(item => item.isCorrect).length;
+             const totalIncorrectPractice = totalPracticeAttempts - totalCorrectPractice;
+             const practiceAccuracy = totalPracticeAttempts ? Math.round((totalCorrectPractice / totalPracticeAttempts) * 100) : 0;
 
              return (
                  <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
@@ -923,6 +1050,35 @@
                                  {sub.icon} {sub.subjectName}
                              </button>
                          ))}
+                     </div>
+
+                     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-4 mb-5 shadow-sm">
+                         <div className="flex items-center justify-between mb-3">
+                             <div>
+                                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500 font-bold">Practice Activity</p>
+                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">{totalPracticeAttempts} attempted questions</h3>
+                             </div>
+                             <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+                                 <div>Correct: <span className="font-bold text-green-600 dark:text-green-400">{totalCorrectPractice}</span></div>
+                                 <div>Accuracy: <span className="font-bold text-blue-600 dark:text-blue-300">{practiceAccuracy}%</span></div>
+                             </div>
+                         </div>
+                         {totalPracticeAttempts ? (
+                             <div className="space-y-2">
+                                 {practiceActivity.slice(0, 5).map((item, idx) => (
+                                     <div key={idx} className="rounded-2xl border border-gray-100 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
+                                         <div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                             <span>{item.q.subjectName} • {item.q.chapterName}</span>
+                                             <span>{new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                         </div>
+                                         <div className="text-sm text-gray-800 dark:text-gray-200 font-medium line-clamp-2">{item.q.text}</div>
+                                         <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">{item.isCorrect ? 'Correct' : 'Incorrect'} — Selected: {(item.optionIdx + 10).toString(36).toUpperCase()}</div>
+                                     </div>
+                                 ))}
+                             </div>
+                         ) : (
+                             <p className="text-sm text-gray-500 dark:text-gray-400">No practice activity yet. Open a chapter and attempt questions to see your analysis here.</p>
+                         )}
                      </div>
 
                      <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3">Topic-wise Questions</h3>
@@ -946,7 +1102,99 @@
           };
 
           // --- 🆕 PROFILE & SETTINGS VIEW ---
+          const renderPerformanceView = () => {
+             const totalLectures = VIDEOS.length;
+             const watchedCount = watchedLectureIds.length;
+             const watchedPercent = totalLectures ? Math.round((watchedCount / totalLectures) * 100) : 0;
+             const practiceActivity = getAllPracticeActivities();
+             const totalPracticeAttempts = practiceActivity.length;
+             const totalPracticeCorrect = practiceActivity.filter(item => item.isCorrect).length;
+             const practiceAccuracy = totalPracticeAttempts ? Math.round((totalPracticeCorrect / totalPracticeAttempts) * 100) : 0;
+
+             return (
+               <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
+                 <div className="flex items-center gap-3 mb-5">
+                    <button onClick={() => setShowPerformance(false)} className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white flex items-center justify-center">
+                      <i className="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white">Performance Overview</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Track batch progress and practice analytics.</p>
+                    </div>
+                 </div>
+
+                 <div className="flex gap-2 mb-5">
+                    <button onClick={() => setPerformanceTab('batch')} className={`flex-1 px-4 py-3 rounded-2xl text-sm font-bold transition-colors ${performanceTab === 'batch' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800'}`}>
+                        Batch
+                    </button>
+                    <button onClick={() => setPerformanceTab('practice')} className={`flex-1 px-4 py-3 rounded-2xl text-sm font-bold transition-colors ${performanceTab === 'practice' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800'}`}>
+                        Practice
+                    </button>
+                 </div>
+
+                 {performanceTab === 'batch' ? (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                               <p className="text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500 font-bold">Lectures watched</p>
+                               <p className="text-3xl font-black text-gray-900 dark:text-white mt-2">{watchedCount}</p>
+                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{watchedPercent}% of {totalLectures}</p>
+                            </div>
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                               <p className="text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500 font-bold">Batch progress</p>
+                               <div className="mt-3 h-3 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                                   <div className="h-full bg-blue-600" style={{ width: `${watchedPercent}%` }}></div>
+                               </div>
+                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Continue attending more lectures to improve your completion score.</p>
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                            <h3 className="font-bold text-gray-900 dark:text-white mb-3">Batch Summary</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">This section updates each time you open a lecture and helps you track batch progress.</p>
+                        </div>
+                    </div>
+                 ) : (
+                    <div className="space-y-4">
+                       <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                               <p className="text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500 font-bold">Attempted</p>
+                               <p className="text-3xl font-black text-gray-900 dark:text-white mt-2">{totalPracticeAttempts}</p>
+                            </div>
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                               <p className="text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500 font-bold">Accuracy</p>
+                               <p className="text-3xl font-black text-gray-900 dark:text-gray-100 mt-2">{practiceAccuracy}%</p>
+                            </div>
+                       </div>
+                       <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-bold text-gray-900 dark:text-white">Practice Activity</h3>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Latest</span>
+                            </div>
+                            {practiceActivity.length ? (
+                               <div className="space-y-3">
+                                   {practiceActivity.slice(0, 6).map((item, idx) => (
+                                      <div key={idx} className="rounded-2xl border border-gray-100 dark:border-gray-800 p-3">
+                                          <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">{item.q.subjectName} • {item.q.chapterName}</div>
+                                          <div className="font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2">{item.q.text}</div>
+                                          <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                                             <span>{item.isCorrect ? 'Correct' : 'Incorrect'}</span>
+                                             <span>{new Date(item.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                          </div>
+                                      </div>
+                                   ))}
+                               </div>
+                            ) : (
+                               <p className="text-sm text-gray-500 dark:text-gray-400">No practice activity yet. Attempt questions to fill this report.</p>
+                            )}
+                       </div>
+                    </div>
+                 )}
+               </div>
+             );
+          };
+
           const renderProfileView = () => (
+             showPerformance ? renderPerformanceView() : (
              <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
                  <div className="text-center mb-8">
                      <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full mx-auto flex items-center justify-center text-4xl font-black mb-4 shadow-lg uppercase">{tgUser.first_name[0]}</div>
@@ -955,7 +1203,7 @@
                  </div>
 
                  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm mb-6">
-                     <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                     <div onClick={() => setShowPerformance(true)} className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
                          <div className="flex items-center gap-3 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-chart-line text-blue-500 w-5"></i> <span className="font-medium">My Performance</span></div>
                          <i className="fa-solid fa-chevron-right text-gray-400 text-sm"></i>
                      </div>
@@ -977,7 +1225,7 @@
                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"><i className="fa-solid fa-arrow-right"></i></div>
                  </div>
              </div>
-          );
+          ));
 
           return (
             <div className="min-h-screen font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950">
