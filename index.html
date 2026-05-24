@@ -798,7 +798,7 @@
           useEffect(() => { setPracticeSelectedTopic(null); setPracticeShowPalette(false); }, [activePracticeChapter]);
           useEffect(() => {
               const loadNeetprepData = async () => {
-                  const url = neetprepAuthToken ? '/api/neetprep/data' : `/api/neetprep/data?identifier=${encodeURIComponent(neetprepUser)}`;
+                  const url = neetprepAuthToken ? 'http://localhost:5000/api/neetprep/data' : `http://localhost:5000/api/neetprep/data?identifier=${encodeURIComponent(neetprepUser)}`;
                   if (!neetprepAuthToken && !neetprepUser) return;
                   try {
                       const response = await fetch(url, {
@@ -826,7 +826,7 @@
                   return;
               }
               try {
-                  const response = await fetch('/api/neetprep/request-otp', {
+                  const response = await fetch('http://localhost:5000/api/neetprep/request-otp', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ identifier: neetprepLoginInput.trim() })
@@ -845,7 +845,7 @@
                   return;
               }
               try {
-                  const response = await fetch('/api/neetprep/verify-otp', {
+                  const response = await fetch('http://localhost:5000/api/neetprep/verify-otp', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ identifier: neetprepLoginInput.trim(), otp: neetprepOtpInput.trim() })
@@ -863,7 +863,7 @@
                   setShowNeetprepModal(false);
 
                   // Fetch stored data from backend
-                  const r2 = await fetch(`/api/neetprep/data?identifier=${encodeURIComponent(neetprepLoginInput.trim())}`);
+                  const r2 = await fetch(`http://localhost:5000/api/neetprep/data?identifier=${encodeURIComponent(neetprepLoginInput.trim())}`);
                   if (r2.ok) {
                       const d = await r2.json();
                       setNeetprepData(d.data || null);
@@ -875,7 +875,7 @@
 
           const disconnectNeetprep = async () => {
               try {
-                  await fetch('/api/neetprep/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: neetprepUser || neetprepLoginInput.trim() }) });
+                  await fetch('http://localhost:5000/api/neetprep/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: neetprepUser || neetprepLoginInput.trim() }) });
               } catch (e) { /* ignore */ }
               setNeetprepConnected(false);
               setNeetprepUser('');
@@ -1296,7 +1296,7 @@
                                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">NEETPrep Login</h3>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">Use your official NEETPrep account to connect.</p>
                               </div>
-                              <button onClick={() => setShowNeetprepModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"><i className="fa-solid fa-xmark"></i></button>
+                            <button onClick={() => setShowNeetprepModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"><i className="fa-solid fa-xmark"></i></button>
                           </div>
                           <form onSubmit={sendNeetprepOtp} className="space-y-4">
                               <div>

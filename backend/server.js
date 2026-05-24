@@ -34,7 +34,7 @@ const NEETPREP_COURSE_DATA_BODY_TEMPLATE = process.env.NEETPREP_COURSE_DATA_BODY
 const NEETPREP_COURSE_DATA_AUTH_HEADER = process.env.NEETPREP_COURSE_DATA_AUTH_HEADER;
 const CLOUDINARY_FOLDER = process.env.CLOUDINARY_UPLOAD_FOLDER || 'ataxy/neetprep';
 const SYNC_CRON = process.env.SYNC_CRON || '0 2 * * 0';
-const CLOUDINARY_ENABLED = !!(process.env.CLOUDINARY_CLOUD_NAME=ATAXY || process.env.CLOUDINARY_CLOUD_ID=fe339bb7d93a9aec654de980c80d20) && process.env.CLOUDINARY_API_KEY=662266621129135 && process.env.CLOUDINARY_API_SECRET=zFJj8H4aJzg5bMHXb4tA7iUY96I;
+const CLOUDINARY_ENABLED = !!(process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_ID) && !!process.env.CLOUDINARY_API_KEY && !!process.env.CLOUDINARY_API_SECRET;
 
 const readJSON = (file, fallback) => {
   try { return JSON.parse(fs.readFileSync(file, 'utf8') || 'null') || fallback; } catch (e) { return fallback; }
