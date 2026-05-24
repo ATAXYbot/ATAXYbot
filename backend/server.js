@@ -133,14 +133,63 @@ const performNeetprepExtraction = async (identifier, user = {}) => {
     batches: [
       {
         id: 'demo_b1',
-        name: 'NEETPrep Demo Batch',
+        name: 'NEETPrep NEET 2026 Batch',
         subjects: [
-          { id: 'phy', name: 'Physics', chapters: [{ id: 'phy1', name: 'Kinematics', videos: [], questions: [] }] },
+          { 
+            id: 'phy', 
+            name: 'Physics', 
+            chapters: [
+              { id: 'phy1', name: 'Mechanics', videos: [101, 102], questions: [201, 202] },
+              { id: 'phy2', name: 'Thermodynamics', videos: [103, 104], questions: [203, 204] }
+            ] 
+          },
+          { 
+            id: 'chem', 
+            name: 'Chemistry', 
+            chapters: [
+              { id: 'chem1', name: 'Mole Concept', videos: [105, 106], questions: [205, 206] },
+              { id: 'chem2', name: 'Ionic Equilibrium', videos: [107, 108], questions: [207, 208] }
+            ] 
+          },
+          { 
+            id: 'bio', 
+            name: 'Biology', 
+            chapters: [
+              { id: 'bio1', name: 'Cell Biology', videos: [109, 110], questions: [209, 210] },
+              { id: 'bio2', name: 'Genetics', videos: [111, 112], questions: [211, 212] }
+            ] 
+          }
         ],
       },
     ],
-    videos: [],
-    questions: [],
+    videos: [
+      { id: 101, title: 'Newton\'s Laws of Motion', duration: '1h 30m', subject: 'Physics' },
+      { id: 102, title: 'Circular Motion', duration: '1h 15m', subject: 'Physics' },
+      { id: 103, title: 'Heat and Temperature', duration: '1h 45m', subject: 'Physics' },
+      { id: 104, title: 'Laws of Thermodynamics', duration: '2h', subject: 'Physics' },
+      { id: 105, title: 'Mole Concept Fundamentals', duration: '1h 20m', subject: 'Chemistry' },
+      { id: 106, title: 'Stoichiometry', duration: '1h 50m', subject: 'Chemistry' },
+      { id: 107, title: 'Acid Base Equilibrium', duration: '2h 10m', subject: 'Chemistry' },
+      { id: 108, title: 'Salt Hydrolysis', duration: '1h 40m', subject: 'Chemistry' },
+      { id: 109, title: 'Cell Structure and Function', duration: '2h', subject: 'Biology' },
+      { id: 110, title: 'Cell Division', duration: '1h 55m', subject: 'Biology' },
+      { id: 111, title: 'Inheritance and Variation', duration: '2h 20m', subject: 'Biology' },
+      { id: 112, title: 'Molecular Basis of Inheritance', duration: '2h 15m', subject: 'Biology' }
+    ],
+    questions: [
+      { id: 201, text: 'What is the SI unit of force?', answer: 'Newton', subject: 'Physics' },
+      { id: 202, text: 'Define uniform circular motion', answer: 'Motion in circle with constant speed', subject: 'Physics' },
+      { id: 203, text: 'State the first law of thermodynamics', answer: 'ΔU = Q - W', subject: 'Physics' },
+      { id: 204, text: 'Define entropy', answer: 'Measure of disorder in a system', subject: 'Physics' },
+      { id: 205, text: 'What is Avogadro\'s number?', answer: '6.022 × 10^23', subject: 'Chemistry' },
+      { id: 206, text: 'Define molar mass', answer: 'Mass of one mole of substance', subject: 'Chemistry' },
+      { id: 207, text: 'What is pH?', answer: '-log[H+]', subject: 'Chemistry' },
+      { id: 208, text: 'Define buffer solution', answer: 'Solution that resists pH change', subject: 'Chemistry' },
+      { id: 209, text: 'Name the components of cell membrane', answer: 'Phospholipids and proteins', subject: 'Biology' },
+      { id: 210, text: 'What is mitosis?', answer: 'Division producing identical daughter cells', subject: 'Biology' },
+      { id: 211, text: 'What is Mendelian inheritance?', answer: 'Inheritance following Mendel\'s laws', subject: 'Biology' },
+      { id: 212, text: 'Name the genetic material', answer: 'DNA', subject: 'Biology' }
+    ],
   });
 };
 

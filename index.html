@@ -768,7 +768,10 @@
           const [neetprepConnected, setNeetprepConnected] = useState(() => JSON.parse(localStorage.getItem('ataxy_neetprep_connected')) || false);
           const [neetprepUser, setNeetprepUser] = useState(() => localStorage.getItem('ataxy_neetprep_user') || '');
           const [neetprepAuthToken, setNeetprepAuthToken] = useState(() => localStorage.getItem('ataxy_neetprep_token') || '');
-          const [neetprepData, setNeetprepData] = useState(null);
+          const [neetprepData, setNeetprepData] = useState(() => {
+              const saved = localStorage.getItem('ataxy_neetprep_data');
+              return saved ? JSON.parse(saved) : null;
+          });
           const [showNeetprepModal, setShowNeetprepModal] = useState(false);
           const [neetprepLoginInput, setNeetprepLoginInput] = useState('');
           const [neetprepOtpInput, setNeetprepOtpInput] = useState('');
@@ -798,6 +801,17 @@
           useEffect(() => { setPracticeSelectedTopic(null); setPracticeShowPalette(false); }, [activePracticeChapter]);
           useEffect(() => {
               const loadNeetprepData = async () => {
+                  // Try to restore from localStorage first
+                  const savedData = localStorage.getItem('ataxy_neetprep_data');
+                  if (savedData) {
+                      try {
+                          setNeetprepData(JSON.parse(savedData));
+                      } catch (e) {
+                          console.error('Failed to parse saved NEETPrep data');
+                      }
+                  }
+                  
+                  // Then try to fetch fresh data from backend
                   const url = neetprepAuthToken ? 'http://localhost:5000/api/neetprep/data' : `http://localhost:5000/api/neetprep/data?identifier=${encodeURIComponent(neetprepUser)}`;
                   if (!neetprepAuthToken && !neetprepUser) return;
                   try {
@@ -805,10 +819,12 @@
                           headers: neetprepAuthToken ? { 'Authorization': `Bearer ${neetprepAuthToken}` } : {}
                       });
                       const payload = await response.json();
-                      if (response.ok) setNeetprepData(payload.data || payload);
-                      else setNeetprepData(null);
+                      if (response.ok) {
+                          setNeetprepData(payload.data || payload);
+                          localStorage.setItem('ataxy_neetprep_data', JSON.stringify(payload.data || payload));
+                      }
                   } catch (error) {
-                      setNeetprepData(null);
+                      console.error('Failed to fetch NEETPrep data from backend');
                   }
               };
               loadNeetprepData();
@@ -858,15 +874,19 @@
                   setNeetprepConnected(true);
                   setNeetprepUser(data.user?.identifier || neetprepLoginInput.trim());
                   setNeetprepAuthToken(data.token || '');
-                  setNeetprepStatus('Connected to NEETPrep.');
+                  setNeetprepStatus('Connected to NEETPrep. Loading courses...');
                   setNeetprepOtpInput('');
-                  setShowNeetprepModal(false);
 
-                  // Fetch stored data from backend
+                  // Fetch and store course data
                   const r2 = await fetch(`http://localhost:5000/api/neetprep/data?identifier=${encodeURIComponent(neetprepLoginInput.trim())}`);
                   if (r2.ok) {
                       const d = await r2.json();
                       setNeetprepData(d.data || null);
+                      localStorage.setItem('ataxy_neetprep_data', JSON.stringify(d.data || null));
+                      setNeetprepStatus('✅ Connected to NEETPrep! Courses loaded.');
+                      setTimeout(() => setShowNeetprepModal(false), 1000);
+                  } else {
+                      setNeetprepStatus('⚠️ Connected but courses failed to load');
                   }
               } catch (error) {
                   setNeetprepStatus('Unable to verify OTP. Backend may not be running.');
@@ -884,6 +904,7 @@
               localStorage.removeItem('ataxy_neetprep_connected');
               localStorage.removeItem('ataxy_neetprep_user');
               localStorage.removeItem('ataxy_neetprep_token');
+              localStorage.removeItem('ataxy_neetprep_data');
           };
 
           const handleBack = () => {
@@ -1039,6 +1060,25 @@
                       <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-1 px-1">My Study Batches</h2>
                       <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 px-1">Select a batch to access lectures</p>
                       <div className="space-y-4">
+                          {neetprepConnected && neetprepData && neetprepData.batches && neetprepData.batches.length > 0 && (
+                              <>
+                                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-4 mb-6 border-l-4 border-purple-500">
+                                      <h3 className="font-bold text-purple-900 dark:text-purple-200 mb-2">📚 Your NEETPrep Courses</h3>
+                                      <p className="text-sm text-purple-700 dark:text-purple-300">{neetprepData.batches.length} batch • {neetprepData.videos.length} videos • {neetprepData.questions.length} questions</p>
+                                  </div>
+                                  {neetprepData.batches.map(batch => (
+                                      <div key={batch.id} onClick={() => setActiveBatch({...batch, isNeetprep: true})} className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-3xl shadow-sm border border-purple-200 dark:border-purple-700/50 overflow-hidden cursor-pointer hover:shadow-md transition-all">
+                                          <div className="bg-gradient-to-r from-purple-500 to-blue-500 h-2.5 w-full"></div>
+                                          <div className="p-5">
+                                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">🎓 {batch.name}</h3>
+                                              <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">{batch.subjects.length} subjects</p>
+                                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Connected to NEETPrep</p>
+                                              <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition">Go to Batch <i className="fa-solid fa-arrow-right text-xs"></i></button>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </>
+                          )}
                           {BATCHES.map(batch => ( 
                               <div key={batch.id} onClick={() => setActiveBatch(batch)} className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden cursor-pointer">
                                   <div className={`${batch.color} h-2.5 w-full`}></div>
