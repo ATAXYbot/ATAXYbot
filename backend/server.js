@@ -4,11 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
 const cron = require('node-cron');
+const { scrapePWJarvisBatches } = require('./scrapers/pwjarvis-scraper');
 require('dotenv').config();
 
 const cloudinary = require('cloudinary').v2;
 const fetchFn = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
-const { scrapePWJarvisBatches } = require('./scrapers/pwjarvis-scraper');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_ID,
@@ -35,9 +35,10 @@ const NEETPREP_VERIFY_BODY_TEMPLATE = process.env.NEETPREP_VERIFY_BODY_TEMPLATE;
 const NEETPREP_COURSE_DATA_BODY_TEMPLATE = process.env.NEETPREP_COURSE_DATA_BODY_TEMPLATE;
 const NEETPREP_COURSE_DATA_AUTH_HEADER = process.env.NEETPREP_COURSE_DATA_AUTH_HEADER;
 const CLOUDINARY_FOLDER = process.env.CLOUDINARY_UPLOAD_FOLDER || 'ataxy/neetprep';
-const SYNC_CRON = process.env.SYNC_CRON || '0 2 * * 0';
-const PWJARVIS_SYNC_CRON = process.env.PWJARVIS_SYNC_CRON || '0 3 * * 0'; // Weekly Sunday 3 AM UTC
 const CLOUDINARY_ENABLED = !!(process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_ID) && !!process.env.CLOUDINARY_API_KEY && !!process.env.CLOUDINARY_API_SECRET;
+const GITHUB_RAW_URL = process.env.GITHUB_RAW_URL || 'https://raw.githubusercontent.com/risha-ilahe/ATAXY-BATCHES/main/pwjarvis-batches.json';
+const PWJARVIS_SITE_URL = process.env.PWJARVIS_SITE_URL || 'https://www.pwjarvis.com/study/all-batches';
+const PWJARVIS_SYNC_CRON = process.env.PWJARVIS_SYNC_CRON || '0 3 * * 0';
 
 const readJSON = (file, fallback) => {
   try { return JSON.parse(fs.readFileSync(file, 'utf8') || 'null') || fallback; } catch (e) { return fallback; }
@@ -90,6 +91,81 @@ const uploadBackupToCloudinary = async (identifier, payload) => {
     console.error('[CLOUDINARY] upload failed', error);
     return null;
   }
+};
+
+const uploadPayloadToGitHub = async (payload) => {
+  const repo = process.env.GITHUB_REPO;
+  const filePath = process.env.GITHUB_PATH;
+  const token = process.env.GITHUB_TOKEN;
+  const branch = process.env.GITHUB_BRANCH || 'main';
+
+  if (!repo || !filePath || !token) return null;
+
+  try {
+    const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    };
+
+    const currentResponse = await fetchFn(url, { headers });
+    const body = {
+      message: `Update PWJarvis batches ${new Date().toISOString()}`,
+      content: Buffer.from(JSON.stringify(payload, null, 2)).toString('base64'),
+      branch,
+      committer: {
+        name: 'ATAXYbot',
+        email: 'no-reply@ataxybot.local',
+      },
+    };
+
+    if (currentResponse.ok) {
+      const existing = await currentResponse.json();
+      if (existing.sha) body.sha = existing.sha;
+    }
+
+    const response = await fetchFn(url, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GitHub upload failed: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.content?.html_url || result.content?.download_url || null;
+  } catch (error) {
+    console.error('[GITHUB] upload failed', error.message || error);
+    return null;
+  }
+};
+
+const savePWJarvisData = async (payload) => {
+  const entry = {
+    ...payload,
+    source: 'pwjarvis.com',
+    savedAt: new Date().toISOString(),
+  };
+
+  writeJSON(PWJARVIS_FILE, entry);
+
+  const cloudinaryUrl = await uploadBackupToCloudinary('pwjarvis', entry);
+  if (cloudinaryUrl) {
+    entry.cloudinaryUrl = cloudinaryUrl;
+    writeJSON(PWJARVIS_FILE, entry);
+  }
+
+  const githubUrl = await uploadPayloadToGitHub(entry);
+  if (githubUrl) {
+    entry.githubUrl = githubUrl;
+    writeJSON(PWJARVIS_FILE, entry);
+  }
+
+  return entry;
 };
 
 const saveBatches = async (identifier, payload) => {
@@ -310,49 +386,29 @@ app.post('/api/neetprep/disconnect', (req, res) => {
 });
 
 // ===============================================
-// 🟢 PWJarvis Batch Scraping Endpoints
+// 🟢 PWJarvis Batch API Endpoints
 // ===============================================
 
-app.post('/api/pwjarvis/scrape', async (req, res) => {
+app.get('/api/pwjarvis/batches', async (req, res) => {
   try {
-    console.log('📡 Starting PWJarvis batch scrape...');
-    const result = await scrapePWJarvisBatches();
+    // First try to get from local cache
+    let data = readJSON(PWJARVIS_FILE, { batches: [], scrapedAt: null });
     
-    if (result.success) {
-      // Save to local storage
-      writeJSON(PWJARVIS_FILE, result);
-      
-      // Backup to Cloudinary if enabled
-      if (CLOUDINARY_ENABLED) {
-        try {
-          const json = JSON.stringify(result, null, 2);
-          const dataUri = `data:application/json;base64,${Buffer.from(json).toString('base64')}`;
-          const publicId = `${CLOUDINARY_FOLDER}/pwjarvis/${Date.now()}`;
-          const cloudResult = await cloudinary.uploader.upload(dataUri, {
-            resource_type: 'raw',
-            public_id: publicId,
-            overwrite: true,
-          });
-          result.backupUrl = cloudResult.secure_url || cloudResult.url;
-          console.log('✅ Backup uploaded to Cloudinary:', result.backupUrl);
-        } catch (error) {
-          console.warn('⚠️ Cloudinary backup failed:', error.message);
+    // If local cache is empty or very old, fetch from GitHub
+    if (!data.batches || data.batches.length === 0) {
+      console.log('📡 Fetching PWJarvis batches from GitHub...');
+      try {
+        const response = await fetchFn(GITHUB_RAW_URL);
+        if (response.ok) {
+          data = await response.json();
+          // Save to local cache
+          writeJSON(PWJARVIS_FILE, data);
+          console.log(`✅ Fetched ${data.batches?.length || 0} batches from GitHub`);
         }
+      } catch (error) {
+        console.error('⚠️ Failed to fetch from GitHub:', error.message);
       }
-      
-      return res.json({ ok: true, message: `Successfully scraped ${result.count} batches`, data: result });
-    } else {
-      return res.status(500).json({ ok: false, error: result.error, data: result });
     }
-  } catch (error) {
-    console.error('❌ Scrape endpoint error:', error.message);
-    return res.status(500).json({ ok: false, error: error.message });
-  }
-});
-
-app.get('/api/pwjarvis/batches', (req, res) => {
-  try {
-    const data = readJSON(PWJARVIS_FILE, { batches: [], scrapedAt: null, expiresAt: null });
     
     // Check if data has expired (older than 7 days)
     if (data.scrapedAt) {
@@ -373,7 +429,7 @@ app.get('/api/pwjarvis/batches', (req, res) => {
   }
 });
 
-app.get('/api/pwjarvis/batch/:id', (req, res) => {
+app.get('/api/pwjarvis/batch/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const data = readJSON(PWJARVIS_FILE, { batches: [] });
@@ -390,100 +446,53 @@ app.get('/api/pwjarvis/batch/:id', (req, res) => {
   }
 });
 
-app.post('/api/pwjarvis/refresh', async (req, res) => {
+app.post('/api/pwjarvis/scrape', async (req, res) => {
   try {
-    const data = readJSON(PWJARVIS_FILE, { batches: [] });
-    
-    // Check if data needs refresh (older than 7 days or empty)
-    if (!data.batches || data.batches.length === 0) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: 'Run /api/pwjarvis/scrape first to fetch batches' 
-      });
-    }
-    
-    const scrapedDate = new Date(data.scrapedAt);
-    const expiryDate = new Date(scrapedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    if (new Date() <= expiryDate) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: 'Data is still fresh. Next refresh available in 7 days.',
-        expiresAt: expiryDate.toISOString()
-      });
-    }
-    
-    // Data has expired, scrape again
-    const result = await scrapePWJarvisBatches();
-    if (result.success) {
-      writeJSON(PWJARVIS_FILE, result);
-      return res.json({ ok: true, message: 'Batches refreshed successfully', data: result });
+    const data = await scrapePWJarvisBatches();
+    if (data.success) {
+      await savePWJarvisData(data);
+      return res.json({ ok: true, message: `Successfully scraped ${data.count} batches`, data });
     } else {
-      return res.status(500).json({ ok: false, error: result.error });
+      return res.status(500).json({ ok: false, error: data.error });
     }
   } catch (error) {
-    console.error('❌ Refresh error:', error.message);
     return res.status(500).json({ ok: false, error: error.message });
   }
 });
 
-const performSync = async () => {
-  console.log('[SYNC] performing weekly NEETPrep sync for connected users');
-  const users = readJSON(USERS_FILE, {});
-  for (const identifier of Object.keys(users)) {
-    try {
-      await performNeetprepExtraction(identifier, users[identifier]);
-      console.log(`[SYNC] refreshed data for ${identifier}`);
-    } catch (error) {
-      console.error(`[SYNC] failed for ${identifier}`, error.message || error);
+app.post('/api/pwjarvis/refresh', async (req, res) => {
+  try {
+    const data = await scrapePWJarvisBatches();
+    if (data.success) {
+      await savePWJarvisData(data);
+      return res.json({ ok: true, message: `Refreshed ${data.count} batches`, data });
     }
+    return res.status(500).json({ ok: false, error: 'Refresh failed' });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
   }
-};
-
-cron.schedule(SYNC_CRON, () => {
-  console.log('[CRON] scheduled sync triggered');
-  performSync();
 });
 
-// ===============================================
-// 🟢 PWJarvis Weekly Scrape Schedule
-// ===============================================
 const performPWJarvisSync = async () => {
-  console.log('🟢 [CRON] PWJarvis weekly sync triggered');
+  console.log('[CRON] PWJarvis weekly sync triggered');
   try {
-    const result = await scrapePWJarvisBatches();
-    if (result.success) {
-      writeJSON(PWJARVIS_FILE, result);
-      
-      // Backup to Cloudinary
-      if (CLOUDINARY_ENABLED) {
-        try {
-          const json = JSON.stringify(result, null, 2);
-          const dataUri = `data:application/json;base64,${Buffer.from(json).toString('base64')}`;
-          const publicId = `${CLOUDINARY_FOLDER}/pwjarvis/${Date.now()}`;
-          await cloudinary.uploader.upload(dataUri, {
-            resource_type: 'raw',
-            public_id: publicId,
-            overwrite: true,
-          });
-          console.log('✅ PWJarvis backup uploaded to Cloudinary');
-        } catch (error) {
-          console.warn('⚠️ PWJarvis Cloudinary backup failed:', error.message);
-        }
-      }
-      
-      console.log(`✅ [CRON] PWJarvis sync completed - ${result.count} batches scraped`);
-    } else {
-      console.error('❌ [CRON] PWJarvis sync failed:', result.error);
+    const data = await scrapePWJarvisBatches();
+    if (data.success) {
+      await savePWJarvisData(data);
+      console.log(`✅ [CRON] PWJarvis sync completed - ${data.count} batches scraped`);
     }
-  } catch (error) {
-    console.error('❌ [CRON] PWJarvis sync error:', error.message);
+  } catch (err) {
+    console.error('❌ [CRON] PWJarvis sync failed:', err);
   }
 };
 
+// Weekly Cron Job for Auto-Sync
 cron.schedule(PWJARVIS_SYNC_CRON, () => {
   performPWJarvisSync();
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Backend listening on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✅ Backend listening on port ${PORT}`);
+  console.log(`📡 PWJarvis API: GET http://localhost:${PORT}/api/pwjarvis/batches`);
+});

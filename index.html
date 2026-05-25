@@ -951,6 +951,10 @@
           const [pwjarvisError, setPWJarvisError] = useState('');
           const [activePWBatch, setActivePWBatch] = useState(null); 
 
+          // 🟢 Dynamic QBank State
+          const [qbankData, setQbankData] = useState([]);
+          const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+
           const practiceQuestions = useMemo(() => {
               if (!activePracticeChapter) return [];
               let flat = [];
@@ -973,6 +977,22 @@
           useEffect(() => { localStorage.setItem('ataxy_neetprep_connected', JSON.stringify(neetprepConnected)); localStorage.setItem('ataxy_neetprep_user', neetprepUser); localStorage.setItem('ataxy_neetprep_token', neetprepAuthToken); }, [neetprepConnected, neetprepUser, neetprepAuthToken]);
           useEffect(() => { localStorage.setItem('ataxy_pwjarvis_batches', JSON.stringify(pwjarvisbatches)); }, [pwjarvisbatches]);
           
+          // 🟢 Load QBank on Mount
+          useEffect(() => {
+              const fetchQbank = async () => {
+                  try {
+                      const res = await fetch('http://localhost:5000/api/qbank');
+                      if (res.ok) {
+                          const json = await res.json();
+                          setQbankData(json.data || []);
+                      }
+                  } catch (e) {
+                      console.error("Failed to load Qbank", e);
+                  }
+              };
+              fetchQbank();
+          }, []);
+
           // 🟢 Load PWJarvis batches from backend
           useEffect(() => {
               const loadPWJarvisBatches = async () => {
@@ -1431,7 +1451,7 @@
                          <h2 className="text-2xl font-black text-gray-900 dark:text-white">Practice Hub</h2>
                      </div>
                      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5">
-                         {ALIEN_QBANK.map(sub => (
+                         {qbankData.map(sub => (
                              <button key={sub.id} onClick={() => setActivePracticeSubject(sub)} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap border flex items-center gap-2 ${activePracticeSubject?.id === sub.id ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800'}`}>
                                  {sub.icon} {sub.name}
                              </button>
@@ -1439,8 +1459,8 @@
                      </div>
                      <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 uppercase tracking-wider text-xs">Chapter Selection</h3>
                      <div className="space-y-3">
-                         {(activePracticeSubject || ALIEN_QBANK[0]).chapters.length > 0 ? (
-                             (activePracticeSubject || ALIEN_QBANK[0]).chapters.map((chap, i) => (
+                         {qbankData.length > 0 && (activePracticeSubject || qbankData[0]).chapters.length > 0 ? (
+                             (activePracticeSubject || qbankData[0]).chapters.map((chap, i) => (
                                  <div key={i} onClick={() => setActivePracticeChapter(chap)} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#0eb582] hover:shadow-md transition-all">
                                      <div>
                                          <h4 className="font-bold text-sm text-gray-900 dark:text-white">{chap.name}</h4>
@@ -1450,7 +1470,7 @@
                                  </div>
                              ))
                          ) : (
-                             <p className="text-sm text-gray-500 text-center mt-8">Chapters adding soon...</p>
+                             <p className="text-sm text-gray-500 text-center mt-8">Upload a PDF to add chapters.</p>
                          )}
                      </div>
                  </div>
@@ -1464,10 +1484,36 @@
              
              const totalAttempted = Object.keys(perf).length;
              let totalCorrect = 0;
-             ALIEN_QBANK.forEach(sub => sub.chapters.forEach(chap => chap.topics?.forEach(top => top.questions.forEach(q => {
+             qbankData.forEach(sub => sub.chapters.forEach(chap => chap.topics?.forEach(top => top.questions.forEach(q => {
                  if(perf[q.id] === q.correct) totalCorrect++;
              }))));
              const accuracy = totalAttempted > 0 ? Math.round((totalCorrect/totalAttempted)*100) : 0;
+
+             const handlePdfUpload = async (e) => {
+                 const file = e.target.files[0];
+                 if(!file) return;
+                 setIsUploadingPdf(true);
+                 const formData = new FormData();
+                 formData.append('pdf', file);
+                 
+                 try {
+                     const res = await fetch('http://localhost:5000/api/qbank/upload', {
+                         method: 'POST',
+                         body: formData
+                     });
+                     const data = await res.json();
+                     if(data.ok) {
+                         setQbankData(data.data);
+                         alert("PDF processed and added to QBank successfully!");
+                     } else {
+                         alert("Error processing PDF: " + data.error);
+                     }
+                 } catch(err) {
+                     alert("Network error during upload.");
+                 }
+                 setIsUploadingPdf(false);
+                 e.target.value = ''; // Reset input
+             };
 
              return (
              <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
@@ -1489,6 +1535,19 @@
                          <h4 className="font-bold text-gray-900 dark:text-white text-xl">{accuracy}%</h4>
                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">{totalCorrect}/{totalAttempted} Correct</p>
                      </div>
+                 </div>
+
+                 <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">Admin Tools</h3>
+                 <div className="bg-gradient-to-r from-[#0eb582] to-[#0ba875] p-5 rounded-2xl shadow-sm text-white mb-6 relative overflow-hidden">
+                     <div className="relative z-10">
+                         <h4 className="font-bold text-lg mb-1">Add Books / PDFs</h4>
+                         <p className="text-xs text-white/80 mb-4">Upload a PDF. AI will automatically extract and categorize questions into the Practice Hub.</p>
+                         <label className={`bg-white text-[#0eb582] font-bold text-sm px-4 py-2.5 rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-2 w-max ${isUploadingPdf ? 'opacity-70 pointer-events-none' : ''}`}>
+                             {isUploadingPdf ? <><i className="fa-solid fa-spinner fa-spin"></i> Processing PDF...</> : <><i className="fa-solid fa-file-pdf"></i> Upload PDF</>}
+                             <input type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} disabled={isUploadingPdf} />
+                         </label>
+                     </div>
+                     <i className="fa-solid fa-robot absolute -right-4 -bottom-4 text-6xl text-white/10"></i>
                  </div>
 
                  <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">App Settings</h3>

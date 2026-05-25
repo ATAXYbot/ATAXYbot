@@ -273,6 +273,49 @@
           const [activeVideo, setActiveVideo] = useState(null);
           const [videoTab, setVideoTab] = useState('videos');
           const [activeIframeUrl, setActiveIframeUrl] = useState(null);
+          
+          // PW Jarvis States
+          const [pwBatches, setPwBatches] = useState([]);
+          const [pwLoading, setPwLoading] = useState(false);
+          const [pwError, setPwError] = useState('');
+          const [activePwBatch, setActivePwBatch] = useState(null);
+
+          useEffect(() => {
+            const loadPWBatches = async () => {
+              try {
+                const cached = localStorage.getItem('ataxy_pwjarvis_batches');
+                if (cached) setPwBatches(JSON.parse(cached));
+                
+                const res = await fetch('http://localhost:5000/api/pwjarvis/batches');
+                const json = await res.json();
+                if (json.ok && json.data && json.data.batches) {
+                  setPwBatches(json.data.batches);
+                  localStorage.setItem('ataxy_pwjarvis_batches', JSON.stringify(json.data.batches));
+                }
+              } catch (err) {
+                console.error('Failed to load PW batches', err);
+              }
+            };
+            loadPWBatches();
+          }, []);
+
+          const handleFetchPWBatches = async () => {
+            setPwLoading(true);
+            setPwError('');
+            try {
+              const res = await fetch('http://localhost:5000/api/pwjarvis/scrape', { method: 'POST' });
+              const json = await res.json();
+              if (json.ok && json.data && json.data.batches) {
+                setPwBatches(json.data.batches);
+                localStorage.setItem('ataxy_pwjarvis_batches', JSON.stringify(json.data.batches));
+              } else {
+                setPwError('Failed to fetch new batches from server.');
+              }
+            } catch (err) {
+              setPwError('Backend connection error (localhost:5000). Ensure the backend is running.');
+            }
+            setPwLoading(false);
+          };
 
           // Initialize Telegram on mount
           useEffect(() => {
@@ -288,6 +331,7 @@
             else if (activeSubject) setActiveSubject(null);
             else if (activeSubBatch) setActiveSubBatch(null);
             else if (activeBatch) { setActiveBatch(null); setCurrentTab('batches'); }
+            else if (activePwBatch) { setActivePwBatch(null); }
           };
 
           const BottomNav = () => (
@@ -299,6 +343,10 @@
               <button onClick={() => { setCurrentTab('batches'); setActiveSubBatch(null); setActiveSubject(null); setActiveChapter(null); setActiveVideo(null); }} className={`flex flex-col items-center p-3 w-full ${currentTab === 'batches' ? 'text-blue-600' : 'text-gray-500'}`}>
                 <i className="fa-solid fa-book-open text-xl mb-1"></i>
                 <span className="text-[10px] font-medium">Batches</span>
+              </button>
+              <button onClick={() => { setCurrentTab('pw'); setActiveBatch(null); setActiveSubBatch(null); setActiveSubject(null); setActiveChapter(null); setActiveVideo(null); setActivePwBatch(null); }} className={`flex flex-col items-center p-3 w-full ${currentTab === 'pw' ? 'text-cyan-600' : 'text-gray-500'}`}>
+                <i className="fa-solid fa-book-open-reader text-xl mb-1"></i>
+                <span className="text-[10px] font-medium">PW</span>
               </button>
               <button onClick={() => setCurrentTab('notices')} className={`flex flex-col items-center p-3 w-full ${currentTab === 'notices' ? 'text-blue-600' : 'text-gray-500'}`}>
                 <i className="fa-solid fa-bell text-xl mb-1"></i>
@@ -554,12 +602,120 @@
             </div>
           );
 
+          const PWJarvisView = () => {
+            if (activePwBatch) {
+              return (
+                <div className="pb-24 animate-in slide-in-from-right duration-200">
+                  <div className="bg-cyan-600 pt-8 pb-6 px-5 text-white shadow-md rounded-b-3xl">
+                    <div className="flex items-center gap-3">
+                      <button onClick={handleBack} className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm"><i className="fa-solid fa-chevron-left"></i></button>
+                      <h2 className="font-bold text-lg line-clamp-1">Batch Details</h2>
+                    </div>
+                  </div>
+                  <div className="px-5 mt-6 space-y-4">
+                    {activePwBatch.imageUrl && (
+                      <img src={activePwBatch.imageUrl} alt="batch" className="w-full h-48 object-cover rounded-xl shadow-sm" />
+                    )}
+                    <h1 className="text-2xl font-bold text-gray-800">{activePwBatch.title}</h1>
+                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">{activePwBatch.description || "No description provided."}</p>
+                    
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Instructor</p>
+                        <p className="font-semibold text-gray-800 text-sm">{activePwBatch.instructor || "N/A"}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Price</p>
+                        <p className="font-bold text-green-600 text-sm">{activePwBatch.price || "Free"}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Category</p>
+                        <p className="font-semibold text-blue-600 text-sm">{activePwBatch.category || "General"}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Duration</p>
+                        <p className="font-semibold text-gray-800 text-sm">{activePwBatch.duration || "N/A"}</p>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => window.open(activePwBatch.link, '_blank')}
+                      className="w-full mt-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+                    >
+                      Visit Official Site <i className="fa-solid fa-external-link-alt"></i>
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="pb-24 pt-6 px-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">PW Batches</h2>
+                    <p className="text-gray-500 text-sm">Free batches from pwjarvis</p>
+                  </div>
+                  <button 
+                    onClick={handleFetchPWBatches} 
+                    disabled={pwLoading}
+                    className="bg-cyan-50 text-cyan-600 w-10 h-10 rounded-full flex items-center justify-center hover:bg-cyan-100 transition-colors"
+                  >
+                    <i className={`fa-solid fa-rotate-right ${pwLoading ? 'fa-spin' : ''}`}></i>
+                  </button>
+                </div>
+
+                {pwError && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm mb-4">
+                    <i className="fa-solid fa-circle-exclamation mr-2"></i> {pwError}
+                  </div>
+                )}
+
+                {pwBatches.length === 0 && !pwLoading && (
+                  <div className="text-center py-10">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fa-solid fa-box-open text-3xl text-gray-400"></i>
+                    </div>
+                    <p className="text-gray-500 mb-4">No batches loaded yet.</p>
+                    <button 
+                      onClick={handleFetchPWBatches}
+                      className="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-cyan-700 transition-colors"
+                    >
+                      Fetch Batches Now
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {pwBatches.map(batch => (
+                    <div key={batch.id} onClick={() => setActivePwBatch(batch)} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden cursor-pointer transform active:scale-[0.98] transition-transform">
+                      {batch.imageUrl && <img src={batch.imageUrl} alt={batch.title} className="w-full h-32 object-cover bg-gray-100" />}
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="bg-cyan-100 text-cyan-700 text-[10px] font-bold px-2 py-1 rounded uppercase">{batch.category || 'Batch'}</span>
+                          <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{batch.price || 'Free'}</span>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800 line-clamp-2">{batch.title}</h3>
+                        <p className="text-gray-500 text-xs mt-1 mb-3 line-clamp-2">{batch.description}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-3">
+                          <span className="flex items-center gap-1"><i className="fa-solid fa-user-tie"></i> {batch.instructor || 'PW Mentor'}</span>
+                          <span className="flex items-center gap-1"><i className="fa-solid fa-star text-yellow-400"></i> {batch.rating || '4.5'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          };
+
           return (
             <div className="min-h-screen font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden">
-              {activeVideo ? <VideoPlayerView /> : activeChapter ? <ChapterDetailView /> : activeSubject ? <SubjectDetailView /> : activeBatch ? <BatchDetailView /> : (
+              {activeVideo ? <VideoPlayerView /> : activeChapter ? <ChapterDetailView /> : activeSubject ? <SubjectDetailView /> : activeBatch ? <BatchDetailView /> : activePwBatch ? <PWJarvisView /> : (
                 <>
                   {currentTab === 'home' && <HomeView />}
                   {currentTab === 'batches' && <BatchesView />}
+                  {currentTab === 'pw' && <PWJarvisView />}
                   {currentTab === 'notices' && <NoticesView />}
                   {currentTab === 'profile' && (
                     <div className="p-5 pt-10 text-center animate-in fade-in">
