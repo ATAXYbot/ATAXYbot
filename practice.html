@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEET Practice | Telegram Mini App</title>
+
+  <link rel="stylesheet" href="practice.css" />
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <span class="app-badge">NEET</span>
+        <h1>Practice</h1>
+      </div>
+      <p class="app-subtitle">Select a subject, chapter and topic to begin your quiz.</p>
+    </header>
+
+    <main class="content">
+      <section class="accordion-panel">
+        <div class="panel-header">
+          <h2>Practice Topics</h2>
+          <p class="panel-copy">Tap through the nested menu and press Practice Now.</p>
+        </div>
+
+        <div id="statusMessage" class="status-message">Loading topics…</div>
+        <div id="practiceAccordion" class="accordion"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="practice.js"></script>
+</body>
+</html>
