@@ -741,6 +741,7 @@
             );
         };
 
+
         // ==========================================
         // � PWJARVIS BATCH VIEW
         // ==========================================
@@ -1020,42 +1021,131 @@
                   try {
                       setQbankError(null);
                       
-                      // Fetch practice topics from backend API
-                      const response = await fetch('http://localhost:5000/api/neet/practice-topics');
-                      if (!response.ok) throw new Error(`Backend Error: ${response.status}`);
-                      
-                      const topicsData = await response.json();
-                      const hierarchyData = topicsData.data || [];
-                      
-                      // Transform hierarchy into qbank format
-                      const subjects = hierarchyData.map((subjectGroup, idx) => {
-                          const subjectName = subjectGroup.subject || 'Unknown';
-                          const icon = subjectName.toLowerCase().includes('physics') ? '⚛️' : 
-                                      subjectName.toLowerCase().includes('biology') ? '🌿' : '⚗️';
+                      // Fetch directly from your Supabase REST API
+                      const supabaseUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co/rest/v1';
+                      const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+                      const headers = { 
+                          'apikey': apikey, 
+                          'Authorization': `Bearer ${apikey}`,
+                          'Content-Type': 'application/json'
+                      };
+
+                      // Try to fetch 'questions', if missing fallback to 'Raceee_testttingg_checkinggg'
+                      let qRes = await fetch(`${supabaseUrl}/questions?select=*&limit=5000`, { headers });
+                      if (!qRes.ok && qRes.status === 404) {
+                          qRes = await fetch(`${supabaseUrl}/Raceee_testttingg_checkinggg?select=*&limit=5000`, { headers });
+                      }
+
+                      if (!qRes.ok) {
+                          const errText = await qRes.text();
+                          throw new Error(`Supabase API Error (${qRes.status}): ${errText}`);
+                      }
+
+                      const questions = await qRes.json();
+
+                      // Try to fetch chapters and topics
+                      let chapters = [];
+                      let topics = [];
+                      try {
+                          const cRes = await fetch(`${supabaseUrl}/chapters?select=*`, { headers });
+                          if (cRes.ok) chapters = await cRes.json();
+                          const tRes = await fetch(`${supabaseUrl}/topics?select=*`, { headers });
+                          if (tRes.ok) topics = await tRes.json();
+                      } catch (e) {
+                          console.warn("Could not fetch chapters/topics", e);
+                      }
+
+                      // Transform data into the app's required tree format
+                      const subjectsMap = {};
+                      const matchedQuestionIds = new Set();
+
+                      chapters.forEach(chap => {
+                          const subjName = chap.subject || 'Chemistry';
+                          if (!subjectsMap[subjName]) {
+                              subjectsMap[subjName] = { id: 'sub_' + subjName, name: subjName, icon: subjName === 'Physics' ? '⚛️' : (subjName === 'Biology' ? '🌿' : '⚗️'), chapters: [] };
+                          }
+                          const chapterNode = { id: chap.id, name: chap.name, topics: [] };
+                          const chapTopics = topics.filter(t => t.chapter_id === chap.id);
                           
-                          return {
-                              id: `sub_${idx}`,
-                              name: subjectName,
-                              icon: icon,
-                              chapters: (subjectGroup.chapters || []).map((chapterGroup, chIdx) => ({
-                                  id: `chap_${idx}_${chIdx}`,
-                                  name: chapterGroup.chapter || 'Chapter',
-                                  topics: (chapterGroup.topics || []).map((topicName, tIdx) => ({
-                                      id: `top_${idx}_${chIdx}_${tIdx}`,
-                                      name: topicName,
-                                      questions: [], // Loaded on demand
-                                      subject: subjectName,
-                                      chapter: chapterGroup.chapter,
-                                      topicName: topicName
-                                  }))
-                              }))
-                          };
+                          chapTopics.forEach(top => {
+                              const topicNode = { id: top.id, name: top.name, questions: [] };
+                              const topQuestions = questions.filter(q => q.topic_id === top.id || q.topic === top.name);
+                              
+                              topQuestions.forEach(q => {
+                                  matchedQuestionIds.add(q.id);
+                                  let parsedOpts = q.options || q.option_a ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
+                                  if (!parsedOpts) {
+                                      parsedOpts = q.options;
+                                      if (typeof parsedOpts === 'string') { try { parsedOpts = JSON.parse(parsedOpts); } catch (e) { parsedOpts = []; } }
+                                  }
+                                  if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
+                                  
+                                  let correctIdx = q.correct_answer;
+                                  if (correctIdx === undefined && q.correct_option) {
+                                      correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                                  }
+                                  if (correctIdx === undefined) correctIdx = q.correct || 0;
+
+                                  topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: q.image_url, options: parsedOpts, correctOption: ['A','B','C','D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
+                              });
+                              if (topicNode.questions.length > 0) { chapterNode.topics.push(topicNode); }
+                          });
+                          if (chapterNode.topics.length > 0) { subjectsMap[subjName].chapters.push(chapterNode); }
                       });
-                      
-                      if (subjects.length > 0) {
-                          setQbankData(subjects);
+
+                      // Process unmatched questions so none are ever lost
+                      const unmatchedQuestions = questions.filter(q => !matchedQuestionIds.has(q.id));
+                      unmatchedQuestions.forEach((q, idx) => {
+                          const subjName = q.subject || 'Mixed Subjects';
+                          const chapName = q.chapter || 'Mixed Chapters';
+                          const topName = q.topic || 'Mixed Topics';
+                          
+                          if (!subjectsMap[subjName]) {
+                              subjectsMap[subjName] = { id: 'sub_unm_' + subjName, name: subjName, icon: '📂', chapters: [] };
+                          }
+                          let chapterNode = subjectsMap[subjName].chapters.find(c => c.name === chapName);
+                          if (!chapterNode) {
+                              chapterNode = { id: 'chap_unm_' + chapName, name: chapName, topics: [] };
+                              subjectsMap[subjName].chapters.push(chapterNode);
+                          }
+                          let topicNode = chapterNode.topics.find(t => t.name === topName);
+                          if (!topicNode) {
+                              topicNode = { id: 'top_unm_' + topName, name: topName, questions: [] };
+                              chapterNode.topics.push(topicNode);
+                          }
+
+                          let parsedOpts = q.options || q.option_a ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
+                          if (!parsedOpts) {
+                              parsedOpts = q.options || q.Options || q.options_array;
+                              if (typeof parsedOpts === 'string') { try { parsedOpts = JSON.parse(parsedOpts); } catch (e) { parsedOpts = []; } }
+                          }
+                          if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
+                          
+                          let correctIdx = q.correct_answer;
+                          if (correctIdx === undefined && q.correct_option) {
+                              correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                          }
+                          if (correctIdx === undefined) correctIdx = q.correct || 0;
+
+                          topicNode.questions.push({ 
+                              id: q.id || `q_unm_${idx}`, 
+                              text: q.question_text || q.question || 'Unnamed Question', 
+                              imageUrl: q.image_url,
+                              options: parsedOpts, 
+                              correctOption: ['A','B','C','D'][correctIdx] || 'A',
+                              correct: correctIdx, 
+                              explanation: q.explanation || q.Explanation || 'No explanation', 
+                              difficulty: q.difficulty || 'Medium', 
+                              ncert: true, accuracy: 'N/A' 
+                          });
+                      });
+
+                      let finalData = Object.values(subjectsMap);
+
+                      if (finalData.length > 0) {
+                          setQbankData(finalData);
                       } else {
-                          setQbankError("No practice topics found in database.");
+                          setQbankError("Connected to Supabase, but no questions were found.");
                           setQbankData(ALIEN_QBANK);
                       }
                   } catch (e) {
@@ -1092,38 +1182,26 @@
                   return;
               }
 
-              const loadQuestions = async () => {
-                  try {
-                      setQuestionsLoading(true);
-                      setCurrentQuestionIndex(0);
-                      if (activePracticeChapter.questions?.length > 0) {
-                          setLoadedQuestions(activePracticeChapter.questions || []);
-                          return;
-                      }
+              const loadQuestions = () => {
+                  setQuestionsLoading(true);
+                  setCurrentQuestionIndex(0);
 
-                      const firstTopic = activePracticeChapter.topics?.[0];
-                      if (!firstTopic) {
-                          setLoadedQuestions([]);
-                          return;
-                      }
-
-                      const subject = encodeURIComponent(firstTopic.subject);
-                      const chapter = encodeURIComponent(firstTopic.chapter);
-                      const topic = encodeURIComponent(firstTopic.topicName || firstTopic.name);
-                      const response = await fetch(`http://localhost:5000/api/neet/quiz/${subject}/${chapter}/${topic}`);
-                      if (response.ok) {
-                          const data = await response.json();
-                          setLoadedQuestions(data.data || []);
-                      } else {
-                          console.error('Failed to load questions for', subject, chapter, topic);
-                          setLoadedQuestions([]);
-                      }
-                  } catch (err) {
-                      console.error('Error loading questions:', err);
-                      setLoadedQuestions([]);
-                  } finally {
-                      setQuestionsLoading(false);
+                  let allQuestions = [];
+                  let gIdx = 1;
+                  if (activePracticeChapter.topics) {
+                      activePracticeChapter.topics.forEach(t => {
+                          if (t.questions) {
+                              t.questions.forEach(q => allQuestions.push({ ...q, globalIndex: gIdx++, topicId: t.id, topicName: t.name }));
+                          }
+                      });
                   }
+                  
+                  if (allQuestions.length > 0) {
+                      setLoadedQuestions(allQuestions);
+                  } else {
+                      setLoadedQuestions([]);
+                  }
+                  setQuestionsLoading(false);
               };
 
               loadQuestions();
@@ -1605,6 +1683,23 @@
                          </div>
 
                          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+                             <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1">
+                                 <button 
+                                     onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); }} 
+                                     className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${!practiceSelectedTopic ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
+                                 >
+                                     All Topics
+                                 </button>
+                                 {activePracticeChapter.topics?.map((t, idx) => (
+                                     <button 
+                                         key={idx}
+                                         onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); }}
+                                         className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${practiceSelectedTopic === t.name ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
+                                     >
+                                         {t.name} ({t.questions?.length || 0})
+                                     </button>
+                                 ))}
+                             </div>
                              <div className="flex justify-between items-center mb-2">
                                  <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Progress</span>
                                  <span className="text-xs font-bold text-gray-900 dark:text-white">{currentQuestionIndex + 1}/{displayedQuestions.length}</span>
@@ -1710,6 +1805,19 @@
                      <div className="flex justify-between items-center mb-6">
                          <h2 className="text-2xl font-black text-gray-900 dark:text-white">Practice Hub</h2>
                      </div>
+                     
+                     {qbankError && (
+                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-5 shadow-sm text-sm text-red-800 dark:text-red-200">
+                             <div className="font-bold flex items-center gap-2 mb-2">
+                                 <i className="fa-solid fa-triangle-exclamation"></i> Supabase Connection Issue
+                             </div>
+                             <p className="mb-2 opacity-90">{qbankError}</p>
+                             <p className="text-xs opacity-75">
+                                 <strong>Hint:</strong> If you see "Unauthorized", your API key is incorrect. It should start with <code>eyJ...</code> (Anon Public Key), not <code>sb_publishable_...</code>. Check your Supabase Dashboard &gt; Project Settings &gt; API.
+                             </p>
+                         </div>
+                     )}
+
                      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5">
                          {qbankData.map(sub => (
                              <button key={sub.id} onClick={() => setActivePracticeSubject(sub)} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap border flex items-center gap-2 transition-all ${activePracticeSubject?.id === sub.id ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-[#0eb582]'}`}>
