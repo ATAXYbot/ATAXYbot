@@ -194,9 +194,12 @@
   </div>
 
   <script>
-    const supabaseUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co';
-    const supabaseAnonKey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
-    const tableName = 'Raceee testttingg checkinggg';
+    const getApiBaseUrl = () => {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:5000';
+      }
+      return 'http://localhost:5000'; // Update with production backend URL
+    };
 
     const statusMessage = document.getElementById('statusMessage');
     const questionsContainer = document.getElementById('questionsContainer');
@@ -215,24 +218,22 @@
         topicTitle.textContent = selection.topic;
         topicMeta.textContent = `${selection.subject} • ${selection.chapter}`;
 
-        // Fetch questions for this topic
-        const encodedTableName = encodeURIComponent(tableName);
-        const query = `select=*&subject=eq.${encodeURIComponent(selection.subject)}&chapter=eq.${encodeURIComponent(selection.chapter)}&topic=eq.${encodeURIComponent(selection.topic)}`;
-        const apiUrl = `${supabaseUrl}/rest/v1/${encodedTableName}?${query}`;
-
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'apikey': supabaseAnonKey,
-            'Content-Type': 'application/json',
-          },
-        });
+        // Fetch questions from backend
+        const apiBase = getApiBaseUrl();
+        const encodedSubject = encodeURIComponent(selection.subject);
+        const encodedChapter = encodeURIComponent(selection.chapter);
+        const encodedTopic = encodeURIComponent(selection.topic);
+        
+        const response = await fetch(
+          `${apiBase}/api/neet/quiz/${encodedSubject}/${encodedChapter}/${encodedTopic}`
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
 
         if (!data || data.length === 0) {
           statusMessage.textContent = 'No questions found for this topic yet.';
@@ -243,7 +244,7 @@
         statusMessage.textContent = '';
       } catch (error) {
         console.error('Error loading quiz:', error);
-        statusMessage.textContent = 'Unable to load questions: ' + error.message;
+        statusMessage.textContent = 'Error: ' + error.message + '. Make sure backend is running on port 5000.';
       }
     };
 

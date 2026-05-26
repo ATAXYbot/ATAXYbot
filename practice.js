@@ -1,9 +1,14 @@
-const supabaseUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co';
-const supabaseAnonKey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
-const tableName = 'Raceee testttingg checkinggg';
-
 const accordionContainer = document.getElementById('practiceAccordion');
 const statusMessage = document.getElementById('statusMessage');
+
+// Detect if running locally or on GitHub Pages
+const getApiBaseUrl = () => {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000';
+  }
+  // For GitHub Pages, we'd need to update this to point to your actual backend URL
+  return 'http://localhost:5000'; // Update this with your production backend URL
+};
 
 const buildNestedStructure = (rows) => {
   const tree = {};
@@ -162,29 +167,18 @@ const escapeHtml = (text) => {
 const loadPracticeTopics = async () => {
   statusMessage.textContent = 'Loading topics…';
   try {
-    // Using Supabase REST API directly
-    const encodedTableName = encodeURIComponent(tableName);
-    const apiUrl = `${supabaseUrl}/rest/v1/${encodedTableName}?select=subject,chapter,topic&order=subject.asc,chapter.asc,topic.asc`;
-    
-    console.log('Fetching from URL:', apiUrl);
-    
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'apikey': supabaseAnonKey,
-        'Content-Type': 'application/json',
-      },
-    });
+    const apiBase = getApiBaseUrl();
+    const response = await fetch(`${apiBase}/api/neet/practice-topics`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log('Data received:', data);
+    const result = await response.json();
+    const data = result.data || result;
 
     if (!data || data.length === 0) {
-      statusMessage.textContent = 'No practice topics found in database.';
+      statusMessage.textContent = 'No practice topics found.';
       return;
     }
 
@@ -193,8 +187,7 @@ const loadPracticeTopics = async () => {
     statusMessage.textContent = '';
   } catch (error) {
     console.error('Error loading practice topics:', error);
-    statusMessage.textContent =
-      'Unable to load practice topics. Error: ' + error.message;
+    statusMessage.textContent = 'Error: ' + error.message + '. Make sure backend is running on port 5000.';
   }
 };
 

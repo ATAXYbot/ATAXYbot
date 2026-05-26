@@ -5,6 +5,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cron = require('node-cron');
 const { scrapePWJarvisBatches } = require('./scrapers/pwjarvis-scraper');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const cloudinary = require('cloudinary').v2;
@@ -46,6 +47,14 @@ const readJSON = (file, fallback) => {
 const writeJSON = (file, obj) => fs.writeFileSync(file, JSON.stringify(obj, null, 2));
 
 const app = express();
+
+// Initialize Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+app.locals.supabase = supabase;
+
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -491,8 +500,281 @@ cron.schedule(PWJARVIS_SYNC_CRON, () => {
   performPWJarvisSync();
 });
 
+// ============================================================
+// NEET QUESTIONS API - Supabase Integration
+// ============================================================
+
+// Middleware to set Telegram user ID
+const setTelegramUserId = (req, res, next) => {
+  const telegramUserId = req.headers['x-telegram-user-id'];
+  if (telegramUserId) {
+    res.locals.telegramUserId = telegramUserId;
+  }
+  next();
+};
+
+app.use('/api/neet', setTelegramUserId);
+
+// Get all chapters
+app.get('/api/neet/chapters', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('chapters')
+      .select('id, name, subject, description, order_index')
+      .order('order_index', { ascending: true });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get topics by chapter
+app.get('/api/neet/chapters/:chapterId/topics', async (req, res) => {
+  try {
+    const { chapterId } = req.params;
+    const { data, error } = await supabase
+      .from('topics')
+      .select('id, name, order_index')
+      .eq('chapter_id', chapterId)
+      .order('order_index', { ascending: true });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get questions by topic (with pagination & protection)
+app.get('/api/neet/topics/:topicId/questions', async (req, res) => {
+  try {
+    const { topicId } = req.params;
+    const { limit = 10, offset = 0 } = req.query;
+
+    // Limit max questions per request (protection against bulk copying)
+    const queryLimit = Math.min(parseInt(limit), 20);
+
+    const { data, error, count } = await supabase
+      .from('questions')
+      .select('id, question_text, question_type, options, difficulty, image_url, tags', { count: 'exact' })
+      .eq('topic_id', topicId)
+      .order('id', { ascending: true })
+      .range(offset, offset + queryLimit - 1);
+
+    if (error) throw error;
+
+    res.json({
+      questions: data,
+      total: count,
+      limit: queryLimit,
+      offset: parseInt(offset)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single question with answer
+app.get('/api/neet/questions/:questionId', async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Submit answer and track progress
+app.post('/api/neet/questions/:questionId/submit', async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { userAnswer } = req.body;
+    const telegramUserId = res.locals.telegramUserId;
+
+    if (!telegramUserId) {
+      return res.status(401).json({ error: 'Unauthorized: No Telegram user ID' });
+    }
+
+    // Get question
+    const { data: question, error: qError } = await supabase
+      .from('questions')
+      .select('correct_answer, explanation')
+      .eq('id', questionId)
+      .single();
+
+    if (qError) throw qError;
+
+    const isCorrect = question.correct_answer === userAnswer;
+
+    // Log progress
+    const { error: pError } = await supabase
+      .from('user_progress')
+      .insert({
+        telegram_user_id: parseInt(telegramUserId),
+        question_id: questionId,
+        is_correct: isCorrect,
+        attempts: 1
+      });
+
+    if (pError) throw pError;
+
+    res.json({
+      isCorrect,
+      correctAnswer: question.correct_answer,
+      explanation: question.explanation
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user stats
+app.get('/api/neet/user/stats', async (req, res) => {
+  try {
+    const telegramUserId = res.locals.telegramUserId;
+
+    if (!telegramUserId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Get overall stats
+    const { data: stats, error: statsError } = await supabase
+      .from('user_progress')
+      .select('is_correct')
+      .eq('telegram_user_id', parseInt(telegramUserId));
+
+    if (statsError) throw statsError;
+
+    const correct = stats.filter(s => s.is_correct).length;
+    const total = stats.length;
+    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    res.json({
+      totalAttempts: total,
+      correctAnswers: correct,
+      accuracy: accuracy
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Register/update user account
+app.post('/api/neet/user/register', async (req, res) => {
+  try {
+    const { telegramUserId, username, firstName, lastName, photoUrl } = req.body;
+
+    if (!telegramUserId) {
+      return res.status(400).json({ error: 'Missing telegram_user_id' });
+    }
+
+    // Upsert user
+    const { data, error } = await supabase
+      .from('user_accounts')
+      .upsert({
+        telegram_user_id: parseInt(telegramUserId),
+        username,
+        first_name: firstName,
+        last_name: lastName,
+        profile_photo_url: photoUrl,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'telegram_user_id' })
+      .select();
+
+    if (error) throw error;
+
+    res.json({ success: true, user: data[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/neet/users', async (req, res) => {
+  try {
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      const { data, error } = await supabase
+        .from('user_accounts')
+        .select('telegram_user_id, username, first_name, last_name, profile_photo_url, updated_at')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      return res.json({ users: data || [] });
+    }
+
+    const users = readJSON(USERS_FILE, {});
+    return res.json({ users: Object.values(users) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🟢 NEET Practice Topics API
+app.get('/api/neet/practice-topics', async (req, res) => {
+  try {
+    // Try Supabase first
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      const tableName = 'Raceee testttingg checkinggg';
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('subject, chapter, topic')
+        .order('subject', { ascending: true })
+        .order('chapter', { ascending: true })
+        .order('topic', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return res.json({ data });
+      }
+    }
+
+    // Fallback to local JSON
+    const practiceData = readJSON(path.join(DATA_DIR, 'practice-topics.json'), []);
+    return res.json({ data: practiceData });
+  } catch (error) {
+    console.error('Error fetching practice topics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🟢 NEET Quiz Questions API
+app.get('/api/neet/quiz/:subject/:chapter/:topic', async (req, res) => {
+  try {
+    const { subject, chapter, topic } = req.params;
+
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      const tableName = 'Raceee testttingg checkinggg';
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('subject', decodeURIComponent(subject))
+        .eq('chapter', decodeURIComponent(chapter))
+        .eq('topic', decodeURIComponent(topic))
+        .limit(20);
+
+      if (!error && data) {
+        return res.json({ data });
+      }
+    }
+
+    res.status(404).json({ error: 'No questions found' });
+  } catch (error) {
+    console.error('Error fetching quiz questions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Backend listening on port ${PORT}`);
   console.log(`📡 PWJarvis API: GET http://localhost:${PORT}/api/pwjarvis/batches`);
+  console.log(`📡 NEET Practice API: GET http://localhost:${PORT}/api/neet/practice-topics`);
+  console.log(`📡 NEET Quiz API: GET http://localhost:${PORT}/api/neet/quiz/:subject/:chapter/:topic`);
 });
