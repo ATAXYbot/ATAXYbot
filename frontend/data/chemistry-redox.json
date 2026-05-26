@@ -1,0 +1,77 @@
+{
+  "subject": "Chemistry",
+  "chapter": "Redox Reaction",
+  "topic": "Oxidation and Reduction",
+  "questions": [
+    {
+      "id": "r_001",
+      "question_text": "Oxidation is defined as -",
+      "image_url": "",
+      "options": ["Gain of electrons","Decrease in positive valency","Loss of electrons","Addition of electropositive element"],
+      "correct_option": 2
+    },
+    {
+      "id": "r_002",
+      "question_text": "Reduction is defined as -",
+      "image_url": "",
+      "options": ["Increase in positive valency","Gain of electrons","Loss of protons","Decrease in negative valency"],
+      "correct_option": 1
+    },
+    {
+      "id": "r_003",
+      "question_text": "In the reaction MnO4^- + SO3^2- + H+ ⟶ SO4^2- + Mn^2+ + H2O",
+      "image_url": "",
+      "options": ["MnO4^- and H+ both are reduced","MnO4^- is reduced and H+ is oxidised","MnO4^- is reduced and SO3^2- is oxidised","MnO4^- is oxidised and SO3^2- is reduced"],
+      "correct_option": 2
+    },
+    {
+      "id": "r_004",
+      "question_text": "Which of the following halogen always show only one oxidation state in its compounds?",
+      "image_url": "",
+      "options": ["Cl","F","Br","I"],
+      "correct_option": 1
+    },
+    {
+      "id": "r_005",
+      "question_text": "Which of the following reactions do not involve oxidation-reduction?",
+      "image_url": "",
+      "options": ["2Rb + 2H2O ⟶ 2RbOH + H2","2CuI2 ⟶ 2CuI + I2","NH4Cl + NaOH ⟶ NaCl + NH3 + H2O","3Mg + N2 ⟶ Mg3N2"],
+      "correct_option": 2
+    },
+    {
+      "id": "r_006",
+      "question_text": "In which of the following compounds, the oxidation state of I-atom is highest?",
+      "image_url": "",
+      "options": ["KI3","KIO4","KIO3","IF5"],
+      "correct_option": 1
+    },
+    {
+      "id": "r_007",
+      "question_text": "The oxidation number of phosphorus in Ba(H2PO2)2 is",
+      "image_url": "",
+      "options": ["+3","+2","+1","-1"],
+      "correct_option": 2
+    },
+    {
+      "id": "r_008",
+      "question_text": "Positive oxidation state of an element indicates that it is -",
+      "image_url": "",
+      "options": ["Elementary form","Oxidised","Reduced","Only reductant"],
+      "correct_option": 1
+    },
+    {
+      "id": "r_009",
+      "question_text": "The oxidation state of oxygen atom in potassium superoxide is -",
+      "image_url": "",
+      "options": ["Zero","-1/2","-1","-2"],
+      "correct_option": 1
+    },
+    {
+      "id": "r_010",
+      "question_text": "Molecular weight of KMnO4 in acidic medium and neutral medium will be respectively",
+      "image_url": "",
+      "options": ["7 x equivalent weight and 2 x equivalent weight","5 x equivalent weight and 3 x equivalent weight","4 x equivalent weight and 5 x equivalent weight","2 x equivalent weight and 4 x equivalent weight"],
+      "correct_option": 1
+    }
+  ]
+}

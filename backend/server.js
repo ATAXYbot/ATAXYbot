@@ -4,7 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
 const cron = require('node-cron');
-const { scrapePWJarvisBatches } = require('./scrapers/pwjarvis-scraper');
+let scrapePWJarvisBatches;
+try {
+  scrapePWJarvisBatches = require('./scrapers/pwjarvis-scraper').scrapePWJarvisBatches;
+} catch (e) {
+  console.warn('PWJarvis scraper not available:', e.message);
+  scrapePWJarvisBatches = async () => [];
+}
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
@@ -48,12 +54,22 @@ const writeJSON = (file, obj) => fs.writeFileSync(file, JSON.stringify(obj, null
 
 const app = express();
 
-// Initialize Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-app.locals.supabase = supabase;
+// Initialize Supabase (optional)
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  try {
+    supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+    app.locals.supabase = supabase;
+    console.log('✅ Supabase connected');
+  } catch (error) {
+    console.warn('⚠️ Supabase initialization failed:', error.message);
+  }
+} else {
+  console.warn('⚠️ Supabase credentials not configured. Using local JSON fallback.');
+}
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -677,22 +693,36 @@ app.post('/api/neet/user/register', async (req, res) => {
       return res.status(400).json({ error: 'Missing telegram_user_id' });
     }
 
-    // Upsert user
-    const { data, error } = await supabase
-      .from('user_accounts')
-      .upsert({
-        telegram_user_id: parseInt(telegramUserId),
-        username,
-        first_name: firstName,
-        last_name: lastName,
-        profile_photo_url: photoUrl,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'telegram_user_id' })
-      .select();
+    // Try Supabase first
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('user_accounts')
+        .upsert({
+          telegram_user_id: parseInt(telegramUserId),
+          username,
+          first_name: firstName,
+          last_name: lastName,
+          profile_photo_url: photoUrl,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'telegram_user_id' })
+        .select();
 
-    if (error) throw error;
+      if (error) throw error;
+      return res.json({ success: true, user: data[0] });
+    }
 
-    res.json({ success: true, user: data[0] });
+    // Fallback to local JSON
+    const users = readJSON(USERS_FILE, {});
+    users[telegramUserId] = {
+      telegram_user_id: parseInt(telegramUserId),
+      username,
+      first_name: firstName,
+      last_name: lastName,
+      profile_photo_url: photoUrl,
+      updated_at: new Date().toISOString()
+    };
+    writeJSON(USERS_FILE, users);
+    res.json({ success: true, user: users[telegramUserId] });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -700,14 +730,15 @@ app.post('/api/neet/user/register', async (req, res) => {
 
 app.get('/api/neet/users', async (req, res) => {
   try {
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    if (supabase) {
       const { data, error } = await supabase
         .from('user_accounts')
         .select('telegram_user_id, username, first_name, last_name, profile_photo_url, updated_at')
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
-      return res.json({ users: data || [] });
+      if (!error && data) {
+        return res.json({ users: data || [] });
+      }
     }
 
     const users = readJSON(USERS_FILE, {});
@@ -717,50 +748,96 @@ app.get('/api/neet/users', async (req, res) => {
   }
 });
 
-// 🟢 NEET Practice Topics API
+// 🟢 NEET Practice Topics API - Get unique subject/chapter/topic filters
 app.get('/api/neet/practice-topics', async (req, res) => {
   try {
     // Try Supabase first
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-      const tableName = 'Raceee testttingg checkinggg';
-      const { data, error } = await supabase
+    if (supabase) {
+      const tableName = 'Raceee_testttingg_checkinggg';
+      
+      // Get all unique subjects
+      const { data: allData, error } = await supabase
         .from(tableName)
         .select('subject, chapter, topic')
         .order('subject', { ascending: true })
         .order('chapter', { ascending: true })
         .order('topic', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return res.json({ data });
+      if (!error && allData && allData.length > 0) {
+        // Build hierarchy structure
+        const structure = {};
+        allData.forEach(row => {
+          const subject = row.subject;
+          const chapter = row.chapter;
+          const topic = row.topic;
+          
+          if (!structure[subject]) {
+            structure[subject] = { chapters: {} };
+          }
+          if (!structure[subject].chapters[chapter]) {
+            structure[subject].chapters[chapter] = { topics: new Set() };
+          }
+          structure[subject].chapters[chapter].topics.add(topic);
+        });
+        
+        // Convert to array format for frontend
+        const result = Object.keys(structure).map(subject => ({
+          subject,
+          chapters: Object.keys(structure[subject].chapters).map(chapter => ({
+            chapter,
+            topics: Array.from(structure[subject].chapters[chapter].topics)
+          }))
+        }));
+        
+        return res.json({ data: result });
+      } else if (error) {
+        console.warn('Supabase error:', error.message);
       }
     }
 
     // Fallback to local JSON
     const practiceData = readJSON(path.join(DATA_DIR, 'practice-topics.json'), []);
-    return res.json({ data: practiceData });
+    res.json({ data: practiceData });
   } catch (error) {
     console.error('Error fetching practice topics:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// 🟢 NEET Quiz Questions API
+// 🟢 NEET Quiz Questions API - Get all questions for subject/chapter/topic
 app.get('/api/neet/quiz/:subject/:chapter/:topic', async (req, res) => {
   try {
     const { subject, chapter, topic } = req.params;
+    const decodedSubject = decodeURIComponent(subject);
+    const decodedChapter = decodeURIComponent(chapter);
+    const decodedTopic = decodeURIComponent(topic);
 
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-      const tableName = 'Raceee testttingg checkinggg';
+    if (supabase) {
+      const tableName = 'Raceee_testttingg_checkinggg';
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
-        .eq('subject', decodeURIComponent(subject))
-        .eq('chapter', decodeURIComponent(chapter))
-        .eq('topic', decodeURIComponent(topic))
-        .limit(20);
+        .eq('subject', decodedSubject)
+        .eq('chapter', decodedChapter)
+        .eq('topic', decodedTopic);
 
-      if (!error && data) {
-        return res.json({ data });
+      if (!error && data && data.length > 0) {
+        // Transform data to match quiz format
+        const questions = data.map((q, idx) => ({
+          id: `q_${idx}`,
+          globalIndex: idx + 1,
+          text: q.question_text || q.question || 'Unnamed Question',
+          imageUrl: q.image_url || null,
+          options: [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean),
+          correct: ['A', 'B', 'C', 'D'].indexOf((q.correct_option || 'A').toUpperCase()),
+          correctOption: q.correct_option,
+          topicName: decodedTopic,
+          subject: decodedSubject,
+          chapter: decodedChapter
+        }));
+        return res.json({ data: questions });
+      } else if (error) {
+        console.warn('Supabase error:', error.message);
       }
     }
 
