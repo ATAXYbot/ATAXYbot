@@ -2,9 +2,6 @@ const supabaseUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co';
 const supabaseAnonKey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
 const tableName = 'Raceee testttingg checkinggg';
 
-const { createClient } = window.supabase;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
 const accordionContainer = document.getElementById('practiceAccordion');
 const statusMessage = document.getElementById('statusMessage');
 
@@ -165,20 +162,25 @@ const escapeHtml = (text) => {
 const loadPracticeTopics = async () => {
   statusMessage.textContent = 'Loading topics…';
   try {
-    console.log(`Fetching from table: ${tableName}`);
+    // Using Supabase REST API directly
+    const encodedTableName = encodeURIComponent(tableName);
+    const apiUrl = `${supabaseUrl}/rest/v1/${encodedTableName}?select=subject,chapter,topic&order=subject.asc,chapter.asc,topic.asc`;
     
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('subject, chapter, topic')
-      .order('subject', { ascending: true })
-      .order('chapter', { ascending: true })
-      .order('topic', { ascending: true });
+    console.log('Fetching from URL:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) {
-      console.error('Supabase error:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
+    const data = await response.json();
     console.log('Data received:', data);
 
     if (!data || data.length === 0) {
@@ -192,7 +194,7 @@ const loadPracticeTopics = async () => {
   } catch (error) {
     console.error('Error loading practice topics:', error);
     statusMessage.textContent =
-      'Unable to load practice topics. Please check your connection and try again.';
+      'Unable to load practice topics. Error: ' + error.message;
   }
 };
 
