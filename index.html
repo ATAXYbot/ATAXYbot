@@ -1739,26 +1739,32 @@
                          </div>
 
                          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-                             <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1">
+                             <div className="flex flex-col gap-2 overflow-y-auto max-h-40 no-scrollbar mb-4 pb-1">
                                  <button 
                                      onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); }} 
-                                     className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${!practiceSelectedTopic ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
+                                     className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-colors border shadow-sm flex justify-between items-center ${!practiceSelectedTopic ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
                                  >
-                                     All Topics
+                                     <span>All Topics</span>
                                  </button>
                                  {activePracticeChapter.topics?.map((t, idx) => (
                                      <button 
                                          key={idx}
                                          onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); }}
-                                         className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${practiceSelectedTopic === t.name ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
+                                         className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-colors border shadow-sm flex justify-between items-center ${practiceSelectedTopic === t.name ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
                                      >
-                                         {t.name} ({t.questions?.length || 0})
+                                         <span>{t.name}</span>
+                                         <span className="text-[10px] bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded-full">{t.questions?.length || 0} Qs</span>
                                      </button>
                                  ))}
                              </div>
                              <div className="flex justify-between items-center mb-2">
                                  <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Progress</span>
-                                 <span className="text-xs font-bold text-gray-900 dark:text-white">{currentQuestionIndex + 1}/{displayedQuestions.length}</span>
+                                 <div className="flex items-center gap-3">
+                                     <span className="text-xs font-bold text-gray-900 dark:text-white">{currentQuestionIndex + 1}/{displayedQuestions.length}</span>
+                                     <button onClick={() => setPracticeShowPalette(true)} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center justify-center bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
+                                         <i className="fa-solid fa-grip text-base"></i>
+                                     </button>
+                                 </div>
                              </div>
                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                  <div className="bg-[#0eb582] h-2 rounded-full transition-all" style={{width: `${((currentQuestionIndex + 1) / displayedQuestions.length) * 100}%`}}></div>
@@ -1821,10 +1827,7 @@
                              <button onClick={handlePrevious} disabled={currentQuestionIndex === 0} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
                                  <i className="fa-solid fa-arrow-left"></i> Back
                              </button>
-                             <button onClick={() => setPracticeShowPalette(true)} className="px-4 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-bold rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-center gap-2 transition-colors">
-                                 <i className="fa-solid fa-list-check"></i>
-                             </button>
-                             <button onClick={handleNext} disabled={currentQuestionIndex === displayedQuestions.length - 1 || !isAnswered} className="flex-1 bg-[#0eb582] text-white hover:bg-[#0a9565] disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors">
+                             <button onClick={handleNext} disabled={currentQuestionIndex === displayedQuestions.length - 1} className="flex-1 bg-[#0eb582] text-white hover:bg-[#0a9565] disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors">
                                  Next <i className="fa-solid fa-arrow-right"></i>
                              </button>
                          </div>
