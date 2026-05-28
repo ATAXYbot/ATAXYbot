@@ -764,31 +764,13 @@ app.get('/api/neet/practice-topics', async (req, res) => {
         .order('topic', { ascending: true });
 
       if (!error && allData && allData.length > 0) {
-        // Build hierarchy structure
-        const structure = {};
-        allData.forEach(row => {
-          const subject = row.subject;
-          const chapter = row.chapter;
-          const topic = row.topic;
-          
-          if (!structure[subject]) {
-            structure[subject] = { chapters: {} };
-          }
-          if (!structure[subject].chapters[chapter]) {
-            structure[subject].chapters[chapter] = { topics: new Set() };
-          }
-          structure[subject].chapters[chapter].topics.add(topic);
-        });
-        
-        // Convert to array format for frontend
-        const result = Object.keys(structure).map(subject => ({
-          subject,
-          chapters: Object.keys(structure[subject].chapters).map(chapter => ({
-            chapter,
-            topics: Array.from(structure[subject].chapters[chapter].topics)
-          }))
+        const result = allData.map(row => ({
+          batch: 'Allen Module',
+          file: 'Race',
+          subject: row.subject,
+          chapter: row.chapter,
+          topic: row.topic
         }));
-        
         return res.json({ data: result });
       } else if (error) {
         console.warn('Supabase error:', error.message);
@@ -797,7 +779,14 @@ app.get('/api/neet/practice-topics', async (req, res) => {
 
     // Fallback to local JSON
     const practiceData = readJSON(path.join(DATA_DIR, 'practice-topics.json'), []);
-    res.json({ data: practiceData });
+    const mappedData = practiceData.map(row => ({
+      batch: 'Allen Module',
+      file: 'Race',
+      subject: row.subject,
+      chapter: row.chapter,
+      topic: row.topic
+    }));
+    res.json({ data: mappedData });
   } catch (error) {
     console.error('Error fetching practice topics:', error);
     res.status(500).json({ error: error.message });

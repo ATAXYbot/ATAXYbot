@@ -927,6 +927,8 @@
           const [activeVideo, setActiveVideo] = useState(null);
           const [activePracticeSubject, setActivePracticeSubject] = useState(null);
           const [activePracticeChapter, setActivePracticeChapter] = useState(null);
+          const [activePracticeBatch, setActivePracticeBatch] = useState(null);
+          const [activePracticeFile, setActivePracticeFile] = useState(null);
           const [practiceSelectedTopic, setPracticeSelectedTopic] = useState(null);
           const [practiceAttempts, setPracticeAttempts] = useState(() => JSON.parse(localStorage.getItem('ataxy_practice_perf')) || {});
           const [practiceShowPalette, setPracticeShowPalette] = useState(false);
@@ -1370,6 +1372,8 @@
             else if (activeBatch) setActiveBatch(null);
             else if (activePracticeChapter) setActivePracticeChapter(null);
             else if (activePracticeSubject) setActivePracticeSubject(null);
+            else if (activePracticeFile) setActivePracticeFile(null);
+            else if (activePracticeBatch) setActivePracticeBatch(null);
           };
 
           if (!isVerified) return <Gatekeeper onVerify={(user) => { setTgUser(user); setIsVerified(true); }} />;
@@ -1800,46 +1804,107 @@
                  );
              }
 
+             if (activePracticeSubject) {
+                 return (
+                     <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
+                         <div className="flex items-center gap-3 mb-6">
+                             <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                             <h2 className="text-2xl font-black text-gray-900 dark:text-white">{activePracticeSubject.name}</h2>
+                         </div>
+                         <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 uppercase tracking-wider text-xs">Chapter Selection</h3>
+                         <div className="space-y-3">
+                             {activePracticeSubject.chapters && activePracticeSubject.chapters.length > 0 ? (
+                                 activePracticeSubject.chapters.map((chap, i) => (
+                                     <div key={i} onClick={() => { setActivePracticeChapter(chap); setCurrentTab('questions'); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#0eb582] hover:shadow-md transition-all">
+                                         <div>
+                                             <h4 className="font-bold text-sm text-gray-900 dark:text-white">{chap.name}</h4>
+                                             <p className="text-[10px] font-bold text-[#d49a4e] mt-1 bg-orange-50 dark:bg-orange-900/20 inline-block px-2 py-0.5 rounded">{chap.topics?.length || 0} Topics</p>
+                                         </div>
+                                         <i className="fa-solid fa-chevron-right text-gray-400"></i>
+                                     </div>
+                                 ))
+                             ) : (
+                                 <p className="text-sm text-gray-500 text-center mt-8">No chapters available</p>
+                             )}
+                         </div>
+                     </div>
+                 );
+             }
+
+             if (activePracticeFile) {
+                 return (
+                     <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
+                         <div className="flex items-center gap-3 mb-6">
+                             <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                             <h2 className="text-2xl font-black text-gray-900 dark:text-white">{activePracticeFile.name} Subjects</h2>
+                         </div>
+                         
+                         {qbankError && (
+                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-5 shadow-sm text-sm text-red-800 dark:text-red-200">
+                                 <div className="font-bold flex items-center gap-2 mb-2">
+                                     <i className="fa-solid fa-triangle-exclamation"></i> Supabase Connection Issue
+                                 </div>
+                                 <p className="mb-2 opacity-90">{qbankError}</p>
+                             </div>
+                         )}
+
+                         <div className="grid grid-cols-2 gap-3">
+                             {qbankData.length > 0 ? qbankData.map(sub => (
+                                 <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:border-[#0eb582] hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+                                     <span className="text-4xl mb-2">{sub.icon}</span>
+                                     <h3 className="font-bold text-gray-900 dark:text-white mt-2">{sub.name}</h3>
+                                     <p className="text-[10px] text-gray-500 mt-1">{sub.chapters?.length || 0} Chapters</p>
+                                 </div>
+                             )) : (
+                                 <p className="text-sm text-gray-500 text-center col-span-2 py-8">Loading subjects...</p>
+                             )}
+                         </div>
+                     </div>
+                 );
+             }
+
+             if (activePracticeBatch) {
+                 return (
+                     <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
+                         <div className="flex items-center gap-3 mb-6">
+                             <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                             <h2 className="text-2xl font-black text-gray-900 dark:text-white">{activePracticeBatch.name} Files</h2>
+                         </div>
+                         <div className="space-y-3">
+                             {activePracticeBatch.files.map((file, i) => (
+                                 <div key={i} onClick={() => setActivePracticeFile(file)} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex items-center gap-4 shadow-sm cursor-pointer hover:border-[#0eb582] hover:shadow-md transition-all">
+                                     <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-500 flex items-center justify-center text-xl"><i className="fa-solid fa-file-lines"></i></div>
+                                     <div className="flex-1">
+                                         <h3 className="font-bold text-lg text-gray-900 dark:text-white">{file.name}</h3>
+                                         <p className="text-xs text-gray-500">Practice Modules</p>
+                                     </div>
+                                     <i className="fa-solid fa-chevron-right text-gray-400"></i>
+                                 </div>
+                             ))}
+                         </div>
+                     </div>
+                 );
+             }
+
+             const PRACTICE_BATCHES = [
+                 { id: 'pb_allen', name: 'Allen Module', files: [{ id: 'pf_race', name: 'Race' }] }
+             ];
+
              return (
                  <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
                      <div className="flex justify-between items-center mb-6">
                          <h2 className="text-2xl font-black text-gray-900 dark:text-white">Practice Hub</h2>
                      </div>
-                     
-                     {qbankError && (
-                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-5 shadow-sm text-sm text-red-800 dark:text-red-200">
-                             <div className="font-bold flex items-center gap-2 mb-2">
-                                 <i className="fa-solid fa-triangle-exclamation"></i> Supabase Connection Issue
-                             </div>
-                             <p className="mb-2 opacity-90">{qbankError}</p>
-                             <p className="text-xs opacity-75">
-                                 <strong>Hint:</strong> If you see "Unauthorized", your API key is incorrect. It should start with <code>eyJ...</code> (Anon Public Key), not <code>sb_publishable_...</code>. Check your Supabase Dashboard &gt; Project Settings &gt; API.
-                             </p>
-                         </div>
-                     )}
-
-                     <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5">
-                         {qbankData.map(sub => (
-                             <button key={sub.id} onClick={() => setActivePracticeSubject(sub)} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap border flex items-center gap-2 transition-all ${activePracticeSubject?.id === sub.id ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-[#0eb582]'}`}>
-                                 {sub.icon} {sub.name}
-                             </button>
-                         ))}
-                     </div>
-                     <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 uppercase tracking-wider text-xs">Chapter Selection</h3>
-                     <div className="space-y-3">
-                         {qbankData.length > 0 && (activePracticeSubject || qbankData[0]).chapters.length > 0 ? (
-                             (activePracticeSubject || qbankData[0]).chapters.map((chap, i) => (
-                                 <div key={i} onClick={() => { setActivePracticeChapter(chap); setCurrentTab('questions'); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#0eb582] hover:shadow-md transition-all">
-                                     <div>
-                                         <h4 className="font-bold text-sm text-gray-900 dark:text-white">{chap.name}</h4>
-                                         <p className="text-[10px] font-bold text-[#d49a4e] mt-1 bg-orange-50 dark:bg-orange-900/20 inline-block px-2 py-0.5 rounded">{chap.topics?.length || 0} Topics</p>
-                                     </div>
-                                     <i className="fa-solid fa-chevron-right text-gray-400"></i>
+                     <div className="space-y-4">
+                         {PRACTICE_BATCHES.map(batch => (
+                             <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="bg-gradient-to-br from-[#0eb582] to-[#0ba875] p-5 rounded-2xl shadow-sm text-white cursor-pointer hover:shadow-md transition-all relative overflow-hidden">
+                                 <div className="relative z-10">
+                                     <h3 className="text-xl font-bold mb-1">{batch.name}</h3>
+                                     <p className="text-sm text-white/80">{batch.files.length} Files Available</p>
                                  </div>
-                             ))
-                         ) : (
-                             <p className="text-sm text-gray-500 text-center mt-8">{qbankError || 'Loading practice topics...'}</p>
-                         )}
+                                 <i className="fa-solid fa-layer-group absolute -right-4 -bottom-4 text-6xl text-white/20"></i>
+                             </div>
+                         ))}
                      </div>
                  </div>
              );
@@ -2009,4 +2074,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+</html>  

@@ -14,147 +14,210 @@ const buildNestedStructure = (rows) => {
   const tree = {};
 
   rows.forEach((row) => {
+    const batch = row.batch?.trim() || 'Allen Module';
+    const file = row.file?.trim() || 'Race';
     const subject = row.subject?.trim() || 'Unknown Subject';
     const chapter = row.chapter?.trim() || 'Unknown Chapter';
     const topic = row.topic?.trim() || 'Unknown Topic';
 
-    if (!tree[subject]) {
-      tree[subject] = {};
-    }
+    if (!tree[batch]) tree[batch] = {};
+    if (!tree[batch][file]) tree[batch][file] = {};
+    if (!tree[batch][file][subject]) tree[batch][file][subject] = {};
+    if (!tree[batch][file][subject][chapter]) tree[batch][file][subject][chapter] = new Set();
 
-    if (!tree[subject][chapter]) {
-      tree[subject][chapter] = new Set();
-    }
-
-    tree[subject][chapter].add(topic);
+    tree[batch][file][subject][chapter].add(topic);
   });
 
-  return Object.keys(tree)
-    .sort()
-    .map((subject) => ({
-      subject,
-      chapters: Object.keys(tree[subject])
-        .sort()
-        .map((chapter) => ({
+  return Object.keys(tree).sort().map((batch) => ({
+    batch,
+    files: Object.keys(tree[batch]).sort().map((file) => ({
+      file,
+      subjects: Object.keys(tree[batch][file]).sort().map((subject) => ({
+        subject,
+        chapters: Object.keys(tree[batch][file][subject]).sort().map((chapter) => ({
           chapter,
-          topics: Array.from(tree[subject][chapter]).sort(),
-        })),
-    }));
+          topics: Array.from(tree[batch][file][subject][chapter]).sort()
+        }))
+      }))
+    }))
+  }));
 };
 
-const renderAccordion = (subjects) => {
+const setupAccordionToggle = (button, content) => {
+  button.addEventListener('click', () => {
+    const expanded = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!expanded));
+    content.classList.toggle('open', !expanded);
+
+    if (!expanded) {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      setTimeout(() => {
+        if (content.classList.contains('open')) {
+          content.style.maxHeight = 'none';
+        }
+      }, 350);
+    } else {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      // Force reflow
+      void content.offsetHeight;
+      content.style.maxHeight = '0';
+    }
+  });
+};
+
+const renderAccordion = (batches) => {
   accordionContainer.innerHTML = '';
 
-  if (!subjects.length) {
+  if (!batches.length) {
     accordionContainer.innerHTML =
       '<div class="accordion-no-data">No topics available yet.</div>';
     return;
   }
 
-  subjects.forEach((subjectItem) => {
-    const subjectCard = document.createElement('div');
-    subjectCard.className = 'accordion-item';
+  batches.forEach((batchItem) => {
+    const batchCard = document.createElement('div');
+    batchCard.className = 'accordion-item';
 
-    const subjectButton = document.createElement('button');
-    subjectButton.className = 'accordion-button';
-    subjectButton.type = 'button';
-    subjectButton.setAttribute('aria-expanded', 'false');
-
-    subjectButton.innerHTML = `
+    const batchButton = document.createElement('button');
+    batchButton.className = 'accordion-button';
+    batchButton.type = 'button';
+    batchButton.setAttribute('aria-expanded', 'false');
+    batchButton.innerHTML = `
       <span class="label">
-        <span>${escapeHtml(subjectItem.subject)}</span>
+        <span>${escapeHtml(batchItem.batch)}</span>
       </span>
-      <span class="count">${subjectItem.chapters.length}</span>
+      <span class="count">${batchItem.files.length}</span>
       <span class="icon">▾</span>
     `;
 
-    const subjectContent = document.createElement('div');
-    subjectContent.className = 'accordion-content';
+    const batchContent = document.createElement('div');
+    batchContent.className = 'accordion-content';
 
-    const subjectContentInner = document.createElement('div');
-    subjectContentInner.className = 'accordion-content-inner';
+    const batchContentInner = document.createElement('div');
+    batchContentInner.className = 'accordion-content-inner';
 
-    subjectItem.chapters.forEach((chapterItem) => {
-      const chapterCard = document.createElement('div');
-      chapterCard.className = 'accordion-subitem';
+    batchItem.files.forEach((fileItem) => {
+      const fileCard = document.createElement('div');
+      fileCard.className = 'accordion-subitem';
 
-      const chapterHeader = document.createElement('button');
-      chapterHeader.className = 'accordion-subheader';
-      chapterHeader.type = 'button';
-      chapterHeader.setAttribute('aria-expanded', 'false');
-      chapterHeader.innerHTML = `
-        <span>${escapeHtml(chapterItem.chapter)}</span>
-        <span class="count">${chapterItem.topics.length}</span>
+      const fileButton = document.createElement('button');
+      fileButton.className = 'accordion-subheader';
+      fileButton.type = 'button';
+      fileButton.setAttribute('aria-expanded', 'false');
+      fileButton.innerHTML = `
+        <span>${escapeHtml(fileItem.file)}</span>
+        <span class="count">${fileItem.subjects.length}</span>
         <span class="icon">▾</span>
       `;
 
-      const chapterContent = document.createElement('div');
-      chapterContent.className = 'accordion-subcontent';
+      const fileContent = document.createElement('div');
+      fileContent.className = 'accordion-subcontent';
 
-      const chapterContentInner = document.createElement('div');
-      chapterContentInner.className = 'accordion-subcontent-inner';
+      const fileContentInner = document.createElement('div');
+      fileContentInner.className = 'accordion-subcontent-inner';
 
-      chapterItem.topics.forEach((topicName) => {
-        const topicRow = document.createElement('div');
-        topicRow.className = 'topic-card';
+      fileItem.subjects.forEach((subjectItem) => {
+        const subjectCard = document.createElement('div');
+        subjectCard.className = 'accordion-subitem';
+        subjectCard.style.border = 'none';
+        subjectCard.style.background = '#f9fafb';
 
-        const topicLabel = document.createElement('div');
-        topicLabel.className = 'topic-name';
-        topicLabel.textContent = topicName;
+        const subjectButton = document.createElement('button');
+        subjectButton.className = 'accordion-subheader';
+        subjectButton.style.background = '#f1f5f9';
+        subjectButton.type = 'button';
+        subjectButton.setAttribute('aria-expanded', 'false');
+        subjectButton.innerHTML = `
+          <span>${escapeHtml(subjectItem.subject)}</span>
+          <span class="count">${subjectItem.chapters.length}</span>
+          <span class="icon">▾</span>
+        `;
 
-        const practiceButton = document.createElement('button');
-        practiceButton.className = 'practice-button';
-        practiceButton.textContent = 'Practice Now';
-        practiceButton.addEventListener('click', () => {
-          const selection = {
-            subject: subjectItem.subject,
-            chapter: chapterItem.chapter,
-            topic: topicName,
-            timestamp: Date.now(),
-          };
-          localStorage.setItem('practiceSelection', JSON.stringify(selection));
-          window.location.href = 'quiz.html';
+        const subjectContent = document.createElement('div');
+        subjectContent.className = 'accordion-subcontent';
+
+        const subjectContentInner = document.createElement('div');
+        subjectContentInner.className = 'accordion-subcontent-inner';
+
+        subjectItem.chapters.forEach((chapterItem) => {
+          const chapterCard = document.createElement('div');
+          chapterCard.className = 'accordion-subitem';
+          chapterCard.style.border = 'none';
+
+          const chapterButton = document.createElement('button');
+          chapterButton.className = 'accordion-subheader';
+          chapterButton.style.background = 'transparent';
+          chapterButton.style.paddingLeft = '24px';
+          chapterButton.type = 'button';
+          chapterButton.setAttribute('aria-expanded', 'false');
+          chapterButton.innerHTML = `
+            <span>${escapeHtml(chapterItem.chapter)}</span>
+            <span class="count">${chapterItem.topics.length}</span>
+            <span class="icon">▾</span>
+          `;
+
+          const chapterContent = document.createElement('div');
+          chapterContent.className = 'accordion-subcontent';
+
+          const chapterContentInner = document.createElement('div');
+          chapterContentInner.className = 'accordion-subcontent-inner';
+          chapterContentInner.style.paddingLeft = '24px';
+
+          chapterItem.topics.forEach((topicName) => {
+            const topicRow = document.createElement('div');
+            topicRow.className = 'topic-card';
+
+            const topicLabel = document.createElement('div');
+            topicLabel.className = 'topic-name';
+            topicLabel.textContent = topicName;
+
+            const practiceButton = document.createElement('button');
+            practiceButton.className = 'practice-button';
+            practiceButton.textContent = 'Practice Now';
+            practiceButton.addEventListener('click', () => {
+              const selection = {
+                batch: batchItem.batch,
+                file: fileItem.file,
+                subject: subjectItem.subject,
+                chapter: chapterItem.chapter,
+                topic: topicName,
+                timestamp: Date.now(),
+              };
+              localStorage.setItem('practiceSelection', JSON.stringify(selection));
+              window.location.href = 'quiz.html';
+            });
+
+            topicRow.appendChild(topicLabel);
+            topicRow.appendChild(practiceButton);
+            chapterContentInner.appendChild(topicRow);
+          });
+
+          setupAccordionToggle(chapterButton, chapterContent);
+          chapterContent.appendChild(chapterContentInner);
+          chapterCard.appendChild(chapterButton);
+          chapterCard.appendChild(chapterContent);
+          subjectContentInner.appendChild(chapterCard);
         });
 
-        topicRow.appendChild(topicLabel);
-        topicRow.appendChild(practiceButton);
-        chapterContentInner.appendChild(topicRow);
+        setupAccordionToggle(subjectButton, subjectContent);
+        subjectContent.appendChild(subjectContentInner);
+        subjectCard.appendChild(subjectButton);
+        subjectCard.appendChild(subjectContent);
+        fileContentInner.appendChild(subjectCard);
       });
 
-      chapterContent.appendChild(chapterContentInner);
-      chapterCard.appendChild(chapterHeader);
-      chapterCard.appendChild(chapterContent);
-      subjectContentInner.appendChild(chapterCard);
-
-      chapterHeader.addEventListener('click', () => {
-        const expanded = chapterHeader.getAttribute('aria-expanded') === 'true';
-        chapterHeader.setAttribute('aria-expanded', String(!expanded));
-        chapterContent.classList.toggle('open', !expanded);
-
-        if (!expanded) {
-          chapterContent.style.maxHeight = chapterContent.scrollHeight + 'px';
-        } else {
-          chapterContent.style.maxHeight = '0';
-        }
-      });
+      setupAccordionToggle(fileButton, fileContent);
+      fileContent.appendChild(fileContentInner);
+      fileCard.appendChild(fileButton);
+      fileCard.appendChild(fileContent);
+      batchContentInner.appendChild(fileCard);
     });
 
-    subjectContent.appendChild(subjectContentInner);
-    subjectCard.appendChild(subjectButton);
-    subjectCard.appendChild(subjectContent);
-    accordionContainer.appendChild(subjectCard);
-
-    subjectButton.addEventListener('click', () => {
-      const expanded = subjectButton.getAttribute('aria-expanded') === 'true';
-      subjectButton.setAttribute('aria-expanded', String(!expanded));
-      subjectContent.classList.toggle('open', !expanded);
-
-      if (!expanded) {
-        subjectContent.style.maxHeight = subjectContent.scrollHeight + 'px';
-      } else {
-        subjectContent.style.maxHeight = '0';
-      }
-    });
+    setupAccordionToggle(batchButton, batchContent);
+    batchContent.appendChild(batchContentInner);
+    batchCard.appendChild(batchButton);
+    batchCard.appendChild(batchContent);
+    accordionContainer.appendChild(batchCard);
   });
 };
 
