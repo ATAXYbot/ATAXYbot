@@ -1,7 +1,7 @@
 // PART 1: BRANDING & CREDENTIALS CONFIGURATION
 const SUPABASE_URL = "https://kwzpnupjtvfrevpwfaao.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal";
-const GEMINI_API_KEY = "AIzaSyA5PjbxTWk0Tf8M7f13eQlwKsfmhfpe7KA";
+const GEMINI_API_KEY = "AIzaSyAQmr_gVRSphKzG8AOD3emT6hNpinnMs3c";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -12,8 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Check telegram context
     if (!isLocalhost && (!tg || !tg.initData)) {
-        document.getElementById('splash-screen').classList.remove('hidden');
-        document.getElementById('app-container').classList.add('hidden');
+        document.body.innerHTML = `
+            <div style="display:flex; height:100vh; width:100vw; background:#111827; color:white; align-items:center; justify-content:center; flex-direction:column; font-family:sans-serif; text-align:center; padding: 20px; box-sizing: border-box;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px; color: #ef4444;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Access Restricted</h1>
+                <p style="color: #9ca3af; font-size: 14px; max-width: 300px;">This application is designed to be accessed exclusively through the ATAXY Telegram Mini App.</p>
+            </div>
+        `;
         return;
     }
 
@@ -429,48 +434,89 @@ window.closeModals = function() {
 };
 
 // PART 5: TAB 3 - MENTOR
-let mentorHistory = [];
+let mentorChatHistory = [];
+
+async function askAtaxyMentor(userMessage) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+    
+    let combinedText = "You are ATAXY Mentor, a brilliant, encouraging NEET exam tutor. Explain this clearly, using single $ signs for any math/science formulas.\n\n";
+    mentorChatHistory.forEach(msg => {
+        combinedText += `${msg.role === 'user' ? 'Student' : 'ATAXY Mentor'}: ${msg.text}\n\n`;
+    });
+    combinedText += `Student: ${userMessage}\nATAXY Mentor: `;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                contents: [{ 
+                    parts: [{ 
+                        text: combinedText 
+                    }] 
+                }] 
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            return `Google API Error: ${data.error?.message || response.statusText}`;
+        }
+        return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        return `Connection error: ${error.message}`;
+    }
+}
 
 function setupMentorTab() {
-    const input = document.getElementById('mentor-input');
-    const sendBtn = document.getElementById('mentor-send');
-    const log = document.getElementById('mentor-chat-log');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatLog = document.getElementById('chat-log');
 
-    const appendMsg = (role, text) => {
-        const msg = document.createElement('div');
-        msg.className = `chat-message ${role}`;
-        msg.innerHTML = text;
-        log.appendChild(msg);
-        log.scrollTop = log.scrollHeight;
-        window.renderMath();
-    };
+    if (!chatInput || !sendBtn || !chatLog) return;
 
     sendBtn.addEventListener('click', async () => {
-        const text = input.value.trim();
-        if(!text) return;
+        const userMessage = chatInput.value.trim();
+        if (!userMessage) return;
 
-        appendMsg('user', text);
-        input.value = '';
+        const userDiv = document.createElement('div');
+        userDiv.className = 'chat-message user';
+        userDiv.innerHTML = `<strong>You:</strong> ${userMessage}`;
+        chatLog.appendChild(userDiv);
+        
+        chatInput.value = '';
+        chatLog.scrollTop = chatLog.scrollHeight;
 
-        mentorHistory.push({ role: "user", parts: [{ text }] });
+        const typingId = 'typing-' + Date.now();
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'chat-message ai';
+        aiDiv.id = typingId;
+        aiDiv.innerHTML = `<strong>ATAXY Mentor:</strong> ATAXY Mentor is typing...`;
+        chatLog.appendChild(aiDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+
+        const aiResponse = await askAtaxyMentor(userMessage);
         
-        const systemInstruction = "You are ATAXY Mentor, an expert, encouraging, and elite academic guide specializing in NEET physics, chemistry, and biology preparation. Provide comprehensive explanations using clear formatting and LaTeX formatting where relevant.";
-        
-        try {
-            const reply = await callGeminiAPIWithHistory(systemInstruction, mentorHistory);
-            mentorHistory.push({ role: "model", parts: [{ text: reply }] });
-            appendMsg('ai', reply);
-        } catch (e) {
-            appendMsg('ai', "Sorry, I'm having trouble connecting right now.");
+        mentorChatHistory.push({ role: 'user', text: userMessage });
+        mentorChatHistory.push({ role: 'ai', text: aiResponse });
+
+        const typingElement = document.getElementById(typingId);
+        if (typingElement) {
+            typingElement.innerHTML = `<strong>ATAXY Mentor:</strong> ${aiResponse}`;
         }
+        
+        if (typeof window.renderMath === 'function') {
+            window.renderMath();
+        }
+        chatLog.scrollTop = chatLog.scrollHeight;
     });
 }
 
 async function callGeminiAPI(prompt, systemInstruction) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+    const combinedText = `${systemInstruction}\n\nStudent: ${prompt}`;
     const body = {
-        system_instruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: "user", parts: [{ text: prompt }] }]
+        contents: [{ parts: [{ text: combinedText }] }]
     };
 
     try {
@@ -484,22 +530,6 @@ async function callGeminiAPI(prompt, systemInstruction) {
     } catch(err) {
         return "Network error occurred.";
     }
-}
-
-async function callGeminiAPIWithHistory(systemInstruction, history) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    const body = {
-        system_instruction: { parts: [{ text: systemInstruction }] },
-        contents: history
-    };
-
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
 }
 
 // PART 6: TAB 4 - PROFILE VIEW

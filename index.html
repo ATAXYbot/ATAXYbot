@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ATAXY Learning</title>
+    <link rel="icon" href="data:,">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -79,23 +80,20 @@
         // ⬆️ END OF PRACTICE QUESTIONS ⬆️
         // =========================================================================
 
-        const BATCHES = [
-          { id: 1, name: "Arjuna JEE 2026", target: "Class 11 + JEE", price: "Free", color: "bg-blue-600", students: "120k+" },
-          { id: 6, name: "Yakeen NEET 2.0 2026", target: "Dropper + NEET", price: "Free", color: "bg-purple-600", students: "250k+", subBatches: [
-            { id: 61, name: "Legend Batch", target: "Phase 1", color: "bg-purple-500", subjects: [
-                { id: 'phy', name: "Physics", icon: "⚛️", chapters: [
-                    { id: 'phy_1', name: 'Basic Mathematics', count: "5 Lectures", videos: [
-                        { id: 101, title: "L-01: Intro to Basic Math", duration: "1h 45m", date: "10 May", url: "https://www.w3schools.com/html/mov_bbb.mp4" }
-                    ]}
-                ]},
-                { id: 'pc', name: "Physical Chemistry", icon: "⚗️", chapters: [
-                    { id: 'pc_1', name: 'Mole Concept', count: "8 Lectures", videos: [
-                        { id: 102, title: "L-01: Atomic Mass & Molecular Mass", duration: "2h 31m", date: "05 May", url: "https://youtu.be/cyKkmGYJ-yE?si=61eDK7jgSndsNOup" }
-                    ]}
-                ]}
-            ]}
-          ]}
-        ];
+        const PDFViewer = ({ url, title, onClose }) => (
+            <div className="fixed inset-0 z-[100000] bg-white flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
+                <div className="flex items-center gap-3 p-4 bg-white border-b border-gray-200 text-gray-800 shadow-sm z-10">
+                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+                        <i className="fa-solid fa-arrow-left text-lg"></i>
+                    </button>
+                    <h2 className="font-bold text-base leading-tight truncate">{title}</h2>
+                </div>
+                <div className="flex-1 relative bg-gray-50">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><i className="fa-solid fa-spinner fa-spin text-3xl text-gray-300"></i></div>
+                    <iframe src={url} className="absolute inset-0 w-full h-full border-none relative z-10 bg-white" sandbox="allow-scripts allow-same-origin"></iframe>
+                </div>
+            </div>
+        );
 
         // ==========================================
         // 🔒 PERSISTENT GATEKEEPER
@@ -291,290 +289,6 @@
 
 
         // ==========================================
-        // 🚀 THE ULTIMATE UNIVERSAL PLAYER 
-        // ==========================================
-        const UniversalPlayer = ({ src, poster, title, onBack, user }) => {
-          const isYouTube = src && (src.includes("youtu.be") || src.includes("youtube.com"));
-          const ytId = isYouTube ? src.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/)?.[2] : null;
-
-          const containerRef = useRef(null);
-          const videoRef = useRef(null);
-          const ytPlayerDivRef = useRef(null);
-          const ytPlayerRef = useRef(null);
-          const ytIntervalRef = useRef(null);
-          const progressBarRef = useRef(null);
-          
-          const [isPlaying, setIsPlaying] = useState(false);
-          const [isBuffering, setIsBuffering] = useState(false);
-          const [progress, setProgress] = useState(0);
-          const [currentTime, setCurrentTime] = useState("00:00");
-          const [duration, setDuration] = useState("00:00");
-          
-          const [showControls, setShowControls] = useState(true);
-          const [playerMode, setPlayerMode] = useState('normal'); 
-          const [showSettings, setShowSettings] = useState(false);
-          const [playbackSpeed, setPlaybackSpeed] = useState(1);
-          const [qualityLevels, setQualityLevels] = useState([]);
-          const [playbackQuality, setPlaybackQuality] = useState('auto');
-          const [isSpeeding, setIsSpeeding] = useState(false);
-          const [isFullscreen, setIsFullscreen] = useState(false);
-          const [ytInitCover, setYtInitCover] = useState(isYouTube);
-          
-          const controlsTimerRef = useRef(null);
-          const longPressTimerRef = useRef(null);
-
-          const formatTime = (sec) => {
-            if (isNaN(sec) || sec === Infinity) return "00:00";
-            const h = Math.floor(sec / 3600);
-            const m = Math.floor((sec % 3600) / 60);
-            const s = Math.floor(sec % 60);
-            if (h > 0) return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-            return `${m}:${s < 10 ? '0' : ''}${s}`;
-          };
-
-          const enginePlay = () => isYouTube ? ytPlayerRef.current?.playVideo() : videoRef.current?.play();
-          const enginePause = () => isYouTube ? ytPlayerRef.current?.pauseVideo() : videoRef.current?.pause();
-          const engineGetDuration = () => isYouTube ? (ytPlayerRef.current?.getDuration() || 0) : (videoRef.current?.duration || 0);
-          const engineSeek = (sec) => {
-              if (isYouTube && ytPlayerRef.current) ytPlayerRef.current.seekTo(sec, true);
-              else if (videoRef.current) videoRef.current.currentTime = sec;
-          };
-          const engineSetSpeed = (rate) => {
-              if (isYouTube && ytPlayerRef.current?.setPlaybackRate) ytPlayerRef.current.setPlaybackRate(rate);
-              else if (videoRef.current) videoRef.current.playbackRate = rate;
-              setPlaybackSpeed(rate);
-          };
-          const engineSetQuality = (quality) => {
-              if (isYouTube && ytPlayerRef.current?.setPlaybackQuality) {
-                  ytPlayerRef.current.setPlaybackQuality(quality);
-                  setPlaybackQuality(quality);
-              }
-          };
-
-          useEffect(() => {
-              if (!isYouTube || !src) return;
-              const initYT = () => {
-                  if (ytPlayerRef.current) return; 
-                  ytPlayerRef.current = new window.YT.Player(ytPlayerDivRef.current, {
-                      videoId: ytId,
-                      playerVars: { controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0, playsinline: 1, showinfo: 0, iv_load_policy: 3 },
-                      events: {
-                          onReady: (e) => {
-                              setDuration(formatTime(e.target.getDuration()));
-                              const available = e.target.getAvailableQualityLevels?.() || [];
-                              setQualityLevels(available);
-                              setPlaybackQuality(e.target.getPlaybackQuality?.() || 'auto');
-                              ytIntervalRef.current = setInterval(() => {
-                                  if (ytPlayerRef.current && ytPlayerRef.current.getCurrentTime) {
-                                      const cur = ytPlayerRef.current.getCurrentTime();
-                                      const tot = ytPlayerRef.current.getDuration();
-                                      if (tot > 0) setProgress((cur / tot) * 100);
-                                      setCurrentTime(formatTime(cur));
-                                  }
-                              }, 500);
-                          },
-                          onStateChange: (e) => {
-                              if (e.data === window.YT.PlayerState.PLAYING) {
-                                  setIsPlaying(true); setIsBuffering(false);
-                                  setDuration(formatTime(e.target.getDuration()));
-                                  setTimeout(() => setYtInitCover(false), 1500);
-                              } else if (e.data === window.YT.PlayerState.PAUSED) {
-                                  setIsPlaying(false);
-                              } else if (e.data === window.YT.PlayerState.BUFFERING) {
-                                  setIsBuffering(true);
-                              }
-                          }
-                      }
-                  });
-              };
-              if (!window.YT) {
-                  const tag = document.createElement('script');
-                  tag.src = "https://www.youtube.com/iframe_api";
-                  window.onYouTubeIframeAPIReady = initYT;
-                  document.head.appendChild(tag);
-              } else initYT();
-
-              return () => { clearInterval(ytIntervalRef.current); if (ytPlayerRef.current?.destroy) ytPlayerRef.current.destroy(); };
-          }, [isYouTube, ytId, src]);
-
-          const resetControlsTimer = () => {
-             setShowControls(true);
-             if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
-             controlsTimerRef.current = setTimeout(() => {
-                 if (isPlaying && !showSettings) setShowControls(false);
-             }, 3000);
-          };
-
-          useEffect(() => { resetControlsTimer(); return () => clearTimeout(controlsTimerRef.current); }, [isPlaying, showSettings]);
-
-          useEffect(() => {
-              const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-              document.addEventListener('fullscreenchange', handleFullscreenChange);
-              return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-          }, []);
-
-          const togglePlay = (e) => {
-            if(e) e.stopPropagation();
-            if(!src) return;
-            if (isPlaying) { enginePause(); setIsPlaying(false); } 
-            else { enginePlay(); setIsPlaying(true); }
-            resetControlsTimer();
-          };
-
-          const handleMP4TimeUpdate = () => {
-            if (isYouTube || !videoRef.current) return;
-            const current = videoRef.current.currentTime;
-            const total = videoRef.current.duration;
-            if (total > 0) setProgress((current / total) * 100);
-            setCurrentTime(formatTime(current));
-          };
-
-          // FIXED SCRUBBING CALCULATION FOR ROTATION
-          const handleSeekInteract = (e) => {
-              e.stopPropagation();
-              if(!src || !progressBarRef.current) return;
-              
-              const rect = progressBarRef.current.getBoundingClientRect();
-              const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
-              const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
-              
-              let pos = 0;
-              if (playerMode === 'landscape') {
-                  pos = (clientY - rect.top) / rect.height;
-              } else {
-                  pos = (clientX - rect.left) / rect.width;
-              }
-              
-              pos = Math.max(0, Math.min(1, pos)); 
-              engineSeek(pos * engineGetDuration());
-              setProgress(pos * 100);
-              resetControlsTimer();
-          };
-
-          const handlePointerDown = (e) => {
-             if(!src) return;
-             longPressTimerRef.current = setTimeout(() => {
-                 if (isPlaying) { engineSetSpeed(2.0); setIsSpeeding(true); setShowControls(false); }
-             }, 400);
-          };
-
-          const handlePointerUp = () => {
-             if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-             if (isSpeeding) { engineSetSpeed(playbackSpeed); setIsSpeeding(false); }
-          };
-
-          const getContainerClasses = () => {
-              if (playerMode === 'landscape') return "fixed top-1/2 left-1/2 w-[100vh] h-[100vw] -translate-x-1/2 -translate-y-1/2 rotate-90 z-[99999] bg-black flex items-center justify-center overflow-hidden touch-none";
-              return "w-full aspect-video bg-black relative flex items-center justify-center overflow-hidden touch-none";
-          };
-
-          // Save to local storage for performance tracking
-          useEffect(() => {
-              if(progress > 90 && src) {
-                  const watched = JSON.parse(localStorage.getItem('ataxy_lectures') || '[]');
-                  if(!watched.includes(src)) {
-                      watched.push(src);
-                      localStorage.setItem('ataxy_lectures', JSON.stringify(watched));
-                  }
-              }
-          }, [progress, src]);
-
-          return (
-            <div ref={containerRef} className={getContainerClasses()}>
-              {isYouTube ? (
-                 <div className="w-full h-full pointer-events-none yt-wrapper z-0 relative">
-                     <div ref={ytPlayerDivRef} className="w-full h-full"></div>
-                     {ytInitCover && <div className="absolute inset-0 bg-black z-20 flex items-center justify-center"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}
-                 </div>
-              ) : (
-                 <video ref={videoRef} src={src} className="w-full h-full object-contain pointer-events-none z-0" playsInline onTimeUpdate={handleMP4TimeUpdate} onLoadedMetadata={() => setDuration(formatTime(videoRef.current.duration))} onWaiting={() => setIsBuffering(true)} onPlaying={() => setIsBuffering(false)} />
-              )}
-
-              <div className="absolute inset-0 pointer-events-none z-[5] overflow-hidden flex items-center justify-center opacity-30 mix-blend-overlay">
-                  <div className="watermark-marquee whitespace-nowrap text-white/50 text-2xl font-black select-none tracking-widest drop-shadow-md">{user?.first_name} • UID:{user?.id} • {user?.first_name}</div>
-              </div>
-
-              {/* Gesture Overlay */}
-              <div className="absolute inset-0 z-10 cursor-pointer" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} onContextMenu={(e) => e.preventDefault()} onClick={() => {setShowControls(!showControls); resetControlsTimer();}}></div>
-
-              {/* Top Bar pt-[60px] */}
-              <div className={`absolute top-0 left-0 right-0 p-3 pt-[60px] z-40 transition-opacity duration-300 flex justify-between items-start pointer-events-none bg-gradient-to-b from-black/80 to-transparent pb-10 ${showControls || playerMode === 'normal' ? 'opacity-100' : 'opacity-0'}`}>
-                 <div className="flex items-center gap-3">
-                     <button onPointerDown={(e) => { e.stopPropagation(); onBack(); }} className="w-10 h-10 bg-black/40 text-white rounded-full flex items-center justify-center pointer-events-auto hover:bg-blue-600 transition-colors backdrop-blur-sm shadow-md"><i className="fa-solid fa-arrow-left"></i></button>
-                     <h2 className="text-white font-semibold text-sm line-clamp-1 drop-shadow-md">{title}</h2>
-                 </div>
-              </div>
-
-              {isSpeeding && <div className="absolute top-20 left-0 right-0 flex justify-center z-40 pointer-events-none animate-in fade-in"><div className="bg-black/80 text-white text-xs font-bold px-4 py-2 rounded-full flex items-center gap-2 shadow-lg"><span>2x Speed</span><i className="fa-solid fa-forward"></i></div></div>}
-              {isBuffering && !ytInitCover && <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"><div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}
-
-              <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 z-30 pointer-events-none ${showControls && !isSpeeding && src ? 'opacity-100' : 'opacity-0'}`}>
-                <button onClick={togglePlay} className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-blue-600 transition-colors shadow-lg pointer-events-auto">
-                  {isPlaying ? <i className="fa-solid fa-pause text-white text-2xl"></i> : <i className="fa-solid fa-play text-white text-2xl ml-1"></i>}
-                </button>
-              </div>
-
-              {/* Bottom Bar */}
-              <div className={`absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-[60] bg-gradient-to-t from-black via-black/80 to-transparent pt-12 pb-3 px-4 flex flex-col gap-2 pointer-events-none ${showControls && !isSpeeding && src ? 'opacity-100' : 'opacity-0'} ${playerMode !== 'normal' ? 'px-8 pb-6' : ''}`}>
-                
-                <div ref={progressBarRef} className="w-full h-8 relative flex items-center group cursor-pointer pointer-events-auto" onPointerDown={handleSeekInteract} onPointerMove={(e) => { if(e.buttons > 0) handleSeekInteract(e); }}>
-                    <div className="w-full h-1 bg-white/30 rounded-full relative pointer-events-none transition-all group-hover:h-1.5">
-                        <div className="absolute h-full bg-blue-600 rounded-full" style={{width: `${progress}%`}}></div>
-                        <div className="absolute w-3.5 h-3.5 bg-blue-600 rounded-full top-1/2 -translate-y-1/2 -translate-x-1/2 shadow opacity-0 group-hover:opacity-100 transition-opacity" style={{left: `${progress}%`}}></div>
-                    </div>
-                </div>
-
-                <div className="flex items-center justify-between text-white pointer-events-auto">
-                  <div className="flex items-center gap-4">
-                    <div className="text-xs font-medium opacity-90 tracking-wide font-mono">
-                      {currentTime} <span className="opacity-60 mx-1">/</span> {duration}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="relative">
-                        <button onClick={() => setShowSettings(!showSettings)} className="hover:text-blue-500 transition-colors p-2"><i className="fa-solid fa-gear text-base"></i></button>
-                        {showSettings && (
-                            <div className="absolute bottom-12 right-0 bg-black/95 rounded-xl p-2 w-48 shadow-2xl border border-white/10 z-50 animate-in fade-in">
-                                <div className="text-xs uppercase text-gray-400 tracking-[0.2em] mb-2">Speed</div>
-                                {[0.5, 1, 1.5, 2].map(speed => (
-                                    <button key={speed} onClick={() => { engineSetSpeed(speed); setShowSettings(false); resetControlsTimer(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 rounded flex items-center justify-between">
-                                        <span>{speed === 1 ? 'Normal' : `${speed}x`}</span>
-                                        {playbackSpeed === speed && <i className="fa-solid fa-check text-blue-500"></i>}
-                                    </button>
-                                ))}
-                                <div className="border-t border-white/10 my-2"></div>
-                                <div className="text-xs uppercase text-gray-400 tracking-[0.2em] mb-2">Quality</div>
-                                {qualityLevels.length > 0 ? qualityLevels.map(q => (
-                                    <button key={q} onClick={() => { engineSetQuality(q); setShowSettings(false); resetControlsTimer(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 rounded flex items-center justify-between">
-                                        <span>{q}</span>
-                                        {playbackQuality === q && <i className="fa-solid fa-check text-blue-500"></i>}
-                                    </button>
-                                )) : (
-                                    <div className="text-gray-400 text-sm px-4 py-2">Auto or unsupported quality</div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                    <button onClick={() => setPlayerMode(m => m === 'landscape' ? 'normal' : 'landscape')} className={`hover:text-blue-500 p-2 ${playerMode === 'landscape' ? 'text-blue-500' : ''}`}>
-                        <i className="fa-solid fa-rotate text-base"></i>
-                    </button>
-                    <button onClick={async () => {
-                        if (!document.fullscreenElement) {
-                            await containerRef.current?.requestFullscreen().catch(() => {});
-                        } else {
-                            await document.exitFullscreen().catch(() => {});
-                        }
-                    }} className="hover:text-blue-500 p-2 -mr-2">
-                      <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-base`}></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        };
-
-        // ==========================================
         // 🚀 LIVE GLOBAL CHAT (FIREBASE CLOUD INTEGRATION)
         // ==========================================
         const ChatView = ({ user }) => {
@@ -709,21 +423,33 @@
 
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, isTyping]);
 
-            const fetchAIMentorResponse = async (prompt) => {
-                const apiKey = ""; // API key is injected by runtime environment natively
+            const fetchAIMentorResponse = async (prompt, currentChats) => {
+                const apiKey = "AIzaSyAQmr_gVRSphKzG8AOD3emT6hNpinnMs3c";
                 if(!apiKey) return "API Key not found. Running in demo mode.\n\nMole Concept: 1 Mole = 6.022 x 10^23 particles.";
                 
+                let historyText = `You are ATAXY AI Mentor, an expert tutor for NEET/JEE students. Answer clearly, accurately, and formatting nicely.\n\n`;
+                currentChats.forEach(c => {
+                    if (c.sender === 'user') historyText += `Student: ${c.text}\n\n`;
+                    else historyText += `ATAXY Mentor: ${c.text}\n\n`;
+                });
+                historyText += `Student: ${prompt}\nATAXY Mentor: `;
+
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: `You are ATAXY AI Mentor, an expert tutor for NEET/JEE students. Answer clearly, accurately, and formatting nicely.\n\nStudent: ${prompt}` }] }]
+                            contents: [{ parts: [{ text: historyText }] }]
                         })
                     });
+
                     const data = await response.json();
+                    if (!response.ok) {
+                        return `Google API Error: ${data.error?.message || response.statusText}`;
+                    }
+
                     return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
-                } catch(e) { return "Connection error. Please try again."; }
+                } catch(e) { return `Connection error: ${e.message}`; }
             };
 
             const sendMsg = async (e) => {
@@ -735,7 +461,7 @@
                 setMsg('');
                 setIsTyping(true);
 
-                const aiReply = await fetchAIMentorResponse(userMsg);
+                const aiReply = await fetchAIMentorResponse(userMsg, chats);
                 setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiReply }]);
                 setIsTyping(false);
             };
@@ -959,11 +685,6 @@
           const [tgUser, setTgUser] = useState(window.Telegram?.WebApp?.initDataUnsafe?.user || { first_name: "Student", id: "1001" });
           
           const [currentTab, setCurrentTab] = useState('home'); 
-          const [activeBatch, setActiveBatch] = useState(null);
-          const [activeSubBatch, setActiveSubBatch] = useState(null);
-          const [activeSubject, setActiveSubject] = useState(null);
-          const [activeChapter, setActiveChapter] = useState(null);
-          const [activeVideo, setActiveVideo] = useState(null);
           const [activePracticeSubject, setActivePracticeSubject] = useState(null);
           const [activePracticeChapter, setActivePracticeChapter] = useState(null);
           const [activePracticeBatch, setActivePracticeBatch] = useState(null);
@@ -984,6 +705,14 @@
           const [neetprepStatus, setNeetprepStatus] = useState('');
           const [activePdf, setActivePdf] = useState(null);
           
+          // 🟢 Bookmarks State
+          const [bookmarks, setBookmarks] = useState(() => JSON.parse(localStorage.getItem('ataxy_bookmarks')) || []);
+          
+          // 🟢 Notes & Filter State
+          const [questionNotes, setQuestionNotes] = useState(() => JSON.parse(localStorage.getItem('ataxy_question_notes')) || {});
+          const [questionFilter, setQuestionFilter] = useState('all');
+          const [showNoteInput, setShowNoteInput] = useState({});
+
           // 🟢 PWJarvis State
           const [pwjarvisbatches, setPWJarvisBatches] = useState(() => {
               const saved = localStorage.getItem('ataxy_pwjarvis_batches');
@@ -1067,7 +796,8 @@
           }, [isVerified, tgUser]);
           useEffect(() => { localStorage.setItem('ataxy_practice_perf', JSON.stringify(practiceAttempts)); }, [practiceAttempts]);
           useEffect(() => { localStorage.setItem('ataxy_neetprep_connected', JSON.stringify(neetprepConnected)); localStorage.setItem('ataxy_neetprep_user', neetprepUser); localStorage.setItem('ataxy_neetprep_token', neetprepAuthToken); }, [neetprepConnected, neetprepUser, neetprepAuthToken]);
-          useEffect(() => { localStorage.setItem('ataxy_pwjarvis_batches', JSON.stringify(pwjarvisbatches)); }, [pwjarvisbatches]);
+          useEffect(() => { localStorage.setItem('ataxy_bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
+          useEffect(() => { localStorage.setItem('ataxy_question_notes', JSON.stringify(questionNotes)); }, [questionNotes]);
           
           // 🟢 Load QBank on Mount
           useEffect(() => {
@@ -1084,9 +814,14 @@
                           'Content-Type': 'application/json'
                       };
 
-                      // Try to fetch 'questions', if missing fallback to 'Raceee_testttingg_checkinggg'
-                      let qRes = await fetch(`${supabaseUrl}/questions?select=*&limit=5000`, { headers });
-                      if (!qRes.ok && qRes.status === 404) {
+                      let qRes;
+                      try {
+                          qRes = await fetch(`${supabaseUrl}/questions?select=*&limit=5000`, { headers });
+                      } catch (err) {
+                          qRes = null; // Will trigger the fallback below if network fails on first try
+                      }
+                      
+                      if (!qRes || (!qRes.ok && qRes.status === 404)) {
                           qRes = await fetch(`${supabaseUrl}/Raceee_testttingg_checkinggg?select=*&limit=5000`, { headers });
                       }
 
@@ -1204,29 +939,15 @@
                       }
                   } catch (e) {
                       console.error("Backend Fetch Error:", e);
-                      setQbankError(e.message);
+                      let errorMsg = e.message;
+                      if (errorMsg === "Failed to fetch" || errorMsg.includes("NetworkError")) {
+                          errorMsg = "Database connection blocked. Mobile networks (like Jio/Airtel) sometimes block Supabase domains on cellular data. Please try using WiFi or a VPN.";
+                      }
+                      setQbankError(errorMsg);
                       setQbankData(ALIEN_QBANK); // Fallback to local hardcoded data on error
                   }
               };
               fetchSupabaseData();
-          }, []);
-
-          useEffect(() => {
-              const loadPWJarvisBatches = async () => {
-                  try {
-                      const response = await fetch('http://localhost:5000/api/pwjarvis/batches');
-                      if (response.ok) {
-                          const data = await response.json();
-                          if (data.data && data.data.batches) {
-                              setPWJarvisBatches(data.data);
-                              localStorage.setItem('ataxy_pwjarvis_batches', JSON.stringify(data.data));
-                          }
-                      }
-                  } catch (error) {
-                      console.error('Failed to load PWJarvis batches:', error);
-                  }
-              };
-              loadPWJarvisBatches();
           }, []);
 
           useEffect(() => {
@@ -1292,30 +1013,6 @@
               };
               loadNeetprepData();
           }, [neetprepAuthToken, neetprepUser]);
-
-          const fetchUsers = async () => {
-              setUsersLoading(true);
-              setUsersError('');
-              try {
-                  const response = await fetch('/api/neet/users');
-                  if (!response.ok) {
-                      throw new Error(`Server returned ${response.status}`);
-                  }
-                  const data = await response.json();
-                  setUsers(Array.isArray(data.users) ? data.users : data.users ? [data.users] : []);
-              } catch (error) {
-                  console.error('Failed to load users', error);
-                  setUsersError('Unable to load users. Please make sure the backend is running.');
-              } finally {
-                  setUsersLoading(false);
-              }
-          };
-
-          useEffect(() => {
-              if (currentTab === 'users') {
-                  fetchUsers();
-              }
-          }, [currentTab]);
 
           const openNeetprepModal = () => {
               setNeetprepStatus('');
@@ -1394,35 +1091,8 @@
               localStorage.removeItem('ataxy_neetprep_data');
           };
 
-          // 🟢 PWJarvis Functions
-          const refreshPWJarvisBatches = async () => {
-              setPWJarvisLoading(true);
-              setPWJarvisError('');
-              try {
-                  const response = await fetch('http://localhost:5000/api/pwjarvis/scrape', { method: 'POST' });
-                  if (response.ok) {
-                      const data = await response.json();
-                      if (data.data) {
-                          setPWJarvisBatches(data.data);
-                          localStorage.setItem('ataxy_pwjarvis_batches', JSON.stringify(data.data));
-                      }
-                  } else {
-                      setPWJarvisError('Failed to fetch batches. Please try again later.');
-                  }
-              } catch (error) {
-                  setPWJarvisError('Backend connection error. Make sure the server is running on http://localhost:5000');
-              } finally {
-                  setPWJarvisLoading(false);
-              }
-          };
-
           const handleBack = () => {
-            if (activeVideo) setActiveVideo(null);
-            else if (activeChapter) setActiveChapter(null);
-            else if (activeSubject) setActiveSubject(null);
-            else if (activeSubBatch) setActiveSubBatch(null);
-            else if (activeBatch) setActiveBatch(null);
-            else if (activePracticeChapter) setActivePracticeChapter(null);
+            if (activePracticeChapter) setActivePracticeChapter(null);
             else if (activePracticeSubject) setActivePracticeSubject(null);
             else if (activePracticeFile) setActivePracticeFile(null);
             else if (activePracticeBatch) setActivePracticeBatch(null);
@@ -1520,132 +1190,6 @@
              );
           };
 
-          const renderUsersView = () => {
-              return (
-                  <div className="pb-24 pt-[60px] px-4 animate-in fade-in">
-                      <div className="flex items-center justify-between mb-5">
-                          <div>
-                              <h2 className="text-2xl font-black dark:text-white">Telegram Users</h2>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">All captured users with id, name and username.</p>
-                          </div>
-                          <button onClick={fetchUsers} className="rounded-2xl bg-blue-600 text-white px-4 py-2 text-sm font-bold hover:bg-blue-700">Refresh</button>
-                      </div>
-                      <div className="space-y-4">
-                          {usersLoading ? (
-                              <div className="rounded-3xl bg-gray-100 dark:bg-gray-800 p-6 text-center text-gray-600 dark:text-gray-300">Loading users...</div>
-                          ) : usersError ? (
-                              <div className="rounded-3xl bg-red-50 dark:bg-red-900/20 p-6 text-center text-red-700 dark:text-red-300">{usersError}</div>
-                          ) : users.length === 0 ? (
-                              <div className="rounded-3xl bg-gray-100 dark:bg-gray-800 p-6 text-center text-gray-600 dark:text-gray-300">No users found yet.</div>
-                          ) : (
-                              <div className="grid gap-3">
-                                  {users.map((user) => (
-                                      <div key={user.id || user.username || user.name} className="bg-white dark:bg-gray-900 rounded-3xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm">
-                                          <div className="flex items-center justify-between gap-3 mb-3">
-                                              <div>
-                                                  <h3 className="font-bold text-gray-900 dark:text-white">{user.name || 'Unnamed'}</h3>
-                                                  <p className="text-xs text-gray-500 dark:text-gray-400">ID: {user.id}</p>
-                                              </div>
-                                              <span className="text-xs uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">{user.username ? `@${user.username}` : 'No username'}</span>
-                                          </div>
-                                          <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                              <div className="rounded-2xl bg-gray-50 dark:bg-gray-800 p-3">Telegram ID<div className="mt-2 font-semibold text-gray-900 dark:text-white">{user.id}</div></div>
-                                              <div className="rounded-2xl bg-gray-50 dark:bg-gray-800 p-3">Username<div className="mt-2 font-semibold text-gray-900 dark:text-white">{user.username || '—'}</div></div>
-                                          </div>
-                                      </div>
-                                  ))}
-                              </div>
-                          )}
-                      </div>
-                  </div>
-              );
-          };
-
-          // --- PW AUTHENTIC BATCHES VIEWS ---
-          const renderBatchesView = () => {
-              if(activeSubject) {
-                  return (
-                      <div className="pb-24 pt-[60px] px-4 animate-in fade-in">
-                          <button onClick={handleBack} className="mb-4 text-gray-600 dark:text-gray-300 font-bold"><i className="fa-solid fa-arrow-left"></i> Back</button>
-                          <h2 className="text-2xl font-black mb-4 dark:text-white flex items-center gap-2">{activeSubject.icon} {activeSubject.name} Chapters</h2>
-                          {activeSubject.chapters.map(c => (
-                              <div key={c.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm mb-3">
-                                  <h3 className="font-bold text-gray-900 dark:text-white">{c.name}</h3>
-                                  <p className="text-xs text-blue-500 font-bold mb-3">{c.count}</p>
-                                  <div className="space-y-2">
-                                      {c.videos?.map(v => (
-                                          <div key={v.id} onClick={()=>setActiveVideo(v)} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer border border-gray-100 dark:border-gray-800">
-                                              <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center shrink-0"><i className="fa-solid fa-play"></i></div>
-                                              <div>
-                                                  <p className="font-bold text-sm text-gray-800 dark:text-gray-200 line-clamp-1">{v.title}</p>
-                                                  <p className="text-xs text-gray-500">{v.duration}</p>
-                                              </div>
-                                          </div>
-                                      ))}
-                                  </div>
-                              </div>
-                          ))}
-                      </div>
-                  )
-              }
-              if(activeBatch) {
-                  const s = activeBatch.subBatches ? activeBatch.subBatches[0].subjects : activeBatch.subjects;
-                  return (
-                      <div className="pb-24 pt-[60px] px-4 animate-in fade-in">
-                          <button onClick={handleBack} className="mb-4 text-gray-600 dark:text-gray-300 font-bold"><i className="fa-solid fa-arrow-left"></i> Back</button>
-                          <h2 className="text-2xl font-black mb-4 dark:text-white">{activeBatch.name} Subjects</h2>
-                          <div className="space-y-3">
-                              {s?.map(sub => (
-                                  <div key={sub.id} onClick={() => setActiveSubject(sub)} className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center gap-4 cursor-pointer hover:border-blue-500">
-                                      <div className="text-3xl">{sub.icon}</div>
-                                      <div className="flex-1"><h3 className="font-bold text-lg dark:text-white">{sub.name}</h3></div>
-                                      <i className="fa-solid fa-chevron-right text-gray-400"></i>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                  )
-              }
-
-              return ( 
-                  <div className="pb-24 pt-[60px] px-4 animate-in fade-in">
-                      <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-1 px-1">My Study Batches</h2>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 px-1">Select a batch to access lectures</p>
-                      <div className="space-y-4">
-                          {neetprepConnected && neetprepData && neetprepData.batches && neetprepData.batches.length > 0 && (
-                              <>
-                                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-4 mb-6 border-l-4 border-purple-500">
-                                      <h3 className="font-bold text-purple-900 dark:text-purple-200 mb-2">📚 Your NEETPrep Courses</h3>
-                                      <p className="text-sm text-purple-700 dark:text-purple-300">{neetprepData.batches.length} batch • {neetprepData.videos.length} videos • {neetprepData.questions.length} questions</p>
-                                  </div>
-                                  {neetprepData.batches.map(batch => (
-                                      <div key={batch.id} onClick={() => setActiveBatch({...batch, isNeetprep: true})} className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-3xl shadow-sm border border-purple-200 dark:border-purple-700/50 overflow-hidden cursor-pointer hover:shadow-md transition-all">
-                                          <div className="bg-gradient-to-r from-purple-500 to-blue-500 h-2.5 w-full"></div>
-                                          <div className="p-5">
-                                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">🎓 {batch.name}</h3>
-                                              <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">{batch.subjects.length} subjects</p>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Connected to NEETPrep</p>
-                                              <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition">Go to Batch <i className="fa-solid fa-arrow-right text-xs"></i></button>
-                                          </div>
-                                      </div>
-                                  ))}
-                              </>
-                          )}
-                          {BATCHES.map(batch => ( 
-                              <div key={batch.id} onClick={() => setActiveBatch(batch)} className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden cursor-pointer">
-                                  <div className={`${batch.color} h-2.5 w-full`}></div>
-                                  <div className="p-5">
-                                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{batch.name}</h3>
-                                      <p className="text-gray-500 text-sm mb-4">{batch.target}</p>
-                                      <button className="w-full bg-gray-50 dark:bg-gray-800 text-blue-600 dark:text-blue-400 font-bold py-3 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2">Go to Batch <i className="fa-solid fa-arrow-right text-xs"></i></button>
-                                  </div>
-                              </div> 
-                          ))}
-                      </div>
-                  </div> 
-              );
-          };
-
           // --- NEETPREP PRACTICE ENGINE ---
           const renderQuestionsView = () => {
              if (activePracticeChapter) {
@@ -1653,8 +1197,20 @@
                  const attempts = practiceAttempts;
                  const showPalette = practiceShowPalette;
                  const allQuestions = loadedQuestions;
-                 const displayedQuestions = selectedTopic ? allQuestions.filter(q => q.topicName === selectedTopic) : allQuestions;
-                 const currentQuestion = displayedQuestions[currentQuestionIndex];
+                 
+                 let displayedQuestions = selectedTopic ? allQuestions.filter(q => q.topicName === selectedTopic) : allQuestions;
+                 
+                 if (questionFilter === 'bookmarked') {
+                     displayedQuestions = displayedQuestions.filter(q => bookmarks.includes(q.id));
+                 } else if (questionFilter === 'incorrect') {
+                     displayedQuestions = displayedQuestions.filter(q => {
+                         const ansIdx = attempts[q.id];
+                         return ansIdx !== undefined && ['A', 'B', 'C', 'D'][ansIdx] !== q.correctOption;
+                     });
+                 }
+
+                 const safeQuestionIndex = Math.min(currentQuestionIndex, Math.max(0, displayedQuestions.length - 1));
+                 const currentQuestion = displayedQuestions[safeQuestionIndex];
 
                  const triggerHaptic = (type = 'light') => {
                      if (window.Telegram?.WebApp?.HapticFeedback) {
@@ -1662,6 +1218,11 @@
                          else if (type === 'error') window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
                          else window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                      }
+                 };
+
+                 const toggleBookmark = (qId) => {
+                     setBookmarks(prev => prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]);
+                     triggerHaptic('light');
                  };
 
                  const handleAttempt = (qId, optionIdx) => {
@@ -1680,8 +1241,8 @@
                  };
 
                  const handleNext = () => {
-                     if (currentQuestionIndex < displayedQuestions.length - 1) {
-                         setCurrentQuestionIndex(currentQuestionIndex + 1);
+                     if (safeQuestionIndex < displayedQuestions.length - 1) {
+                         setCurrentQuestionIndex(safeQuestionIndex + 1);
                          setTimeout(() => {
                              document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                          }, 50);
@@ -1689,8 +1250,8 @@
                  };
 
                  const handlePrevious = () => {
-                     if (currentQuestionIndex > 0) {
-                         setCurrentQuestionIndex(currentQuestionIndex - 1);
+                     if (safeQuestionIndex > 0) {
+                         setCurrentQuestionIndex(safeQuestionIndex - 1);
                          setTimeout(() => {
                              document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                          }, 50);
@@ -1716,17 +1277,9 @@
                      );
                  }
 
-                 if (!currentQuestion) {
-                     return (
-                         <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
-                             <p className="text-center text-gray-600 dark:text-gray-400">No questions available</p>
-                         </div>
-                     );
-                 }
-
-                 const isAnswered = attempts[currentQuestion.id] !== undefined;
-                 const selectedOptionIdx = attempts[currentQuestion.id];
-                 const isCorrect = isAnswered && ['A', 'B', 'C', 'D'][selectedOptionIdx] === currentQuestion.correctOption;
+                 const isAnswered = currentQuestion ? attempts[currentQuestion.id] !== undefined : false;
+                 const selectedOptionIdx = currentQuestion ? attempts[currentQuestion.id] : -1;
+                 const isCorrect = currentQuestion && isAnswered && ['A', 'B', 'C', 'D'][selectedOptionIdx] === currentQuestion.correctOption;
 
                  return (
                      <div className="pb-32 pt-[60px] animate-in slide-in-from-right relative min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -1734,7 +1287,7 @@
                              <button onClick={handleBack} className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white"><i className="fa-solid fa-arrow-left"></i></button>
                              <div className="flex-1">
                                  <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{activePracticeChapter.name}</h2>
-                                 <p className="text-[10px] text-gray-500">Question {currentQuestionIndex + 1} of {displayedQuestions.length}</p>
+                                 <p className="text-[10px] text-gray-500">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
                              </div>
                          </div>
 
@@ -1757,26 +1310,46 @@
                                      </button>
                                  ))}
                              </div>
+                             
+                             <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+                                 <button onClick={() => {setQuestionFilter('all'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'all' ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-list-ol mr-1"></i> All Qs</button>
+                                 <button onClick={() => {setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'bookmarked' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-bookmark mr-1"></i> Bookmarked</button>
+                                 <button onClick={() => {setQuestionFilter('incorrect'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'incorrect' ? 'bg-red-500 text-white border-red-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-times-circle mr-1"></i> Incorrect</button>
+                             </div>
+
                              <div className="flex justify-between items-center mb-2">
                                  <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Progress</span>
                                  <div className="flex items-center gap-3">
-                                     <span className="text-xs font-bold text-gray-900 dark:text-white">{currentQuestionIndex + 1}/{displayedQuestions.length}</span>
+                                     <span className="text-xs font-bold text-gray-900 dark:text-white">{displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0}/{displayedQuestions.length}</span>
                                      <button onClick={() => setPracticeShowPalette(true)} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center justify-center bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
                                          <i className="fa-solid fa-grip text-base"></i>
                                      </button>
                                  </div>
                              </div>
                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                 <div className="bg-[#0eb582] h-2 rounded-full transition-all" style={{width: `${((currentQuestionIndex + 1) / displayedQuestions.length) * 100}%`}}></div>
+                                 <div className="bg-[#0eb582] h-2 rounded-full transition-all" style={{width: `${displayedQuestions.length > 0 ? ((safeQuestionIndex + 1) / displayedQuestions.length) * 100 : 0}%`}}></div>
                              </div>
                          </div>
 
                          <div data-qa-card className="px-4 mt-5 max-w-2xl mx-auto">
+                             {displayedQuestions.length === 0 ? (
+                                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden py-12 text-center px-4">
+                                     <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
+                                     <h3 className="font-bold text-gray-900 dark:text-white mb-2">No questions found</h3>
+                                     <p className="text-sm text-gray-500 mb-4">No questions match your current filters.</p>
+                                     <button onClick={() => {setQuestionFilter('all'); setPracticeSelectedTopic(null);}} className="bg-[#0eb582] text-white font-bold text-sm px-4 py-2 rounded-xl">Clear Filters</button>
+                                 </div>
+                             ) : (
                              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                                  <div className="p-5">
-                                     <h3 className="font-bold text-gray-900 dark:text-white leading-relaxed text-base mb-4">
-                                         Q{currentQuestionIndex + 1}. {currentQuestion.text}
-                                     </h3>
+                                     <div className="flex justify-between items-start gap-3 mb-4">
+                                         <h3 className="font-bold text-gray-900 dark:text-white leading-relaxed text-base">
+                                             Q{safeQuestionIndex + 1}. {currentQuestion.text}
+                                         </h3>
+                                         <button onClick={() => toggleBookmark(currentQuestion.id)} className={`shrink-0 p-1 text-xl transition-all active:scale-90 ${bookmarks.includes(currentQuestion.id) ? 'text-yellow-500 drop-shadow-sm' : 'text-gray-300 dark:text-gray-700 hover:text-gray-400'}`}>
+                                             <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid' : 'regular'} fa-bookmark`}></i>
+                                         </button>
+                                     </div>
                                      {currentQuestion.imageUrl && (
                                          <div className="mb-4 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center max-h-64">
                                              <img src={currentQuestion.imageUrl} alt="Question Image" className="w-full h-full object-contain" onError={(e) => {e.target.style.display = 'none'}} />
@@ -1821,13 +1394,33 @@
                                          </button>
                                      </div>
                                  )}
+                                 
+                                 <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 p-3 flex justify-between items-center transition-colors">
+                                     <button onClick={() => setShowNoteInput(prev => ({...prev, [currentQuestion.id]: !prev[currentQuestion.id]}))} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors flex items-center gap-1.5">
+                                         <i className="fa-solid fa-pen-to-square"></i> {questionNotes[currentQuestion.id] ? 'Edit Notes' : 'Add Notes'}
+                                     </button>
+                                     {questionNotes[currentQuestion.id] && !showNoteInput[currentQuestion.id] && (
+                                         <span className="text-[10px] bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 px-2 py-0.5 rounded font-bold"><i className="fa-solid fa-note-sticky"></i> Note Attached</span>
+                                     )}
+                                 </div>
+                                 {showNoteInput[currentQuestion.id] && (
+                                     <div className="p-3 bg-yellow-50 dark:bg-yellow-900/10 border-t border-yellow-200 dark:border-yellow-800/30 animate-in fade-in">
+                                         <textarea
+                                             value={questionNotes[currentQuestion.id] || ''}
+                                             onChange={(e) => setQuestionNotes(prev => ({...prev, [currentQuestion.id]: e.target.value}))}
+                                             placeholder="Write down concepts, formulas, or why you got this wrong..."
+                                             className="w-full bg-white dark:bg-gray-900 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:border-yellow-400 dark:focus:border-yellow-500 focus:ring-0 p-3 placeholder-gray-400 dark:placeholder-gray-500 resize-none h-24 outline-none shadow-inner"
+                                         ></textarea>
+                                     </div>
+                                 )}
                              </div>
+                             )}
                          </div>
                          <div className="fixed bottom-0 w-full max-w-md bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 flex gap-3 z-[45] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-                             <button onClick={handlePrevious} disabled={currentQuestionIndex === 0} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                             <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
                                  <i className="fa-solid fa-arrow-left"></i> Back
                              </button>
-                             <button onClick={handleNext} disabled={currentQuestionIndex === displayedQuestions.length - 1} className="flex-1 bg-[#0eb582] text-white hover:bg-[#0a9565] disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors">
+                             <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="flex-1 bg-[#0eb582] text-white hover:bg-[#0a9565] disabled:opacity-50 disabled:cursor-not-allowed font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors">
                                  Next <i className="fa-solid fa-arrow-right"></i>
                              </button>
                          </div>
@@ -1846,7 +1439,7 @@
                                              let bgClass = "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700";
                                              if (isAns) bgClass = isCorrect ? "bg-[#0eb582] text-white" : "bg-red-500 text-white";
                                              return (
-                                                 <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-all ${bgClass} ${currentQuestionIndex === qIdx ? 'ring-2 ring-blue-500' : ''}`}>
+                                                 <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-all ${bgClass} ${safeQuestionIndex === qIdx ? 'ring-2 ring-blue-500' : ''}`}>
                                                      {qIdx + 1}
                                                  </button>
                                              );
@@ -2012,7 +1605,7 @@
                  </div>
 
                  <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">Performance Dashboard</h3>
-                 <div className="grid grid-cols-2 gap-3 mb-6">
+                 <div className="grid grid-cols-2 gap-3 mb-3">
                      <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-center items-center text-center">
                          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full flex items-center justify-center text-lg mb-2"><i className="fa-solid fa-video"></i></div>
                          <h4 className="font-bold text-gray-900 dark:text-white text-xl">{watched.length}</h4>
@@ -2023,6 +1616,17 @@
                          <h4 className="font-bold text-gray-900 dark:text-white text-xl">{accuracy}%</h4>
                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">{totalCorrect}/{totalAttempted} Correct</p>
                      </div>
+                 </div>
+
+                 <div className="mb-6 bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between cursor-pointer hover:border-yellow-500 dark:hover:border-yellow-500 transition-colors" onClick={() => alert("Bookmark viewer coming soon!")}>
+                     <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-lg"><i className="fa-solid fa-bookmark"></i></div>
+                         <div className="text-left">
+                             <h4 className="font-bold text-gray-900 dark:text-white text-base">Saved Bookmarks</h4>
+                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{bookmarks.length} Questions</p>
+                         </div>
+                     </div>
+                     <i className="fa-solid fa-chevron-right text-gray-400"></i>
                  </div>
 
                  <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">Admin Tools</h3>
@@ -2055,41 +1659,20 @@
             <div className="min-h-screen font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950">
               
               {activePdf && <PDFViewer url={activePdf} title="Course Material" onClose={() => setActivePdf(null)} />}
-
-              {activeVideo ? (
-                  <div className="bg-white dark:bg-gray-950 min-h-screen animate-in slide-in-from-bottom duration-300 pb-10">
-                      <UniversalPlayer src={activeVideo.url} title={activeVideo.title} onBack={handleBack} user={tgUser} />
-                      <div className="p-5 pt-5">
-                          <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-2">{activeVideo.title}</h1>
-                          <div className="flex gap-3 mb-5">
-                              <button onClick={() => setActivePdf("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf")} className="flex-1 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 text-red-600 dark:text-red-400 font-bold py-2.5 rounded-xl border border-red-100 dark:border-red-900/50 flex items-center justify-center gap-2 text-sm transition-colors shadow-sm">
-                                  <i className="fa-solid fa-file-pdf"></i> Class Notes
-                              </button>
-                          </div>
-                      </div>
-                  </div>
-              ) : activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : 
-               activeSubject && currentTab === 'batches' ? renderBatchesView() : 
-               activeBatch && currentTab === 'batches' ? renderBatchesView() : (
+              {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                 <>
                   {currentTab === 'home' && renderHomeView()}
-                  {currentTab === 'batches' && renderBatchesView()}
                   {currentTab === 'chat' && <ChatView user={tgUser} />}
                   {currentTab === 'ai' && <AIMentorView />}
                   {currentTab === 'questions' && renderQuestionsView()}
-                  {currentTab === 'pw' && <PWJarvisView batches={pwjarvisbatches} loading={pwjarvisLoading} error={pwjarvisError} onRefresh={refreshPWJarvisBatches} activeBatch={activePWBatch} setActiveBatch={setActivePWBatch} />}
-                  {currentTab === 'users' && renderUsersView()}
                   {currentTab === 'profile' && renderProfileView()}
                   
                   {/* Bottom Navigation */}
                   <div className="fixed bottom-0 w-full max-w-md bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-around pb-5 pt-3 z-[45] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] overflow-x-auto">
                     <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'home' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-house text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-                    <button onClick={() => { setCurrentTab('batches'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'batches' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-book-open text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Batches</span></button>
-                    <button onClick={() => { setCurrentTab('pw'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'pw' ? 'text-cyan-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-book text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">PW</span></button>
                     <button onClick={() => { setCurrentTab('chat'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'chat' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-message text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
                     <button onClick={() => { setCurrentTab('ai'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'ai' ? 'text-purple-500' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-robot text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">AI</span></button>
                     <button onClick={() => { setCurrentTab('questions'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'questions' ? 'text-[#0eb582]' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-file-pen text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
-                    <button onClick={() => { setCurrentTab('users'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'users' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-users text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Users</span></button>
                     <button onClick={() => { setCurrentTab('profile'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'profile' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
                   </div>
                 </>
