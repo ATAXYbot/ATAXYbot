@@ -806,7 +806,7 @@
                       setQbankError(null);
                       
                       // Fetch directly from your Supabase REST API
-                      const supabaseUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co/rest/v1';
+                      const supabaseUrl = 'https://supabase-proxy.thevoicesession.workers.dev/rest/v1';
                       const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
                       const headers = { 
                           'apikey': apikey, 
@@ -875,7 +875,7 @@
                                   }
                                   if (correctIdx === undefined) correctIdx = q.correct || 0;
 
-                                  topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: q.image_url, options: parsedOpts, correctOption: ['A','B','C','D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
+                                  topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: q.image_url ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A','B','C','D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
                               });
                               if (topicNode.questions.length > 0) { chapterNode.topics.push(topicNode); }
                           });
@@ -919,7 +919,7 @@
                           topicNode.questions.push({ 
                               id: q.id || `q_unm_${idx}`, 
                               text: q.question_text || q.question || 'Unnamed Question', 
-                              imageUrl: q.image_url,
+                              imageUrl: q.image_url ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null,
                               options: parsedOpts, 
                               correctOption: ['A','B','C','D'][correctIdx] || 'A',
                               correct: correctIdx, 
