@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NEET Quiz | Telegram Mini App</title>
 
+  <!-- KaTeX for Math & Chemical Formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
+
   <style>
     :root {
       color-scheme: light;
@@ -257,7 +263,7 @@
 
         const questionText = document.createElement('div');
         questionText.className = 'question-text';
-        questionText.textContent = `Q${idx + 1}. ${q.question || 'Question'}`;
+        questionText.innerHTML = `Q${idx + 1}. ${q.question ? q.question.replace(/\n/g, '<br/>') : 'Question'}`;
         card.appendChild(questionText);
 
         const optionsDiv = document.createElement('div');
@@ -267,13 +273,30 @@
         options.forEach((opt, optIdx) => {
           const btn = document.createElement('button');
           btn.className = 'option';
-          btn.textContent = `${String.fromCharCode(65 + optIdx)}. ${opt}`;
+          btn.innerHTML = `<b>${String.fromCharCode(65 + optIdx)}.</b> ${opt.replace(/\n/g, '<br/>')}`;
           optionsDiv.appendChild(btn);
         });
 
         card.appendChild(optionsDiv);
         questionsContainer.appendChild(card);
       });
+
+      const applyMath = () => {
+        if (window.renderMathInElement) {
+          window.renderMathInElement(questionsContainer, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+          });
+        } else {
+          setTimeout(applyMath, 100);
+        }
+      };
+      applyMath();
     };
 
     const goBack = () => {

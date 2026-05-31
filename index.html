@@ -17,6 +17,12 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <!-- KaTeX for Math & Chemical Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
+
     <style>
         ::-webkit-scrollbar { display: none; }
         body { 
@@ -40,6 +46,9 @@
         
         .np-grid-btn { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
         .dark .np-grid-btn { border-color: #374151; }
+        /* NTA Exam Styling overrides */
+        .katex-display { margin: 0.75em 0 !important; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
+        .katex { font-size: 1.05em; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 scroll-smooth">
@@ -101,6 +110,76 @@
                 </div>
             </div>
         );
+
+        // ==========================================
+        // 📝 FORMATTED TEXT COMPONENT (MATH & CHEM)
+        // ==========================================
+        const smartNeetFormatter = (text) => {
+            if (typeof text !== 'string') return text;
+            let t = text;
+            
+            // 1. Fix stringified newlines (often happens from CSV/JSON parsing)
+            t = t.replace(/\\n/g, '\n');
+            
+            // 2. NTA Formatting: Isolate major chemical equations on their own lines!
+            // Finds any math block containing an arrow and forces a line break before AND after it.
+            t = t.replace(/([a-zA-Z0-9.?:)])\s*(?=\$\$?[^$]*?(?:\\rightarrow|->|\\rightleftharpoons)[^$]*?\$\$?)/g, '$1\n\n');
+            t = t.replace(/(\$\$?[^$]*?(?:\\rightarrow|->|\\rightleftharpoons)[^$]*?\$\$?)\s*(?=[a-zA-Z])/g, '$1\n\n');
+            
+            // 3. Auto-detect flattened lists of chemical reactions separated by commas
+            t = t.replace(/(\$\$?[^$]+(?:\\rightarrow|\\ce\{|->|\\rightleftharpoons|=)[^$]+\$\$?)\s*,\s*(?=\$\$?)/g, '$1\n\n');
+            
+            // 4. Separate explicit reactions nicely (e.g., "Reaction 1:", "Reaction 2:")
+            t = t.replace(/(Reaction\s+\d+[:.])/gi, '\n\n<strong>$1</strong> ');
+            
+            // 5. Break lines for Statement/Roman numerals if they seem to be list items
+            t = t.replace(/([.!?,])\s+(?=(?:I{1,3}|IV|V|VI{0,3})\.)/g, '$1\n\n');
+            t = t.replace(/([.!?,])\s+(?=\([i|v|x]+\))/gi, '$1\n\n');
+            t = t.replace(/(Statement\s+[IVX]+[:.])/gi, '\n\n<strong>$1</strong> ');
+            
+            // 6. Convert all newlines to <br/> for HTML rendering
+            t = t.replace(/\n/g, '<br/>');
+            
+            // 7. Clean up excessive breaks
+            t = t.replace(/(?:<br\s*\/?>\s*){3,}/g, '<br/><br/>');
+            t = t.replace(/^(?:<br\s*\/?>\s*)+/, '');
+            t = t.replace(/(?:<br\s*\/?>\s*)+$/, '');
+            
+            return t;
+        };
+
+        const FormattedText = ({ text, className = "" }) => {
+            const containerRef = useRef(null);
+            
+            useEffect(() => {
+                let timeoutId;
+                const renderMath = () => {
+                    if (containerRef.current && window.renderMathInElement) {
+                        try {
+                            window.renderMathInElement(containerRef.current, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                    {left: '\\(', right: '\\)', display: false},
+                                    {left: '\\[', right: '\\]', display: true}
+                                ],
+                                throwOnError: false,
+                                output: 'html'
+                            });
+                        } catch (e) {
+                            console.warn("KaTeX render error:", e);
+                        }
+                    } else if (!window.renderMathInElement) {
+                        timeoutId = setTimeout(renderMath, 500); // Retry if script is loading
+                    }
+                };
+                renderMath();
+                return () => clearTimeout(timeoutId);
+            }, [text]);
+
+            if (typeof text !== 'string') return <span className={className}>{text}</span>;
+            return <div ref={containerRef} className={`w-full ${className || 'block'}`} dangerouslySetInnerHTML={{ __html: smartNeetFormatter(text) }} />;
+        };
 
         // ==========================================
         // 🔒 PERSISTENT GATEKEEPER
@@ -214,7 +293,7 @@
                 <div id={`question-card-${q.id}`} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden mb-6 scroll-mt-[180px]">
                     <div className="p-5">
                         <div className="flex justify-between items-start mb-4 gap-2">
-                            <p className="font-bold text-gray-900 dark:text-white leading-relaxed text-[15px]"><span className="text-gray-900 dark:text-white mr-1 text-base">Q{q.globalIndex}.</span> {q.text}</p>
+                            <div className="text-gray-800 dark:text-gray-100 leading-relaxed text-[15px] font-medium"><span className="font-black text-gray-900 dark:text-white mr-1 text-base">Q{q.globalIndex}.</span> <FormattedText text={q.text} className="inline" /></div>
                             <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[9px] px-2 py-1 rounded font-bold whitespace-nowrap line-clamp-1 max-w-[100px] shrink-0 uppercase tracking-wider">{q.topicName}</span>
                         </div>
                         
@@ -241,8 +320,8 @@
 
                                 return (
                                     <div key={idx} className={`np-grid-btn w-full text-left flex items-stretch transition-colors ${bg}`}>
-                                        <div className={`w-10 flex items-center justify-center shrink-0 font-bold text-sm ${numBg}`}>{idx + 1}</div>
-                                        <div className="p-3.5 text-sm w-full">{opt}</div>
+                                        <div className={`w-10 flex items-center justify-center shrink-0 font-bold text-[15px] ${numBg}`}>({idx + 1})</div>
+                                        <div className="p-3.5 text-sm w-full text-left break-words overflow-hidden"><FormattedText text={opt} /></div>
                                     </div>
                                 );
                             })}
@@ -678,6 +757,35 @@
         };
 
         // ==========================================
+        // ⏱️ PRACTICE SESSION TIMER
+        // ==========================================
+        const PracticeTimer = ({ active, questionId, isAnswered }) => {
+            const timesRef = useRef({});
+            const [time, setTime] = useState(0);
+
+            useEffect(() => {
+                if (questionId) {
+                    setTime(timesRef.current[questionId] || 0);
+                }
+            }, [questionId]);
+
+            useEffect(() => {
+                if (!active || !questionId || isAnswered) return;
+                const timer = setInterval(() => {
+                    setTime(t => { const newTime = t + 1; timesRef.current[questionId] = newTime; return newTime; });
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [active, questionId, isAnswered]);
+            
+            const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+            return (
+                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 border border-gray-200 dark:border-gray-700 shadow-inner">
+                    <i className="fa-regular fa-clock text-blue-500"></i> {formatTime(time)}
+                </div>
+            );
+        };
+
+        // ==========================================
         // �🚀 MAIN APP & NAVIGATION ROUTER
         // ==========================================
         function App() {
@@ -696,7 +804,7 @@
           const [activePracticeBatch, setActivePracticeBatch] = useState(null);
           const [activePracticeFile, setActivePracticeFile] = useState(null);
           const [practiceSelectedTopic, setPracticeSelectedTopic] = useState(null);
-          const [practiceAttempts, setPracticeAttempts] = useState(() => safeGetJSON('ataxy_practice_perf', {}));
+          const [practiceAttempts, setPracticeAttempts] = useState(() => safeGetJSON('ataxy_practice_perf', null) || {});
           const [practiceShowPalette, setPracticeShowPalette] = useState(false);
           const [neetprepConnected, setNeetprepConnected] = useState(() => safeGetJSON('ataxy_neetprep_connected', false));
           const [neetprepUser, setNeetprepUser] = useState(() => safeGetStr('ataxy_neetprep_user', ''));
@@ -708,12 +816,28 @@
           const [neetprepStatus, setNeetprepStatus] = useState('');
           const [activePdf, setActivePdf] = useState(null);
           
-          const [bookmarks, setBookmarks] = useState(() => safeGetJSON('ataxy_bookmarks', []));
-          const [questionNotes, setQuestionNotes] = useState(() => safeGetJSON('ataxy_question_notes', {}));
+          const [bookmarks, setBookmarks] = useState(() => { const b = safeGetJSON('ataxy_bookmarks', null); return Array.isArray(b) ? b : []; });
+          const [questionNotes, setQuestionNotes] = useState(() => safeGetJSON('ataxy_question_notes', null) || {});
           const [questionFilter, setQuestionFilter] = useState('all');
           const [showNoteInput, setShowNoteInput] = useState({});
 
-          const [pwjarvisbatches, setPWJarvisBatches] = useState(() => safeGetJSON('ataxy_pwjarvis_batches', { batches: [], scrapedAt: null, count: 0 }));
+          // 🔖 Bookmark Viewer State
+          const [showBookmarkViewer, setShowBookmarkViewer] = useState(false);
+          const [bookmarkSearch, setBookmarkSearch] = useState('');
+          const [bookmarkSubjectFilter, setBookmarkSubjectFilter] = useState('');
+          const [bookmarkChapterFilter, setBookmarkChapterFilter] = useState('');
+          const [bookmarkTopicFilter, setBookmarkTopicFilter] = useState('');
+          const [activeBookmarkId, setActiveBookmarkId] = useState(null);
+          
+          // ❌ Mistakes Revision Viewer State
+          const [showIncorrectViewer, setShowIncorrectViewer] = useState(false);
+          const [incorrectSearch, setIncorrectSearch] = useState('');
+          const [incorrectSubjectFilter, setIncorrectSubjectFilter] = useState('');
+          const [incorrectChapterFilter, setIncorrectChapterFilter] = useState('');
+          const [incorrectTopicFilter, setIncorrectTopicFilter] = useState('');
+          const [activeIncorrectId, setActiveIncorrectId] = useState(null);
+
+          const [pwjarvisbatches, setPWJarvisBatches] = useState(() => safeGetJSON('ataxy_pwjarvis_batches', null) || { batches: [], scrapedAt: null, count: 0 });
           const [pwjarvisLoading, setPWJarvisLoading] = useState(false);
           const [pwjarvisError, setPWJarvisError] = useState('');
           const [activePWBatch, setActivePWBatch] = useState(null); 
@@ -729,13 +853,30 @@
           const [loadedQuestions, setLoadedQuestions] = useState([]);
           const [questionsLoading, setQuestionsLoading] = useState(false);
           const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+          const [showExplanation, setShowExplanation] = useState(false);
+
+          // 📈 Analytics State (Local Storage Only)
+          const [studyStreak, setStudyStreak] = useState(() => safeGetJSON('ataxy_streak', null) || { count: 1, lastDate: new Date().toDateString() });
+          useEffect(() => {
+              const todayStr = new Date().toDateString();
+              const yesterday = new Date();
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayStr = yesterday.toDateString();
+              setStudyStreak(prev => {
+                  if (!prev) return { count: 1, lastDate: todayStr };
+                  if (prev.lastDate === todayStr) return prev;
+                  if (prev.lastDate === yesterdayStr) return { count: prev.count + 1, lastDate: todayStr };
+                  return { count: 1, lastDate: todayStr };
+              });
+          }, []);
+          useEffect(() => { safeSetItem('ataxy_streak', JSON.stringify(studyStreak)); }, [studyStreak]);
 
           const practiceQuestions = useMemo(() => {
               if (!activePracticeChapter) return [];
               let flat = [];
               let gIdx = 1;
-              activePracticeChapter.topics.forEach(t => {
-                  t.questions.forEach(q => flat.push({ ...q, globalIndex: gIdx++, topicId: t.id, topicName: t.name }));
+              activePracticeChapter.topics?.forEach(t => {
+                  t.questions?.forEach(q => flat.push({ ...q, globalIndex: gIdx++, topicId: t.id, topicName: t.name }));
               });
               return flat;
           }, [activePracticeChapter]);
@@ -743,10 +884,10 @@
           // Daily Targets
           const getTodayStr = () => new Date().toISOString().split('T')[0];
           const [selectedDate, setSelectedDate] = useState(getTodayStr());
-          const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', {}));
+          const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', null) || {});
           const [newTarget, setNewTarget] = useState("");
 
-          useEffect(() => { safeSetItem('ataxy_targets', targetsData); }, [targetsData]);
+          useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
           useEffect(() => { if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } }, []);
           useEffect(() => { 
               if (window.Telegram?.WebApp) { 
@@ -789,10 +930,10 @@
                   }
               }
           }, [isVerified, tgUser]);
-          useEffect(() => { safeSetItem('ataxy_practice_perf', practiceAttempts); }, [practiceAttempts]);
-          useEffect(() => { safeSetItem('ataxy_neetprep_connected', neetprepConnected); safeSetItem('ataxy_neetprep_user', neetprepUser); safeSetItem('ataxy_neetprep_token', neetprepAuthToken); }, [neetprepConnected, neetprepUser, neetprepAuthToken]);
-          useEffect(() => { safeSetItem('ataxy_bookmarks', bookmarks); }, [bookmarks]);
-          useEffect(() => { safeSetItem('ataxy_question_notes', questionNotes); }, [questionNotes]);
+          useEffect(() => { safeSetItem('ataxy_practice_perf', JSON.stringify(practiceAttempts)); }, [practiceAttempts]);
+          useEffect(() => { safeSetItem('ataxy_neetprep_connected', JSON.stringify(neetprepConnected)); safeSetItem('ataxy_neetprep_user', neetprepUser); safeSetItem('ataxy_neetprep_token', neetprepAuthToken); }, [neetprepConnected, neetprepUser, neetprepAuthToken]);
+          useEffect(() => { safeSetItem('ataxy_bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
+          useEffect(() => { safeSetItem('ataxy_question_notes', JSON.stringify(questionNotes)); }, [questionNotes]);
           
           // 🟢 Load QBank on Mount
           useEffect(() => {
@@ -809,35 +950,56 @@
                           'Content-Type': 'application/json'
                       };
 
-                      let qRes;
-                      try {
-                          qRes = await fetch(`${supabaseUrl}/questions?select=*&limit=5000`, { headers });
-                      } catch (err) {
-                          qRes = null; // Will trigger the fallback below if network fails on first try
-                      }
+                      const fetchTable = async (table) => {
+                          let res;
+                          try {
+                              res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`, { headers });
+                          } catch (err) {
+                              // Fallback: fetch without custom headers in case CORS blocks preflight
+                              res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`);
+                          }
+                          
+                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          
+                          const text = await res.text();
+                          let data;
+                          try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid JSON"); }
+                          
+                          let arr = [];
+                          if (Array.isArray(data)) arr = data;
+                          else if (data && Array.isArray(data.data)) arr = data.data;
+                          else if (data && typeof data === 'object') {
+                              for (const key in data) {
+                                  if (Array.isArray(data[key])) { arr = data[key]; break; }
+                              }
+                          }
+                          
+                          arr.forEach((item, i) => { 
+                              if (!item.id) {
+                                  const txt = (item.question_text || item.question || '').substring(0, 15).replace(/[^a-zA-Z0-9]/g, '');
+                                  item.id = `${table}_${i}_${txt}`;
+                              } else {
+                                  item.id = String(item.id);
+                              }
+                          });
+                          return arr;
+                      };
+
+                      let q1 = [], q2 = [];
+                      let errors = [];
+                      try { q1 = await fetchTable('questions'); } catch(e) { errors.push(`Q1: ${e.message}`); }
+                      try { q2 = await fetchTable('Raceee_testttingg_checkinggg'); } catch(e) { errors.push(`Q2: ${e.message}`); }
                       
-                      if (!qRes || (!qRes.ok && qRes.status === 404)) {
-                          qRes = await fetch(`${supabaseUrl}/Raceee_testttingg_checkinggg?select=*&limit=5000`, { headers });
+                      const allQuestions = [...q1, ...q2];
+                      if (allQuestions.length === 0) {
+                          throw new Error(`Cloudflare Proxy empty. Details: ${errors.join(' | ')}`);
                       }
-
-                      if (!qRes.ok) {
-                          const errText = await qRes.text();
-                          throw new Error(`Supabase API Error (${qRes.status}): ${errText}`);
-                      }
-
-                      const questions = await qRes.json();
+                      const questions = allQuestions;
 
                       // Try to fetch chapters and topics
-                      let chapters = [];
-                      let topics = [];
-                      try {
-                          const cRes = await fetch(`${supabaseUrl}/chapters?select=*`, { headers });
-                          if (cRes.ok) chapters = await cRes.json();
-                          const tRes = await fetch(`${supabaseUrl}/topics?select=*`, { headers });
-                          if (tRes.ok) topics = await tRes.json();
-                      } catch (e) {
-                          console.warn("Could not fetch chapters/topics", e);
-                      }
+                      let chapters = [], topics = [];
+                      try { chapters = await fetchTable('chapters'); } catch(e) {}
+                      try { topics = await fetchTable('topics'); } catch(e) {}
 
                       // Transform data into the app's required tree format
                       const subjectsMap = {};
@@ -864,11 +1026,12 @@
                                   }
                                   if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
                                   
-                                  let correctIdx = q.correct_answer;
-                                  if (correctIdx === undefined && q.correct_option) {
+                                  let correctIdx = parseInt(q.correct_answer, 10);
+                                  if (isNaN(correctIdx) && q.correct_option) {
                                       correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
                                   }
-                                  if (correctIdx === undefined || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
+                                  if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
+                                  if (isNaN(correctIdx)) correctIdx = 0;
 
                                   topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A','B','C','D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
                               });
@@ -905,14 +1068,15 @@
                           }
                           if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
                           
-                          let correctIdx = q.correct_answer;
-                          if (correctIdx === undefined && q.correct_option) {
+                          let correctIdx = parseInt(q.correct_answer, 10);
+                          if (isNaN(correctIdx) && q.correct_option) {
                               correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
                           }
-                          if (correctIdx === undefined || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
+                          if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
+                          if (isNaN(correctIdx)) correctIdx = 0;
 
                           topicNode.questions.push({ 
-                              id: q.id || `q_unm_${idx}`, 
+                              id: q.id, 
                               text: q.question_text || q.question || 'Unnamed Question', 
                               imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null,
                               options: parsedOpts, 
@@ -927,16 +1091,27 @@
                       let finalData = Object.values(subjectsMap);
 
                       if (finalData.length > 0) {
+                          // Clean up empty branches
+                          finalData = finalData.filter(s => {
+                              s.chapters = s.chapters.filter(c => {
+                                  c.topics = c.topics.filter(t => t.questions.length > 0);
+                                  return c.topics.length > 0;
+                              });
+                              return s.chapters.length > 0;
+                          });
+                      }
+
+                      if (finalData.length > 0) {
                           setQbankData(finalData);
                       } else {
-                          setQbankError("Connected to Supabase, but no questions were found.");
+                          setQbankError("Connected to Cloudflare proxy, but it returned empty categories.");
                           setQbankData(ALIEN_QBANK);
                       }
                   } catch (e) {
-                      console.error("Backend Fetch Error:", e);
+                      console.error("Cloudflare Proxy Fetch Error:", e);
                       let errorMsg = e.message;
                       if (errorMsg === "Failed to fetch" || errorMsg.includes("NetworkError")) {
-                          errorMsg = "Database connection blocked. Mobile networks (like Jio/Airtel) sometimes block Supabase domains on cellular data. Please try using WiFi or a VPN.";
+                          errorMsg = "Cloudflare Proxy connection blocked. Please check your internet or VPN.";
                       }
                       setQbankError(errorMsg);
                       setQbankData(ALIEN_QBANK); // Fallback to local hardcoded data on error
@@ -949,12 +1124,14 @@
               if (!activePracticeChapter) {
                   setLoadedQuestions([]);
                   setCurrentQuestionIndex(0);
+                  setShowExplanation(false);
                   return;
               }
 
               const loadQuestions = () => {
                   setQuestionsLoading(true);
                   setCurrentQuestionIndex(0);
+                  setShowExplanation(false);
 
                   let allQuestions = [];
                   let gIdx = 1;
@@ -1229,6 +1406,7 @@
                  const handleNext = () => {
                      if (safeQuestionIndex < displayedQuestions.length - 1) {
                          setCurrentQuestionIndex(safeQuestionIndex + 1);
+                         setShowExplanation(false);
                          setTimeout(() => {
                              document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                          }, 50);
@@ -1238,6 +1416,7 @@
                  const handlePrevious = () => {
                      if (safeQuestionIndex > 0) {
                          setCurrentQuestionIndex(safeQuestionIndex - 1);
+                         setShowExplanation(false);
                          setTimeout(() => {
                              document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                          }, 50);
@@ -1247,6 +1426,7 @@
                  const scrollToQuestion = (idx) => {
                      setPracticeShowPalette(false);
                      setCurrentQuestionIndex(idx);
+                     setShowExplanation(false);
                      setTimeout(() => {
                          document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                      }, 50);
@@ -1269,18 +1449,21 @@
 
                  return (
                      <div className="pb-32 pt-[60px] animate-in slide-in-from-right relative min-h-screen bg-gray-50 dark:bg-gray-950">
-                         <div className="px-4 pb-3 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-20 pt-4">
-                             <button onClick={handleBack} className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white"><i className="fa-solid fa-arrow-left"></i></button>
-                             <div className="flex-1">
-                                 <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{activePracticeChapter.name}</h2>
-                                 <p className="text-[10px] text-gray-500">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
+                         <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-20 pt-4">
+                             <div className="flex items-center gap-3">
+                                 <button onClick={handleBack} className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white"><i className="fa-solid fa-arrow-left"></i></button>
+                                 <div className="flex-1">
+                                     <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{activePracticeChapter.name}</h2>
+                                     <p className="text-[10px] text-gray-500">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
+                                 </div>
                              </div>
+                            <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} />
                          </div>
 
                          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
                              <div className="flex flex-col gap-2 overflow-y-auto max-h-40 no-scrollbar mb-4 pb-1">
                                  <button 
-                                     onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); }} 
+                                     onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowExplanation(false); }} 
                                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-colors border shadow-sm flex justify-between items-center ${!practiceSelectedTopic ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
                                  >
                                      <span>All Topics</span>
@@ -1288,7 +1471,7 @@
                                  {activePracticeChapter.topics?.map((t, idx) => (
                                      <button 
                                          key={idx}
-                                         onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); }}
+                                         onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); setShowExplanation(false); }}
                                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-colors border shadow-sm flex justify-between items-center ${practiceSelectedTopic === t.name ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}
                                      >
                                          <span>{t.name}</span>
@@ -1298,9 +1481,9 @@
                              </div>
                              
                              <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                                 <button onClick={() => {setQuestionFilter('all'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'all' ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-list-ol mr-1"></i> All Qs</button>
-                                 <button onClick={() => {setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'bookmarked' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-bookmark mr-1"></i> Bookmarked</button>
-                                 <button onClick={() => {setQuestionFilter('incorrect'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'incorrect' ? 'bg-red-500 text-white border-red-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-times-circle mr-1"></i> Incorrect</button>
+                                 <button onClick={() => {setQuestionFilter('all'); setCurrentQuestionIndex(0); setShowExplanation(false);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'all' ? 'bg-[#0eb582] text-white border-[#0eb582]' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-list-ol mr-1"></i> All Qs</button>
+                                 <button onClick={() => {setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); setShowExplanation(false);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'bookmarked' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-bookmark mr-1"></i> Bookmarked</button>
+                                 <button onClick={() => {setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); setShowExplanation(false);}} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${questionFilter === 'incorrect' ? 'bg-red-500 text-white border-red-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}`}><i className="fa-solid fa-times-circle mr-1"></i> Incorrect</button>
                              </div>
 
                              <div className="flex justify-between items-center mb-2">
@@ -1323,15 +1506,15 @@
                                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
                                      <h3 className="font-bold text-gray-900 dark:text-white mb-2">No questions found</h3>
                                      <p className="text-sm text-gray-500 mb-4">No questions match your current filters.</p>
-                                     <button onClick={() => {setQuestionFilter('all'); setPracticeSelectedTopic(null);}} className="bg-[#0eb582] text-white font-bold text-sm px-4 py-2 rounded-xl">Clear Filters</button>
+                                     <button onClick={() => {setQuestionFilter('all'); setPracticeSelectedTopic(null); setShowExplanation(false);}} className="bg-[#0eb582] text-white font-bold text-sm px-4 py-2 rounded-xl">Clear Filters</button>
                                  </div>
                              ) : (
                              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                                  <div className="p-5">
                                      <div className="flex justify-between items-start gap-3 mb-4">
-                                         <h3 className="font-bold text-gray-900 dark:text-white leading-relaxed text-base">
-                                             Q{safeQuestionIndex + 1}. {currentQuestion.text}
-                                         </h3>
+                                         <div className="text-gray-800 dark:text-gray-100 leading-relaxed text-base font-medium">
+                                             <span className="font-black text-gray-900 dark:text-white mr-1">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
+                                         </div>
                                          <button onClick={() => toggleBookmark(currentQuestion.id)} className={`shrink-0 p-1 text-xl transition-all active:scale-90 ${bookmarks.includes(currentQuestion.id) ? 'text-yellow-500 drop-shadow-sm' : 'text-gray-300 dark:text-gray-700 hover:text-gray-400'}`}>
                                              <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid' : 'regular'} fa-bookmark`}></i>
                                          </button>
@@ -1360,8 +1543,8 @@
                                              }
                                              return (
                                                  <button key={idx} disabled={isAnswered} onClick={() => handleAttempt(currentQuestion.id, idx)} className={`np-grid-btn w-full text-left flex items-stretch transition-all ${bg} disabled:cursor-not-allowed`}>
-                                                     <div className={`w-10 flex items-center justify-center shrink-0 font-bold text-sm ${numBg}`}>{['A', 'B', 'C', 'D'][idx]}</div>
-                                                     <div className="p-3.5 text-sm w-full">{opt}</div>
+                                                     <div className={`w-10 flex items-center justify-center shrink-0 font-bold text-[15px] ${numBg}`}>({idx + 1})</div>
+                                                     <div className="p-3.5 text-sm w-full text-left break-words overflow-hidden"><FormattedText text={opt} /></div>
                                                  </button>
                                              );
                                          })}
@@ -1369,15 +1552,33 @@
                                  </div>
                                  {isAnswered && (
                                      <div className={`p-4 border-t ${isCorrect ? 'bg-[#e6f4ea] dark:bg-green-900/30 border-[#cce8d6] dark:border-green-800' : 'bg-[#fce8e6] dark:bg-red-900/30 border-[#fad2cf] dark:border-red-800'} animate-in fade-in`}>
-                                         <div className="flex items-center gap-2 mb-3">
-                                             <i className={`fa-solid ${isCorrect ? 'fa-check-circle text-green-600 dark:text-green-400' : 'fa-times-circle text-red-600 dark:text-red-400'} text-lg`}></i>
-                                             <span className={`font-bold text-sm ${isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                                                 {isCorrect ? 'Correct!' : 'Incorrect'}
-                                             </span>
+                                         <div className="flex items-center justify-between mb-3">
+                                             <div className="flex items-center gap-2">
+                                                 <i className={`fa-solid ${isCorrect ? 'fa-check-circle text-green-600 dark:text-green-400' : 'fa-times-circle text-red-600 dark:text-red-400'} text-lg`}></i>
+                                                 <span className={`font-bold text-sm ${isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                                     {isCorrect ? 'Correct!' : 'Incorrect'}
+                                                 </span>
+                                             </div>
+                                             <button onClick={() => handleClear(currentQuestion.id)} className="text-xs font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 transition-colors">
+                                                 <i className="fa-solid fa-rotate-left"></i> Clear Answer
+                                             </button>
                                          </div>
-                                         <button onClick={() => handleClear(currentQuestion.id)} className="text-xs font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1">
-                                             <i className="fa-solid fa-rotate-left"></i> Clear Answer
-                                         </button>
+                                         
+                                         <div className="flex gap-2">
+                                             <button onClick={() => setShowExplanation(!showExplanation)} className={`border text-[11px] font-bold px-4 py-2 rounded-full shadow-sm transition-colors ${showExplanation ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-300' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+                                                 {showExplanation ? 'Hide Explanation' : 'View Explanation'}
+                                             </button>
+                                             <button onClick={() => alert('Question flagged for review. Our team will verify it soon!')} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-bold px-4 py-2 rounded-full shadow-sm hover:text-red-500 hover:border-red-300 transition-colors flex items-center gap-1">
+                                                 <i className="fa-regular fa-flag"></i> Report
+                                             </button>
+                                         </div>
+                                         
+                                         {showExplanation && (
+                                             <div className="mt-4 p-3 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner animate-in fade-in">
+                                                 <p className="font-bold text-gray-500 dark:text-gray-400 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb text-yellow-500"></i> Explanation</p>
+                                                 {currentQuestion.explanation ? <FormattedText text={currentQuestion.explanation} /> : <span className="italic text-gray-400">No explanation provided for this question.</span>}
+                                             </div>
+                                         )}
                                      </div>
                                  )}
                                  
@@ -1476,7 +1677,7 @@
                          {qbankError && (
                              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-5 shadow-sm text-sm text-red-800 dark:text-red-200">
                                  <div className="font-bold flex items-center gap-2 mb-2">
-                                     <i className="fa-solid fa-triangle-exclamation"></i> Supabase Connection Issue
+                                     <i className="fa-solid fa-cloud"></i> Cloudflare Proxy Issue
                                  </div>
                                  <p className="mb-2 opacity-90">{qbankError}</p>
                              </div>
@@ -1544,17 +1745,302 @@
              );
           };
 
+          // --- BOOKMARK VIEWER (ADVANCED FILTERING) ---
+          const renderBookmarkViewer = () => {
+              const allBookmarked = [];
+              qbankData.forEach(sub => {
+                  sub.chapters?.forEach(chap => {
+                      chap.topics?.forEach(top => {
+                          top.questions?.forEach(q => {
+                              if (bookmarks.includes(q.id)) {
+                                  allBookmarked.push({
+                                      ...q,
+                                      subjectName: sub.name,
+                                      chapterName: chap.name,
+                                      topicName: top.name
+                                  });
+                              }
+                          });
+                      });
+                  });
+              });
+
+              let subjects = new Set();
+              let chapters = new Set();
+              let topics = new Set();
+
+              allBookmarked.forEach(q => {
+                  subjects.add(q.subjectName);
+                  if (!bookmarkSubjectFilter || q.subjectName === bookmarkSubjectFilter) {
+                      chapters.add(q.chapterName);
+                      if (!bookmarkChapterFilter || q.chapterName === bookmarkChapterFilter) {
+                          topics.add(q.topicName);
+                      }
+                  }
+              });
+
+              const filtered = allBookmarked.filter(q => {
+                  if (bookmarkSearch && !q.text.toLowerCase().includes(bookmarkSearch.toLowerCase())) return false;
+                  if (bookmarkSubjectFilter && q.subjectName !== bookmarkSubjectFilter) return false;
+                  if (bookmarkChapterFilter && q.chapterName !== bookmarkChapterFilter) return false;
+                  if (bookmarkTopicFilter && q.topicName !== bookmarkTopicFilter) return false;
+                  return true;
+              });
+
+              return (
+                  <div className="fixed inset-0 z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10 pt-[60px]">
+                          <div className="flex items-center gap-3">
+                              <button onClick={() => setShowBookmarkViewer(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200">
+                                  <i className="fa-solid fa-arrow-left"></i>
+                              </button>
+                              <h2 className="font-bold text-lg text-gray-900 dark:text-white leading-tight">Bookmarks</h2>
+                          </div>
+                          <span className="text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 px-2 py-1 rounded shadow-sm">{filtered.length} Qs</span>
+                      </div>
+
+                      <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 space-y-3 z-10">
+                          <div className="relative">
+                              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                              <input type="text" placeholder="Search saved questions..." value={bookmarkSearch} onChange={e => setBookmarkSearch(e.target.value)} className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 outline-none transition-all" />
+                          </div>
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                              <select value={bookmarkSubjectFilter} onChange={e => {setBookmarkSubjectFilter(e.target.value); setBookmarkChapterFilter(''); setBookmarkTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                  <option value="">All Subjects</option>
+                                  {[...subjects].map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                              <select value={bookmarkChapterFilter} onChange={e => {setBookmarkChapterFilter(e.target.value); setBookmarkTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                  <option value="">All Chapters</option>
+                                  {[...chapters].map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                              <select value={bookmarkTopicFilter} onChange={e => setBookmarkTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                  <option value="">All Topics</option>
+                                  {[...topics].map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                          </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                          {filtered.length === 0 ? (
+                              <div className="text-center py-12">
+                                  <i className="fa-regular fa-bookmark text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                  <p className="text-gray-500 dark:text-gray-400 font-medium">No bookmarks match your search.</p>
+                              </div>
+                          ) : filtered.map(q => {
+                              const isExpanded = activeBookmarkId === q.id;
+                              return (
+                                  <div key={q.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                                      <div className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveBookmarkId(isExpanded ? null : q.id)}>
+                                          <div className="flex flex-wrap gap-2 mb-2">
+                                              <span className="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{q.subjectName}</span>
+                                              <span className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider truncate max-w-[200px]">{q.topicName}</span>
+                                          </div>
+                                          <div className="text-[15px] font-medium text-gray-800 dark:text-gray-200 line-clamp-3 mb-3">
+                                              <FormattedText text={q.text} className="inline" />
+                                          </div>
+                                          <div className="flex justify-between items-center text-xs">
+                                              <button onClick={(e) => { e.stopPropagation(); setBookmarks(prev => prev.filter(id => id !== q.id)); }} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1.5 rounded-lg font-bold transition-colors">
+                                                  <i className="fa-solid fa-trash"></i> Remove
+                                              </button>
+                                              <span className="text-blue-600 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg">{isExpanded ? 'Hide Details' : 'View Question'} <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} ml-1`}></i></span>
+                                          </div>
+                                      </div>
+                                      
+                                      {isExpanded && (
+                                          <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 animate-in fade-in">
+                                              {q.imageUrl && (
+                                                  <div className="mb-4 rounded-xl overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700 p-2">
+                                                      <img src={q.imageUrl} alt="Question" className="max-w-full max-h-48 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                                                  </div>
+                                              )}
+                                              <div className="space-y-2 mb-4">
+                                                  {q.options.map((opt, i) => {
+                                                      const isCorrect = ['A','B','C','D'][i] === q.correctOption;
+                                                      return (
+                                                          <div key={i} className={`p-3 border rounded-xl text-sm ${isCorrect ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 font-bold' : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
+                                                              <span className="mr-2 opacity-60">({i+1})</span> <FormattedText text={opt} className="inline" />
+                                                              {isCorrect && <i className="fa-solid fa-check-circle ml-2 text-green-600 dark:text-green-400 float-right mt-0.5"></i>}
+                                                          </div>
+                                                      )
+                                                  })}
+                                              </div>
+                                              {q.explanation && (
+                                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
+                                                      <p className="font-bold text-yellow-600 dark:text-yellow-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb"></i> Explanation</p>
+                                                      <FormattedText text={q.explanation} />
+                                                  </div>
+                                              )}
+                                              {questionNotes[q.id] && (
+                                                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
+                                                      <p className="font-bold text-blue-600 dark:text-blue-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-note-sticky"></i> My Notes</p>
+                                                      <p className="whitespace-pre-wrap leading-relaxed">{questionNotes[q.id]}</p>
+                                                  </div>
+                                              )}
+                                          </div>
+                                      )}
+                                  </div>
+                              )
+                          })}
+                      </div>
+                  </div>
+              );
+          };
+
+          // --- MISTAKES (INCORRECT) VIEWER ---
+          const renderIncorrectViewer = () => {
+              const allIncorrect = [];
+              const perf = safeGetJSON('ataxy_practice_perf', null) || {};
+
+              qbankData.forEach(sub => {
+                  sub.chapters?.forEach(chap => {
+                      chap.topics?.forEach(top => {
+                          top.questions?.forEach(q => {
+                              if (perf[q.id] !== undefined && ['A','B','C','D'][perf[q.id]] !== q.correctOption) {
+                                  allIncorrect.push({
+                                      ...q,
+                                      subjectName: sub.name,
+                                      chapterName: chap.name,
+                                      topicName: top.name,
+                                      userAttempt: perf[q.id]
+                                  });
+                              }
+                          });
+                      });
+                  });
+              });
+
+              let subjects = new Set();
+              let chapters = new Set();
+              let topics = new Set();
+
+              allIncorrect.forEach(q => {
+                  subjects.add(q.subjectName);
+                  if (!incorrectSubjectFilter || q.subjectName === incorrectSubjectFilter) {
+                      chapters.add(q.chapterName);
+                      if (!incorrectChapterFilter || q.chapterName === incorrectChapterFilter) {
+                          topics.add(q.topicName);
+                      }
+                  }
+              });
+
+              const filtered = allIncorrect.filter(q => {
+                  if (incorrectSearch && !q.text.toLowerCase().includes(incorrectSearch.toLowerCase())) return false;
+                  if (incorrectSubjectFilter && q.subjectName !== incorrectSubjectFilter) return false;
+                  if (incorrectChapterFilter && q.chapterName !== incorrectChapterFilter) return false;
+                  if (incorrectTopicFilter && q.topicName !== incorrectTopicFilter) return false;
+                  return true;
+              });
+
+              return (
+                  <div className="fixed inset-0 z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10 pt-[60px]">
+                          <div className="flex items-center gap-3">
+                              <button onClick={() => setShowIncorrectViewer(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200">
+                                  <i className="fa-solid fa-arrow-left"></i>
+                              </button>
+                              <h2 className="font-bold text-lg text-gray-900 dark:text-white leading-tight">Mistakes Revision</h2>
+                          </div>
+                          <span className="text-xs font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 px-2 py-1 rounded shadow-sm">{filtered.length} Qs</span>
+                      </div>
+
+                      <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 space-y-3 z-10">
+                          <div className="relative">
+                              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                              <input type="text" placeholder="Search incorrect questions..." value={incorrectSearch} onChange={e => setIncorrectSearch(e.target.value)} className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none transition-all" />
+                          </div>
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                              <select value={incorrectSubjectFilter} onChange={e => {setIncorrectSubjectFilter(e.target.value); setIncorrectChapterFilter(''); setIncorrectTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                  <option value="">All Subjects</option>
+                                  {[...subjects].map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                              <select value={incorrectChapterFilter} onChange={e => {setIncorrectChapterFilter(e.target.value); setIncorrectTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                  <option value="">All Chapters</option>
+                                  {[...chapters].map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                              <select value={incorrectTopicFilter} onChange={e => setIncorrectTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                  <option value="">All Topics</option>
+                                  {[...topics].map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                          </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                          {filtered.length === 0 ? (
+                              <div className="text-center py-12">
+                                  <i className="fa-solid fa-bullseye text-4xl text-green-400 mb-3"></i>
+                                  <p className="text-gray-500 dark:text-gray-400 font-medium">Amazing! No incorrect questions here.</p>
+                              </div>
+                          ) : filtered.map(q => {
+                              const isExpanded = activeIncorrectId === q.id;
+                              return (
+                                  <div key={q.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                                      <div className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveIncorrectId(isExpanded ? null : q.id)}>
+                                          <div className="flex flex-wrap gap-2 mb-2">
+                                              <span className="text-[9px] bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Mistake</span>
+                                              <span className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider truncate max-w-[200px]">{q.topicName}</span>
+                                          </div>
+                                          <div className="text-[15px] font-medium text-gray-800 dark:text-gray-200 line-clamp-3 mb-3">
+                                              <FormattedText text={q.text} className="inline" />
+                                          </div>
+                                          <div className="flex justify-end items-center text-xs">
+                                              <span className="text-blue-600 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg">{isExpanded ? 'Hide Solution' : 'Revise Mistake'} <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} ml-1`}></i></span>
+                                          </div>
+                                      </div>
+                                      
+                                      {isExpanded && (
+                                          <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 animate-in fade-in">
+                                              <div className="space-y-2 mb-4">
+                                                  {q.options.map((opt, i) => {
+                                                      const isCorrect = ['A','B','C','D'][i] === q.correctOption;
+                                                      const wasSelected = q.userAttempt === i;
+                                                      return (
+                                                          <div key={i} className={`p-3 border rounded-xl text-sm ${isCorrect ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 font-bold' : wasSelected ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 font-bold' : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
+                                                              <span className="mr-2 opacity-60">({i+1})</span> <FormattedText text={opt} className="inline" />
+                                                              {isCorrect && <i className="fa-solid fa-check-circle ml-2 text-green-600 dark:text-green-400 float-right mt-0.5"></i>}
+                                                              {wasSelected && !isCorrect && <span className="float-right text-[10px] uppercase tracking-wider text-red-500 mt-1"><i className="fa-solid fa-times"></i> Your Pick</span>}
+                                                          </div>
+                                                      )
+                                                  })}
+                                              </div>
+                                              {q.explanation && (
+                                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
+                                                      <p className="font-bold text-yellow-600 dark:text-yellow-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb"></i> Explanation</p>
+                                                      <FormattedText text={q.explanation} />
+                                                  </div>
+                                              )}
+                                          </div>
+                                      )}
+                                  </div>
+                              )
+                          })}
+                      </div>
+                  </div>
+              );
+          };
+
           // --- PROFILE & PERFORMANCE ---
           const renderProfileView = () => {
-             const perf = safeGetJSON('ataxy_practice_perf', {});
-             const watched = safeGetJSON('ataxy_lectures', []);
+             const perf = safeGetJSON('ataxy_practice_perf', null) || {};
              
              const totalAttempted = Object.keys(perf).length;
              let totalCorrect = 0;
-             qbankData.forEach(sub => sub.chapters.forEach(chap => chap.topics?.forEach(top => top.questions.forEach(q => {
-                 if(perf[q.id] === q.correct) totalCorrect++;
-             }))));
+             let subjectStats = {};
+
+             qbankData.forEach(sub => {
+                 subjectStats[sub.name] = { attempted: 0, correct: 0 };
+                 sub.chapters?.forEach(chap => chap.topics?.forEach(top => top.questions?.forEach(q => {
+                     if(perf[q.id] !== undefined) {
+                         subjectStats[sub.name].attempted++;
+                         if(perf[q.id] === q.correct) {
+                             totalCorrect++;
+                             subjectStats[sub.name].correct++;
+                         }
+                     }
+                 })));
+             });
+
              const accuracy = totalAttempted > 0 ? Math.round((totalCorrect/totalAttempted)*100) : 0;
+             const totalIncorrect = totalAttempted - totalCorrect;
 
              const handlePdfUpload = async (e) => {
                  const file = e.target.files[0];
@@ -1592,10 +2078,10 @@
 
                  <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">Performance Dashboard</h3>
                  <div className="grid grid-cols-2 gap-3 mb-3">
-                     <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-center items-center text-center">
-                         <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full flex items-center justify-center text-lg mb-2"><i className="fa-solid fa-video"></i></div>
-                         <h4 className="font-bold text-gray-900 dark:text-white text-xl">{watched.length}</h4>
-                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Lectures Watched</p>
+                     <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-center items-center text-center cursor-pointer hover:border-yellow-500 transition-colors" onClick={() => setShowBookmarkViewer(true)}>
+                         <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-lg mb-2"><i className="fa-solid fa-bookmark"></i></div>
+                         <h4 className="font-bold text-gray-900 dark:text-white text-xl">{bookmarks.length}</h4>
+                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Bookmarked</p>
                      </div>
                      <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-center items-center text-center">
                          <div className="w-10 h-10 bg-green-50 dark:bg-green-900/30 text-green-500 rounded-full flex items-center justify-center text-lg mb-2"><i className="fa-solid fa-bullseye"></i></div>
@@ -1604,15 +2090,69 @@
                      </div>
                  </div>
 
-                 <div className="mb-6 bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between cursor-pointer hover:border-yellow-500 dark:hover:border-yellow-500 transition-colors" onClick={() => alert("Bookmark viewer coming soon!")}>
-                     <div className="flex items-center gap-4">
-                         <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-lg"><i className="fa-solid fa-bookmark"></i></div>
-                         <div className="text-left">
-                             <h4 className="font-bold text-gray-900 dark:text-white text-base">Saved Bookmarks</h4>
-                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{bookmarks.length} Questions</p>
+                 <div className="bg-gradient-to-r from-orange-400 to-rose-500 rounded-2xl p-4 text-white shadow-md flex items-center justify-between mb-6">
+                     <div>
+                         <h4 className="font-black text-lg flex items-center gap-2"><i className="fa-solid fa-fire text-yellow-300"></i> {studyStreak.count} Day Streak!</h4>
+                         <p className="text-xs text-white/80 font-medium mt-0.5">Keep practicing every day to maintain your streak.</p>
+                     </div>
+                 </div>
+
+                 <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm mb-6">
+                     <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-pie text-purple-500"></i> Detailed Analytics</h4>
+                     <div className="grid grid-cols-3 gap-2 mb-5">
+                         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
+                             <div className="text-lg font-black text-gray-900 dark:text-white">{totalAttempted}</div>
+                             <div className="text-[9px] text-gray-500 font-bold uppercase mt-1 tracking-wider">Attempted</div>
+                         </div>
+                         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center border border-green-100 dark:border-green-900/30">
+                             <div className="text-lg font-black text-green-600 dark:text-green-400">{totalCorrect}</div>
+                             <div className="text-[9px] text-green-600 dark:text-green-400 font-bold uppercase mt-1 tracking-wider">Correct</div>
+                         </div>
+                         <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center border border-red-100 dark:border-red-900/30">
+                             <div className="text-lg font-black text-red-600 dark:text-red-400">{totalIncorrect}</div>
+                             <div className="text-[9px] text-red-600 dark:text-red-400 font-bold uppercase mt-1 tracking-wider">Incorrect</div>
                          </div>
                      </div>
-                     <i className="fa-solid fa-chevron-right text-gray-400"></i>
+                     <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Subject Wise Accuracy</h5>
+                     <div className="space-y-4">
+                         {Object.keys(subjectStats).map(subName => {
+                             const s = subjectStats[subName];
+                             const acc = s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0;
+                             let barColor = 'bg-blue-500';
+                             if(subName.toLowerCase().includes('phy')) barColor = 'bg-purple-500';
+                             if(subName.toLowerCase().includes('bio') || subName.toLowerCase().includes('bot') || subName.toLowerCase().includes('zoo')) barColor = 'bg-green-500';
+                             if(subName.toLowerCase().includes('chem')) barColor = 'bg-orange-500';
+                             return (
+                                 <div key={subName}>
+                                     <div className="flex justify-between text-xs mb-1.5">
+                                         <span className="font-bold text-gray-700 dark:text-gray-300">{subName}</span>
+                                         <span className="font-bold text-gray-900 dark:text-white">{acc}% <span className="text-gray-400 font-normal">({s.correct}/{s.attempted})</span></span>
+                                     </div>
+                                     <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                                         <div className={`${barColor} h-full rounded-full transition-all duration-1000`} style={{width: `${acc}%`}}></div>
+                                     </div>
+                                 </div>
+                             );
+                         })}
+                         {Object.keys(subjectStats).length === 0 && <p className="text-xs text-gray-400 italic">Attempt questions to see subject data.</p>}
+                     </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-3 mb-6">
+                     <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center gap-3 cursor-pointer hover:border-yellow-500 transition-colors" onClick={() => setShowBookmarkViewer(true)}>
+                         <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-lg shrink-0"><i className="fa-solid fa-bookmark"></i></div>
+                         <div className="text-left">
+                             <h4 className="font-bold text-gray-900 dark:text-white text-sm">Bookmarks</h4>
+                             <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{bookmarks.length} Saved</p>
+                         </div>
+                     </div>
+                     <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center gap-3 cursor-pointer hover:border-red-500 transition-colors" onClick={() => setShowIncorrectViewer(true)}>
+                         <div className="w-10 h-10 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center text-lg shrink-0"><i className="fa-solid fa-times-circle"></i></div>
+                         <div className="text-left">
+                             <h4 className="font-bold text-gray-900 dark:text-white text-sm">Mistakes</h4>
+                             <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{totalIncorrect} Review</p>
+                         </div>
+                     </div>
                  </div>
 
                  <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">Admin Tools</h3>
@@ -1653,6 +2193,9 @@
                   {currentTab === 'questions' && renderQuestionsView()}
                   {currentTab === 'profile' && renderProfileView()}
                   
+                  {showBookmarkViewer && renderBookmarkViewer()}
+                  {showIncorrectViewer && renderIncorrectViewer()}
+
                   {/* Bottom Navigation */}
                   <div className="fixed bottom-0 w-full max-w-md bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-around pb-5 pt-3 z-[45] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] overflow-x-auto">
                     <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 ${currentTab === 'home' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}><i className="fa-solid fa-house text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
