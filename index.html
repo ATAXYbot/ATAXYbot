@@ -59,7 +59,6 @@
 
         const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
         const TELEGRAM_BOT_TOKEN = '7977433269:AAFCtV_YvR8zcg5tiAr433tNE-4bSCgjkZ0';
-        const ADMIN_TELEGRAM_ID = 'YOUR_TELEGRAM_ID_HERE'; // ⚠️ PUT YOUR TELEGRAM ID HERE (Get it from @userinfobot)
 
         const safeGetStr = (key, def) => { try { return localStorage.getItem(key) || def; } catch(e) { return def; } };
         const safeGetJSON = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
@@ -857,12 +856,6 @@
           const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
           const [showExplanation, setShowExplanation] = useState(false);
 
-          // 🚨 Report Modal State
-          const [reportModalOpen, setReportModalOpen] = useState(false);
-          const [reportQuestion, setReportQuestion] = useState(null);
-          const [reportReason, setReportReason] = useState('');
-          const [isReporting, setIsReporting] = useState(false);
-
           // 📈 Analytics State (Local Storage Only)
           const [studyStreak, setStudyStreak] = useState(() => safeGetJSON('ataxy_streak', null) || { count: 1, lastDate: new Date().toDateString() });
           useEffect(() => {
@@ -954,24 +947,27 @@
                       const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
 
                       const fetchTable = async (table) => {
-                          // Adding timestamp to bypass aggressive WebView caching on Mobile Data
-                          const ts = Date.now();
-                          // Structuring to prioritize Simple Requests (no auth headers) to prevent CORS preflight block by Mobile ISPs
-                          const fetchAttempts = [
-                              { url: `${directSupabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}&_t=${ts}`, headers: {} },
-                              { url: `${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}&_t=${ts}`, headers: {} },
-                              { url: `${directSupabaseUrl}/${table}?select=*&limit=5000&_t=${ts}`, headers: { 'apikey': apikey, 'Authorization': `Bearer ${apikey}` } },
-                              { url: `${supabaseUrl}/${table}?select=*&limit=5000&_t=${ts}`, headers: { 'apikey': apikey, 'Authorization': `Bearer ${apikey}` } }
+                          const urls = [
+                              `${supabaseUrl}/${table}?select=*&limit=5000`,
+                              `${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`,
+                              `${directSupabaseUrl}/${table}?select=*&limit=5000`,
+                              `${directSupabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`
                           ];
 
                           let lastError;
-                          for (const attempt of fetchAttempts) {
+                          for (const url of urls) {
                               try {
-                                  const reqHeaders = { 'Accept': 'application/json', ...attempt.headers };
+                                  const reqHeaders = { 'Accept': 'application/json' };
+                                  // Add auth headers only if apikey isn't in URL 
+                                  if (!url.includes('apikey=')) {
+                                      reqHeaders['apikey'] = apikey;
+                                      reqHeaders['Authorization'] = `Bearer ${apikey}`;
+                                  }
                                   
-                                  // Intentionally omitted `cache: 'no-store'` as it can trigger CORS OPTIONS requests 
-                                  // in some Android WebViews over mobile networks. The `_t` parameter handles cache busting.
-                                  const res = await fetch(attempt.url, { headers: reqHeaders });
+                                  const res = await fetch(url, { 
+                                      headers: reqHeaders,
+                                      cache: 'no-store'
+                                  });
                                   if (res.ok) {
                                       const text = await res.text();
                                       let data;
@@ -1271,64 +1267,6 @@
               safeRemoveItem('ataxy_neetprep_user');
               safeRemoveItem('ataxy_neetprep_token');
               safeRemoveItem('ataxy_neetprep_data');
-          };
-
-          // --- QUESTION REPORTING FUNCTION ---
-          const submitReport = async () => {
-              if (!reportReason.trim()) return;
-              setIsReporting(true);
-              
-              try {
-                  const studentName = tgUser?.first_name || 'Unknown Student';
-                  const studentId = tgUser?.id || 'Unknown ID';
-                  const studentUsername = tgUser?.username ? `@${tgUser.username}` : 'No username';
-                  const q = reportQuestion;
-                  
-                  const adminMessage = `🚨 *NEW QUESTION REPORT* 🚨\n\n👤 *Student:* ${studentName} (${studentUsername} | UID: \`${studentId}\`)\n📝 *Reason:* ${reportReason}\n\n📚 *Subject:* ${activePracticeSubject?.name || 'N/A'}\n📖 *Chapter:* ${activePracticeChapter?.name || 'N/A'}\n📑 *Topic:* ${q.topicName || 'N/A'}\n🔢 *Question ID:* \`${q.id}\`\n\n*Question Text:*\n${q.text.substring(0, 150)}${q.text.length > 150 ? '...' : ''}\n\n*Options:*\n1) ${q.options[0]}\n2) ${q.options[1]}\n3) ${q.options[2]}\n4) ${q.options[3]}\n\n✅ *System Correct Option:* ${q.correctOption}`;
-
-                  // Send to Admin (App Owner)
-                  if (ADMIN_TELEGRAM_ID !== 'YOUR_TELEGRAM_ID_HERE') {
-                      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                              chat_id: ADMIN_TELEGRAM_ID,
-                              text: adminMessage,
-                              parse_mode: 'Markdown'
-                          })
-                      });
-                  }
-
-                  // Send confirmation to Student
-                  if (tgUser?.id) {
-                      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                              chat_id: tgUser.id,
-                              text: `✅ *Report Submitted*\n\nThank you ${studentName}! Your report for Question \`${q.id}\` has been successfully sent to our admins for review.\n\n*Your Reason:* ${reportReason}`,
-                              parse_mode: 'Markdown'
-                          })
-                      });
-                  }
-
-                  if (window.Telegram?.WebApp?.HapticFeedback) {
-                      window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                  }
-                  
-                  setReportModalOpen(false);
-                  setReportReason('');
-                  
-                  if (window.Telegram?.WebApp?.showAlert) {
-                      window.Telegram.WebApp.showAlert("Report submitted successfully to the admins!");
-                  } else {
-                      alert("Report submitted successfully!");
-                  }
-              } catch (err) {
-                  console.error("Report error:", err);
-                  alert('Failed to send report. Please check your connection.');
-              }
-              setIsReporting(false);
           };
 
           const handleBack = () => {
@@ -1645,10 +1583,30 @@
                                              <button onClick={() => setShowExplanation(!showExplanation)} className={`border text-[11px] font-bold px-4 py-2 rounded-full shadow-sm transition-colors ${showExplanation ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-300' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                                                  {showExplanation ? 'Hide Explanation' : 'View Explanation'}
                                              </button>
-                                             <button onClick={() => {
-                                                 setReportQuestion(currentQuestion);
-                                                 setReportReason('');
-                                                 setReportModalOpen(true);
+                                             <button onClick={async (e) => {
+                                                 const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+                                                 if (!tgId) { alert('Open this app inside Telegram to use the Report feature.'); return; }
+                                                 try {
+                                                     const btn = e.currentTarget;
+                                                     const originalHtml = btn.innerHTML;
+                                                     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+                                                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                                                         method: 'POST',
+                                                         headers: { 'Content-Type': 'application/json' },
+                                                         body: JSON.stringify({
+                                                             chat_id: tgId,
+                                                             text: `🚨 *Question Reported*\n\nYou reported Question ID: \`${currentQuestion.id}\`\n\nThank you! Our team has received your report and will verify this question immediately.`,
+                                                         parse_mode: 'Markdown'
+                                                         })
+                                                     });
+                                                     btn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i> Sent';
+                                                     setTimeout(() => btn.innerHTML = originalHtml, 3000);
+                                                     if (window.Telegram?.WebApp?.HapticFeedback) {
+                                                         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                                                     }
+                                                 } catch(err) {
+                                                     alert('Failed to report. Please check your connection.');
+                                                 }
                                              }} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-bold px-4 py-2 rounded-full shadow-sm hover:text-red-500 hover:border-red-300 transition-colors flex items-center gap-1">
                                                  <i className="fa-regular fa-flag"></i> Report
                                              </button>
@@ -2311,31 +2269,6 @@
                               {neetprepStatus && <p className="text-sm text-gray-600 dark:text-gray-300">{neetprepStatus}</p>}
                               {neetprepConnected && <button type="button" onClick={disconnectNeetprep} className="w-full bg-red-600 text-white py-3 rounded-2xl font-bold hover:bg-red-700">Disconnect NEETPrep</button>}
                           </form>
-                      </div>
-                  </div>
-              )}
-
-              {/* REPORT MODAL */}
-              {reportModalOpen && reportQuestion && (
-                  <div className="fixed inset-0 bg-black/60 z-[100000] flex items-center justify-center p-4 animate-in fade-in" onClick={() => !isReporting && setReportModalOpen(false)}>
-                      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center gap-3 mb-4">
-                              <div className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xl"><i className="fa-solid fa-triangle-exclamation"></i></div>
-                              <div>
-                                  <h3 className="font-bold text-lg text-gray-900 dark:text-white">Report Question</h3>
-                                  <p className="text-[10px] text-gray-500">Q.ID: {reportQuestion.id}</p>
-                              </div>
-                          </div>
-                          
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">Why are you reporting this question?</p>
-                          <textarea value={reportReason} onChange={e => setReportReason(e.target.value)} placeholder="e.g., Wrong answer, typing mistake, options are incomplete..." className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white resize-none h-24 mb-4"></textarea>
-                          
-                          <div className="flex gap-3">
-                              <button onClick={() => setReportModalOpen(false)} disabled={isReporting} className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 transition-colors">Cancel</button>
-                              <button onClick={submitReport} disabled={isReporting || !reportReason.trim()} className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                                  {isReporting ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Submit Report'}
-                              </button>
-                          </div>
                       </div>
                   </div>
               )}
