@@ -48,13 +48,11 @@
     <script type="text/babel" data-type="module">
         const { useState, useRef, useEffect, useMemo } = React;
 
-        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-            ? 'http://localhost:5000' 
-            : 'https://neet-prep-backend.onrender.com';
+        const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
 
         const safeGetStr = (key, def) => { try { return localStorage.getItem(key) || def; } catch(e) { return def; } };
         const safeGetJSON = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
-        const safeSetItem = (key, val) => { try { localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val)); } catch(e) {} };
+        const safeSetItem = (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} };
         const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
 
         // =========================================================================
