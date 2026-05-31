@@ -953,24 +953,40 @@
 
                       const fetchTable = async (table) => {
                           let res;
+                          const directUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co/rest/v1';
+                          
                           try {
+                              // Attempt 1: Try proxy with standard headers
                               res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`, { 
                                   headers,
-                                  cache: 'no-store' // Safely bypasses Telegram cache without breaking Supabase URL
+                                  cache: 'no-store'
                               });
                               if (!res.ok) throw new Error(`HTTP ${res.status}`);
                           } catch (err) {
-                              // Fallback: Bypass Telegram Webview CORS preflight by sending apikey directly in URL
                               try {
-                                  res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
-                                      cache: 'no-store',
-                                      headers: {
-                                          'Cache-Control': 'no-cache, no-store, must-revalidate',
-                                          'Pragma': 'no-cache',
-                                          'Expires': '0'
-                                      }
+                                  // Attempt 2: Try direct Supabase URL (in case .workers.dev is blocked by Telegram/ISP)
+                                  res = await fetch(`${directUrl}/${table}?select=*&limit=5000`, { 
+                                      headers,
+                                      cache: 'no-store'
                                   });
-                              } catch (fallbackErr) { throw new Error(`Network: ${fallbackErr.message}`); }
+                                  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                              } catch (err2) {
+                                  try {
+                                      // Attempt 3: Proxy without Authorization header to bypass strict preflight in some WebViews
+                                      res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
+                                          cache: 'no-store'
+                                      });
+                                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                  } catch (err3) {
+                                      try {
+                                          // Attempt 4: Direct URL without Authorization header
+                                          res = await fetch(`${directUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
+                                              cache: 'no-store'
+                                          });
+                                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                      } catch (fallbackErr) { throw new Error(`Network: ${fallbackErr.message}`); }
+                                  }
+                              }
                           }
                           
                           if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
@@ -1583,12 +1599,15 @@
                                                  {showExplanation ? 'Hide Explanation' : 'View Explanation'}
                                              </button>
                                              <button onClick={async (e) => {
-                                                 const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+                                                 const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                                                 const tgId = user?.id;
                                                  if (!tgId) { alert('Open this app inside Telegram to use the Report feature.'); return; }
                                                  try {
                                                      const btn = e.currentTarget;
                                                      const originalHtml = btn.innerHTML;
                                                      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+                                                     
+                                                     // 1. Send confirmation to the student
                                                      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                                                          method: 'POST',
                                                          headers: { 'Content-Type': 'application/json' },
@@ -1598,6 +1617,32 @@
                                                          parse_mode: 'Markdown'
                                                          })
                                                      });
+
+                                                     // 2. Send detailed report to the Admin
+                                                     // To get your numeric chat ID, message @userinfobot on Telegram
+                                                     const ADMIN_CHAT_ID = 'YOUR_ADMIN_CHAT_ID'; // Replace this with your numeric chat ID (e.g. 123456789)
+                                                     
+                                                     let reportDetails = `🚨 *NEW QUESTION REPORT* 🚨\n\n`;
+                                                     reportDetails += `*Reporter:* ${user.first_name} (@${user.username || 'N/A'}) [UID: ${tgId}]\n`;
+                                                     reportDetails += `*Subject:* ${activePracticeSubject?.name || 'N/A'}\n`;
+                                                     reportDetails += `*Chapter:* ${activePracticeChapter?.name || 'N/A'}\n`;
+                                                     reportDetails += `*Topic:* ${currentQuestion.topicName || 'N/A'}\n`;
+                                                     reportDetails += `*Question ID:* \`${currentQuestion.id}\`\n\n`;
+                                                     reportDetails += `*Question Text:*\n${currentQuestion.text.substring(0, 500)}${currentQuestion.text.length > 500 ? '...' : ''}\n\n`;
+                                                     reportDetails += `*Action Required:* Please verify this question in your database.`;
+
+                                                     if (ADMIN_CHAT_ID !== '5182808926') {
+                                                         await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                                                             method: 'POST',
+                                                             headers: { 'Content-Type': 'application/json' },
+                                                             body: JSON.stringify({
+                                                                 chat_id: ADMIN_CHAT_ID,
+                                                                 text: reportDetails,
+                                                                 parse_mode: 'Markdown'
+                                                             })
+                                                         });
+                                                     }
+
                                                      btn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i> Sent';
                                                      setTimeout(() => btn.innerHTML = originalHtml, 3000);
                                                      if (window.Telegram?.WebApp?.HapticFeedback) {
