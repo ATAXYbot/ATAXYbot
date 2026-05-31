@@ -48,6 +48,13 @@
     <script type="text/babel" data-type="module">
         const { useState, useRef, useEffect, useMemo } = React;
 
+        const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
+
+        const safeGetStr = (key, def) => { try { return localStorage.getItem(key) || def; } catch(e) { return def; } };
+        const safeGetJSON = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
+        const safeSetItem = (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} };
+        const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
+
         // =========================================================================
         // ⬇️ ADD YOUR PRACTICE QUESTIONS HERE (ALIEN PLATFORM QBANK) ⬇️
         // =========================================================================
@@ -55,23 +62,23 @@
             { id: "sub_phy", name: "Physics", icon: "⚛️", chapters: [
                 { id: "c_phy_1", name: "Kinematics 1D", topics: [
                     { id: "t_phy_1_1", name: "Distance & Displacement", questions: [
-                        { id: "q1", text: "A particle is moving in a circular path of radius r. The displacement after half a circle would be:", options: ["Zero", "πr", "2r", "2πr"], correct: 2, ncert: true, accuracy: "88%" },
-                        { id: "q2", text: "Which of the following is a scalar quantity?", options: ["Displacement", "Distance", "Velocity", "Acceleration"], correct: 1, ncert: true, accuracy: "95%" }
+                        { id: "q1", text: "A particle is moving in a circular path of radius r. The displacement after half a circle would be:", options: ["Zero", "πr", "2r", "2πr"], correct: 2, correctOption: "C", ncert: true, accuracy: "88%" },
+                        { id: "q2", text: "Which of the following is a scalar quantity?", options: ["Displacement", "Distance", "Velocity", "Acceleration"], correct: 1, correctOption: "B", ncert: true, accuracy: "95%" }
                     ]}
                 ]}
             ]},
             { id: "sub_chem", name: "Chemistry", icon: "⚗️", chapters: [
                 { id: "c_chem_1", name: "Some Basic Concepts of Chemistry", topics: [
                     { id: "t_chem_1_1", name: "Mole Concept", questions: [
-                        { id: "q3", text: "The number of atoms in 0.1 mol of a triatomic gas is: (NA = 6.02x10^23)", options: ["6.026 x 10^22", "1.806 x 10^23", "3.600 x 10^23", "1.806 x 10^22"], correct: 1, ncert: false, accuracy: "76%" }
+                        { id: "q3", text: "The number of atoms in 0.1 mol of a triatomic gas is: (NA = 6.02x10^23)", options: ["6.026 x 10^22", "1.806 x 10^23", "3.600 x 10^23", "1.806 x 10^22"], correct: 1, correctOption: "B", ncert: false, accuracy: "76%" }
                     ]}
                 ]}
             ]},
             { id: "sub_bio", name: "Biology", icon: "🌿", chapters: [
                 { id: "c_bio_1", name: "The Living World", topics: [
                     { id: "t_bio_1_1", name: "What is Living?", questions: [
-                        { id: "q4", text: "The system of the naming of organisms was developed by", options: ["Robert Hooke", "Carolus Linnaeus", "T. Schwann", "Ernst Mayr"], correct: 1, ncert: true, accuracy: "91%" },
-                        { id: "q5", text: "Which of the following are twin characteristics of growth?", options: ["Increase in mass and number", "Increase in weight and volume", "Increase in height and radius", "None of these"], correct: 0, ncert: true, accuracy: "85%" }
+                        { id: "q4", text: "The system of the naming of organisms was developed by", options: ["Robert Hooke", "Carolus Linnaeus", "T. Schwann", "Ernst Mayr"], correct: 1, correctOption: "B", ncert: true, accuracy: "91%" },
+                        { id: "q5", text: "Which of the following are twin characteristics of growth?", options: ["Increase in mass and number", "Increase in weight and volume", "Increase in height and radius", "None of these"], correct: 0, correctOption: "A", ncert: true, accuracy: "85%" }
                     ]}
                 ]}
             ]}
@@ -99,14 +106,14 @@
         // 🔒 PERSISTENT GATEKEEPER
         // ==========================================
         const Gatekeeper = ({ onVerify }) => {
-            const [step, setStep] = useState(() => parseInt(localStorage.getItem('ataxy_verify_step') || '0'));
+            const [step, setStep] = useState(() => parseInt(safeGetStr('ataxy_verify_step', '0')));
             const [verifying, setVerifying] = useState(false);
             const [isCheckingSaved, setIsCheckingSaved] = useState(true);
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || { first_name: "Student", id: "1001", username: "student" };
 
             useEffect(() => {
                 const checkVerification = async () => {
-                    const savedState = localStorage.getItem('ataxy_verified');
+                    const savedState = safeGetStr('ataxy_verified', '');
                     if (savedState === 'true') {
                         onVerify(tgUser);
                         return;
@@ -114,12 +121,12 @@
                     
                     if (tgUser?.id && String(tgUser.id) !== "1001") {
                         try {
-                            const res = await fetch('/api/neet/users');
+                            const res = await fetch(`${BACKEND_URL}/api/neet/users`);
                             if (res.ok) {
                                 const data = await res.json();
                                 const isRegistered = data.users?.some(u => String(u.telegram_user_id) === String(tgUser.id));
                                 if (isRegistered) {
-                                    localStorage.setItem('ataxy_verified', 'true');
+                                    safeSetItem('ataxy_verified', 'true');
                                     onVerify(tgUser);
                                     return;
                                 }
@@ -136,8 +143,8 @@
             const handleVerify = () => {
                 setVerifying(true);
                 setTimeout(() => {
-                    localStorage.setItem('ataxy_verified', 'true');
-                    localStorage.removeItem('ataxy_verify_step');
+                    safeSetItem('ataxy_verified', 'true');
+                    safeRemoveItem('ataxy_verify_step');
                     setVerifying(false);
                     onVerify(tgUser);
                 }, 1500);
@@ -145,7 +152,7 @@
 
             const handleJoin = (url, nextStep) => {
                 setStep(nextStep);
-                localStorage.setItem('ataxy_verify_step', nextStep.toString());
+                safeSetItem('ataxy_verify_step', nextStep.toString());
                 if (window.Telegram?.WebApp?.openTelegramLink) {
                     window.Telegram.WebApp.openTelegramLink(url);
                 } else {
@@ -188,7 +195,7 @@
                             {verifying ? <i className="fa-solid fa-spinner fa-spin"></i> : "Verify & Login"}
                         </button>
                         {step < 2 && (
-                            <button onClick={() => { setStep(2); localStorage.setItem('ataxy_verify_step', '2'); }} className="text-sm text-gray-400 hover:text-white transition-colors underline">
+                            <button onClick={() => { setStep(2); safeSetItem('ataxy_verify_step', '2'); }} className="text-sm text-gray-400 hover:text-white transition-colors underline">
                                 Already joined? Click here to skip
                             </button>
                         )}
@@ -328,8 +335,7 @@
                                 setChats(msgs);
                             }, (err) => console.error(err));
                         } else {
-                            // Fallback to local storage if Firebase is not connected yet
-                            setChats(JSON.parse(localStorage.getItem('ataxy_global_chat') || '[]'));
+                            setChats(safeGetJSON('ataxy_global_chat', []));
                         }
                     } catch(e) { console.error(e); }
                 };
@@ -338,7 +344,7 @@
 
             useEffect(() => { 
                 chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
-                if(!fbApp?.db) localStorage.setItem('ataxy_global_chat', JSON.stringify(chats));
+                if(!fbApp?.db) safeSetItem('ataxy_global_chat', JSON.stringify(chats));
             }, [chats]);
 
             const sendMsg = async (e) => {
@@ -675,13 +681,13 @@
         // �🚀 MAIN APP & NAVIGATION ROUTER
         // ==========================================
         function App() {
-          const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('ataxy_theme') === 'dark');
+          const [isDarkMode, setIsDarkMode] = useState(() => safeGetStr('ataxy_theme', '') === 'dark');
           useEffect(() => {
-              if (isDarkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('ataxy_theme', 'dark'); } 
-              else { document.documentElement.classList.remove('dark'); localStorage.setItem('ataxy_theme', 'light'); }
+              if (isDarkMode) { document.documentElement.classList.add('dark'); safeSetItem('ataxy_theme', 'dark'); } 
+              else { document.documentElement.classList.remove('dark'); safeSetItem('ataxy_theme', 'light'); }
           }, [isDarkMode]);
 
-          const [isVerified, setIsVerified] = useState(localStorage.getItem('ataxy_verified') === 'true');
+          const [isVerified, setIsVerified] = useState(() => safeGetStr('ataxy_verified', '') === 'true');
           const [tgUser, setTgUser] = useState(window.Telegram?.WebApp?.initDataUnsafe?.user || { first_name: "Student", id: "1001" });
           
           const [currentTab, setCurrentTab] = useState('home'); 
@@ -690,39 +696,28 @@
           const [activePracticeBatch, setActivePracticeBatch] = useState(null);
           const [activePracticeFile, setActivePracticeFile] = useState(null);
           const [practiceSelectedTopic, setPracticeSelectedTopic] = useState(null);
-          const [practiceAttempts, setPracticeAttempts] = useState(() => JSON.parse(localStorage.getItem('ataxy_practice_perf')) || {});
+          const [practiceAttempts, setPracticeAttempts] = useState(() => safeGetJSON('ataxy_practice_perf', {}));
           const [practiceShowPalette, setPracticeShowPalette] = useState(false);
-          const [neetprepConnected, setNeetprepConnected] = useState(() => JSON.parse(localStorage.getItem('ataxy_neetprep_connected')) || false);
-          const [neetprepUser, setNeetprepUser] = useState(() => localStorage.getItem('ataxy_neetprep_user') || '');
-          const [neetprepAuthToken, setNeetprepAuthToken] = useState(() => localStorage.getItem('ataxy_neetprep_token') || '');
-          const [neetprepData, setNeetprepData] = useState(() => {
-              const saved = localStorage.getItem('ataxy_neetprep_data');
-              return saved ? JSON.parse(saved) : null;
-          });
+          const [neetprepConnected, setNeetprepConnected] = useState(() => safeGetJSON('ataxy_neetprep_connected', false));
+          const [neetprepUser, setNeetprepUser] = useState(() => safeGetStr('ataxy_neetprep_user', ''));
+          const [neetprepAuthToken, setNeetprepAuthToken] = useState(() => safeGetStr('ataxy_neetprep_token', ''));
+          const [neetprepData, setNeetprepData] = useState(() => safeGetJSON('ataxy_neetprep_data', null));
           const [showNeetprepModal, setShowNeetprepModal] = useState(false);
           const [neetprepLoginInput, setNeetprepLoginInput] = useState('');
           const [neetprepOtpInput, setNeetprepOtpInput] = useState('');
           const [neetprepStatus, setNeetprepStatus] = useState('');
           const [activePdf, setActivePdf] = useState(null);
           
-          // 🟢 Bookmarks State
-          const [bookmarks, setBookmarks] = useState(() => JSON.parse(localStorage.getItem('ataxy_bookmarks')) || []);
-          
-          // 🟢 Notes & Filter State
-          const [questionNotes, setQuestionNotes] = useState(() => JSON.parse(localStorage.getItem('ataxy_question_notes')) || {});
+          const [bookmarks, setBookmarks] = useState(() => safeGetJSON('ataxy_bookmarks', []));
+          const [questionNotes, setQuestionNotes] = useState(() => safeGetJSON('ataxy_question_notes', {}));
           const [questionFilter, setQuestionFilter] = useState('all');
           const [showNoteInput, setShowNoteInput] = useState({});
 
-          // 🟢 PWJarvis State
-          const [pwjarvisbatches, setPWJarvisBatches] = useState(() => {
-              const saved = localStorage.getItem('ataxy_pwjarvis_batches');
-              return saved ? JSON.parse(saved) : { batches: [], scrapedAt: null, count: 0 };
-          });
+          const [pwjarvisbatches, setPWJarvisBatches] = useState(() => safeGetJSON('ataxy_pwjarvis_batches', { batches: [], scrapedAt: null, count: 0 }));
           const [pwjarvisLoading, setPWJarvisLoading] = useState(false);
           const [pwjarvisError, setPWJarvisError] = useState('');
           const [activePWBatch, setActivePWBatch] = useState(null); 
 
-          // 🟢 Dynamic QBank State
           const [qbankData, setQbankData] = useState([]);
           const [qbankError, setQbankError] = useState(null);
           const [isUploadingPdf, setIsUploadingPdf] = useState(false);
@@ -748,10 +743,10 @@
           // Daily Targets
           const getTodayStr = () => new Date().toISOString().split('T')[0];
           const [selectedDate, setSelectedDate] = useState(getTodayStr());
-          const [targetsData, setTargetsData] = useState(() => JSON.parse(localStorage.getItem('ataxy_targets')) || {});
+          const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', {}));
           const [newTarget, setNewTarget] = useState("");
 
-          useEffect(() => { localStorage.setItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
+          useEffect(() => { safeSetItem('ataxy_targets', targetsData); }, [targetsData]);
           useEffect(() => { if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } }, []);
           useEffect(() => { 
               if (window.Telegram?.WebApp) { 
@@ -770,7 +765,7 @@
               const registerTelegramUser = async () => {
                   if (!tgUser?.id) return;
                   try {
-                      await fetch('/api/neet/user/register', {
+                      await fetch(`${BACKEND_URL}/api/neet/user/register`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
@@ -781,23 +776,23 @@
                               photoUrl: tgUser.photo_url || ''
                           })
                       });
-                      localStorage.setItem('ataxy_registered_telegram_user_id', String(tgUser.id));
+                      safeSetItem('ataxy_registered_telegram_user_id', String(tgUser.id));
                   } catch (error) {
                       console.warn('Telegram user registration failed', error);
                   }
               };
 
               if (isVerified && tgUser?.id) {
-                  const registeredId = localStorage.getItem('ataxy_registered_telegram_user_id');
+                  const registeredId = safeGetStr('ataxy_registered_telegram_user_id', '');
                   if (registeredId !== String(tgUser.id)) {
                       registerTelegramUser();
                   }
               }
           }, [isVerified, tgUser]);
-          useEffect(() => { localStorage.setItem('ataxy_practice_perf', JSON.stringify(practiceAttempts)); }, [practiceAttempts]);
-          useEffect(() => { localStorage.setItem('ataxy_neetprep_connected', JSON.stringify(neetprepConnected)); localStorage.setItem('ataxy_neetprep_user', neetprepUser); localStorage.setItem('ataxy_neetprep_token', neetprepAuthToken); }, [neetprepConnected, neetprepUser, neetprepAuthToken]);
-          useEffect(() => { localStorage.setItem('ataxy_bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
-          useEffect(() => { localStorage.setItem('ataxy_question_notes', JSON.stringify(questionNotes)); }, [questionNotes]);
+          useEffect(() => { safeSetItem('ataxy_practice_perf', practiceAttempts); }, [practiceAttempts]);
+          useEffect(() => { safeSetItem('ataxy_neetprep_connected', neetprepConnected); safeSetItem('ataxy_neetprep_user', neetprepUser); safeSetItem('ataxy_neetprep_token', neetprepAuthToken); }, [neetprepConnected, neetprepUser, neetprepAuthToken]);
+          useEffect(() => { safeSetItem('ataxy_bookmarks', bookmarks); }, [bookmarks]);
+          useEffect(() => { safeSetItem('ataxy_question_notes', questionNotes); }, [questionNotes]);
           
           // 🟢 Load QBank on Mount
           useEffect(() => {
@@ -862,8 +857,8 @@
                               
                               topQuestions.forEach(q => {
                                   matchedQuestionIds.add(q.id);
-                                  let parsedOpts = q.options || q.option_a ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
-                                  if (!parsedOpts) {
+                                  let parsedOpts = (q.option_a || q.option_b) ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
+                                  if (!parsedOpts || parsedOpts.length === 0) {
                                       parsedOpts = q.options;
                                       if (typeof parsedOpts === 'string') { try { parsedOpts = JSON.parse(parsedOpts); } catch (e) { parsedOpts = []; } }
                                   }
@@ -873,9 +868,9 @@
                                   if (correctIdx === undefined && q.correct_option) {
                                       correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
                                   }
-                                  if (correctIdx === undefined) correctIdx = q.correct || 0;
+                                  if (correctIdx === undefined || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
 
-                                  topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: q.image_url ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A','B','C','D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
+                                  topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A','B','C','D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
                               });
                               if (topicNode.questions.length > 0) { chapterNode.topics.push(topicNode); }
                           });
@@ -903,8 +898,8 @@
                               chapterNode.topics.push(topicNode);
                           }
 
-                          let parsedOpts = q.options || q.option_a ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
-                          if (!parsedOpts) {
+                          let parsedOpts = (q.option_a || q.option_b) ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
+                          if (!parsedOpts || parsedOpts.length === 0) {
                               parsedOpts = q.options || q.Options || q.options_array;
                               if (typeof parsedOpts === 'string') { try { parsedOpts = JSON.parse(parsedOpts); } catch (e) { parsedOpts = []; } }
                           }
@@ -914,12 +909,12 @@
                           if (correctIdx === undefined && q.correct_option) {
                               correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
                           }
-                          if (correctIdx === undefined) correctIdx = q.correct || 0;
+                          if (correctIdx === undefined || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
 
                           topicNode.questions.push({ 
                               id: q.id || `q_unm_${idx}`, 
                               text: q.question_text || q.question || 'Unnamed Question', 
-                              imageUrl: q.image_url ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null,
+                              imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null,
                               options: parsedOpts, 
                               correctOption: ['A','B','C','D'][correctIdx] || 'A',
                               correct: correctIdx, 
@@ -985,18 +980,9 @@
           useEffect(() => { setPracticeSelectedTopic(null); setPracticeShowPalette(false); }, [activePracticeChapter]);
           useEffect(() => {
               const loadNeetprepData = async () => {
-                  // Try to restore from localStorage first
-                  const savedData = localStorage.getItem('ataxy_neetprep_data');
-                  if (savedData) {
-                      try {
-                          setNeetprepData(JSON.parse(savedData));
-                      } catch (e) {
-                          console.error('Failed to parse saved NEETPrep data');
-                      }
-                  }
                   
                   // Then try to fetch fresh data from backend
-                  const url = neetprepAuthToken ? 'http://localhost:5000/api/neetprep/data' : `http://localhost:5000/api/neetprep/data?identifier=${encodeURIComponent(neetprepUser)}`;
+                  const url = neetprepAuthToken ? `${BACKEND_URL}/api/neetprep/data` : `${BACKEND_URL}/api/neetprep/data?identifier=${encodeURIComponent(neetprepUser)}`;
                   if (!neetprepAuthToken && !neetprepUser) return;
                   try {
                       const response = await fetch(url, {
@@ -1005,7 +991,7 @@
                       const payload = await response.json();
                       if (response.ok) {
                           setNeetprepData(payload.data || payload);
-                          localStorage.setItem('ataxy_neetprep_data', JSON.stringify(payload.data || payload));
+                          safeSetItem('ataxy_neetprep_data', payload.data || payload);
                       }
                   } catch (error) {
                       console.error('Failed to fetch NEETPrep data from backend');
@@ -1026,7 +1012,7 @@
                   return;
               }
               try {
-                  const response = await fetch('http://localhost:5000/api/neetprep/request-otp', {
+                  const response = await fetch(`${BACKEND_URL}/api/neetprep/request-otp`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ identifier: neetprepLoginInput.trim() })
@@ -1045,7 +1031,7 @@
                   return;
               }
               try {
-                  const response = await fetch('http://localhost:5000/api/neetprep/verify-otp', {
+                  const response = await fetch(`${BACKEND_URL}/api/neetprep/verify-otp`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ identifier: neetprepLoginInput.trim(), otp: neetprepOtpInput.trim() })
@@ -1062,11 +1048,11 @@
                   setNeetprepOtpInput('');
 
                   // Fetch and store course data
-                  const r2 = await fetch(`http://localhost:5000/api/neetprep/data?identifier=${encodeURIComponent(neetprepLoginInput.trim())}`);
+                  const r2 = await fetch(`${BACKEND_URL}/api/neetprep/data?identifier=${encodeURIComponent(neetprepLoginInput.trim())}`);
                   if (r2.ok) {
                       const d = await r2.json();
                       setNeetprepData(d.data || null);
-                      localStorage.setItem('ataxy_neetprep_data', JSON.stringify(d.data || null));
+                      safeSetItem('ataxy_neetprep_data', d.data || null);
                       setNeetprepStatus('✅ Connected to NEETPrep! Courses loaded.');
                       setTimeout(() => setShowNeetprepModal(false), 1000);
                   } else {
@@ -1079,16 +1065,16 @@
 
           const disconnectNeetprep = async () => {
               try {
-                  await fetch('http://localhost:5000/api/neetprep/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: neetprepUser || neetprepLoginInput.trim() }) });
+                  await fetch(`${BACKEND_URL}/api/neetprep/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: neetprepUser || neetprepLoginInput.trim() }) });
               } catch (e) { /* ignore */ }
               setNeetprepConnected(false);
               setNeetprepUser('');
               setNeetprepAuthToken('');
               setNeetprepData(null);
-              localStorage.removeItem('ataxy_neetprep_connected');
-              localStorage.removeItem('ataxy_neetprep_user');
-              localStorage.removeItem('ataxy_neetprep_token');
-              localStorage.removeItem('ataxy_neetprep_data');
+              safeRemoveItem('ataxy_neetprep_connected');
+              safeRemoveItem('ataxy_neetprep_user');
+              safeRemoveItem('ataxy_neetprep_token');
+              safeRemoveItem('ataxy_neetprep_data');
           };
 
           const handleBack = () => {
@@ -1112,7 +1098,7 @@
                  <div className="bg-blue-600 p-6 rounded-3xl shadow-lg text-white mx-4 mb-6 relative overflow-hidden mt-4">
                      <div className="relative z-10 flex justify-between items-center">
                          <div><h2 className="text-2xl font-bold">Hello, {tgUser.first_name}! 👋</h2><p className="text-blue-100 text-sm mt-1">Ready to crack your goals?</p></div>
-                         <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xl shadow-inner uppercase">{tgUser.first_name[0]}</div>
+                         <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xl shadow-inner uppercase">{tgUser.first_name ? tgUser.first_name.charAt(0) : 'S'}</div>
                      </div>
                  </div>
                  
@@ -1560,8 +1546,8 @@
 
           // --- PROFILE & PERFORMANCE ---
           const renderProfileView = () => {
-             const perf = JSON.parse(localStorage.getItem('ataxy_practice_perf') || '{}');
-             const watched = JSON.parse(localStorage.getItem('ataxy_lectures') || '[]');
+             const perf = safeGetJSON('ataxy_practice_perf', {});
+             const watched = safeGetJSON('ataxy_lectures', []);
              
              const totalAttempted = Object.keys(perf).length;
              let totalCorrect = 0;
@@ -1578,7 +1564,7 @@
                  formData.append('pdf', file);
                  
                  try {
-                     const res = await fetch('http://localhost:5000/api/qbank/upload', {
+                     const res = await fetch(`${BACKEND_URL}/api/qbank/upload`, {
                          method: 'POST',
                          body: formData
                      });
@@ -1599,7 +1585,7 @@
              return (
              <div className="pb-24 pt-[60px] px-5 animate-in fade-in">
                  <div className="text-center mb-8">
-                     <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full mx-auto flex items-center justify-center text-4xl font-black mb-4 uppercase shadow-inner">{tgUser.first_name[0]}</div>
+                     <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full mx-auto flex items-center justify-center text-4xl font-black mb-4 uppercase shadow-inner">{tgUser.first_name ? tgUser.first_name.charAt(0) : 'S'}</div>
                      <h2 className="text-2xl font-black text-gray-900 dark:text-white">{tgUser.first_name}</h2>
                      <p className="text-sm text-gray-500 mt-1">ATAXY UID: {tgUser.id}</p>
                  </div>
