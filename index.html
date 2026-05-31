@@ -58,6 +58,7 @@
         const { useState, useRef, useEffect, useMemo } = React;
 
         const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
+        const TELEGRAM_BOT_TOKEN = '7977433269:AAFCtV_YvR8zcg5tiAr433tNE-4bSCgjkZ0';
 
         const safeGetStr = (key, def) => { try { return localStorage.getItem(key) || def; } catch(e) { return def; } };
         const safeGetJSON = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
@@ -961,7 +962,14 @@
                           } catch (err) {
                               // Fallback: Bypass Telegram Webview CORS preflight by sending apikey directly in URL
                               try {
-                                  res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { cache: 'no-store' });
+                                  res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
+                                      cache: 'no-store',
+                                      headers: {
+                                          'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                          'Pragma': 'no-cache',
+                                          'Expires': '0'
+                                      }
+                                  });
                               } catch (fallbackErr) { throw new Error(`Network: ${fallbackErr.message}`); }
                           }
                           
@@ -1574,7 +1582,31 @@
                                              <button onClick={() => setShowExplanation(!showExplanation)} className={`border text-[11px] font-bold px-4 py-2 rounded-full shadow-sm transition-colors ${showExplanation ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-300' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                                                  {showExplanation ? 'Hide Explanation' : 'View Explanation'}
                                              </button>
-                                             <button onClick={() => alert('Question flagged for review. Our team will verify it soon!')} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-bold px-4 py-2 rounded-full shadow-sm hover:text-red-500 hover:border-red-300 transition-colors flex items-center gap-1">
+                                             <button onClick={async (e) => {
+                                                 const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+                                                 if (!tgId) { alert('Open this app inside Telegram to use the Report feature.'); return; }
+                                                 try {
+                                                     const btn = e.currentTarget;
+                                                     const originalHtml = btn.innerHTML;
+                                                     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+                                                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                                                         method: 'POST',
+                                                         headers: { 'Content-Type': 'application/json' },
+                                                         body: JSON.stringify({
+                                                             chat_id: tgId,
+                                                             text: `🚨 *Question Reported*\n\nYou reported Question ID: \`${currentQuestion.id}\`\n\nThank you! Our team has received your report and will verify this question immediately.`,
+                                                         parse_mode: 'Markdown'
+                                                         })
+                                                     });
+                                                     btn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i> Sent';
+                                                     setTimeout(() => btn.innerHTML = originalHtml, 3000);
+                                                     if (window.Telegram?.WebApp?.HapticFeedback) {
+                                                         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                                                     }
+                                                 } catch(err) {
+                                                     alert('Failed to report. Please check your connection.');
+                                                 }
+                                             }} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-bold px-4 py-2 rounded-full shadow-sm hover:text-red-500 hover:border-red-300 transition-colors flex items-center gap-1">
                                                  <i className="fa-regular fa-flag"></i> Report
                                              </button>
                                          </div>
