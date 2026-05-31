@@ -844,3 +844,39 @@ app.listen(PORT, () => {
   console.log(`📡 NEET Practice API: GET http://localhost:${PORT}/api/neet/practice-topics`);
   console.log(`📡 NEET Quiz API: GET http://localhost:${PORT}/api/neet/quiz/:subject/:chapter/:topic`);
 });
+
+// ============================================================
+// TELEGRAM BOT WEBAPP INTEGRATION
+// ============================================================
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7977433269:AAFCtV_YvR8zcg5tiAr433tNE-4bSCgjkZ0';
+// Automatically try to configure the Bot's Menu button to launch your App
+const setupTelegramBotMenu = async () => {
+  if (!TELEGRAM_BOT_TOKEN) return;
+  // Define your Frontend URL here (Make sure to set this in your .env for production)
+  const webAppUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'https://risha-ilahe.github.io/ATAXYbot/';
+  
+  try {
+    const response = await fetchFn(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setChatMenuButton`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        menu_button: {
+          type: 'web_app',
+          text: 'Practice 🚀',
+          web_app: { url: webAppUrl }
+        }
+      })
+    });
+    
+    const result = await response.json();
+    if (result.ok) {
+      console.log(`✅ Telegram Bot Menu Button successfully linked to Web App`);
+    } else {
+      console.warn(`⚠️ Could not set Telegram Bot Menu Button: ${result.description}`);
+    }
+  } catch (error) {
+    console.error(`❌ Error configuring Telegram Bot Web App: ${error.message}`);
+  }
+};
+
+setupTelegramBotMenu();
