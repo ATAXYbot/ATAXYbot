@@ -889,6 +889,7 @@
           const [newTarget, setNewTarget] = useState("");
 
           useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
+          useEffect(() => { if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } }, []);
           useEffect(() => { 
               if (window.Telegram?.WebApp) { 
                   window.Telegram.WebApp.ready(); 
@@ -943,61 +944,59 @@
                       
                       // Fetch directly from your Supabase REST API
                       const supabaseUrl = 'https://supabase-proxy.thevoicesession.workers.dev/rest/v1';
-                      const directSupabaseUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co/rest/v1';
                       const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+                      const headers = { 
+                          'apikey': apikey, 
+                          'Authorization': `Bearer ${apikey}`,
+                          'Content-Type': 'application/json'
+                      };
 
                       const fetchTable = async (table) => {
-                          const urls = [
-                              `${supabaseUrl}/${table}?select=*&limit=5000`,
-                              `${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`,
-                              `${directSupabaseUrl}/${table}?select=*&limit=5000`,
-                              `${directSupabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`
-                          ];
-
-                          let lastError;
-                          for (const url of urls) {
+                          let res;
+                          try {
+                              res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`, { 
+                                  headers,
+                                  cache: 'no-store' // Safely bypasses Telegram cache without breaking Supabase URL
+                              });
+                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          } catch (err) {
+                              // Fallback: Bypass Telegram Webview CORS preflight by sending apikey directly in URL
                               try {
-                                  const reqHeaders = { 'Accept': 'application/json' };
-                                  // Add auth headers only if apikey isn't in URL 
-                                  if (!url.includes('apikey=')) {
-                                      reqHeaders['apikey'] = apikey;
-                                      reqHeaders['Authorization'] = `Bearer ${apikey}`;
-                                  }
-                                  
-                                  const res = await fetch(url, { 
-                                      headers: reqHeaders,
-                                      cache: 'no-store'
-                                  });
-                                  if (res.ok) {
-                                      const text = await res.text();
-                                      let data;
-                                      try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid JSON"); }
-                                      
-                                      let arr = [];
-                                      if (Array.isArray(data)) arr = data;
-                                      else if (data && Array.isArray(data.data)) arr = data.data;
-                                      else if (data && typeof data === 'object') {
-                                          for (const key in data) {
-                                              if (Array.isArray(data[key])) { arr = data[key]; break; }
-                                          }
+                                  res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
+                                      cache: 'no-store',
+                                      headers: {
+                                          'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                          'Pragma': 'no-cache',
+                                          'Expires': '0'
                                       }
-                                      
-                                      arr.forEach((item, i) => { 
-                                          if (!item.id) {
-                                              const txt = (item.question_text || item.question || '').substring(0, 15).replace(/[^a-zA-Z0-9]/g, '');
-                                              item.id = `${table}_${i}_${txt}`;
-                                          } else {
-                                              item.id = String(item.id);
-                                          }
-                                      });
-                                      return arr;
-                                  }
-                                  lastError = new Error(`HTTP ${res.status}`);
-                              } catch (err) {
-                                  lastError = err;
+                                  });
+                              } catch (fallbackErr) { throw new Error(`Network: ${fallbackErr.message}`); }
+                          }
+                          
+                          if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
+                          
+                          const text = await res.text();
+                          let data;
+                          try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid JSON"); }
+                          
+                          let arr = [];
+                          if (Array.isArray(data)) arr = data;
+                          else if (data && Array.isArray(data.data)) arr = data.data;
+                          else if (data && typeof data === 'object') {
+                              for (const key in data) {
+                                  if (Array.isArray(data[key])) { arr = data[key]; break; }
                               }
                           }
-                          throw lastError || new Error("All fetch attempts failed");
+                          
+                          arr.forEach((item, i) => { 
+                              if (!item.id) {
+                                  const txt = (item.question_text || item.question || '').substring(0, 15).replace(/[^a-zA-Z0-9]/g, '');
+                                  item.id = `${table}_${i}_${txt}`;
+                              } else {
+                                  item.id = String(item.id);
+                              }
+                          });
+                          return arr;
                       };
 
                       let q1 = [], q2 = [];
