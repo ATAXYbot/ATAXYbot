@@ -953,13 +953,19 @@
                       const fetchTable = async (table) => {
                           let res;
                           try {
-                              res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`, { headers });
+                              res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`, { 
+                                  headers,
+                                  cache: 'no-store' // Safely bypasses Telegram cache without breaking Supabase URL
+                              });
+                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
                           } catch (err) {
-                              // Fallback: fetch without custom headers in case CORS blocks preflight
-                              res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`);
+                              // Fallback: Bypass Telegram Webview CORS preflight by sending apikey directly in URL
+                              try {
+                                  res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { cache: 'no-store' });
+                              } catch (fallbackErr) { throw new Error(`Network: ${fallbackErr.message}`); }
                           }
                           
-                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
                           
                           const text = await res.text();
                           let data;
@@ -1111,7 +1117,7 @@
                       console.error("Cloudflare Proxy Fetch Error:", e);
                       let errorMsg = e.message;
                       if (errorMsg === "Failed to fetch" || errorMsg.includes("NetworkError")) {
-                          errorMsg = "Cloudflare Proxy connection blocked. Please check your internet or VPN.";
+                          errorMsg = "Telegram Webview blocked the connection. Try closing the mini-app and opening it again.";
                       }
                       setQbankError(errorMsg);
                       setQbankData(ALIEN_QBANK); // Fallback to local hardcoded data on error
