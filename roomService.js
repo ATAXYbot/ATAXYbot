@@ -23,18 +23,24 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     const joinRoom = async (roomData, password = null) => {
         try {
             // 1. Fetch Token
-            const res = await fetch(`${SUPABASE_PROXY_URL}/functions/v1/agora-token`, {
+            const res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                    'apikey': SUPABASE_ANON_KEY 
+                    'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
                 },
                 body: JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password })
             });
             
-            if (!res.ok) throw new Error((await res.json()).error);
-            const { token } = await res.json();
+            if (!res.ok) {
+                throw new Error(`Token fetch failed with status ${res.status}`);
+            }
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            
+            const token = data.token;
+            if (!token) throw new Error("Received an empty token from the server.");
 
             // 2. Initialize Agora
             const agoraClient = window.AgoraRTC.createClient({ mode: "live", codec: "vp8" });

@@ -744,26 +744,29 @@
 
                     let token = null;
                     try {
-                        const res = await fetch(`${SUPABASE_PROXY_URL}/functions/v1/agora-token`, {
+                        const res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
                             method: 'POST',
                             headers: { 
                                 'Content-Type': 'application/json', 
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                                'apikey': SUPABASE_ANON_KEY 
+                                'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
                             },
                             body: JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password })
                         });
                         
-                        if (res.ok) {
-                            const { token: fetchedToken, error } = await res.json();
-                            if (error) { alert(error); return false; }
-                            token = fetchedToken;
-                        } else {
+                        if (!res.ok) {
                             throw new Error(`Failed to fetch token. Server responded with ${res.status}`);
+                        }
+
+                        const data = await res.json();
+                        if (data.error) { alert(data.error); return false; }
+                        
+                        token = data.token;
+                        if (!token) {
+                            throw new Error("Received an empty token from the server.");
                         }
                     } catch (e) {
                         console.error("Could not fetch Agora token. Cannot join room.", e);
-                        alert("Failed to connect to Voice Gateway. Please check your connection.");
+                        alert("Failed to connect to Voice Gateway: " + e.message);
                         return false;
                     }
 

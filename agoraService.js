@@ -4,7 +4,6 @@
  */
 
 const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
-const AGORA_TOKEN = null; // Unsecured testing mode as requested
 
 export const useAgoraVoice = (roomName, user) => {
     const [client, setClient] = React.useState(null);
@@ -43,9 +42,30 @@ export const useAgoraVoice = (roomName, user) => {
             });
 
             try {
+                // Fetch token first
+                const uid = String(user?.id || Math.floor(Math.random() * 10000));
+                const res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
+                    },
+                    body: JSON.stringify({ channelName: String(roomName), uid })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Token fetch failed with status ${res.status}`);
+                }
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                const token = data.token;
+                
+                if (!token) throw new Error("Received an empty token from the server.");
+
                 // By default, join as audience
                 await agoraClient.setClientRole("audience");
-                await agoraClient.join(AGORA_APP_ID, String(roomName), AGORA_TOKEN, String(user?.id || Math.floor(Math.random() * 10000)));
+                await agoraClient.join(AGORA_APP_ID, String(roomName), token, uid);
                 setIsConnected(true);
             } catch (e) {
                 console.error("Agora Join Failed:", e);
