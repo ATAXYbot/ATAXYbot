@@ -784,7 +784,7 @@
                     });
 
                     await agoraClient.setClientRole("audience");
-                    await agoraClient.join(AGORA_APP_ID, roomData.channel_name, token, String(tgUser.id));
+                    await agoraClient.join(AGORA_APP_ID, String(roomData.channel_name), token, String(tgUser?.id || "1001"));
                     
                     if (supabase) {
                         await supabase.from('room_participants').upsert({

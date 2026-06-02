@@ -45,7 +45,7 @@ export const useAgoraVoice = (roomName, user) => {
             try {
                 // By default, join as audience
                 await agoraClient.setClientRole("audience");
-                await agoraClient.join(AGORA_APP_ID, roomName, AGORA_TOKEN, user?.id ? String(user.id) : String(Math.floor(Math.random() * 10000)));
+                await agoraClient.join(AGORA_APP_ID, String(roomName), AGORA_TOKEN, String(user?.id || Math.floor(Math.random() * 10000)));
                 setIsConnected(true);
             } catch (e) {
                 console.error("Agora Join Failed:", e);

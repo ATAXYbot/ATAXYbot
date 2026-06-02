@@ -55,7 +55,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
 
             // CRITICAL: Join using String User Account
             await agoraClient.setClientRole("audience");
-            await agoraClient.join(AGORA_APP_ID, roomData.channel_name, token, String(tgUser.id));
+            await agoraClient.join(AGORA_APP_ID, String(roomData.channel_name), token, String(tgUser?.id || "1001"));
             
             // 3. Setup Supabase Realtime Ephemeral Channel
             await supabase.from('room_participants').upsert({
