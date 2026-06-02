@@ -111,12 +111,83 @@
         const { useState, useRef, useEffect, useMemo } = React;
 
         const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
-        const TELEGRAM_BOT_TOKEN = '7977433269:AAFCtV_YvR8zcg5tiAr433tNE-4bSCgjkZ0';
 
         const safeGetStr = (key, def) => { try { return localStorage.getItem(key) || def; } catch(e) { return def; } };
         const safeGetJSON = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
         const safeSetItem = (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} };
         const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
+
+        // ==========================================
+        // 🤖 SECURE AI MULTI-MODEL FALLBACK ENGINE
+        // ==========================================
+        const fetchGeminiSecure = async (prompt, history = [], systemContext = "") => {
+            const modelsToTry = [
+              "gemini-3.1-flash-lite", // The current fastest, high-volume model
+              "gemini-3.5-flash",      // The current stable, smart fallback
+              "gemini-2.5-flash-lite", // Reliable older backup
+              "gemini-2.5-flash"       // Reliable older backup
+            ];
+            const proxyUrl = "https://ataxy-ai-proxy.thevoicesession.workers.dev";
+            
+            let contents = history.map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.text }]
+            }));
+            contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+            let lastError = null;
+
+            for (const model of modelsToTry) {
+                try {
+                    let data;
+                    let isOk = false;
+
+                    // Attempt 1: Route through user's Cloudflare Proxy
+                    try {
+                        const res = await fetch(proxyUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ model, contents, systemInstruction: systemContext })
+                        });
+                        
+                        const rawText = await res.text();
+                        try {
+                            data = JSON.parse(rawText);
+                        } catch (parseError) {
+                            console.error(`[AI Proxy] Non-JSON response for ${model}:`, rawText);
+                            throw new Error(`Proxy returned an invalid format. Status: ${res.status}`);
+                        }
+                        isOk = res.ok;
+                        
+                        if (!isOk) {
+                            throw new Error(data?.error?.message || `Proxy failed with status: ${res.status}`);
+                        }
+                    } catch (e) {
+                        console.error(`[AI Proxy] Network or Fetch error for ${model}:`, e);
+                        lastError = e;
+                        isOk = false;
+                    }
+
+                    if (!isOk) {
+                        console.warn(`Proxy failed for model ${model}. Make sure your Cloudflare worker is deployed correctly.`);
+                        continue; // Skip to the next model
+                    }
+                    
+                    if (isOk && data.candidates && data.candidates.length > 0) {
+                        return data.candidates[0].content.parts[0].text;
+                    } else if (data.promptFeedback?.blockReason) {
+                        throw new Error(`Blocked by safety settings: ${data.promptFeedback.blockReason}`);
+                    } else {
+                        const errMsg = data.error?.message || data.message || (typeof data.error === 'string' ? data.error : null) || `Model ${model} returned empty response`;
+                        throw new Error(errMsg);
+                    }
+                } catch (err) {
+                    console.warn(`[AI Fallback] ${model} failed:`, err.message);
+                    lastError = err;
+                }
+            }
+            return `All AI models are currently busy or unavailable. Please try again later. (Error: ${lastError?.message})`;
+        };
 
         // =========================================================================
         // ⬇️ ADD YOUR PRACTICE QUESTIONS HERE (ALIEN PLATFORM QBANK) ⬇️
@@ -178,6 +249,16 @@
             
             // 6. Convert all newlines to <br/> for HTML rendering
             t = t.replace(/\n/g, '<br/>');
+            
+            // --- ADDED AI MARKDOWN RENDERING SUPPORT ---
+            t = t.replace(/\*\*(.+?)\*\*/g, '<strong class="text-blue-600 dark:text-blue-400">$1</strong>');
+            t = t.replace(/__(.+?)__/g, '<strong class="text-blue-600 dark:text-blue-400">$1</strong>');
+            t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            t = t.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 text-pink-500 px-1 py-0.5 rounded text-xs border border-gray-200 dark:border-gray-700">$1</code>');
+            t = t.replace(/### (.*)/g, '<h3 class="text-lg font-bold mt-3 mb-1 text-gray-800 dark:text-gray-100">$1</h3>');
+            t = t.replace(/## (.*)/g, '<h2 class="text-xl font-bold mt-3 mb-1 text-gray-800 dark:text-gray-100">$1</h2>');
+            t = t.replace(/# (.*)/g, '<h1 class="text-2xl font-bold mt-3 mb-1 text-gray-800 dark:text-gray-100">$1</h1>');
+            t = t.replace(/(?:<br\s*\/?>)?\s*[-•]\s+(.*)/g, '<li class="ml-4 list-disc my-1">$1</li>');
             
             // 7. Clean up excessive breaks
             t = t.replace(/(?:<br\s*\/?>\s*){3,}/g, '<br/><br/>');
@@ -390,94 +471,112 @@
         };
 
         // ==========================================
-        // 🚀 SMART PRACTICE QUESTION CARD (NEETPREP REPLICA)
+        // 🚀 AI QUESTION ASSISTANT COMPONENT
         // ==========================================
-        const QuestionCard = ({ q, attemptIdx, onAttempt, onClear }) => {
+        const QuestionAIAssistant = ({ q, attemptIdx }) => {
             const isAnswered = attemptIdx !== undefined;
+            const [showAIChat, setShowAIChat] = useState(false);
+            const [aiMsgs, setAiMsgs] = useState([]);
+            const [aiInput, setAiInput] = useState("");
+            const [aiTyping, setAiTyping] = useState(false);
+            const chatEndRef = useRef(null);
+
+            useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMsgs, aiTyping]);
+
+            // Reset chat if the user navigates to a new question
+            useEffect(() => {
+                setShowAIChat(false);
+                setAiMsgs([]);
+                setAiInput("");
+                setAiTyping(false);
+            }, [q.id]);
+
+            const handleAskAI = async (promptText) => {
+                if (!promptText.trim()) return;
+                
+                const userMsg = promptText;
+                setAiMsgs(prev => [...prev, { sender: 'user', text: userMsg }]);
+                setAiInput("");
+                setAiTyping(true);
+
+                const systemContext = `You are ATAXY AI Mentor, an encouraging academic tutor for NEET/JEE.
+The student is practicing a question and needs help.
+QUESTION CONTEXT:
+"${q.text}"
+OPTIONS:
+1. ${q.options[0]}
+2. ${q.options[1]}
+3. ${q.options[2]}
+4. ${q.options[3]}
+CORRECT ANSWER: Option ${q.correctOption} (${q.options[q.correct]})
+USER'S ANSWER: ${isAnswered ? `Option ${['A','B','C','D'][attemptIdx]} (${q.options[attemptIdx]})` : 'Not answered yet'}
+EXPLANATION GIVEN: ${q.explanation || 'None'}
+
+INSTRUCTIONS: 
+- Address the user's specific doubt concisely.
+- Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas.
+- Be encouraging, especially if they answered incorrectly.`;
+
+                const aiReply = await fetchGeminiSecure(userMsg, aiMsgs, systemContext);
+                
+                setAiMsgs(prev => [...prev, { sender: 'ai', text: aiReply }]);
+                setAiTyping(false);
+            };
 
             return (
-                <div id={`question-card-${q.id}`} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden mb-6 scroll-mt-[180px]">
-                    <div className="p-5">
-                        <div className="flex justify-between items-start mb-4 gap-2">
-                            <div className="text-gray-800 dark:text-gray-100 leading-relaxed text-[15px] font-medium"><span className="font-black text-gray-900 dark:text-white mr-1 text-base">Q{q.globalIndex}.</span> <FormattedText text={q.text} className="inline" /></div>
-                            <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[9px] px-2 py-1 rounded font-bold whitespace-nowrap line-clamp-1 max-w-[100px] shrink-0 uppercase tracking-wider">{q.topicName}</span>
-                        </div>
-                        
-                        {/* Options List */}
-                        <div className="flex flex-col border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mb-5">
-                            {q.options.map((opt, idx) => {
-                                const isSelected = attemptIdx === idx;
-                                const isCorrectChoice = idx === q.correct;
-                                
-                                let bg = "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200";
-                                let numBg = "border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-500";
-                                
-                                if (isAnswered) {
-                                    if (isCorrectChoice) {
-                                        bg = "bg-[#e6f4ea] dark:bg-green-900/40 text-[#1e7e34] dark:text-green-300 font-bold";
-                                        numBg = "border-r border-[#cce8d6] dark:border-green-800 bg-[#cce8d6] dark:bg-green-800 text-[#1e7e34] dark:text-green-200";
-                                    } else if (isSelected) {
-                                        bg = "bg-[#fce8e6] dark:bg-red-900/40 text-[#c5221f] dark:text-red-300 font-bold";
-                                        numBg = "border-r border-[#fad2cf] dark:border-red-800 bg-[#fad2cf] dark:bg-red-800 text-[#c5221f] dark:text-red-200";
-                                    } else {
-                                        bg = "opacity-50 bg-white dark:bg-gray-800";
-                                    }
-                                }
+                <>
+                    <button onClick={() => setShowAIChat(!showAIChat)} className={`border text-xs font-semibold px-4 py-2 rounded-sm shadow-sm transition-colors flex items-center gap-1 ${showAIChat ? 'bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
+                        <i className="fa-solid fa-sparkles text-purple-500"></i> {showAIChat ? 'Close AI Mentor' : 'Ask AI Mentor'}
+                    </button>
 
-                                return (
-                                    <div key={idx} className={`np-grid-btn w-full text-left flex items-stretch transition-colors ${bg}`}>
-                                        <div className={`w-10 flex items-center justify-center shrink-0 font-bold text-[15px] ${numBg}`}>({idx + 1})</div>
-                                        <div className="p-3.5 text-sm w-full text-left break-words overflow-hidden"><FormattedText text={opt} /></div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        
-                        {/* Badges */}
-                        <div className="flex gap-2 mb-2">
-                            {q.ncert && <span className="bg-[#d49a4e] text-white text-[10px] font-bold px-3 py-1 rounded uppercase shadow-sm">From NCERT</span>}
-                            {q.accuracy && <span className="bg-[#d49a4e] text-white text-[10px] font-bold px-3 py-1 rounded uppercase shadow-sm">{q.accuracy} Correct</span>}
-                        </div>
-                    </div>
-
-                    {/* Bottom Action Area */}
-                    <div className="bg-gray-50 dark:bg-gray-800 p-3.5 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-3">
-                        {/* 4 Option Buttons Array */}
-                        <div className="grid grid-cols-4 gap-2">
-                            {[0, 1, 2, 3].map(btnIdx => {
-                                const isSelected = attemptIdx === btnIdx;
-                                const isCorrectChoice = btnIdx === q.correct;
-                                let btnClass = "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 shadow-sm";
-                                
-                                if(isAnswered) {
-                                    if(isCorrectChoice) btnClass = "bg-[#0eb582] text-white border-[#0eb582]";
-                                    else if(isSelected) btnClass = "bg-[#e53935] text-white border-[#e53935]";
-                                    else btnClass = "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-400 opacity-50";
-                                }
-
-                                return (
-                                    <button key={btnIdx} disabled={isAnswered} onClick={() => onAttempt(q.id, btnIdx)} className={`py-2 rounded-lg border font-bold flex flex-col items-center justify-center transition-all ${btnClass}`}>
-                                        <span>{btnIdx + 1}</span>
-                                        {isAnswered && <span className="text-[8px] font-normal opacity-80 mt-0.5">{isCorrectChoice ? 'Correct' : isSelected ? 'Wrong' : ''}</span>}
-                                    </button>
-                                )
-                            })}
-                        </div>
-
-                        {/* After Attempt Actions */}
-                        {isAnswered && (
-                            <div className="flex flex-wrap gap-2 justify-between items-center animate-in fade-in pt-2">
-                                <div className="flex gap-2">
-                                    <button className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-bold px-4 py-2 rounded-full shadow-sm hover:bg-gray-100 transition-colors">View Explanation</button>
-                                    <button className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-bold px-4 py-2 rounded-full shadow-sm hover:bg-gray-100 transition-colors">Video Ref.</button>
-                                </div>
-                                <button onClick={() => onClear(q.id)} className="text-red-500 hover:text-red-600 text-xs font-bold p-2 transition-colors flex items-center gap-1"><i className="fa-solid fa-rotate-left"></i> Clear</button>
+                    {showAIChat && (
+                        <div className="w-full mt-3 bg-purple-50 dark:bg-gray-800/80 border border-purple-200 dark:border-purple-900/50 rounded-sm p-4 animate-in fade-in">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] shadow-sm"><i className="fa-solid fa-robot"></i></div>
+                                <span className="font-bold text-xs text-purple-800 dark:text-purple-300">Context-Aware Mentor</span>
                             </div>
-                        )}
-                    </div>
-                </div>
-            )
-        }
+                            
+                            <div className="max-h-[300px] overflow-y-auto no-scrollbar space-y-3 mb-3">
+                                {aiMsgs.length === 0 && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 italic">Ask me anything about this specific question! I know what you answered.</div>
+                                )}
+                                {aiMsgs.map((m, i) => (
+                                    <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
+                                            <FormattedText text={m.text} />
+                                        </div>
+                                    </div>
+                                ))}
+                                {aiTyping && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 p-3 rounded-2xl rounded-bl-none flex gap-1 items-center shadow-sm">
+                                            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></div>
+                                            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={chatEndRef}></div>
+                            </div>
+
+                            {aiMsgs.length === 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    <button onClick={() => handleAskAI("Can you explain this step-by-step?")} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold px-3 py-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors shadow-sm">Explain step-by-step</button>
+                                    {isAnswered && attemptIdx !== q.correct && (
+                                        <button onClick={() => handleAskAI("Why is my answer wrong?")} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold px-3 py-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors shadow-sm">Why is my answer wrong?</button>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                <input value={aiInput} onChange={(e) => setAiInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAskAI(aiInput)} placeholder="Type your doubt..." className="flex-1 bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 dark:text-white shadow-inner" />
+                                <button onClick={() => handleAskAI(aiInput)} disabled={aiTyping || !aiInput.trim()} className="w-10 h-10 bg-purple-600 text-white rounded-xl flex items-center justify-center hover:bg-purple-700 shadow-sm disabled:opacity-50 transition-colors"><i className="fa-solid fa-paper-plane text-xs"></i></button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        };
 
 
         // ==========================================
@@ -607,10 +706,60 @@
         // ==========================================
         // 🎙️ AGORA REAL-TIME LAYER & WEPLAY VOICE ROOMS (ISP BYPASSED)
         // ==========================================
-        const SUPABASE_PROXY_URL = 'https://supabase-proxy.thevoicesession.workers.dev';
+        const SUPABASE_PROXY_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co'; // Connect directly to fix WebSockets
         const SUPABASE_ANON_KEY = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
         const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
         const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY) : null;
+
+        async function getAgoraToken(channelName, userId, password = null) {
+            try {
+                const bodyStr = JSON.stringify({
+                    channelName: channelName,
+                    uid: String(userId), // Ensure UID is a string for Telegram IDs
+                    password: password
+                });
+                const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apikey}`,
+                    'apikey': apikey
+                };
+
+                let response;
+                try {
+                    response = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
+                        method: 'POST',
+                        headers: headers,
+                        body: bodyStr
+                    });
+                } catch (proxyError) {
+                    try {
+                        // Fallback to direct Supabase Edge Function URL
+                        response = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
+                            method: 'POST',
+                            headers: headers,
+                            body: bodyStr
+                        });
+                    } catch (fallbackError) {
+                        throw new Error(`Network failure: ${fallbackError.message}`);
+                    }
+                }
+
+                if (!response.ok) {
+                    let errData;
+                    try { errData = await response.json(); } catch (e) { throw new Error(`Server returned status ${response.status}`); }
+                    throw new Error(errData?.error || `Server returned status ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data.token;
+            } catch (error) {
+                console.error("Token acquisition failed:", error);
+                alert("Could not retrieve voice security token: " + error.message);
+                throw error;
+            }
+        }
 
         const CreateRoomModal = ({ onClose, onCreate }) => {
             const [name, setName] = useState('');
@@ -744,29 +893,11 @@
 
                     let token = null;
                     try {
-                        const res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
-                            method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json', 
-                                'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
-                            },
-                            body: JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password })
-                        });
-                        
-                        if (!res.ok) {
-                            throw new Error(`Failed to fetch token. Server responded with ${res.status}`);
-                        }
-
-                        const data = await res.json();
-                        if (data.error) { alert(data.error); return false; }
-                        
-                        token = data.token;
+                        token = await getAgoraToken(roomData.channel_name, tgUser.id, password);
                         if (!token) {
                             throw new Error("Received an empty token from the server.");
                         }
                     } catch (e) {
-                        console.error("Could not fetch Agora token. Cannot join room.", e);
-                        alert("Failed to connect to Voice Gateway: " + e.message);
                         return false;
                     }
 
@@ -1175,35 +1306,6 @@
 
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, isTyping]);
 
-            const fetchAIMentorResponse = async (prompt, currentChats) => {
-                const apiKey = "AIzaSyAQmr_gVRSphKzG8AOD3emT6hNpinnMs3c";
-                if(!apiKey) return "API Key not found. Running in demo mode.\n\nMole Concept: 1 Mole = 6.022 x 10^23 particles.";
-                
-                let historyText = `You are ATAXY AI Mentor, an expert tutor for NEET/JEE students. Answer clearly, accurately, and formatting nicely.\n\n`;
-                currentChats.forEach(c => {
-                    if (c.sender === 'user') historyText += `Student: ${c.text}\n\n`;
-                    else historyText += `ATAXY Mentor: ${c.text}\n\n`;
-                });
-                historyText += `Student: ${prompt}\nATAXY Mentor: `;
-
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: historyText }] }]
-                        })
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) {
-                        return `Google API Error: ${data.error?.message || response.statusText}`;
-                    }
-
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
-                } catch(e) { return `Connection error: ${e.message}`; }
-            };
-
             const sendMsg = async (e) => {
                 e.preventDefault();
                 if (!msg.trim()) return;
@@ -1213,7 +1315,9 @@
                 setMsg('');
                 setIsTyping(true);
 
-                const aiReply = await fetchAIMentorResponse(userMsg, chats);
+                const systemContext = "You are ATAXY AI Mentor, an expert tutor for NEET/JEE students. Answer clearly, accurately, and formatting nicely using Markdown.";
+                const aiReply = await fetchGeminiSecure(userMsg, chats.filter(c => c.id !== 1), systemContext); // Send history excluding welcome message
+                
                 setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiReply }]);
                 setIsTyping(false);
             };
@@ -1234,7 +1338,7 @@
                         {chats.map((c, i) => (
                             <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-3.5 rounded-2xl shadow-sm text-sm whitespace-pre-wrap leading-relaxed ${c.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
-                                    {c.text}
+                                    <FormattedText text={c.text} />
                                 </div>
                             </div>
                         ))}
@@ -2036,10 +2140,11 @@
                                              </button>
                                          </div>
                                          
-                                         <div className="flex gap-2">
+                                         <div className="flex flex-wrap gap-2">
                                              <button onClick={() => setShowExplanation(!showExplanation)} className={`border text-xs font-semibold px-4 py-2 rounded-sm shadow-sm transition-colors ${showExplanation ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                                                  {showExplanation ? 'Hide Explanation' : 'View Explanation'}
                                              </button>
+                                             <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
                                          </div>
                                          
                                          {showExplanation && (

@@ -1,7 +1,6 @@
 // PART 1: BRANDING & CREDENTIALS CONFIGURATION
 const SUPABASE_URL = "https://kwzpnupjtvfrevpwfaao.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal";
-const GEMINI_API_KEY = "AIzaSyAQmr_gVRSphKzG8AOD3emT6hNpinnMs3c";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -437,7 +436,7 @@ window.closeModals = function() {
 let mentorChatHistory = [];
 
 async function askAtaxyMentor(userMessage) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://ataxy-ai-proxy.thevoicesession.workers.dev`;
     
     let combinedText = "You are ATAXY Mentor, a brilliant, encouraging NEET exam tutor. Explain this clearly, using single $ signs for any math/science formulas.\n\n";
     mentorChatHistory.forEach(msg => {
@@ -446,23 +445,27 @@ async function askAtaxyMentor(userMessage) {
     combinedText += `Student: ${userMessage}\nATAXY Mentor: `;
 
     try {
-        const response = await fetch(url, {
+        let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                contents: [{ 
-                    parts: [{ 
-                        text: combinedText 
-                    }] 
-                }] 
+                model: "gemini-3.1-flash-lite",
+                contents: [{ role: 'user', parts: [{ text: combinedText }] }]
             })
         });
 
-        const data = await response.json();
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            return `Proxy Error: The server returned an invalid response. Make sure your Cloudflare worker is deployed and online.`;
+        }
+
         if (!response.ok) {
             return `Google API Error: ${data.error?.message || response.statusText}`;
         }
-        return data.candidates[0].content.parts[0].text;
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
     } catch (error) {
         return `Connection error: ${error.message}`;
     }
@@ -513,19 +516,31 @@ function setupMentorTab() {
 }
 
 async function callGeminiAPI(prompt, systemInstruction) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://ataxy-ai-proxy.thevoicesession.workers.dev`;
     const combinedText = `${systemInstruction}\n\nStudent: ${prompt}`;
     const body = {
-        contents: [{ parts: [{ text: combinedText }] }]
+        model: "gemini-3.1-flash-lite",
+        contents: [{ role: "user", parts: [{ text: combinedText }] }]
     };
 
     try {
-        const res = await fetch(url, {
+        let res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body)
         });
-        const data = await res.json();
+        
+        const rawText = await res.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            return "Proxy Error: The server returned an invalid response.";
+        }
+        
+        if (!res.ok) {
+            return `API Error: ${data.error?.message || res.statusText}`;
+        }
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
     } catch(err) {
         return "Network error occurred.";

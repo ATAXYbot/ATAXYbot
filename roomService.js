@@ -23,17 +23,32 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     const joinRoom = async (roomData, password = null) => {
         try {
             // 1. Fetch Token
-            const res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
-                },
-                body: JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password })
-            });
+            const bodyStr = JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password });
+            const headers = { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal`,
+                'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
+            };
+
+            let res;
+            try {
+                res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyStr
+                });
+            } catch (proxyError) {
+                res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyStr
+                });
+            }
             
             if (!res.ok) {
-                throw new Error(`Token fetch failed with status ${res.status}`);
+                let errData;
+                try { errData = await res.json(); } catch (e) { throw new Error(`Token fetch failed with status ${res.status}`); }
+                throw new Error(errData?.error || `Token fetch failed with status ${res.status}`);
             }
 
             const data = await res.json();

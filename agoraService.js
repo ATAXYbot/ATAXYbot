@@ -44,17 +44,33 @@ export const useAgoraVoice = (roomName, user) => {
             try {
                 // Fetch token first
                 const uid = String(user?.id || Math.floor(Math.random() * 10000));
-                const res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
-                    },
-                    body: JSON.stringify({ channelName: String(roomName), uid })
-                });
+                const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apikey}`,
+                    'apikey': apikey
+                };
+                const bodyStr = JSON.stringify({ channelName: String(roomName), uid });
+
+                let res;
+                try {
+                    res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
+                        method: 'POST',
+                        headers: headers,
+                        body: bodyStr
+                    });
+                } catch (proxyError) {
+                    res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
+                        method: 'POST',
+                        headers: headers,
+                        body: bodyStr
+                    });
+                }
 
                 if (!res.ok) {
-                    throw new Error(`Token fetch failed with status ${res.status}`);
+                    let errData;
+                    try { errData = await res.json(); } catch (e) { throw new Error(`Token fetch failed with status ${res.status}`); }
+                    throw new Error(errData?.error || `Token fetch failed with status ${res.status}`);
                 }
 
                 const data = await res.json();
