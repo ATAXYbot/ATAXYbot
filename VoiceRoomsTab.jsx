@@ -1,3 +1,4 @@
+// LAYER 4: PREMIUM INTERFACE 
 import React, { useState } from 'react';
 import { useVoiceRoom } from '../services/roomService';
 

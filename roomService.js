@@ -1,3 +1,4 @@
+// LAYER 3: FRONTEND STATE ENGINE & STRING SIGN-IN
 import { useState, useEffect, createContext, useContext } from 'react';
 
 // Bypass ISPs using Cloudflare Proxy Worker

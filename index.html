@@ -698,6 +698,7 @@
             const [activeSpeakers, setActiveSpeakers] = useState({});
             const [realtimeChannel, setRealtimeChannel] = useState(null);
             const [availableRooms, setAvailableRooms] = useState([]);
+            const [chatMessages, setChatMessages] = useState([]);
 
             const fetchRooms = async () => {
                 if (!supabase) return;
@@ -814,12 +815,16 @@
                                     alert("You were removed by the host.");
                                 }
                             })
+                            .on('broadcast', { event: 'text_chat' }, (payload) => {
+                                setChatMessages(prev => [...prev, payload]);
+                            })
                             .subscribe();
                         
                         setRealtimeChannel(channel);
                         fetchParticipants(roomData.id);
                     }
                     setActiveRoom(roomData);
+                    setChatMessages([]);
                     return true;
                 } catch (e) { 
                     console.error("Join Error", e); 
@@ -855,6 +860,7 @@
                 setClient(null);
                 setRemoteUsers([]);
                 setRealtimeChannel(null);
+                setChatMessages([]);
             };
 
             const createRoom = async (name, type, password = null) => {
@@ -929,7 +935,13 @@
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, fetchRooms };
+            const sendChat = (text) => {
+                const payload = { userId: String(tgUser.id), userName: tgUser.first_name, text, time: new Date().toISOString() };
+                realtimeChannel?.send({ type: 'broadcast', event: 'text_chat', payload });
+                setChatMessages(prev => [...prev, payload]); // Optimistic update
+            };
+
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, fetchRooms, sendChat };
         };
 
         const FloatingVoiceWidget = ({ voiceState }) => {
@@ -1010,8 +1022,9 @@
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction } = voiceState;
+            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendChat } = voiceState;
             const [showActionModal, setShowActionModal] = useState(false);
+            const [chatInput, setChatInput] = useState('');
 
             const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
             const myParticipant = participants.find(p => String(p.user_id) === String(tgUser.id));
@@ -1082,26 +1095,40 @@
                             {micSeats.map((occupant, i) => <React.Fragment key={i}>{renderSeat(i+2, occupant, `Seat ${i+2}`)}</React.Fragment>)}
                         </div>
                     </div>
-                    <div className="flex-1 bg-[#021633] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                        <h3 className="text-sm font-bold text-[#A4DFE6] uppercase tracking-widest mb-4 flex justify-between">
-                            Audience
-                            <span className="text-[#00FFFF] bg-[#010B1C] px-2 py-0.5 rounded-md border border-[#00FFFF]/30">{audience.length}</span>
-                        </h3>
-                        <div className="flex flex-wrap gap-3 overflow-y-auto max-h-[150px] no-scrollbar">
-                            {audience.map(p => (
-                                <div key={p.id} className="w-10 h-10 rounded-full bg-[#010B1C] flex items-center justify-center border border-[#0AE0D0]/20 text-white font-bold text-xs" title={p.user_name}>
-                                    {p.user_name.charAt(0)}
-                                </div>
-                            ))}
+
+                    <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-4">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col justify-end">
+                            <div className="flex flex-col gap-2">
+                                {chatMessages.map((msg, idx) => (
+                                    <div key={idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%]">
+                                        <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
+                                        <span className="text-white">{msg.text}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
+                        {audience.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2 border-t border-[#0AE0D0]/20 max-h-[60px] overflow-y-auto no-scrollbar">
+                                {audience.map(p => (
+                                    <div key={p.id} className="w-8 h-8 rounded-full bg-[#010B1C] flex items-center justify-center border border-[#0AE0D0]/20 text-white font-bold text-[10px]" title={p.user_name}>
+                                        {p.user_name.charAt(0)}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="fixed bottom-[60px] w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex justify-around items-center z-20">
-                        <button className="w-12 h-12 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] text-xl transition-colors"><i className="fa-regular fa-comment-dots"></i></button>
-                        <button onClick={handleBottomMicClick} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 animate-bounce shadow-[0_0_15px_rgba(79,70,229,0.6)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.6)]'}`}>
+
+                    <div className="fixed bottom-[60px] w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-2 items-center z-20">
+                        <input 
+                            value={chatInput} onChange={e=>setChatInput(e.target.value)} 
+                            placeholder="Message room..." 
+                            className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF]"
+                            onKeyDown={(e) => { if(e.key==='Enter' && chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }}
+                        />
+                        <button onClick={handleBottomMicClick} className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.6)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]'}`}>
                             {!isSpeaker ? <i className="fa-solid fa-hand"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>}
                         </button>
-                        <button className="w-12 h-12 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] text-xl transition-colors"><i className="fa-solid fa-share-nodes"></i></button>
-                        {isHost && <button onClick={() => audience[0] && sendHostAction('kick', audience[0].user_id)} className="w-12 h-12 flex items-center justify-center text-[#A4DFE6] hover:text-red-500 text-xl transition-colors"><i className="fa-solid fa-gear"></i></button>}
+                        {isHost && <button onClick={() => audience[0] && sendHostAction('kick', audience[0].user_id)} className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-red-500/20 hover:text-red-500 text-lg transition-colors border border-transparent hover:border-red-500/50"><i className="fa-solid fa-gear"></i></button>}
                     </div>
 
                     {showActionModal && (

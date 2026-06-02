@@ -1,5 +1,5 @@
 -- ==============================================================
--- LAYER 1: VOICE ROOMS SCHEMA & SPATIAL HOST-TRANSFER TRIGGERS
+-- LAYER 1: VOICE ROOMS SCHEMA & SPATIAL HOST-TRANSFER TRIGGERS (TELEGRAM STRING FIX VERIFIED)
 -- ==============================================================
 
 -- 1. Voice Rooms Table

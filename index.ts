@@ -1,3 +1,4 @@
+// LAYER 2: AGORA AUTOMATED TOKEN (SUPABASE EDGE FUNCTION)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { RtcTokenBuilder, RtcRole } from "npm:agora-access-token";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
