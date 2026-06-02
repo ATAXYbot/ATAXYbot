@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Apply dark mode by default for new users before React loads to prevent white flash
+        try { if (localStorage.getItem('ataxy_theme') !== 'light') document.documentElement.classList.add('dark'); } catch(e) {}
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ATAXY Learning</title>
@@ -261,7 +265,7 @@
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-ataxy-background/95 backdrop-blur-md border-b border-ataxy-border z-[1000000] px-4 h-[60px] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-ataxy-background/95 backdrop-blur-md border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_env(safe-area-inset-top,_0px))] pt-[env(safe-area-inset-top,_0px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
                         <AtaxyLogo className="w-9 h-9 rounded-xl shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
                         <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
@@ -549,8 +553,8 @@
             };
 
             return (
-                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh-60px)]">
-                    <div className="fixed top-[60px] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))]">
+                    <div className="fixed top-[calc(60px_+_env(safe-area-inset-top,_0px))] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
                             <div>
@@ -613,9 +617,11 @@
             const [remoteUsers, setRemoteUsers] = useState([]);
             const [isSpeaker, setIsSpeaker] = useState(false);
             const [isConnected, setIsConnected] = useState(false);
+            const [activeSpeakers, setActiveSpeakers] = useState({});
 
             useEffect(() => {
                 if (!roomName || !window.AgoraRTC) return;
+                let isMounted = true;
                 
                 const initAgora = async () => {
                     const agoraClient = window.AgoraRTC.createClient({ mode: "live", codec: "vp8" });
@@ -626,23 +632,46 @@
                         if (mediaType === "audio") {
                             remoteUser.audioTrack.play();
                         }
-                        setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
+                        if (isMounted) setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
                     });
 
                     agoraClient.on("user-unpublished", (remoteUser, mediaType) => {
                         if (mediaType === "audio" && remoteUser.audioTrack) {
                             remoteUser.audioTrack.stop();
                         }
+                        if (isMounted) setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
                     });
 
                     agoraClient.on("user-left", (remoteUser) => {
-                        setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+                        if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+                    });
+
+                    // Volume indicator for neon pulsing active speaker animation (WePlay style)
+                    agoraClient.enableAudioVolumeIndicator();
+                    agoraClient.on("volume-indicator", (volumes) => {
+                        if (!isMounted) return;
+                        setActiveSpeakers(prev => {
+                            const newSpeakingMap = {};
+                            let changed = false;
+                            volumes.forEach((vol) => {
+                                if (vol.level > 5) { // Threshold to prevent background noise triggering
+                                    newSpeakingMap[vol.uid] = true;
+                                }
+                            });
+                            if (Object.keys(newSpeakingMap).length !== Object.keys(prev).length) changed = true;
+                            else {
+                                for (let key in newSpeakingMap) {
+                                    if (!prev[key]) changed = true;
+                                }
+                            }
+                            return changed ? newSpeakingMap : prev;
+                        });
                     });
 
                     try {
                         await agoraClient.setClientRole("audience");
                         await agoraClient.join(AGORA_APP_ID, roomName, AGORA_TOKEN, user?.id || Math.floor(Math.random() * 10000));
-                        setIsConnected(true);
+                        if (isMounted) setIsConnected(true);
                     } catch (e) {
                         console.error("Agora Join Failed:", e);
                     }
@@ -651,27 +680,65 @@
                 initAgora();
 
                 return () => {
+                    isMounted = false;
                     if (localAudioTrack) { localAudioTrack.stop(); localAudioTrack.close(); }
                     if (client) client.leave();
                 };
             }, [roomName]);
 
-            return { client, isConnected, remoteUsers, isMuted, setIsMuted, localAudioTrack, setLocalAudioTrack, isSpeaker, setIsSpeaker };
+            // Upgrade role to Host and take an empty seat
+            const stepUp = async () => {
+                if (!client) return;
+                try {
+                    await client.setClientRole("host");
+                    const track = await window.AgoraRTC.createMicrophoneAudioTrack();
+                    await client.publish([track]);
+                    setLocalAudioTrack(track); 
+                    setIsMuted(false); 
+                    setIsSpeaker(true);
+                } catch (e) { console.error("Publish failed. Microphone permission denied?", e); }
+            };
+
+            // Step down from stage to audience
+            const stepDown = async () => {
+                if (!client || !localAudioTrack) return;
+                try {
+                    localAudioTrack.stop();
+                    localAudioTrack.close();
+                    await client.unpublish([localAudioTrack]);
+                    await client.setClientRole("audience");
+                    setLocalAudioTrack(null);
+                    setIsSpeaker(false);
+                    setIsMuted(true);
+                } catch (e) { console.error("Unpublish failed", e); }
+            };
+
+            // Mute/Unmute self
+            const toggleMute = async () => {
+                if (localAudioTrack) {
+                    const nextMute = !isMuted;
+                    await localAudioTrack.setMuted(nextMute);
+                    setIsMuted(nextMute);
+                }
+            };
+
+            return { client, isConnected, remoteUsers, isMuted, isSpeaker, activeSpeakers, stepUp, stepDown, toggleMute };
         };
 
         const VoiceRoomsTab = ({ tgUser }) => {
             const [activeRoom, setActiveRoom] = useState(null);
             const mockRooms = [
-                { id: "room_phy", name: "Physics Core Doubt Lounge", host: "Dr. H.C. Verma", listeners: 142 },
-                { id: "room_chem", name: "Organic Chem Sync-Session", host: "Walter White", listeners: 89 },
-                { id: "room_bio", name: "Genetics Rapid Fire", host: "Charles Darwin", listeners: 215 },
+                { id: "room_phy", name: "Physics Core Doubt Lounge", host: "Sir HC Verma", listeners: 142 },
+                { id: "room_chem", name: "Organic Chem Sync-Session", host: "Alex Chemist", listeners: 89 },
+                { id: "room_bio", name: "Genetics Rapid Fire", host: "Dr. Biology", listeners: 215 },
             ];
 
             return (
-                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh-60px)] bg-[#010B1C] text-white">
+                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white">
                     {!activeRoom ? (
                         <div className="p-4 flex-1 overflow-y-auto">
-                            <h2 className="text-2xl font-black mb-4 text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Public Lounges</h2>
+                            <h2 className="text-2xl font-black mb-1 text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Public Lounges</h2>
+                            <p className="text-xs text-[#A4DFE6] mb-5">Join active voice rooms to discuss and study live.</p>
                             <div className="space-y-4 mb-20">
                                 {mockRooms.map(room => (
                                     <div key={room.id} onClick={() => setActiveRoom(room)} className="bg-[#021633] border border-[#0AE0D0]/30 rounded-2xl p-4 shadow-[0_0_15px_rgba(0,255,255,0.05)] cursor-pointer hover:border-[#00FFFF] transition-all relative overflow-hidden group">
@@ -679,14 +746,14 @@
                                             <h3 className="font-bold text-lg text-white mb-1">{room.name}</h3>
                                             <div className="flex justify-between items-center text-sm text-[#A4DFE6]">
                                                 <span><i className="fa-solid fa-crown text-[#F9D33A] mr-1"></i> {room.host}</span>
-                                                <span className="flex items-center gap-1 bg-[#010B1C] px-2 py-1 rounded-md border border-[#00FFFF]/20"><i className="fa-solid fa-headphones text-[#00FFFF]"></i> {room.listeners}</span>
+                                                <span className="flex items-center gap-1 bg-[#010B1C] px-2 py-1 rounded-md border border-[#00FFFF]/20"><i className="fa-solid fa-fire text-orange-500 mr-1"></i> {room.listeners}</span>
                                             </div>
                                         </div>
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-[#00FFFF] opacity-5 rounded-full blur-2xl group-hover:opacity-20 transition-opacity"></div>
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={() => setActiveRoom({id: `room_${Date.now()}`, name: `${tgUser.first_name}'s Lounge`, host: tgUser.first_name, listeners: 1})} className="fixed bottom-[80px] right-6 w-14 h-14 bg-gradient-to-r from-[#00FFFF] to-[#0AE0D0] text-[#010B1C] rounded-full shadow-[0_0_20px_rgba(0,255,255,0.6)] flex items-center justify-center text-2xl hover:scale-110 transition-transform z-50">
+                            <button onClick={() => setActiveRoom({id: `room_${Date.now()}`, name: `${tgUser.first_name}'s Lounge`, host: tgUser.first_name, listeners: 0})} className="fixed bottom-[80px] right-6 w-14 h-14 bg-gradient-to-r from-[#00FFFF] to-[#0AE0D0] text-[#010B1C] rounded-full shadow-[0_0_20px_rgba(0,255,255,0.6)] flex items-center justify-center text-2xl hover:scale-110 transition-transform z-50">
                                 <i className="fa-solid fa-plus"></i>
                             </button>
                         </div>
@@ -698,55 +765,145 @@
         };
 
         const ActiveVoiceRoom = ({ room, tgUser, onLeave }) => {
-            const { client, isConnected, remoteUsers, isMuted, setIsMuted, localAudioTrack, setLocalAudioTrack, isSpeaker, setIsSpeaker } = useAgoraVoice(room.id, tgUser);
+            const { client, isConnected, remoteUsers, isMuted, isSpeaker, activeSpeakers, stepUp, stepDown, toggleMute } = useAgoraVoice(room.id, tgUser);
+            const [showActionModal, setShowActionModal] = useState(false);
 
-            const toggleMic = async () => {
-                if (!localAudioTrack) {
-                    try {
-                        await client.setClientRole("host");
-                        const track = await window.AgoraRTC.createMicrophoneAudioTrack();
-                        await client.publish([track]);
-                        setLocalAudioTrack(track); setIsMuted(false); setIsSpeaker(true);
-                    } catch (e) { console.error("Publish failed", e); }
+            const handleBottomMicClick = () => {
+                if (!isSpeaker) {
+                    stepUp();
                 } else {
-                    const nextMute = !isMuted;
-                    await localAudioTrack.setMuted(nextMute);
-                    setIsMuted(nextMute);
+                    toggleMute();
                 }
             };
 
-            const handleLeave = async () => {
-                if (localAudioTrack) { localAudioTrack.stop(); localAudioTrack.close(); }
-                if (client) { try { await client.unpublish(); } catch(e){} await client.leave(); }
+            const handleSeatClick = (seat) => {
+                if (seat.isLocal) {
+                    setShowActionModal(true);
+                } else if (!seat.isOccupied && !isSpeaker) {
+                    stepUp();
+                }
+            };
+
+            const handleLeave = () => {
                 onLeave();
             };
 
-            const speakers = isSpeaker ? [{ uid: 'local', name: tgUser.first_name, isLocal: true, speaking: !isMuted }] : [];
-            remoteUsers.slice(0, 8 - speakers.length).forEach(u => speakers.push({ uid: u.uid, name: `User ${u.uid.toString().substring(0,4)}`, speaking: u.hasAudio }));
-            const emptySeats = Array.from({ length: 8 - speakers.length });
+            // Calculate exactly 8 stage seats for a WePlay styled grid
+            const MAX_SEATS = 8;
+            const seats = [];
+            
+            if (isSpeaker) {
+                seats.push({
+                    id: 'local',
+                    uid: client?.uid || 'local',
+                    name: tgUser.first_name || 'Me',
+                    isLocal: true,
+                    isOccupied: true,
+                    isMuted: isMuted,
+                    isSpeaking: activeSpeakers[client?.uid] || (!isMuted && activeSpeakers['local'])
+                });
+            }
+
+            remoteUsers.slice(0, MAX_SEATS - seats.length).forEach(u => {
+                seats.push({
+                    id: u.uid,
+                    uid: u.uid,
+                    name: `User ${u.uid.toString().substring(0,4)}`,
+                    isLocal: false,
+                    isOccupied: true,
+                    isMuted: !u.hasAudio,
+                    isSpeaking: activeSpeakers[u.uid]
+                });
+            });
+
+            const emptyCount = MAX_SEATS - seats.length;
+            for (let i = 0; i < emptyCount; i++) {
+                seats.push({ id: `empty-${i}`, isOccupied: false });
+            }
 
             return (
                 <div className="flex-1 flex flex-col relative z-10">
                     <div className="px-4 py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur">
-                        <div className="flex flex-col"><h2 className="text-xl font-black text-[#E0F7FA]">{room.name}</h2><p className="text-xs text-[#00FFFF] font-bold"><span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> Live</p></div>
-                        <button onClick={handleLeave} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)]">Leave</button>
+                        <div className="flex flex-col">
+                            <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">{room.name}</h2>
+                            <p className="text-xs text-[#00FFFF] font-bold">
+                                <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> Live {isConnected ? '' : '(Connecting...)'}
+                            </p>
+                        </div>
+                        <button onClick={handleLeave} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
                     </div>
                     <div className="p-6">
                         <h3 className="text-sm font-bold text-[#A4DFE6] uppercase tracking-widest mb-4">Speaker Stage</h3>
                         <div className="grid grid-cols-4 gap-y-6 gap-x-4">
-                            {speakers.map(s => (<div key={s.uid} className="flex flex-col items-center gap-2"><div className={`w-14 h-14 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center text-xl font-bold border-2 ${s.speaking ? 'border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.8)] animate-pulse text-[#010B1C]' : 'border-transparent text-white'}`}>{s.name.charAt(0)}</div><span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full">{s.name}</span></div>))}
-                            {emptySeats.map((_, i) => (<div key={`empty-${i}`} onClick={!isSpeaker ? toggleMic : undefined} className={`flex flex-col items-center gap-2 ${!isSpeaker ? 'cursor-pointer hover:opacity-80' : 'opacity-40'}`}><div className="w-14 h-14 rounded-full border-2 border-dashed border-[#0AE0D0]/40 flex items-center justify-center bg-[#021633]"><i className="fa-solid fa-microphone-lines text-[#0AE0D0]/40 text-lg"></i></div><span className="text-[10px] text-[#A4DFE6]/50">Empty</span></div>))}
+                            {seats.map((seat) => (
+                                <div key={seat.id} onClick={() => handleSeatClick(seat)} className={`flex flex-col items-center gap-2 ${!seat.isOccupied && !isSpeaker ? 'cursor-pointer hover:scale-105 transition-transform' : seat.isLocal ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}>
+                                    {seat.isOccupied ? (
+                                        <div className="relative">
+                                            <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center text-xl font-bold border-2 transition-all duration-300 ${seat.isSpeaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
+                                                {seat.name.charAt(0)}
+                                            </div>
+                                            {seat.isMuted && (
+                                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600">
+                                                    <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className={`w-14 h-14 rounded-full border-2 border-dashed border-[#0AE0D0]/40 flex items-center justify-center bg-[#021633] ${!isSpeaker ? 'hover:bg-[#0AE0D0]/10 transition-colors' : 'opacity-40'}`}>
+                                            <i className="fa-solid fa-microphone-lines text-[#0AE0D0]/40 text-lg"></i>
+                                        </div>
+                                    )}
+                                    <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">
+                                        {seat.isOccupied ? (seat.isLocal ? "Me" : seat.name) : "Empty"}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     </div>
                     <div className="flex-1 bg-[#021633] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                        <h3 className="text-sm font-bold text-[#A4DFE6] uppercase tracking-widest mb-4 flex justify-between">Audience<span className="text-[#00FFFF]">{room.listeners + (isConnected && !isSpeaker ? 1 : 0)}</span></h3>
-                        <div className="flex flex-wrap gap-3">{!isSpeaker && isConnected && (<div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border border-gray-500 shadow-sm relative">{tgUser.first_name.charAt(0)}<div className="absolute -bottom-1 -right-1 bg-gray-800 rounded-full w-4 h-4 flex items-center justify-center border border-gray-600"><i className="fa-solid fa-microphone-slash text-[8px] text-gray-400"></i></div></div>)}{Array.from({length: 12}).map((_, i) => (<div key={i} className="w-10 h-10 rounded-full bg-[#010B1C] flex items-center justify-center border border-[#0AE0D0]/20 text-[#A4DFE6] opacity-60"><i className="fa-solid fa-user text-sm"></i></div>))}</div>
+                        <h3 className="text-sm font-bold text-[#A4DFE6] uppercase tracking-widest mb-4 flex justify-between">
+                            Audience
+                            <span className="text-[#00FFFF] bg-[#010B1C] px-2 py-0.5 rounded-md border border-[#00FFFF]/30">{room.listeners + (isConnected && !isSpeaker ? 1 : 0) + remoteUsers.length}</span>
+                        </h3>
+                        <div className="flex flex-wrap gap-3 overflow-y-auto max-h-[150px] no-scrollbar">
+                            {!isSpeaker && isConnected && (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center border-2 border-indigo-400 shadow-sm relative text-white font-bold">
+                                    {tgUser.first_name.charAt(0)}
+                                    <div className="absolute -bottom-1 -right-1 bg-gray-800 rounded-full w-4 h-4 flex items-center justify-center border border-gray-600">
+                                        <i className="fa-solid fa-headphones text-[8px] text-gray-300"></i>
+                                    </div>
+                                </div>
+                            )}
+                            {Array.from({length: 12}).map((_, i) => (
+                                <div key={i} className="w-10 h-10 rounded-full bg-[#010B1C] flex items-center justify-center border border-[#0AE0D0]/20 text-[#A4DFE6] opacity-60">
+                                    <i className="fa-solid fa-user text-sm"></i>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div className="fixed bottom-[60px] w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex justify-around items-center z-20">
                         <button className="w-12 h-12 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] text-xl transition-colors"><i className="fa-regular fa-comment-dots"></i></button>
-                        <button onClick={toggleMic} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all shadow-lg border-2 ${isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.6)]'}`}><i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i></button>
-                        <button className="w-12 h-12 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] text-xl transition-colors"><i className="fa-solid fa-hand-sparkles"></i></button>
+                        <button onClick={handleBottomMicClick} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 animate-bounce shadow-[0_0_15px_rgba(79,70,229,0.6)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.6)]'}`}>
+                            {!isSpeaker ? <i className="fa-solid fa-hand"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>}
+                        </button>
+                        <button className="w-12 h-12 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] text-xl transition-colors"><i className="fa-solid fa-share-nodes"></i></button>
                     </div>
+
+                    {showActionModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(false)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 mx-auto flex items-center justify-center text-2xl mb-4 border border-red-500/50">
+                                    <i className="fa-solid fa-microphone-lines-slash"></i>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Leave Stage</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">Return to audience and give up your speaker seat?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowActionModal(false)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                    <button onClick={() => { stepDown(); setShowActionModal(false); }} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(255,0,0,0.4)]">Step Down</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -808,8 +965,8 @@
             };
 
             return (
-                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh-60px)] bg-gray-50 dark:bg-gray-950">
-                    <div className="fixed top-[60px] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-gray-50 dark:bg-gray-950">
+                    <div className="fixed top-[calc(60px_+_env(safe-area-inset-top,_0px))] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-purple-500/30 shadow-inner" />
                             <div>
@@ -882,7 +1039,7 @@
         // �🚀 MAIN APP & NAVIGATION ROUTER
         // ==========================================
         function App() {
-          const [isDarkMode, setIsDarkMode] = useState(() => safeGetStr('ataxy_theme', '') === 'dark');
+          const [isDarkMode, setIsDarkMode] = useState(() => safeGetStr('ataxy_theme', 'dark') === 'dark');
           useEffect(() => {
               if (isDarkMode) { document.documentElement.classList.add('dark'); safeSetItem('ataxy_theme', 'dark'); } 
               else { document.documentElement.classList.remove('dark'); safeSetItem('ataxy_theme', 'light'); }
@@ -897,6 +1054,7 @@
           const [activePracticeBatch, setActivePracticeBatch] = useState(null);
           const [activePracticeFile, setActivePracticeFile] = useState(null);
           const [practiceSelectedTopic, setPracticeSelectedTopic] = useState(null);
+          const [showQuiz, setShowQuiz] = useState(false);
           const [practiceAttempts, setPracticeAttempts] = useState(() => safeGetJSON('ataxy_practice_perf', null) || {});
           const [practiceShowPalette, setPracticeShowPalette] = useState(false);
           
@@ -1260,7 +1418,8 @@
           useEffect(() => { setPracticeSelectedTopic(null); setPracticeShowPalette(false); }, [activePracticeChapter]);
 
           const handleBack = () => {
-            if (activePracticeChapter) setActivePracticeChapter(null);
+            if (showQuiz) setShowQuiz(false);
+            else if (activePracticeChapter) setActivePracticeChapter(null);
             else if (activePracticeSubject) setActivePracticeSubject(null);
             else if (activePracticeFile) setActivePracticeFile(null);
             else if (activePracticeBatch) setActivePracticeBatch(null);
@@ -1338,6 +1497,44 @@
           // --- NEETPREP PRACTICE ENGINE ---
           const renderQuestionsView = () => {
              if (activePracticeChapter) {
+                 if (!showQuiz) {
+                     const totalQs = activePracticeChapter.topics?.reduce((acc, t) => acc + (t.questions?.length || 0), 0) || 0;
+                     return (
+                         <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                             <div className="flex items-center gap-3 mb-6">
+                                 <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
+                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{activePracticeChapter.name}</h2>
+                             </div>
+                             
+                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5 mb-6 shadow-sm flex justify-between items-center">
+                                 <div>
+                                     <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">Practice All Topics</h3>
+                                     <p className="text-blue-600 dark:text-blue-400 text-xs font-semibold mt-1">{totalQs} Questions Available</p>
+                                 </div>
+                                 <button onClick={() => { setPracticeSelectedTopic(null); setShowQuiz(true); }} className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md transition-colors shadow-blue-500/30">
+                                     <i className="fa-solid fa-play ml-1"></i>
+                                 </button>
+                             </div>
+
+                             <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Specific Topics</h3>
+                             
+                             <div className="space-y-3">
+                                 {activePracticeChapter.topics?.map((top, i) => (
+                                     <div key={i} onClick={() => { setPracticeSelectedTopic(top.name); setShowQuiz(true); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
+                                         <div className="flex-1 mr-4">
+                                             <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{top.name}</h4>
+                                             <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{top.questions?.length || 0} Qs</p>
+                                         </div>
+                                         <button className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:bg-[#00a651] group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+                                             <i className="fa-solid fa-play ml-0.5 text-xs"></i>
+                                         </button>
+                                     </div>
+                                 ))}
+                             </div>
+                         </div>
+                     );
+                 }
+
                  const selectedTopic = practiceSelectedTopic;
                  const attempts = practiceAttempts;
                  const showPalette = practiceShowPalette;
@@ -1417,7 +1614,7 @@
                  if (questionsLoading) {
                      return (
                          <div className="pb-32 animate-in fade-in min-h-screen bg-white">
-                             <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200 bg-white sticky top-[60px] z-20 pt-4">
+                             <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200 bg-white relative z-20 pt-4">
                                  <div className="flex items-center gap-3 w-full">
                                      <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse shrink-0"></div>
                                      <div className="flex-1 space-y-2">
@@ -1465,11 +1662,11 @@
 
                  return (
                      <div className="pb-32 animate-in slide-in-from-right relative min-h-screen bg-white">
-                         <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200 bg-white sticky top-[60px] z-20 pt-4">
+                         <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200 bg-white relative z-20 pt-4">
                              <div className="flex items-center gap-3">
                                  <button onClick={handleBack} className="w-10 h-10 rounded-full hover:bg-gray-100 text-gray-900"><i className="fa-solid fa-arrow-left"></i></button>
-                                 <div className="flex-1">
-                                     <h2 className="text-lg font-bold text-gray-900 leading-tight line-clamp-1">{activePracticeChapter.name}</h2>
+                                 <div className="flex-1 overflow-hidden">
+                                     <h2 className="text-lg font-bold text-gray-900 leading-tight truncate">{activePracticeChapter.name}</h2>
                                      <p className="text-[10px] text-gray-500">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
                                  </div>
                              </div>
@@ -1477,23 +1674,26 @@
                          </div>
 
                          <div className="bg-white border-b border-gray-200 px-4 py-3">
-                             <div className="flex flex-col gap-2 overflow-y-auto max-h-40 no-scrollbar mb-4 pb-1">
-                                 <button 
-                                     onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowExplanation(false); }} 
-                                     className={`w-full text-left px-4 py-2.5 rounded-sm text-sm font-semibold transition-colors border flex justify-between items-center ${!practiceSelectedTopic ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-gray-700 border-gray-300'}`}
-                                 >
-                                     <span>All Topics</span>
-                                 </button>
-                                 {activePracticeChapter.topics?.map((t, idx) => (
+                             <div className="mb-4">
+                                 <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto no-scrollbar p-2 border border-gray-200 bg-gray-50 rounded-lg shadow-inner">
                                      <button 
-                                         key={idx}
-                                         onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); setShowExplanation(false); }}
-                                         className={`w-full text-left px-4 py-2.5 rounded-sm text-sm font-semibold transition-colors border flex justify-between items-center ${practiceSelectedTopic === t.name ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-gray-700 border-gray-300'}`}
+                                         onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowExplanation(false); }}
+                                         className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-bold transition-all flex justify-between items-center border ${!practiceSelectedTopic ? 'bg-[#2563eb] text-white border-[#2563eb] shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`}
                                      >
-                                         <span>{t.name}</span>
-                                         <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{t.questions?.length || 0} Qs</span>
+                                         <span className="truncate pr-2">All Topics</span>
+                                         <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${!practiceSelectedTopic ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>{allQuestions.length} Qs</span>
                                      </button>
-                                 ))}
+                                     {activePracticeChapter.topics?.map((t, idx) => (
+                                         <button 
+                                             key={idx}
+                                             onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); setShowExplanation(false); }}
+                                             className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-bold transition-all flex justify-between items-center border ${practiceSelectedTopic === t.name ? 'bg-[#2563eb] text-white border-[#2563eb] shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                                         >
+                                             <span className="truncate pr-2">{t.name}</span>
+                                             <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${practiceSelectedTopic === t.name ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>{t.questions?.length || 0} Qs</span>
+                                         </button>
+                                     ))}
+                                 </div>
                              </div>
                              
                              <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
@@ -1668,7 +1868,7 @@
                          <div className="space-y-3">
                              {activePracticeSubject.chapters && activePracticeSubject.chapters.length > 0 ? (
                                  activePracticeSubject.chapters.map((chap, i) => (
-                                     <div key={i} onClick={() => { setActivePracticeChapter(chap); setCurrentTab('questions'); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
+                                     <div key={i} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
                                          <div>
                                              <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{chap.name}</h4>
                                              <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{chap.topics?.length || 0} Topics</p>
@@ -1810,7 +2010,7 @@
               });
 
               return (
-                  <div className="fixed inset-x-0 bottom-0 top-[60px] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
+                  <div className="fixed inset-x-0 bottom-0 top-[calc(60px_+_env(safe-area-inset-top,_0px))] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
                       <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                           <div className="flex items-center gap-3">
                               <button onClick={() => setShowBookmarkViewer(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200">
@@ -1955,7 +2155,7 @@
               });
 
               return (
-                  <div className="fixed inset-x-0 bottom-0 top-[60px] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
+                  <div className="fixed inset-x-0 bottom-0 top-[calc(60px_+_env(safe-area-inset-top,_0px))] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
                       <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                           <div className="flex items-center gap-3">
                               <button onClick={() => setShowIncorrectViewer(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200">
@@ -2176,7 +2376,7 @@
           };
 
           return (
-            <div className="min-h-screen font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950 pt-[60px]">
+            <div className="min-h-screen font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950 pt-[calc(60px_+_env(safe-area-inset-top,_0px))]">
               <TopNavBar />
               
               {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
