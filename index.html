@@ -612,6 +612,82 @@
         const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
         const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY) : null;
 
+        const CreateRoomModal = ({ onClose, onCreate }) => {
+            const [name, setName] = useState('');
+            const [type, setType] = useState('temporary');
+            const [password, setPassword] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!name.trim()) return;
+                setIsSubmitting(true);
+                await onCreate(name, type, password || null);
+                setIsSubmitting(false);
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-4">Create Voice Lounge</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input autoFocus required type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g., Late Night Study" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={()=>setType('temporary')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${type==='temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Temporary</button>
+                                    <button type="button" onClick={()=>setType('permanent')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${type==='permanent' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Permanent</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
+                                <input type="text" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Creating...' : 'Create Room'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const JoinRoomModal = ({ room, onClose, onJoin }) => {
+            const [password, setPassword] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsSubmitting(true);
+                const success = await onJoin(room, password);
+                setIsSubmitting(false);
+                if (success) onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-2">Join {room.channel_name}</h3>
+                        <p className="text-sm text-[#A4DFE6] mb-4">This room is locked. Please enter the password to join.</p>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <input autoFocus required type="text" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Enter Room Password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Joining...' : 'Join'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
         const useGlobalVoice = (tgUser) => {
             const [client, setClient] = useState(null);
             const [activeRoom, setActiveRoom] = useState(null);
@@ -625,16 +701,34 @@
 
             const fetchRooms = async () => {
                 if (!supabase) return;
-                const { data } = await supabase.from('voice_rooms').select('*').order('room_type', { ascending: false });
-                if (data) setAvailableRooms(data);
+                const { data: rooms } = await supabase.from('voice_rooms').select('*').order('room_type', { ascending: false });
+                const { data: allParticipants } = await supabase.from('room_participants').select('*');
+                
+                if (rooms && allParticipants) {
+                    const validRooms = rooms.filter(room => {
+                        const hostPresent = allParticipants.some(p => p.room_id === room.id && String(p.user_id) === String(room.host_user_id));
+                        const age = Date.now() - new Date(room.created_at || Date.now()).getTime();
+                        return hostPresent || age < 30000;
+                    });
+                    setAvailableRooms(validRooms);
+                } else if (rooms) {
+                    setAvailableRooms(rooms);
+                }
             };
 
             useEffect(() => {
                 if (!supabase) return;
-                fetchRooms();
+                
+                supabase.from('room_participants').delete().eq('user_id', String(tgUser.id)).then(() => {
+                    fetchRooms();
+                });
+
                 const channel = supabase.channel('voice_rooms_sync')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_rooms' }, () => {
                         fetchRooms();
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => {
+                        fetchRooms(); 
                     })
                     .subscribe();
                 return () => { supabase.removeChannel(channel); };
@@ -642,14 +736,27 @@
 
             const joinRoom = async (roomData, password = null) => {
                 try {
-                    const res = await fetch(`${SUPABASE_PROXY_URL}/functions/v1/agora-token`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-                        body: JSON.stringify({ channelName: roomData.channel_name, uid: tgUser.id, password })
-                    });
-                    
-                    const { token, error } = await res.json();
-                    if (error) { alert(error); return; }
+                    if (roomData.password && roomData.password !== password) {
+                        alert("Incorrect password!");
+                        return false;
+                    }
+
+                    let token = null;
+                    try {
+                        const res = await fetch(`${SUPABASE_PROXY_URL}/functions/v1/agora-token`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+                            body: JSON.stringify({ channelName: roomData.channel_name, uid: tgUser.id, password })
+                        });
+                        
+                        if (res.ok) {
+                            const { token: fetchedToken, error } = await res.json();
+                            if (error) { alert(error); return false; }
+                            token = fetchedToken;
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch Agora token. Trying to join without token.", e);
+                    }
 
                     const agoraClient = window.AgoraRTC.createClient({ mode: "live", codec: "vp8" });
                     setClient(agoraClient);
@@ -691,6 +798,10 @@
                             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants', filter: `room_id=eq.${roomData.id}` }, () => {
                                 fetchParticipants(roomData.id);
                             })
+                            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, () => {
+                                alert("The host has closed the room.");
+                                leaveRoom(agoraClient, roomData.id);
+                            })
                             .on('broadcast', { event: 'mute' }, (payload) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     setLocalAudioTrack(track => { track?.setMuted(true); return track; });
@@ -709,7 +820,12 @@
                         fetchParticipants(roomData.id);
                     }
                     setActiveRoom(roomData);
-                } catch (e) { console.error("Join Error", e); }
+                    return true;
+                } catch (e) { 
+                    console.error("Join Error", e); 
+                    alert("Failed to join room: " + e.message);
+                    return false;
+                }
             };
 
             const fetchParticipants = async (roomId) => {
@@ -722,20 +838,15 @@
                 if (forcedClient) { try { await forcedClient.leave(); } catch (e) {} }
                 if (supabase && roomId) {
                     const currentRoom = activeRoom || availableRooms.find(r => r.id === roomId);
-                    const { data: currentParticipants } = await supabase.from('room_participants').select('*').eq('room_id', roomId);
 
                     await supabase.from('room_participants').delete().match({ room_id: roomId, user_id: String(tgUser.id) });
                     if (realtimeChannel) supabase.removeChannel(realtimeChannel);
 
-                    // Frontend fallback: If host is leaving and no other speakers exist, close the room globally
                     if (currentRoom && String(currentRoom.host_user_id) === String(tgUser.id)) {
-                        const otherSpeakers = currentParticipants?.filter(p => p.user_id !== String(tgUser.id) && p.seat_number !== null) || [];
-                        if (otherSpeakers.length === 0) {
-                            if (currentRoom.room_type === 'temporary') {
-                                await supabase.from('voice_rooms').delete().eq('id', roomId);
-                            } else {
-                                await supabase.from('voice_rooms').update({ is_live: false }).eq('id', roomId);
-                            }
+                        if (currentRoom.room_type === 'temporary') {
+                            await supabase.from('voice_rooms').delete().eq('id', roomId);
+                        } else {
+                            await supabase.from('voice_rooms').update({ is_live: false }).eq('id', roomId);
                         }
                     }
                 }
@@ -743,17 +854,18 @@
                 setLocalAudioTrack(null);
                 setClient(null);
                 setRemoteUsers([]);
+                setRealtimeChannel(null);
             };
 
             const createRoom = async (name, type, password = null) => {
                 if (!supabase) return;
-                const uniqueName = `${name} #${Math.floor(Math.random() * 10000)}`;
                 const { data, error } = await supabase.from('voice_rooms').insert({
-                    channel_name: uniqueName,
+                    channel_name: name,
                     host_user_id: String(tgUser.id),
                     owner_id: type === 'permanent' ? String(tgUser.id) : null,
                     room_type: type,
-                    password
+                    password: password || null,
+                    is_live: true
                 }).select().single();
                 
                 if (error) {
@@ -763,8 +875,10 @@
                 }
 
                 if (data) {
-                    await joinRoom(data, password);
-                    setTimeout(() => takeSeat(0, data.id), 1500);
+                    const joined = await joinRoom(data, password);
+                    if (joined) {
+                        setTimeout(() => takeSeat(0, data.id), 1500);
+                    }
                 }
             };
 
@@ -840,7 +954,16 @@
 
         const VoiceRoomsTab = ({ tgUser, voiceState }) => {
             const { availableRooms, fetchRooms, createRoom, joinRoom } = voiceState;
+            const [showCreateModal, setShowCreateModal] = useState(false);
+            const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
             
+            const handleJoinClick = (room) => {
+                if (room.password) {
+                    setSelectedRoomToJoin(room);
+                } else {
+                    joinRoom(room);
+                }
+            };
 
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white">
@@ -849,20 +972,29 @@
                         <p className="text-xs text-[#A4DFE6] mb-5">Join active voice rooms to discuss and study live.</p>
                         
                         <div className="flex gap-2 mb-6">
-                            <button onClick={() => createRoom(`${tgUser.first_name}'s Lounge`, 'temporary')} className="flex-1 bg-white/10 hover:bg-white/20 border border-[#0AE0D0]/30 py-3 rounded-xl font-bold transition-all text-sm">Create Temp</button>
-                            <button onClick={() => createRoom(`${tgUser.first_name}'s Premium`, 'permanent')} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm">Advanced VIP</button>
+                            <button onClick={() => setShowCreateModal(true)} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2">
+                                <i className="fa-solid fa-plus"></i> Create Room
+                            </button>
                         </div>
 
                         <div className="space-y-4 pb-20">
                             {availableRooms.map(room => {
                                 const isPremium = room.room_type === 'permanent';
                                 return (
-                                    <div key={room.id} onClick={() => joinRoom(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
+                                    <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
                                         {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
-                                        <div className="relative z-10">
-                                            <h3 className="font-bold text-lg text-white mb-1">{room.channel_name}</h3>
-                                            <div className="flex justify-between items-center text-sm text-[#A4DFE6]">
-                                                <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-gray-400'} mr-1`}></i> Host ID: {room.host_user_id.substring(0,5)}</span>
+                                        <div className="relative z-10 flex justify-between items-center">
+                                            <div>
+                                                <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                    {room.channel_name} 
+                                                    {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                </h3>
+                                                <div className="flex justify-between items-center text-sm text-[#A4DFE6]">
+                                                    <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {room.host_user_id.substring(0,5)}</span>
+                                                </div>
+                                            </div>
+                                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
+                                                <i className="fa-solid fa-arrow-right"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -871,6 +1003,8 @@
                             {availableRooms.length === 0 && <p className="text-center text-gray-500 mt-10">No active lounges. Be the first to host!</p>}
                         </div>
                     </div>
+                    {showCreateModal && <CreateRoomModal onClose={() => setShowCreateModal(false)} onCreate={createRoom} />}
+                    {selectedRoomToJoin && <JoinRoomModal room={selectedRoomToJoin} onClose={() => setSelectedRoomToJoin(null)} onJoin={joinRoom} />}
                 </div>
             );
         };
