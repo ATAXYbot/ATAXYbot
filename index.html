@@ -746,7 +746,11 @@
                     try {
                         const res = await fetch(`${SUPABASE_PROXY_URL}/functions/v1/agora-token`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'apikey': SUPABASE_ANON_KEY 
+                            },
                             body: JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password })
                         });
                         
@@ -754,9 +758,13 @@
                             const { token: fetchedToken, error } = await res.json();
                             if (error) { alert(error); return false; }
                             token = fetchedToken;
+                        } else {
+                            throw new Error(`Failed to fetch token. Server responded with ${res.status}`);
                         }
                     } catch (e) {
-                        console.warn("Could not fetch Agora token. Trying to join without token.", e);
+                        console.error("Could not fetch Agora token. Cannot join room.", e);
+                        alert("Failed to connect to Voice Gateway. Please check your connection.");
+                        return false;
                     }
 
                     const agoraClient = window.AgoraRTC.createClient({ mode: "live", codec: "vp8" });

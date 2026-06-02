@@ -25,7 +25,11 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             // 1. Fetch Token
             const res = await fetch(`${SUPABASE_PROXY_URL}/functions/v1/agora-token`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SUPABASE_ANON_KEY 
+                },
                 body: JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password })
             });
             
