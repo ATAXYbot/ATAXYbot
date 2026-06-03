@@ -12,6 +12,7 @@ CREATE TABLE voice_rooms (
     room_type TEXT DEFAULT 'temporary' CHECK (room_type IN ('temporary', 'permanent')),
     is_live BOOLEAN DEFAULT true,
     is_partner_seat_open BOOLEAN DEFAULT false,
+    require_mic_request BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT now()
 );
 

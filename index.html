@@ -827,15 +827,35 @@ INSTRUCTIONS:
 
         const useGlobalVoice = (tgUser) => {
             const [client, setClient] = useState(null);
+            const clientRef = useRef(null);
+            useEffect(() => { clientRef.current = client; }, [client]);
+
             const [activeRoom, setActiveRoom] = useState(null);
+            const roomRef = useRef(null);
+            useEffect(() => { roomRef.current = activeRoom; }, [activeRoom]);
+
             const [participants, setParticipants] = useState([]);
             const [localAudioTrack, setLocalAudioTrack] = useState(null);
+            const trackRef = useRef(null);
+            useEffect(() => { trackRef.current = localAudioTrack; }, [localAudioTrack]);
+
             const [isMuted, setIsMuted] = useState(true);
             const [remoteUsers, setRemoteUsers] = useState([]);
             const [activeSpeakers, setActiveSpeakers] = useState({});
             const [realtimeChannel, setRealtimeChannel] = useState(null);
+            const channelRef = useRef(null);
+            useEffect(() => { channelRef.current = realtimeChannel; }, [realtimeChannel]);
+
             const [availableRooms, setAvailableRooms] = useState([]);
             const [chatMessages, setChatMessages] = useState([]);
+            const [micRequests, setMicRequests] = useState([]);
+            const [pendingInvite, setPendingInvite] = useState(null);
+
+            const sendBroadcast = (event, payload) => {
+                if (channelRef.current) {
+                    channelRef.current.send({ type: 'broadcast', event: event, payload: payload });
+                }
+            };
 
             const fetchRooms = async () => {
                 if (!supabase) return;
@@ -921,7 +941,7 @@ INSTRUCTIONS:
                         await supabase.from('room_participants').upsert({
                             room_id: roomData.id,
                             user_id: String(tgUser.id),
-                            user_name: tgUser.first_name,
+                            user_name: tgUser.first_name || tgUser.username || "Unknown",
                             photo_url: tgUser.photo_url || null,
                             seat_number: null
                         });
@@ -934,20 +954,40 @@ INSTRUCTIONS:
                                 alert("The host has closed the room.");
                                 leaveRoom(agoraClient, roomData.id);
                             })
-                            .on('broadcast', { event: 'mute' }, (payload) => {
+                            .on('broadcast', { event: 'mute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     setLocalAudioTrack(track => { track?.setMuted(true); return track; });
                                     setIsMuted(true);
                                 }
                             })
-                            .on('broadcast', { event: 'kick' }, (payload) => {
+                            .on('broadcast', { event: 'kick' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     leaveRoom(agoraClient, roomData.id);
                                     alert("You were removed by the host.");
                                 }
                             })
-                            .on('broadcast', { event: 'text_chat' }, (payload) => {
+                            .on('broadcast', { event: 'text_chat' }, ({ payload }) => {
                                 setChatMessages(prev => [...prev, payload]);
+                            })
+                            .on('broadcast', { event: 'invite_to_seat' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) setPendingInvite(payload);
+                            })
+                            .on('broadcast', { event: 'request_seat' }, ({ payload }) => {
+                                if (String(roomData.host_user_id) === String(tgUser.id)) {
+                                    setMicRequests(prev => {
+                                        if (!prev.some(r => r.uid === payload.uid)) return [...prev, payload];
+                                        return prev;
+                                    });
+                                }
+                            })
+                            .on('broadcast', { event: 'approve_seat' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) takeSeat(payload.seatNum);
+                            })
+                            .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    stepDown();
+                                    alert("The host has moved you back to the audience.");
+                                }
                             })
                             .subscribe();
                         
@@ -1015,6 +1055,7 @@ INSTRUCTIONS:
                     host_user_id: String(tgUser.id),
                     owner_id: type === 'permanent' ? String(tgUser.id) : null,
                     room_type: type,
+                    require_mic_request: false,
                     password: password || null,
                     is_live: true
                 }).select().single();
@@ -1033,16 +1074,16 @@ INSTRUCTIONS:
                 if (data) {
                     const agoraClient = await joinRoom(data, password);
                     if (agoraClient) {
-                        await takeSeat(0, data.id, agoraClient);
+                        await takeSeat(0, data.id, agoraClient, preTrack);
                         return true;
                     }
                 }
                 return false;
             };
 
-            const takeSeat = async (seatIdx, roomId = activeRoom?.id, passedClient = null) => {
+            const takeSeat = async (seatIdx, roomId = roomRef.current?.id, passedClient = null, passedTrack = null) => {
                 try {
-                    const activeClient = passedClient || client;
+                    const activeClient = passedClient || clientRef.current;
                     if (!activeClient) {
                         console.warn("No active Agora client to take seat");
                         return;
@@ -1050,40 +1091,44 @@ INSTRUCTIONS:
                     
                     // Immediately claim the seat in DB so UI updates instantly (Runs asynchronously)
                     if (supabase) {
-                        const rId = roomId || activeRoom?.id;
+                        const rId = roomId || roomRef.current?.id;
                         supabase.from('room_participants').update({ seat_number: seatIdx }).match({ room_id: rId, user_id: String(tgUser.id) }).then(() => {
                             if (seatIdx === 0) {
                                 supabase.from('voice_rooms').update({ host_user_id: String(tgUser.id) }).eq('id', rId);
                             }
-                        });
+                        }).catch(e => console.error("Seat update error:", e));
                     }
 
-                    let track = localAudioTrack;
+                    // Request microphone track immediately to preserve the gesture token
+                    let track = passedTrack || trackRef.current;
                     if (!track) {
                         track = await window.AgoraRTC.createMicrophoneAudioTrack();
                         setLocalAudioTrack(track);
                     }
                     await activeClient.setClientRole("host");
-                    await activeClient.publish([track]);
+                    try { await activeClient.publish([track]); } catch(e) {}
                     setIsMuted(false);
                 } catch (e) { 
                     console.error("Seat error", e); 
-                    alert("You are seated, but microphone access was denied or failed. Please tap your mic to retry.");
+                    alert("You are seated, but microphone access was denied. Check your browser/Telegram permissions.");
                 }
             };
 
             const stepDown = async () => {
-                if (localAudioTrack) {
-                    localAudioTrack.stop();
-                    localAudioTrack.close();
-                    if (client) {
-                        try { await client.unpublish([localAudioTrack]); } catch(e) {}
+                const track = trackRef.current;
+                const c = clientRef.current;
+                const r = roomRef.current;
+                if (track) {
+                    track.stop();
+                    track.close();
+                    if (c) {
+                        try { await c.unpublish([track]); } catch(e) {}
                     }
                     setLocalAudioTrack(null);
                 }
-                if (client) await client.setClientRole("audience");
-                if (supabase && activeRoom) {
-                    await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: activeRoom.id, user_id: String(tgUser.id) });
+                if (c) await c.setClientRole("audience");
+                if (supabase && r) {
+                    await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: r.id, user_id: String(tgUser.id) });
                 }
             };
 
@@ -1110,8 +1155,8 @@ INSTRUCTIONS:
             };
 
             const sendHostAction = (action, targetUid) => {
-                if (realtimeChannel && String(activeRoom?.host_user_id) === String(tgUser.id)) {
-                    realtimeChannel.send({ type: 'broadcast', event: action, payload: { target_uid: String(targetUid) } });
+                if (channelRef.current && String(roomRef.current?.host_user_id) === String(tgUser.id)) {
+                    channelRef.current.send({ type: 'broadcast', event: action, payload: { target_uid: String(targetUid) } });
                 }
             };
 
@@ -1121,13 +1166,14 @@ INSTRUCTIONS:
                 setChatMessages(prev => [...prev, payload]); // Optimistic update
             };
 
-            const updateRoomSettings = async (newName, newPassword) => {
-                if (!supabase || !activeRoom) return false;
+            const updateRoomSettings = async (newName, newPassword, reqMic) => {
+                if (!supabase || !roomRef.current) return false;
                 try {
                     const { error } = await supabase.from('voice_rooms').update({
                         channel_name: newName,
-                        password: newPassword || null
-                    }).eq('id', activeRoom.id);
+                        password: newPassword || null,
+                        require_mic_request: reqMic
+                    }).eq('id', roomRef.current.id);
                     if (error) {
                         let errorMsg = error.message;
                         if (errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
@@ -1142,7 +1188,7 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, fetchRooms, sendChat, updateRoomSettings };
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings };
         };
 
         const FloatingVoiceWidget = ({ voiceState }) => {
@@ -1225,13 +1271,14 @@ INSTRUCTIONS:
         const RoomSettingsModal = ({ activeRoom, onClose, onSave }) => {
             const [name, setName] = useState(activeRoom.channel_name);
             const [password, setPassword] = useState(activeRoom.password || '');
+            const [requireMic, setRequireMic] = useState(activeRoom.require_mic_request || false);
             const [isSubmitting, setIsSubmitting] = useState(false);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 if (!name.trim()) return;
                 setIsSubmitting(true);
-                const success = await onSave(name, password);
+                const success = await onSave(name, password, requireMic);
                 setIsSubmitting(false);
                 if (success) onClose();
             };
@@ -1249,6 +1296,15 @@ INSTRUCTIONS:
                                 <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
                                 <input type="text" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
                             </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Mic Requests</label>
+                                <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3">
+                                    <span className="text-white text-sm">Require permission to speak</span>
+                                    <button type="button" onClick={() => setRequireMic(!requireMic)} className={`w-12 h-6 rounded-full transition-colors ${requireMic ? 'bg-[#00FFFF]' : 'bg-gray-600'} flex items-center px-1`}>
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${requireMic ? 'translate-x-6' : ''}`}></div>
+                                    </button>
+                                </div>
+                            </div>
                             <div className="flex gap-3 mt-6">
                                 <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
                                 <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Saving...' : 'Save'}</button>
@@ -1260,10 +1316,11 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendChat, updateRoomSettings } = voiceState;
-            const [showActionModal, setShowActionModal] = useState(false);
+            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings } = voiceState;
+            const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
 
             const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
@@ -1276,16 +1333,51 @@ INSTRUCTIONS:
             const audience = participants.filter(p => p.seat_number === null);
 
             const handleBottomMicClick = () => {
-                if (!isSpeaker) takeSeat(2); // Take first general mic seat available
+                if (!isSpeaker) {
+                    const occupiedSeats = participants.map(p => p.seat_number);
+                    let emptySeat = 2;
+                    while(occupiedSeats.includes(emptySeat) && emptySeat <= 9) emptySeat++;
+                    if (emptySeat <= 9) {
+                        if (activeRoom.require_mic_request) {
+                            sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum: emptySeat });
+                            alert("Requested to speak. Waiting for host approval.");
+                        } else {
+                            takeSeat(emptySeat);
+                        }
+                    }
+                    else alert("All seats are currently full!");
+                }
                 else toggleMute();
             };
 
             const handleSeatClick = (seatNum, occupant) => {
                 if (occupant) {
-                    if (occupant.user_id === String(tgUser.id)) setShowActionModal(true);
-                    else if (isHost && confirm(`Mute ${occupant.user_name}?`)) sendHostAction('mute', occupant.user_id);
-                } else if (!isSpeaker) {
-                    takeSeat(seatNum);
+                    if (occupant.user_id === String(tgUser.id)) {
+                        if (isHost) {
+                            alert("As the host, your seat is permanently fixed.");
+                        } else {
+                            setShowActionModal({ type: 'self' });
+                        }
+                    } else if (isHost) {
+                        setShowActionModal({ type: 'host_target', occupant });
+                    }
+                } else {
+                    if (isHost) {
+                        if (seatNum !== 0) { // Host can't move, can only invite to empty seats
+                            setShowActionModal({ type: 'invite_to_seat', seatNum });
+                        }
+                    } else if (isSpeaker) {
+                        if (confirm("Are you sure you want to change your seat?")) {
+                            takeSeat(seatNum);
+                        }
+                    } else {
+                        if (activeRoom.require_mic_request) {
+                            sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum });
+                            alert("Requested to take seat. Waiting for host approval.");
+                        } else {
+                            takeSeat(seatNum);
+                        }
+                    }
                 }
             };
 
@@ -1312,11 +1404,11 @@ INSTRUCTIONS:
                                 )}
                             </div>
                         ) : (
-                            <div className={`rounded-full border-2 border-dashed border-[#0AE0D0]/40 flex items-center justify-center bg-[#021633] ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} ${!isSpeaker ? 'hover:bg-[#0AE0D0]/10' : 'opacity-40'}`}>
+                            <div className={`rounded-full border-2 border-dashed border-[#0AE0D0]/40 flex items-center justify-center bg-[#021633] ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} hover:bg-[#0AE0D0]/10`}>
                                 <i className="fa-solid fa-microphone-lines text-[#0AE0D0]/40"></i>
                             </div>
                         )}
-                        <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? (isMe ? "Me" : occupant.user_name) : label}</span>
+                        <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? occupant.user_name : label}</span>
                     </div>
                 )
             };
@@ -1383,17 +1475,95 @@ INSTRUCTIONS:
                         {isHost && <button onClick={() => setShowSettingsModal(true)} className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 text-lg transition-colors border border-transparent"><i className="fa-solid fa-sliders"></i></button>}
                     </div>
 
-                    {showActionModal && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(false)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
-                                <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 mx-auto flex items-center justify-center text-2xl mb-4 border border-red-500/50">
-                                    <i className="fa-solid fa-microphone-lines-slash"></i>
+                    {isHost && micRequests.length > 0 && (
+                        <button onClick={() => setShowRequestsModal(true)} className="absolute bottom-20 right-4 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-[0_0_15px_rgba(255,0,0,0.5)] animate-bounce flex items-center gap-1.5 z-30">
+                            <i className="fa-solid fa-hand"></i> {micRequests.length} Requests
+                        </button>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { stepDown(); setShowActionModal(null); }} className="py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-bold transition-colors shadow-sm">Stand Up (Listen Only)</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Leave Stage</h3>
-                                <p className="text-sm text-[#A4DFE6] mb-6">Return to audience and give up your speaker seat?</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'host_target' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant.user_name}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Mic</button>
+                                    <button onClick={() => { sendBroadcast('lift_user', { target_uid: showActionModal.occupant.user_id }); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Lift Up (To Audience)</button>
+                                    <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick User</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'invite_to_seat' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-t-2xl p-4 w-full max-w-md h-[50vh] flex flex-col border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-white mb-4">Invite to Seat {showActionModal.seatNum}</h3>
+                                <div className="flex-1 overflow-y-auto space-y-2">
+                                    {audience.length === 0 && <p className="text-gray-400 text-center py-10">No audience members to invite.</p>}
+                                    {audience.map(a => (
+                                        <div key={a.id} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
+                                            <div className="flex items-center gap-2 text-white font-bold text-sm">
+                                                <div className="w-8 h-8 rounded-full bg-[#00FFFF] text-[#010B1C] flex items-center justify-center">{a.user_name[0]}</div>
+                                                {a.user_name}
+                                            </div>
+                                            <button onClick={() => { sendBroadcast('invite_to_seat', { target_uid: a.user_id, seatNum: showActionModal.seatNum }); setShowActionModal(null); alert('Invite sent!'); }} className="bg-[#00FFFF] text-[#010B1C] px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(0,255,255,0.4)]">Invite</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {pendingInvite && (
+                        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPendingInvite(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50">
+                                    <i className="fa-solid fa-microphone"></i>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Host Invitation</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">The host invited you to take Seat {pendingInvite.seatNum}. Do you accept?</p>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setShowActionModal(false)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
-                                    <button onClick={() => { stepDown(); setShowActionModal(false); }} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(255,0,0,0.4)]">Step Down</button>
+                                    <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
+                                    <button onClick={() => { takeSeat(pendingInvite.seatNum); setPendingInvite(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showRequestsModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowRequestsModal(false)}>
+                            <div className="bg-[#021633] rounded-t-2xl p-4 w-full max-w-md h-[50vh] flex flex-col border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-white mb-4">Mic Requests</h3>
+                                <div className="flex-1 overflow-y-auto space-y-2">
+                                    {micRequests.length === 0 && <p className="text-gray-400 text-center py-10">No pending requests.</p>}
+                                    {micRequests.map(req => (
+                                        <div key={req.uid} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
+                                            <div className="flex items-center gap-2 text-white font-bold text-sm">
+                                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">{req.name[0]}</div>
+                                                <div>
+                                                    <p>{req.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-normal">Requests Seat {req.seatNum}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setMicRequests(prev => prev.filter(r => r.uid !== req.uid))} className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Reject</button>
+                                                <button onClick={() => { sendBroadcast('approve_seat', { target_uid: req.uid, seatNum: req.seatNum }); setMicRequests(prev => prev.filter(r => r.uid !== req.uid)); }} className="bg-[#00FFFF] text-[#010B1C] px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(0,255,255,0.4)]">Approve</button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
