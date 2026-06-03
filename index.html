@@ -881,7 +881,7 @@ INSTRUCTIONS:
 
                     let token = null;
                     try {
-                        token = await getAgoraToken(roomData.channel_name, tgUser.id, password);
+                        token = await getAgoraToken(roomData.id, tgUser.id, password);
                         if (!token) {
                             throw new Error("Received an empty token from the server.");
                         }
@@ -915,13 +915,14 @@ INSTRUCTIONS:
                     });
 
                     await agoraClient.setClientRole("audience");
-                    await agoraClient.join(AGORA_APP_ID, String(roomData.channel_name), token, String(tgUser?.id || "1001"));
+                    await agoraClient.join(AGORA_APP_ID, String(roomData.id), token, String(tgUser?.id || "1001"));
                     
                     if (supabase) {
                         await supabase.from('room_participants').upsert({
                             room_id: roomData.id,
                             user_id: String(tgUser.id),
                             user_name: tgUser.first_name,
+                            photo_url: tgUser.photo_url || null,
                             seat_number: null
                         });
 
@@ -1090,9 +1091,10 @@ INSTRUCTIONS:
                 if (!client) return;
                 try {
                     if (localAudioTrack) {
-                        const nextMute = !isMuted;
-                        await localAudioTrack.setMuted(nextMute);
-                        setIsMuted(nextMute);
+                        // Using setEnabled directly controls capturing at the hardware level, more reliable on mobile
+                        const shouldMute = !isMuted;
+                        await localAudioTrack.setMuted(shouldMute);
+                        setIsMuted(shouldMute);
                     } else {
                         // Recover track if missing
                         const track = await window.AgoraRTC.createMicrophoneAudioTrack();
@@ -1119,7 +1121,28 @@ INSTRUCTIONS:
                 setChatMessages(prev => [...prev, payload]); // Optimistic update
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, fetchRooms, sendChat };
+            const updateRoomSettings = async (newName, newPassword) => {
+                if (!supabase || !activeRoom) return false;
+                try {
+                    const { error } = await supabase.from('voice_rooms').update({
+                        channel_name: newName,
+                        password: newPassword || null
+                    }).eq('id', activeRoom.id);
+                    if (error) {
+                        let errorMsg = error.message;
+                        if (errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
+                            errorMsg = "A room with this name already exists! Please choose a different name.";
+                        }
+                        alert("Failed to update room: " + errorMsg);
+                        return false;
+                    }
+                    return true;
+                } catch (err) {
+                    return false;
+                }
+            };
+
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, fetchRooms, sendChat, updateRoomSettings };
         };
 
         const FloatingVoiceWidget = ({ voiceState }) => {
@@ -1199,9 +1222,48 @@ INSTRUCTIONS:
             );
         };
 
+        const RoomSettingsModal = ({ activeRoom, onClose, onSave }) => {
+            const [name, setName] = useState(activeRoom.channel_name);
+            const [password, setPassword] = useState(activeRoom.password || '');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!name.trim()) return;
+                setIsSubmitting(true);
+                const success = await onSave(name, password);
+                setIsSubmitting(false);
+                if (success) onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-4"><i className="fa-solid fa-sliders mr-2 text-[#00FFFF]"></i>Room Settings</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input required type="text" value={name} onChange={e=>setName(e.target.value)} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
+                                <input type="text" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Saving...' : 'Save'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
         const ActiveVoiceRoom = ({ tgUser, voiceState }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendChat } = voiceState;
+            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendChat, updateRoomSettings } = voiceState;
             const [showActionModal, setShowActionModal] = useState(false);
+            const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
 
             const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
@@ -1237,7 +1299,7 @@ INSTRUCTIONS:
                         {occupant ? (
                             <div className="relative">
                                 {dpUrl ? (
-                                    <img src={dpUrl} alt={occupant.user_name} className={`rounded-full object-cover border-2 transition-all ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110' : 'border-transparent'}`} />
+                                    <img src={dpUrl} alt={occupant.user_name} className={`rounded-full object-cover border-2 transition-all ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110' : 'border-[#0AE0D0]/50'}`} />
                                 ) : (
                                     <div className={`rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
                                         {occupant.user_name.charAt(0)}
@@ -1262,13 +1324,16 @@ INSTRUCTIONS:
             return (
                 <div className="flex-1 flex flex-col relative z-10">
                     <div className="px-4 py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur">
-                        <div className="flex flex-col">
-                            <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">{activeRoom.channel_name}</h2>
+                        <div className="flex flex-col flex-1 overflow-hidden pr-2">
+                            <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
                             <p className="text-xs text-[#00FFFF] font-bold">
                                 <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> {activeRoom.room_type} Room
                             </p>
                         </div>
-                        <button onClick={() => leaveRoom()} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
+                            <button onClick={() => leaveRoom()} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
+                        </div>
                     </div>
                     <div className="p-6">
                         <div className="flex justify-center gap-8 mb-8">
@@ -1309,10 +1374,13 @@ INSTRUCTIONS:
                             className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF]"
                             onKeyDown={(e) => { if(e.key==='Enter' && chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }}
                         />
+                        <button onClick={() => { if(chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }} className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center hover:bg-[#00d8d8] shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors">
+                            <i className="fa-solid fa-paper-plane text-sm"></i>
+                        </button>
                         <button onClick={handleBottomMicClick} className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.6)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]'}`}>
                             {!isSpeaker ? <i className="fa-solid fa-hand"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>}
                         </button>
-                        {isHost && <button onClick={() => audience[0] && sendHostAction('kick', audience[0].user_id)} className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-red-500/20 hover:text-red-500 text-lg transition-colors border border-transparent hover:border-red-500/50"><i className="fa-solid fa-gear"></i></button>}
+                        {isHost && <button onClick={() => setShowSettingsModal(true)} className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 text-lg transition-colors border border-transparent"><i className="fa-solid fa-sliders"></i></button>}
                     </div>
 
                     {showActionModal && (
@@ -1330,6 +1398,36 @@ INSTRUCTIONS:
                             </div>
                         </div>
                     )}
+                    {showParticipantsModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom" onClick={() => setShowParticipantsModal(false)}>
+                            <div className="bg-[#021633] w-full max-w-md h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white">Participants ({participants.length})</h3>
+                                    <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3">
+                                    {participants.map(p => (
+                                        <div key={p.id} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
+                                            <div className="flex items-center gap-3">
+                                                {p.photo_url ? <img src={p.photo_url} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-[#00FFFF] text-[#010B1C] font-bold flex items-center justify-center">{p.user_name[0]}</div>}
+                                                <div>
+                                                    <p className="text-white font-bold text-sm">{p.user_name} {p.user_id === activeRoom.host_user_id && <i className="fa-solid fa-crown text-yellow-400 text-xs ml-1"></i>}</p>
+                                                    <p className="text-[#A4DFE6] text-[10px]">{p.seat_number !== null ? `Seat ${p.seat_number}` : 'Audience'}</p>
+                                                </div>
+                                            </div>
+                                            {isHost && p.user_id !== String(tgUser.id) && (
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => { if(confirm(`Mute ${p.user_name}?`)) sendHostAction('mute', p.user_id); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
+                                                    <button onClick={() => { if(confirm(`Kick ${p.user_name} from the room?`)) sendHostAction('kick', p.user_id); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showSettingsModal && <RoomSettingsModal activeRoom={activeRoom} onClose={() => setShowSettingsModal(false)} onSave={updateRoomSettings} />}
                 </div>
             );
         };
@@ -2782,31 +2880,35 @@ INSTRUCTIONS:
             <div className="min-h-screen font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950 pt-[calc(60px_+_env(safe-area-inset-top,_0px))]">
               <TopNavBar />
               
-              {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
-                <>
-                  {currentTab === 'home' && renderHomeView()}
-                  {currentTab === 'chat' && <ChatView user={tgUser} />}
-                  {currentTab === 'ai' && <AIMentorView />}
-                  {currentTab === 'voice' && (voiceState.activeRoom ? <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} /> : <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />)}
-                  {currentTab === 'questions' && renderQuestionsView()}
-                  {currentTab === 'profile' && renderProfileView()}
-                  
-                  {showBookmarkViewer && renderBookmarkViewer()}
-                  {showIncorrectViewer && renderIncorrectViewer()}
+              <div className="h-full w-full overflow-y-auto">
+                {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
+                  <>
+                    {currentTab === 'home' && renderHomeView()}
+                    {currentTab === 'chat' && <ChatView user={tgUser} />}
+                    {currentTab === 'ai' && <AIMentorView />}
+                    {currentTab === 'voice' && (voiceState.activeRoom ? <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} /> : <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />)}
+                    {currentTab === 'questions' && renderQuestionsView()}
+                    {currentTab === 'profile' && renderProfileView()}
+                    
+                    {showBookmarkViewer && renderBookmarkViewer()}
+                    {showIncorrectViewer && renderIncorrectViewer()}
 
-                  {voiceState.activeRoom && currentTab !== 'voice' && <FloatingVoiceWidget voiceState={voiceState} />}
+                    {/* Main Bottom Navigation (Hidden in Quiz View) */}
+                    <div className="fixed bottom-0 w-full max-w-md bg-ataxy-background/90 backdrop-blur-md border-t border-ataxy-border flex justify-around pb-5 pt-3 z-[45] overflow-x-auto">
+                      <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'home' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-compass text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+                      <button onClick={() => { setCurrentTab('chat'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'chat' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
+                      <button onClick={() => { setCurrentTab('voice'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'voice' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
+                      <button onClick={() => { setCurrentTab('ai'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'ai' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">AI</span></button>
+                      <button onClick={() => { setCurrentTab('questions'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'questions' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
+                      <button onClick={() => { setCurrentTab('profile'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'profile' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
+                    </div>
+                  </>
+                )}
+              </div>
 
-                  {/* Bottom Navigation */}
-                  <div className="fixed bottom-0 w-full max-w-md bg-ataxy-background/90 backdrop-blur-md border-t border-ataxy-border flex justify-around pb-5 pt-3 z-[45] overflow-x-auto">
-                    <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'home' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-compass text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-                    <button onClick={() => { setCurrentTab('chat'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'chat' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
-                    <button onClick={() => { setCurrentTab('voice'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'voice' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
-                    <button onClick={() => { setCurrentTab('ai'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'ai' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">AI</span></button>
-                    <button onClick={() => { setCurrentTab('questions'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'questions' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
-                    <button onClick={() => { setCurrentTab('profile'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'profile' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
-                  </div>
-                </>
-              )}
+              {/* Floating Voice Widget is completely global now (except inside the voice tab itself) */}
+              {voiceState.activeRoom && currentTab !== 'voice' && <FloatingVoiceWidget voiceState={voiceState} />}
+
             </div>
           );
         }
