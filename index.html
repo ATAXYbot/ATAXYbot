@@ -720,32 +720,16 @@ INSTRUCTIONS:
                     uid: String(userId), // Ensure UID is a string for Telegram IDs
                     password: password
                 });
-                const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
                 const headers = {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apikey}`,
-                    'apikey': apikey
+                    'Authorization': `Bearer sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal`
                 };
 
-                let response;
-                try {
-                    response = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
-                        method: 'POST',
-                        headers: headers,
-                        body: bodyStr
-                    });
-                } catch (proxyError) {
-                    try {
-                        // Fallback to direct Supabase Edge Function URL
-                        response = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
-                            method: 'POST',
-                            headers: headers,
-                            body: bodyStr
-                        });
-                    } catch (fallbackError) {
-                        throw new Error(`Network failure: ${fallbackError.message}`);
-                    }
-                }
+                const response = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyStr
+                });
 
                 if (!response.ok) {
                     let errData;
@@ -773,9 +757,11 @@ INSTRUCTIONS:
                 e.preventDefault();
                 if (!name.trim()) return;
                 setIsSubmitting(true);
-                await onCreate(name, type, password || null);
+                const success = await onCreate(name, type, password || null);
                 setIsSubmitting(false);
-                onClose();
+                if (success !== false) {
+                    onClose();
+                }
             };
 
             return (
@@ -969,7 +955,7 @@ INSTRUCTIONS:
                     }
                     setActiveRoom(roomData);
                     setChatMessages([]);
-                    return true;
+                    return agoraClient;
                 } catch (e) { 
                     console.error("Join Error", e); 
                     alert("Failed to join room: " + e.message);
@@ -983,7 +969,11 @@ INSTRUCTIONS:
             };
 
             const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id) => {
-                if (localAudioTrack) { localAudioTrack.stop(); localAudioTrack.close(); }
+                if (localAudioTrack) { 
+                    localAudioTrack.stop(); 
+                    localAudioTrack.close(); 
+                    setLocalAudioTrack(null);
+                }
                 if (forcedClient) { try { await forcedClient.leave(); } catch (e) {} }
                 if (supabase && roomId) {
                     const currentRoom = activeRoom || availableRooms.find(r => r.id === roomId);
@@ -1009,6 +999,16 @@ INSTRUCTIONS:
 
             const createRoom = async (name, type, password = null) => {
                 if (!supabase) return;
+                
+                // Pre-request microphone to preserve user gesture token
+                let preTrack = null;
+                try {
+                    preTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
+                    setLocalAudioTrack(preTrack);
+                } catch(e) {
+                    console.warn("Mic pre-request denied, will retry on seat", e);
+                }
+
                 const { data, error } = await supabase.from('voice_rooms').insert({
                     channel_name: name,
                     host_user_id: String(tgUser.id),
@@ -1019,57 +1019,91 @@ INSTRUCTIONS:
                 }).select().single();
                 
                 if (error) {
-                    alert("Failed to create room: " + error.message);
+                    let errorMsg = error.message;
+                    if (error.code === '23505' || errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
+                        errorMsg = "A room with this name already exists! Please choose a different name.";
+                    }
+                    alert("Failed to create room: " + errorMsg);
+                    if(preTrack) { preTrack.stop(); preTrack.close(); setLocalAudioTrack(null); }
                     console.error("createRoom error:", error);
-                    return;
+                    return false;
                 }
 
                 if (data) {
-                    const joined = await joinRoom(data, password);
-                    if (joined) {
-                        setTimeout(() => takeSeat(0, data.id), 1500);
+                    const agoraClient = await joinRoom(data, password);
+                    if (agoraClient) {
+                        await takeSeat(0, data.id, agoraClient);
+                        return true;
                     }
                 }
+                return false;
             };
 
-            const takeSeat = async (seatIdx, roomId = activeRoom?.id) => {
+            const takeSeat = async (seatIdx, roomId = activeRoom?.id, passedClient = null) => {
                 try {
+                    const activeClient = passedClient || client;
+                    if (!activeClient) {
+                        console.warn("No active Agora client to take seat");
+                        return;
+                    }
+                    
+                    // Immediately claim the seat in DB so UI updates instantly (Runs asynchronously)
+                    if (supabase) {
+                        const rId = roomId || activeRoom?.id;
+                        supabase.from('room_participants').update({ seat_number: seatIdx }).match({ room_id: rId, user_id: String(tgUser.id) }).then(() => {
+                            if (seatIdx === 0) {
+                                supabase.from('voice_rooms').update({ host_user_id: String(tgUser.id) }).eq('id', rId);
+                            }
+                        });
+                    }
+
                     let track = localAudioTrack;
                     if (!track) {
                         track = await window.AgoraRTC.createMicrophoneAudioTrack();
                         setLocalAudioTrack(track);
                     }
-                    await client.setClientRole("host");
-                    await client.publish([track]);
+                    await activeClient.setClientRole("host");
+                    await activeClient.publish([track]);
                     setIsMuted(false);
-
-                    if (supabase) {
-                        await supabase.from('room_participants').update({ seat_number: seatIdx }).match({ room_id: roomId, user_id: String(tgUser.id) });
-                        if (seatIdx === 0) {
-                            await supabase.from('voice_rooms').update({ host_user_id: String(tgUser.id) }).eq('id', roomId);
-                        }
-                    }
-                } catch (e) { console.error("Seat error", e); }
+                } catch (e) { 
+                    console.error("Seat error", e); 
+                    alert("You are seated, but microphone access was denied or failed. Please tap your mic to retry.");
+                }
             };
 
             const stepDown = async () => {
                 if (localAudioTrack) {
                     localAudioTrack.stop();
                     localAudioTrack.close();
-                    await client.unpublish([localAudioTrack]);
+                    if (client) {
+                        try { await client.unpublish([localAudioTrack]); } catch(e) {}
+                    }
                     setLocalAudioTrack(null);
                 }
-                await client.setClientRole("audience");
+                if (client) await client.setClientRole("audience");
                 if (supabase && activeRoom) {
                     await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: activeRoom.id, user_id: String(tgUser.id) });
                 }
             };
 
-            const toggleMute = () => {
-                if (localAudioTrack) {
-                    const nextMute = !isMuted;
-                    localAudioTrack.setMuted(nextMute);
-                    setIsMuted(nextMute);
+            const toggleMute = async () => {
+                if (!client) return;
+                try {
+                    if (localAudioTrack) {
+                        const nextMute = !isMuted;
+                        await localAudioTrack.setMuted(nextMute);
+                        setIsMuted(nextMute);
+                    } else {
+                        // Recover track if missing
+                        const track = await window.AgoraRTC.createMicrophoneAudioTrack();
+                        await client.setClientRole("host");
+                        await client.publish([track]);
+                        setLocalAudioTrack(track);
+                        setIsMuted(false);
+                    }
+                } catch (e) {
+                    console.error("Mute error", e);
+                    alert("Microphone access denied. Please check your browser/Telegram permissions.");
                 }
             };
 
@@ -1196,13 +1230,19 @@ INSTRUCTIONS:
             const renderSeat = (seatNum, occupant, label, isLarge=false) => {
                 const isMe = occupant?.user_id === String(tgUser.id);
                 const speaking = occupant && activeSpeakers[occupant.user_id];
+                const dpUrl = isMe ? tgUser.photo_url : occupant?.photo_url;
+                
                 return (
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                         {occupant ? (
                             <div className="relative">
-                                <div className={`rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
-                                    {occupant.user_name.charAt(0)}
-                                </div>
+                                {dpUrl ? (
+                                    <img src={dpUrl} alt={occupant.user_name} className={`rounded-full object-cover border-2 transition-all ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110' : 'border-transparent'}`} />
+                                ) : (
+                                    <div className={`rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
+                                        {occupant.user_name.charAt(0)}
+                                    </div>
+                                )}
                                 {(isMe ? isMuted : remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio) && (
                                     <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600">
                                         <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>

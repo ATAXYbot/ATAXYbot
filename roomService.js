@@ -1,12 +1,11 @@
 // LAYER 3: FRONTEND STATE ENGINE & STRING SIGN-IN
 import { useState, useEffect, createContext, useContext } from 'react';
 
-// Bypass ISPs using Cloudflare Proxy Worker
-const SUPABASE_PROXY_URL = 'https://supabase-proxy.thevoicesession.workers.dev';
+const SUPABASE_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
 const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
 
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY) : null;
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const VoiceRoomContext = createContext(null);
 
 export const VoiceRoomProvider = ({ children, tgUser }) => {
@@ -26,24 +25,14 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             const bodyStr = JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password });
             const headers = { 
                 'Content-Type': 'application/json', 
-                'Authorization': `Bearer sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal`,
-                'apikey': 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal'
+                'Authorization': `Bearer sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal`
             };
 
-            let res;
-            try {
-                res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
-                    method: 'POST',
-                    headers: headers,
-                    body: bodyStr
-                });
-            } catch (proxyError) {
-                res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
-                    method: 'POST',
-                    headers: headers,
-                    body: bodyStr
-                });
-            }
+            const res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
+                method: 'POST',
+                headers: headers,
+                body: bodyStr
+            });
             
             if (!res.ok) {
                 let errData;
@@ -137,10 +126,25 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         setChatMessages([]);
     };
 
-    const toggleMute = () => {
-        if (localAudioTrack) {
-            localAudioTrack.setMuted(!isMuted);
-            setIsMuted(!isMuted);
+    const toggleMute = async () => {
+        if (!client) return;
+
+        try {
+            if (!localAudioTrack) {
+                // If no track exists, upgrade to host, create mic track, and publish
+                await client.setClientRole("host");
+                const track = await window.AgoraRTC.createMicrophoneAudioTrack();
+                await client.publish(track);
+                setLocalAudioTrack(track);
+                setIsMuted(false);
+            } else {
+                // Toggle existing track
+                await localAudioTrack.setMuted(!isMuted);
+                setIsMuted(!isMuted);
+            }
+        } catch (err) {
+            console.error("Failed to toggle mute/publish:", err);
+            alert("Microphone access denied or error occurred.");
         }
     };
 

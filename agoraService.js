@@ -47,25 +47,15 @@ export const useAgoraVoice = (roomName, user) => {
                 const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
                 const headers = {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apikey}`,
-                    'apikey': apikey
+                    'Authorization': `Bearer ${apikey}`
                 };
                 const bodyStr = JSON.stringify({ channelName: String(roomName), uid });
 
-                let res;
-                try {
-                    res = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
-                        method: 'POST',
-                        headers: headers,
-                        body: bodyStr
-                    });
-                } catch (proxyError) {
-                    res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
-                        method: 'POST',
-                        headers: headers,
-                        body: bodyStr
-                    });
-                }
+                const res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyStr
+                });
 
                 if (!res.ok) {
                     let errData;
