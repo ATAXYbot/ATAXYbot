@@ -16,9 +16,9 @@ export default {
     }
 
     try {
-      const { question_id, selected_option, prompt_text } = await request.json();
+      const { question_id, selected_option, user_query, prompt_text } = await request.json();
 
-      if (!question_id || selected_option === undefined || !prompt_text) {
+      if (!question_id || selected_option === undefined || !user_query || !prompt_text) {
         return new Response(JSON.stringify({ error: 'Missing required fields' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
@@ -28,8 +28,8 @@ export default {
       // STEP 1: Cache Check
       try {
         const stmt = env.DB.prepare(
-          'SELECT ai_explanation FROM ai_answers_cache WHERE question_id = ? AND selected_option = ?'
-        ).bind(String(question_id), String(selected_option));
+          'SELECT ai_explanation FROM ai_answers_cache WHERE question_id = ? AND selected_option = ? AND user_query = ?'
+        ).bind(String(question_id), String(selected_option), String(user_query));
 
         const result = await stmt.first();
 
@@ -95,8 +95,8 @@ export default {
       // ctx.waitUntil lets the worker continue inserting the data without making the user wait
       ctx.waitUntil(
         env.DB.prepare(
-          'INSERT OR IGNORE INTO ai_answers_cache (question_id, selected_option, ai_explanation) VALUES (?, ?, ?)'
-        ).bind(String(question_id), String(selected_option), ai_explanation).run()
+          'INSERT OR IGNORE INTO ai_answers_cache (question_id, selected_option, user_query, ai_explanation) VALUES (?, ?, ?, ?)'
+        ).bind(String(question_id), String(selected_option), String(user_query), ai_explanation).run()
          .catch(insertError => console.error('Database insert error:', insertError))
       );
 

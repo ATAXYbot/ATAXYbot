@@ -138,6 +138,7 @@
                         body: JSON.stringify({
                             question_id: question_id,
                             selected_option: selected_option,
+                            user_query: prompt,
                             prompt_text: `${systemContext}\n\nStudent Doubt: ${prompt}`
                         })
                     });
