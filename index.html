@@ -846,6 +846,20 @@ INSTRUCTIONS:
             const channelRef = useRef(null);
             useEffect(() => { channelRef.current = realtimeChannel; }, [realtimeChannel]);
 
+            const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
+            const speakerMutedRef = useRef(false);
+            useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
+
+            const toggleSpeaker = () => {
+                const nextState = !isSpeakerMuted;
+                remoteUsers.forEach(user => {
+                    if (user.audioTrack) {
+                        user.audioTrack.setVolume(nextState ? 0 : 100);
+                    }
+                });
+                setIsSpeakerMuted(nextState);
+            };
+
             const [availableRooms, setAvailableRooms] = useState([]);
             const [chatMessages, setChatMessages] = useState([]);
             const [micRequests, setMicRequests] = useState([]);
@@ -914,7 +928,12 @@ INSTRUCTIONS:
                     
                     agoraClient.on("user-published", async (remoteUser, mediaType) => {
                         await agoraClient.subscribe(remoteUser, mediaType);
-                        if (mediaType === "audio") remoteUser.audioTrack.play();
+                        if (mediaType === "audio") {
+                            remoteUser.audioTrack.play();
+                            if (speakerMutedRef.current) {
+                                remoteUser.audioTrack.setVolume(0);
+                            }
+                        }
                         setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
                     });
                     agoraClient.on("user-unpublished", (remoteUser, mediaType) => {
@@ -1044,7 +1063,7 @@ INSTRUCTIONS:
                 // Pre-request microphone to preserve user gesture token
                 let preTrack = null;
                 try {
-                    preTrack = await window.AgoraRTC.createMicrophoneAudioTrack();
+                    preTrack = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
                     setLocalAudioTrack(preTrack);
                 } catch(e) {
                     console.warn("Mic pre-request denied, will retry on seat", e);
@@ -1102,7 +1121,7 @@ INSTRUCTIONS:
                     // Request microphone track immediately to preserve the gesture token
                     let track = passedTrack || trackRef.current;
                     if (!track) {
-                        track = await window.AgoraRTC.createMicrophoneAudioTrack();
+                        track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
                         setLocalAudioTrack(track);
                     }
                     await activeClient.setClientRole("host");
@@ -1133,18 +1152,18 @@ INSTRUCTIONS:
             };
 
             const toggleMute = async () => {
-                if (!client) return;
+                if (!clientRef.current) return;
                 try {
-                    if (localAudioTrack) {
-                        // Using setEnabled directly controls capturing at the hardware level, more reliable on mobile
+                    if (trackRef.current) {
                         const shouldMute = !isMuted;
-                        await localAudioTrack.setMuted(shouldMute);
+                        // Using setEnabled directly controls capturing at the hardware level, more reliable on PC/mobile to prevent crashes
+                        await trackRef.current.setEnabled(!shouldMute);
                         setIsMuted(shouldMute);
                     } else {
                         // Recover track if missing
-                        const track = await window.AgoraRTC.createMicrophoneAudioTrack();
-                        await client.setClientRole("host");
-                        await client.publish([track]);
+                        const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
+                        await clientRef.current.setClientRole("host");
+                        await clientRef.current.publish([track]);
                         setLocalAudioTrack(track);
                         setIsMuted(false);
                     }
@@ -1188,11 +1207,11 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings };
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings };
         };
 
         const FloatingVoiceWidget = ({ voiceState }) => {
-            const { activeRoom, isMuted, toggleMute, leaveRoom } = voiceState;
+            const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom } = voiceState;
             if (!activeRoom) return null;
             return (
                 <div className="fixed bottom-[75px] left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100]">
@@ -1205,6 +1224,7 @@ INSTRUCTIONS:
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <button onClick={toggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-xs`}></i></button>
+                        <button onClick={toggleSpeaker} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isSpeakerMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-xs`}></i></button>
                         <button onClick={() => leaveRoom()} className="w-9 h-9 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"><i className="fa-solid fa-phone-slash text-xs"></i></button>
                     </div>
                 </div>
@@ -1316,7 +1336,7 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings } = voiceState;
+            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -1405,10 +1425,10 @@ INSTRUCTIONS:
                             </div>
                         ) : (
                             <div className={`rounded-full border-2 border-dashed border-[#0AE0D0]/40 flex items-center justify-center bg-[#021633] ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} hover:bg-[#0AE0D0]/10`}>
-                                <i className="fa-solid fa-microphone-lines text-[#0AE0D0]/40"></i>
+                        <i className="fa-solid fa-plus text-[#0AE0D0]/40"></i>
                             </div>
                         )}
-                        <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? occupant.user_name : label}</span>
+                <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? occupant.user_name : "\u00A0"}</span>
                     </div>
                 )
             };
@@ -1468,6 +1488,9 @@ INSTRUCTIONS:
                         />
                         <button onClick={() => { if(chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }} className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center hover:bg-[#00d8d8] shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors">
                             <i className="fa-solid fa-paper-plane text-sm"></i>
+                        </button>
+                        <button onClick={toggleSpeaker} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
+                            <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
                         </button>
                         <button onClick={handleBottomMicClick} className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.6)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]'}`}>
                             {!isSpeaker ? <i className="fa-solid fa-hand"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>}
