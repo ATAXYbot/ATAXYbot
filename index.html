@@ -127,7 +127,36 @@
         // ==========================================
         // 🤖 SECURE AI MULTI-MODEL FALLBACK ENGINE
         // ==========================================
-        const fetchGeminiSecure = async (prompt, history = [], systemContext = "") => {
+        const fetchGeminiSecure = async (prompt, history = [], systemContext = "", question_id = null, selected_option = null) => {
+            if (question_id && selected_option) {
+                // Task 2: Route question doubts to the new D1 Caching Proxy
+                const cacheProxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
+                try {
+                    const res = await fetch(cacheProxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            question_id: question_id,
+                            selected_option: selected_option,
+                            prompt_text: `${systemContext}\n\nStudent Doubt: ${prompt}`
+                        })
+                    });
+                    
+                    if (!res.ok) throw new Error(`Proxy error: ${res.status}`);
+                    
+                    const data = await res.json();
+                    
+                    // You can optionally log cache hits for debugging
+                    console.log(`D1 Cache Hit: ${data.cached}`);
+                    
+                    return data.explanation;
+                } catch (err) {
+                    console.error("Error fetching cached explanation:", err);
+                    return "Sorry, there was an error connecting to the AI Mentor. Please try again.";
+                }
+            }
+
+            // Original logic for General Chat (AIMentorView)
             const modelsToTry = [
               "gemini-3.1-flash-lite", // The current fastest, high-volume model
               "gemini-3.5-flash",      // The current stable, smart fallback
@@ -494,32 +523,6 @@
                 setAiInput("");
                 setAiTyping(true);
 
-                // --- 1. Check Cache ---
-                let cachedReply = null;
-                
-                // Check local cache first for an instant response
-                cachedReply = safeGetStr(`ai_cache_${q.id}_${userMsg}`, null);
-
-                if (!cachedReply && supabase) {
-                    try {
-                        const { data } = await supabase.from('ai_mentor_cache')
-                            .select('response')
-                            .eq('question_id', q.id)
-                            .eq('prompt', userMsg)
-                            .single();
-                        if (data && data.response) {
-                            cachedReply = data.response;
-                            safeSetItem(`ai_cache_${q.id}_${userMsg}`, cachedReply);
-                        }
-                    } catch(e) {}
-                }
-
-                if (cachedReply) {
-                    setAiMsgs(prev => [...prev, { sender: 'ai', text: cachedReply }]);
-                    setAiTyping(false);
-                    return;
-                }
-
                 const systemContext = `You are ATAXY, a mentor to help all the students, an encouraging academic tutor for NEET/JEE. You must never say you are an AI.
 The student is practicing a question and needs help.
 QUESTION CONTEXT:
@@ -538,19 +541,10 @@ INSTRUCTIONS:
 - Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas.
 - Be encouraging, especially if they answered incorrectly.`;
 
-                const aiReply = await fetchGeminiSecure(userMsg, aiMsgs, systemContext);
+                const selectedOption = isAnswered ? ['A','B','C','D'][attemptIdx] : 'None';
                 
-                // --- 2. Save to Cache ---
-                safeSetItem(`ai_cache_${q.id}_${userMsg}`, aiReply);
-                if (supabase && !aiReply.startsWith('Blocked by') && !aiReply.startsWith('I am currently')) {
-                    try {
-                        await supabase.from('ai_mentor_cache').insert({
-                            question_id: q.id,
-                            prompt: userMsg,
-                            response: aiReply
-                        });
-                    } catch(e) {}
-                }
+                // Fetch using our new Cloudflare D1 Cache Proxy
+                const aiReply = await fetchGeminiSecure(userMsg, aiMsgs, systemContext, String(q.id), selectedOption);
 
                 setAiMsgs(prev => [...prev, { sender: 'ai', text: aiReply }]);
                 setAiTyping(false);
@@ -1964,51 +1958,23 @@ INSTRUCTIONS:
                   try {
                       setQbankError(null);
                       
-                      // Fetch directly from your Supabase REST API
+                      // Fetch via your secure Cloudflare Worker Proxy
+                      // Note: Keys are now securely hidden inside the Cloudflare Worker!
                       const supabaseUrl = 'https://supabase-proxy.thevoicesession.workers.dev/rest/v1';
-                      const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
                       const headers = { 
-                          'apikey': apikey, 
-                          'Authorization': `Bearer ${apikey}`,
                           'Content-Type': 'application/json'
                       };
 
                       const fetchTable = async (table) => {
                           let res;
-                          const directUrl = 'https://kwzpnupjtvfrevpwfaao.supabase.co/rest/v1';
-                          
                           try {
-                              // Attempt 1: Try proxy with standard headers
                               res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000`, { 
                                   headers,
                                   cache: 'no-store'
                               });
                               if (!res.ok) throw new Error(`HTTP ${res.status}`);
                           } catch (err) {
-                              try {
-                                  // Attempt 2: Try direct Supabase URL (in case .workers.dev is blocked by Telegram/ISP)
-                                  res = await fetch(`${directUrl}/${table}?select=*&limit=5000`, { 
-                                      headers,
-                                      cache: 'no-store'
-                                  });
-                                  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                              } catch (err2) {
-                                  try {
-                                      // Attempt 3: Proxy without Authorization header to bypass strict preflight in some WebViews
-                                      res = await fetch(`${supabaseUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
-                                          cache: 'no-store'
-                                      });
-                                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                                  } catch (err3) {
-                                      try {
-                                          // Attempt 4: Direct URL without Authorization header
-                                          res = await fetch(`${directUrl}/${table}?select=*&limit=5000&apikey=${apikey}`, { 
-                                              cache: 'no-store'
-                                          });
-                                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                                      } catch (fallbackErr) { throw new Error(`Network: ${fallbackErr.message}`); }
-                                  }
-                              }
+                              throw new Error(`Network Error: Ensure your Supabase Proxy Worker is deployed and online. Details: ${err.message}`);
                           }
                           
                           if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
