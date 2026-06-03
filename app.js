@@ -448,6 +448,8 @@ async function askAtaxyMentor(userMessage) {
         let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            mode: 'cors',
+            credentials: 'omit',
             body: JSON.stringify({ 
                 model: "gemini-3.1-flash-lite",
                 contents: [{ role: 'user', parts: [{ text: combinedText }] }]
@@ -527,6 +529,8 @@ async function callGeminiAPI(prompt, systemInstruction) {
         let res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            mode: "cors",
+            credentials: "omit",
             body: JSON.stringify(body)
         });
         

@@ -147,6 +147,8 @@
                         const res = await fetch(proxyUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            mode: 'cors',
+                            credentials: 'omit',
                             body: JSON.stringify({ model, contents, systemInstruction: systemContext })
                         });
                         

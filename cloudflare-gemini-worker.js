@@ -1,19 +1,21 @@
 export default {
   async fetch(request, env) {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin, tg-web-app-data"
+    };
+
     // Handle CORS Preflight
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
+        headers: corsHeaders,
       });
     }
 
     if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
     }
 
     try {
@@ -25,7 +27,10 @@ export default {
       // Note: Best practice is to set GEMINI_API_KEY in your Cloudflare Worker Environment Variables
       const apiKey = env.GEMINI_API_KEY;
       if (!apiKey) {
-         return new Response(JSON.stringify({ error: { message: "GEMINI_API_KEY environment variable is missing on Cloudflare" } }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+         return new Response(JSON.stringify({ error: { message: "GEMINI_API_KEY environment variable is missing on Cloudflare" } }), { 
+            status: 500, 
+            headers: { "Content-Type": "application/json", ...corsHeaders } 
+         });
       }
       
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -45,11 +50,11 @@ export default {
       
       return new Response(JSON.stringify(data), {
         status: response.status,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     } catch (error) {
       return new Response(JSON.stringify({ error: { message: error.message } }), {
-         status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+         status: 500, headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
   }
