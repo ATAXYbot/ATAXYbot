@@ -1433,7 +1433,7 @@ INSTRUCTIONS:
 
             const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
             const myParticipant = participants.find(p => String(p.user_id) === String(tgUser.id));
-            const isSpeaker = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined;
+            const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
 
             const hostSeat = participants.find(p => p.seat_number === 0);
             const partnerSeat = participants.find(p => p.seat_number === 1);
