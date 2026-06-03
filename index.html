@@ -92,6 +92,13 @@
             0% { transform: translate(-10%, -10%) rotate(-20deg); }
             100% { transform: translate(10%, 10%) rotate(-20deg); }
         }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            10% { transform: translateY(-20px) scale(1.1); opacity: 1; }
+            20% { transform: translateY(-40px) scale(1); opacity: 1; }
+            80% { transform: translateY(-150px) scale(1); opacity: 1; }
+            100% { transform: translateY(-200px) scale(0.8); opacity: 0; }
+        }
         input[type="date"]::-webkit-calendar-picker-indicator {
             background: transparent; bottom: 0; color: transparent; cursor: pointer; height: auto; left: 0; position: absolute; right: 0; top: 0; width: auto;
         }
@@ -865,6 +872,34 @@ INSTRUCTIONS:
             const [micRequests, setMicRequests] = useState([]);
             const [pendingInvite, setPendingInvite] = useState(null);
 
+            // --- WEPLAY-STYLE FEATURES (EMOJIS, GIFTS, SFX) ---
+            const [remoteMutedState, setRemoteMutedState] = useState({});
+            const [floatingGifts, setFloatingGifts] = useState([]);
+
+            const addFloatingGift = (payload) => {
+                const id = Date.now() + Math.random();
+                setFloatingGifts(prev => [...prev, { id, ...payload }]);
+                setTimeout(() => {
+                    setFloatingGifts(prev => prev.filter(g => g.id !== id));
+                }, 4000);
+            };
+
+            const triggerSFX = (type) => {
+                const sfxUrls = {
+                    applause: 'https://actions.google.com/sounds/v1/crowds/crowd_cheer.ogg',
+                    laughter: 'https://actions.google.com/sounds/v1/crowds/female_crowd_laughing.ogg',
+                    drumroll: 'https://actions.google.com/sounds/v1/cartoon/drum_roll.ogg',
+                    magic: 'https://actions.google.com/sounds/v1/cartoon/magic_chime_chord.ogg'
+                };
+                try {
+                    if(sfxUrls[type]) {
+                        const audio = new Audio(sfxUrls[type]);
+                        audio.volume = 0.5;
+                        audio.play().catch(e => console.error("SFX play error", e));
+                    }
+                } catch(e) {}
+            };
+
             const sendBroadcast = (event, payload) => {
                 if (channelRef.current) {
                     channelRef.current.send({ type: 'broadcast', event: event, payload: payload });
@@ -1007,6 +1042,15 @@ INSTRUCTIONS:
                                     stepDown();
                                     alert("The host has moved you back to the audience.");
                                 }
+                            })
+                            .on('broadcast', { event: 'send_gift' }, ({ payload }) => {
+                                addFloatingGift(payload);
+                            })
+                            .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
+                                triggerSFX(payload.type);
+                            })
+                            .on('broadcast', { event: 'mute_state_changed' }, ({ payload }) => {
+                                setRemoteMutedState(prev => ({ ...prev, [payload.userId]: payload.isMuted }));
                             })
                             .subscribe();
                         
@@ -1159,6 +1203,15 @@ INSTRUCTIONS:
                         // Using setEnabled directly controls capturing at the hardware level, more reliable on PC/mobile to prevent crashes
                         await trackRef.current.setEnabled(!shouldMute);
                         setIsMuted(shouldMute);
+                        
+                        // Broadcast state globally
+                        if (channelRef.current) {
+                            channelRef.current.send({
+                                type: 'broadcast',
+                                event: 'mute_state_changed',
+                                payload: { userId: String(tgUser.id), isMuted: shouldMute }
+                            });
+                        }
                     } else {
                         // Recover track if missing
                         const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
@@ -1166,6 +1219,14 @@ INSTRUCTIONS:
                         await clientRef.current.publish([track]);
                         setLocalAudioTrack(track);
                         setIsMuted(false);
+                        
+                        if (channelRef.current) {
+                            channelRef.current.send({
+                                type: 'broadcast',
+                                event: 'mute_state_changed',
+                                payload: { userId: String(tgUser.id), isMuted: false }
+                            });
+                        }
                     }
                 } catch (e) {
                     console.error("Mute error", e);
@@ -1207,14 +1268,14 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings };
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, remoteMutedState, floatingGifts, addFloatingGift, triggerSFX };
         };
 
-        const FloatingVoiceWidget = ({ voiceState }) => {
+        const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
             const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom } = voiceState;
             if (!activeRoom) return null;
             return (
-                <div className="fixed bottom-[75px] left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100]">
+                <div onClick={onRestore} className="fixed bottom-[75px] left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] transition-transform">
                     <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] animate-pulse shrink-0"><i className="fa-solid fa-volume-high text-xs"></i></div>
                         <div className="truncate">
@@ -1222,7 +1283,7 @@ INSTRUCTIONS:
                             <p className="text-[#00FFFF] text-[10px] uppercase font-bold tracking-widest">Live Session Active</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                         <button onClick={toggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-xs`}></i></button>
                         <button onClick={toggleSpeaker} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isSpeakerMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-xs`}></i></button>
                         <button onClick={() => leaveRoom()} className="w-9 h-9 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"><i className="fa-solid fa-phone-slash text-xs"></i></button>
@@ -1335,13 +1396,28 @@ INSTRUCTIONS:
             );
         };
 
-        const ActiveVoiceRoom = ({ tgUser, voiceState }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings } = voiceState;
+        const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
+            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, remoteMutedState, floatingGifts, addFloatingGift, triggerSFX } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
             const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
+            
+            const [showGifts, setShowGifts] = useState(false);
+            const [showSFX, setShowSFX] = useState(false);
+
+            const sendGift = (emoji, name) => {
+                sendBroadcast('send_gift', { emoji, name, senderName: tgUser.first_name });
+                addFloatingGift({ emoji, name, senderName: tgUser.first_name });
+                setShowGifts(false);
+            };
+
+            const playSFXAction = (type) => {
+                sendBroadcast('play_sfx', { type });
+                triggerSFX(type);
+                setShowSFX(false);
+            };
 
             const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
             const myParticipant = participants.find(p => String(p.user_id) === String(tgUser.id));
@@ -1402,9 +1478,11 @@ INSTRUCTIONS:
             };
 
             const renderSeat = (seatNum, occupant, label, isLarge=false) => {
+                if (occupant && !occupant.user_id) return null; // Safe guard
                 const isMe = occupant?.user_id === String(tgUser.id);
                 const speaking = occupant && activeSpeakers[occupant.user_id];
                 const dpUrl = isMe ? tgUser.photo_url : occupant?.photo_url;
+                const isOccupantMuted = occupant && (remoteMutedState[occupant.user_id] ?? (remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio));
                 
                 return (
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
@@ -1417,7 +1495,7 @@ INSTRUCTIONS:
                                         {occupant.user_name.charAt(0)}
                                     </div>
                                 )}
-                                {(isMe ? isMuted : remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio) && (
+                                {(isMe ? isMuted : isOccupantMuted) && (
                                     <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600">
                                         <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
                                     </div>
@@ -1435,6 +1513,19 @@ INSTRUCTIONS:
 
             return (
                 <div className="flex-1 flex flex-col relative z-10">
+                    {/* Floating Gifts Overlay */}
+                    <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+                        {floatingGifts.map(gift => (
+                            <div key={gift.id} className="absolute bottom-24 left-4 flex items-center gap-2 bg-[#010B1C]/80 backdrop-blur px-3 py-2 rounded-full border border-[#00FFFF]/30 shadow-[0_0_15px_rgba(0,255,255,0.2)]" style={{ animation: 'floatUp 4s ease-in-out forwards' }}>
+                                <span className="text-3xl">{gift.emoji}</span>
+                                <div className="text-white text-xs">
+                                    <p><span className="font-bold text-[#00FFFF]">{gift.senderName}</span> sent</p>
+                                    <p className="font-semibold">{gift.name}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
                     <div className="px-4 py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur">
                         <div className="flex flex-col flex-1 overflow-hidden pr-2">
                             <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
@@ -1443,6 +1534,7 @@ INSTRUCTIONS:
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={onMinimize} className="bg-[#0AE0D0]/10 text-[#0AE0D0] hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors" title="Minimize Room"><i className="fa-solid fa-compress"></i></button>
                             <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
                             <button onClick={() => leaveRoom()} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
                         </div>
@@ -1479,23 +1571,26 @@ INSTRUCTIONS:
                         )}
                     </div>
 
-                    <div className="fixed bottom-[60px] w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-2 items-center z-20">
+                    <div className="fixed bottom-[60px] w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-1.5 items-center z-20 pb-[env(safe-area-inset-bottom,_12px)]">
                         <input 
                             value={chatInput} onChange={e=>setChatInput(e.target.value)} 
                             placeholder="Message room..." 
-                            className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF]"
+                            className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF] min-w-[100px]"
                             onKeyDown={(e) => { if(e.key==='Enter' && chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }}
                         />
-                        <button onClick={() => { if(chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }} className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center hover:bg-[#00d8d8] shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors">
-                            <i className="fa-solid fa-paper-plane text-sm"></i>
+                        <button onClick={() => setShowGifts(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors bg-[#F9D33A]/10 text-[#F9D33A] hover:bg-[#F9D33A]/20">
+                            <i className="fa-solid fa-gift text-sm"></i>
                         </button>
-                        <button onClick={toggleSpeaker} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
-                            <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'}`}></i>
+                        <button onClick={() => setShowSFX(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors bg-[#00FFFF]/10 text-[#00FFFF] hover:bg-[#00FFFF]/20">
+                            <i className="fa-solid fa-music text-sm"></i>
                         </button>
-                        <button onClick={handleBottomMicClick} className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.6)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]'}`}>
-                            {!isSpeaker ? <i className="fa-solid fa-hand"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>}
+                        <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
+                            <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
                         </button>
-                        {isHost && <button onClick={() => setShowSettingsModal(true)} className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 text-lg transition-colors border border-transparent"><i className="fa-solid fa-sliders"></i></button>}
+                        <button onClick={handleBottomMicClick} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
+                            {!isSpeaker ? <i className="fa-solid fa-hand text-sm"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>}
+                        </button>
+                        {isHost && <button onClick={() => setShowSettingsModal(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 transition-colors bg-transparent"><i className="fa-solid fa-sliders text-sm"></i></button>}
                     </div>
 
                     {isHost && micRequests.length > 0 && (
@@ -1621,6 +1716,44 @@ INSTRUCTIONS:
                         </div>
                     )}
                     {showSettingsModal && <RoomSettingsModal activeRoom={activeRoom} onClose={() => setShowSettingsModal(false)} onSave={updateRoomSettings} />}
+                    
+                    {showGifts && (
+                        <div className="fixed inset-0 bg-transparent z-[90]" onClick={() => setShowGifts(false)}>
+                            <div className="absolute bottom-[115px] left-4 bg-[#021633] border border-[#0AE0D0]/30 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,255,255,0.2)] flex gap-3 animate-in slide-in-from-bottom-5" onClick={e=>e.stopPropagation()}>
+                                <button onClick={() => sendGift('🌹', 'Rose')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
+                                    <span className="text-3xl">🌹</span><span className="text-[10px] text-[#A4DFE6] font-bold">Rose</span>
+                                </button>
+                                <button onClick={() => sendGift('👑', 'Crown')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
+                                    <span className="text-3xl">👑</span><span className="text-[10px] text-[#A4DFE6] font-bold">Crown</span>
+                                </button>
+                                <button onClick={() => sendGift('💖', 'Heart')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
+                                    <span className="text-3xl">💖</span><span className="text-[10px] text-[#A4DFE6] font-bold">Heart</span>
+                                </button>
+                                <button onClick={() => sendGift('🚀', 'Rocket')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
+                                    <span className="text-3xl">🚀</span><span className="text-[10px] text-[#A4DFE6] font-bold">Rocket</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {showSFX && (
+                        <div className="fixed inset-0 bg-transparent z-[90]" onClick={() => setShowSFX(false)}>
+                            <div className="absolute bottom-[115px] left-16 bg-[#021633] border border-[#0AE0D0]/30 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,255,255,0.2)] flex gap-3 animate-in slide-in-from-bottom-5" onClick={e=>e.stopPropagation()}>
+                                <button onClick={() => playSFXAction('applause')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
+                                    <i className="fa-solid fa-hands-clapping text-2xl text-yellow-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Applause</span>
+                                </button>
+                                <button onClick={() => playSFXAction('laughter')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
+                                    <i className="fa-solid fa-face-laugh-squint text-2xl text-orange-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Laugh</span>
+                                </button>
+                                <button onClick={() => playSFXAction('drumroll')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
+                                    <i className="fa-solid fa-drum text-2xl text-blue-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Drumroll</span>
+                                </button>
+                                <button onClick={() => playSFXAction('magic')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
+                                    <i className="fa-solid fa-wand-magic-sparkles text-2xl text-purple-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Magic</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -3079,7 +3212,7 @@ INSTRUCTIONS:
                     {currentTab === 'home' && renderHomeView()}
                     {currentTab === 'chat' && <ChatView user={tgUser} />}
                     {currentTab === 'ai' && <AIMentorView />}
-                    {currentTab === 'voice' && (voiceState.activeRoom ? <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} /> : <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />)}
+                    {currentTab === 'voice' && (voiceState.activeRoom ? <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => setCurrentTab('home')} /> : <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />)}
                     {currentTab === 'questions' && renderQuestionsView()}
                     {currentTab === 'profile' && renderProfileView()}
                     
@@ -3100,7 +3233,7 @@ INSTRUCTIONS:
               </div>
 
               {/* Floating Voice Widget is completely global now (except inside the voice tab itself) */}
-              {voiceState.activeRoom && currentTab !== 'voice' && <FloatingVoiceWidget voiceState={voiceState} />}
+              {voiceState.activeRoom && currentTab !== 'voice' && <FloatingVoiceWidget voiceState={voiceState} onRestore={() => setCurrentTab('voice')} />}
 
             </div>
           );
