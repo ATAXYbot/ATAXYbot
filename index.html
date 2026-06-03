@@ -142,14 +142,9 @@
             }));
             contents.push({ role: 'user', parts: [{ text: prompt }] });
 
-            let lastError = null;
-
-            for (const model of modelsToTry) {
-                try {
-                    let data;
-                    let isOk = false;
-
-                    // Attempt 1: Route through user's Cloudflare Proxy
+            let attempts = 0;
+            while (attempts < 8) {
+                for (const model of modelsToTry) {
                     try {
                         const res = await fetch(proxyUrl, {
                             method: 'POST',
@@ -159,43 +154,30 @@
                             body: JSON.stringify({ model, contents, systemInstruction: systemContext })
                         });
                         
+                        if (res.status === 429) continue;
+
                         const rawText = await res.text();
+                        let data;
                         try {
                             data = JSON.parse(rawText);
                         } catch (parseError) {
-                            console.error(`[AI Proxy] Non-JSON response for ${model}:`, rawText);
-                            throw new Error(`Proxy returned an invalid format. Status: ${res.status}`);
+                            continue;
                         }
-                        isOk = res.ok;
                         
-                        if (!isOk) {
-                            throw new Error(data?.error?.message || `Proxy failed with status: ${res.status}`);
+                        if (res.ok && data.candidates && data.candidates.length > 0) {
+                            return data.candidates[0].content.parts[0].text;
+                        } else if (data.promptFeedback?.blockReason) {
+                            return `Blocked by safety settings: ${data.promptFeedback.blockReason}`;
                         }
-                    } catch (e) {
-                        console.error(`[AI Proxy] Network or Fetch error for ${model}:`, e);
-                        lastError = e;
-                        isOk = false;
+                    } catch (err) {
+                        // Network error, skip to next model
                     }
-
-                    if (!isOk) {
-                        console.warn(`Proxy failed for model ${model}. Make sure your Cloudflare worker is deployed correctly.`);
-                        continue; // Skip to the next model
-                    }
-                    
-                    if (isOk && data.candidates && data.candidates.length > 0) {
-                        return data.candidates[0].content.parts[0].text;
-                    } else if (data.promptFeedback?.blockReason) {
-                        throw new Error(`Blocked by safety settings: ${data.promptFeedback.blockReason}`);
-                    } else {
-                        const errMsg = data.error?.message || data.message || (typeof data.error === 'string' ? data.error : null) || `Model ${model} returned empty response`;
-                        throw new Error(errMsg);
-                    }
-                } catch (err) {
-                    console.warn(`[AI Fallback] ${model} failed:`, err.message);
-                    lastError = err;
                 }
+                attempts++;
+                // Wait 3 seconds before retrying all models again to respect rate limits
+                await new Promise(resolve => setTimeout(resolve, 3000));
             }
-            return `All AI models are currently busy or unavailable. Please try again later. (Error: ${lastError?.message})`;
+            return "I am currently receiving a high volume of requests. Please wait a moment and ask your doubt again!";
         };
 
         // =========================================================================
@@ -264,9 +246,9 @@
             t = t.replace(/__(.+?)__/g, '<strong class="text-blue-600 dark:text-blue-400">$1</strong>');
             t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
             t = t.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 text-pink-500 px-1 py-0.5 rounded text-xs border border-gray-200 dark:border-gray-700">$1</code>');
-            t = t.replace(/### (.*)/g, '<h3 class="text-lg font-bold mt-3 mb-1 text-gray-800 dark:text-gray-100">$1</h3>');
-            t = t.replace(/## (.*)/g, '<h2 class="text-xl font-bold mt-3 mb-1 text-gray-800 dark:text-gray-100">$1</h2>');
-            t = t.replace(/# (.*)/g, '<h1 class="text-2xl font-bold mt-3 mb-1 text-gray-800 dark:text-gray-100">$1</h1>');
+            t = t.replace(/### (.*)/g, '<h3 class="text-sm font-bold mt-2 mb-1 text-gray-800 dark:text-gray-100">$1</h3>');
+            t = t.replace(/## (.*)/g, '<h2 class="text-base font-bold mt-2 mb-1 text-gray-800 dark:text-gray-100">$1</h2>');
+            t = t.replace(/# (.*)/g, '<h1 class="text-lg font-bold mt-2 mb-1 text-gray-800 dark:text-gray-100">$1</h1>');
             t = t.replace(/(?:<br\s*\/?>)?\s*[-•]\s+(.*)/g, '<li class="ml-4 list-disc my-1">$1</li>');
             
             // 7. Clean up excessive breaks
@@ -490,7 +472,11 @@
             const [aiTyping, setAiTyping] = useState(false);
             const chatEndRef = useRef(null);
 
-            useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMsgs, aiTyping]);
+            useEffect(() => { 
+                if (aiTyping) {
+                    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); 
+                }
+            }, [aiTyping]);
 
             // Reset chat if the user navigates to a new question
             useEffect(() => {
@@ -508,7 +494,33 @@
                 setAiInput("");
                 setAiTyping(true);
 
-                const systemContext = `You are ATAXY AI Mentor, an encouraging academic tutor for NEET/JEE.
+                // --- 1. Check Cache ---
+                let cachedReply = null;
+                
+                // Check local cache first for an instant response
+                cachedReply = safeGetStr(`ai_cache_${q.id}_${userMsg}`, null);
+
+                if (!cachedReply && supabase) {
+                    try {
+                        const { data } = await supabase.from('ai_mentor_cache')
+                            .select('response')
+                            .eq('question_id', q.id)
+                            .eq('prompt', userMsg)
+                            .single();
+                        if (data && data.response) {
+                            cachedReply = data.response;
+                            safeSetItem(`ai_cache_${q.id}_${userMsg}`, cachedReply);
+                        }
+                    } catch(e) {}
+                }
+
+                if (cachedReply) {
+                    setAiMsgs(prev => [...prev, { sender: 'ai', text: cachedReply }]);
+                    setAiTyping(false);
+                    return;
+                }
+
+                const systemContext = `You are ATAXY, a mentor to help all the students, an encouraging academic tutor for NEET/JEE. You must never say you are an AI.
 The student is practicing a question and needs help.
 QUESTION CONTEXT:
 "${q.text}"
@@ -528,6 +540,18 @@ INSTRUCTIONS:
 
                 const aiReply = await fetchGeminiSecure(userMsg, aiMsgs, systemContext);
                 
+                // --- 2. Save to Cache ---
+                safeSetItem(`ai_cache_${q.id}_${userMsg}`, aiReply);
+                if (supabase && !aiReply.startsWith('Blocked by') && !aiReply.startsWith('I am currently')) {
+                    try {
+                        await supabase.from('ai_mentor_cache').insert({
+                            question_id: q.id,
+                            prompt: userMsg,
+                            response: aiReply
+                        });
+                    } catch(e) {}
+                }
+
                 setAiMsgs(prev => [...prev, { sender: 'ai', text: aiReply }]);
                 setAiTyping(false);
             };
@@ -535,7 +559,7 @@ INSTRUCTIONS:
             return (
                 <>
                     <button onClick={() => setShowAIChat(!showAIChat)} className={`border text-xs font-semibold px-4 py-2 rounded-sm shadow-sm transition-colors flex items-center gap-1 ${showAIChat ? 'bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
-                        <i className="fa-solid fa-sparkles text-purple-500"></i> {showAIChat ? 'Close AI Mentor' : 'Ask AI Mentor'}
+                        <i className="fa-solid fa-sparkles text-purple-500"></i> {showAIChat ? 'Close ATAXY Mentor' : 'Ask ATAXY Mentor'}
                     </button>
 
                     {showAIChat && (
@@ -842,6 +866,8 @@ INSTRUCTIONS:
             useEffect(() => { roomRef.current = activeRoom; }, [activeRoom]);
 
             const [participants, setParticipants] = useState([]);
+            const participantsRef = useRef([]);
+            useEffect(() => { participantsRef.current = participants; }, [participants]);
             const [localAudioTrack, setLocalAudioTrack] = useState(null);
             const trackRef = useRef(null);
             useEffect(() => { trackRef.current = localAudioTrack; }, [localAudioTrack]);
@@ -872,17 +898,8 @@ INSTRUCTIONS:
             const [micRequests, setMicRequests] = useState([]);
             const [pendingInvite, setPendingInvite] = useState(null);
 
-            // --- WEPLAY-STYLE FEATURES (EMOJIS, GIFTS, SFX) ---
+            // --- WEPLAY-STYLE FEATURES (EMOJIS, SFX) ---
             const [remoteMutedState, setRemoteMutedState] = useState({});
-            const [floatingGifts, setFloatingGifts] = useState([]);
-
-            const addFloatingGift = (payload) => {
-                const id = Date.now() + Math.random();
-                setFloatingGifts(prev => [...prev, { id, ...payload }]);
-                setTimeout(() => {
-                    setFloatingGifts(prev => prev.filter(g => g.id !== id));
-                }, 4000);
-            };
 
             const triggerSFX = (type) => {
                 const sfxUrls = {
@@ -908,17 +925,17 @@ INSTRUCTIONS:
 
             const fetchRooms = async () => {
                 if (!supabase) return;
-                const { data: rooms } = await supabase.from('voice_rooms').select('*').order('room_type', { ascending: false });
-                const { data: allParticipants } = await supabase.from('room_participants').select('*');
+                const { data: rooms, error } = await supabase
+                    .from('voice_rooms')
+                    .select('*')
+                    .eq('is_live', true)
+                    .order('created_at', { ascending: false });
                 
-                if (rooms && allParticipants) {
-                    const validRooms = rooms.filter(room => {
-                        const hostPresent = allParticipants.some(p => p.room_id === room.id && String(p.user_id) === String(room.host_user_id));
-                        const age = Date.now() - new Date(room.created_at || Date.now()).getTime();
-                        return hostPresent || age < 30000;
-                    });
-                    setAvailableRooms(validRooms);
-                } else if (rooms) {
+                if (error) {
+                    console.error("Error fetching rooms:", error);
+                    return;
+                }
+                if (rooms) {
                     setAvailableRooms(rooms);
                 }
             };
@@ -1004,6 +1021,14 @@ INSTRUCTIONS:
                             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants', filter: `room_id=eq.${roomData.id}` }, () => {
                                 fetchParticipants(roomData.id);
                             })
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+                                if (payload.new.is_live === false) {
+                                    alert("The live room has ended.");
+                                    leaveRoom(agoraClient, roomData.id);
+                                } else {
+                                    setActiveRoom(payload.new);
+                                }
+                            })
                             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, () => {
                                 alert("The host has closed the room.");
                                 leaveRoom(agoraClient, roomData.id);
@@ -1043,9 +1068,6 @@ INSTRUCTIONS:
                                     alert("The host has moved you back to the audience.");
                                 }
                             })
-                            .on('broadcast', { event: 'send_gift' }, ({ payload }) => {
-                                addFloatingGift(payload);
-                            })
                             .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
                                 triggerSFX(payload.type);
                             })
@@ -1073,32 +1095,42 @@ INSTRUCTIONS:
             };
 
             const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id) => {
+                const r = roomRef.current;
                 if (localAudioTrack) { 
                     localAudioTrack.stop(); 
                     localAudioTrack.close(); 
                     setLocalAudioTrack(null);
                 }
                 if (forcedClient) { try { await forcedClient.leave(); } catch (e) {} }
-                if (supabase && roomId) {
-                    const currentRoom = activeRoom || availableRooms.find(r => r.id === roomId);
-
-                    await supabase.from('room_participants').delete().match({ room_id: roomId, user_id: String(tgUser.id) });
-                    if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-
-                    if (currentRoom && String(currentRoom.host_user_id) === String(tgUser.id)) {
-                        if (currentRoom.room_type === 'temporary') {
-                            await supabase.from('voice_rooms').delete().eq('id', roomId);
+                if (supabase && r && roomId) {
+                    if (String(r.host_user_id) === String(tgUser.id)) {
+                        // I am the host leaving. Find another speaker to make host.
+                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number > 0 && String(p.user_id) !== String(tgUser.id)).sort((a,b) => a.seat_number - b.seat_number);
+                        
+                        if (remainingMics.length > 0) {
+                            const nextHost = remainingMics[0];
+                            await supabase.from('voice_rooms').update({ host_user_id: nextHost.user_id }).eq('id', roomId);
+                            await supabase.from('room_participants').update({ seat_number: 0 }).match({ room_id: roomId, user_id: nextHost.user_id });
                         } else {
-                            await supabase.from('voice_rooms').update({ is_live: false }).eq('id', roomId);
+                            if (r.room_type === 'temporary') {
+                                await supabase.from('voice_rooms').delete().eq('id', roomId);
+                            } else {
+                                await supabase.from('voice_rooms').update({ is_live: false, host_user_id: r.owner_id }).eq('id', roomId);
+                            }
                         }
                     }
+                    await supabase.from('room_participants').delete().match({ room_id: roomId, user_id: String(tgUser.id) });
+                    if (channelRef.current) supabase.removeChannel(channelRef.current);
                 }
                 setActiveRoom(null);
                 setLocalAudioTrack(null);
+                setIsMuted(true);
                 setClient(null);
                 setRemoteUsers([]);
                 setRealtimeChannel(null);
                 setChatMessages([]);
+                setMicRequests([]);
+                setPendingInvite(null);
             };
 
             const createRoom = async (name, type, password = null) => {
@@ -1181,6 +1213,23 @@ INSTRUCTIONS:
                 const track = trackRef.current;
                 const c = clientRef.current;
                 const r = roomRef.current;
+                
+                if (r && String(r.host_user_id) === String(tgUser.id)) {
+                    // Host stepping down.
+                    const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number > 0 && String(p.user_id) !== String(tgUser.id)).sort((a,b) => a.seat_number - b.seat_number);
+                    if (remainingMics.length > 0) {
+                        const nextHost = remainingMics[0];
+                        await supabase.from('voice_rooms').update({ host_user_id: nextHost.user_id }).eq('id', r.id);
+                        await supabase.from('room_participants').update({ seat_number: 0 }).match({ room_id: r.id, user_id: nextHost.user_id });
+                    } else {
+                        if (r.room_type === 'temporary') {
+                            await supabase.from('voice_rooms').delete().eq('id', r.id);
+                        } else {
+                            await supabase.from('voice_rooms').update({ is_live: false, host_user_id: r.owner_id }).eq('id', r.id);
+                        }
+                    }
+                }
+                
                 if (track) {
                     track.stop();
                     track.close();
@@ -1193,6 +1242,7 @@ INSTRUCTIONS:
                 if (supabase && r) {
                     await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: r.id, user_id: String(tgUser.id) });
                 }
+                setIsMuted(true);
             };
 
             const toggleMute = async () => {
@@ -1268,7 +1318,7 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, remoteMutedState, floatingGifts, addFloatingGift, triggerSFX };
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, remoteMutedState, triggerSFX };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
@@ -1318,29 +1368,6 @@ INSTRUCTIONS:
                         </div>
 
                         <div className="space-y-4 pb-20">
-                            {availableRooms.map(room => {
-                                const isPremium = room.room_type === 'permanent';
-                                return (
-                                    <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
-                                        {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
-                                        <div className="relative z-10 flex justify-between items-center">
-                                            <div>
-                                                <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
-                                                    {room.channel_name} 
-                                                    {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
-                                                </h3>
-                                                <div className="flex justify-between items-center text-sm text-[#A4DFE6]">
-                                                    <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {room.host_user_id.substring(0,5)}</span>
-                                                </div>
-                                            </div>
-                                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
-                                                <i className="fa-solid fa-arrow-right"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                            {availableRooms.length === 0 && <p className="text-center text-gray-500 mt-10">No active lounges. Be the first to host!</p>}
                         </div>
                     </div>
                     {showCreateModal && <CreateRoomModal onClose={() => setShowCreateModal(false)} onCreate={createRoom} />}
@@ -1397,27 +1424,12 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, remoteMutedState, floatingGifts, addFloatingGift, triggerSFX } = voiceState;
+            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, remoteMutedState, triggerSFX } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
             const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
-            
-            const [showGifts, setShowGifts] = useState(false);
-            const [showSFX, setShowSFX] = useState(false);
-
-            const sendGift = (emoji, name) => {
-                sendBroadcast('send_gift', { emoji, name, senderName: tgUser.first_name });
-                addFloatingGift({ emoji, name, senderName: tgUser.first_name });
-                setShowGifts(false);
-            };
-
-            const playSFXAction = (type) => {
-                sendBroadcast('play_sfx', { type });
-                triggerSFX(type);
-                setShowSFX(false);
-            };
 
             const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
             const myParticipant = participants.find(p => String(p.user_id) === String(tgUser.id));
@@ -1430,8 +1442,12 @@ INSTRUCTIONS:
 
             const handleBottomMicClick = () => {
                 if (!isSpeaker) {
+                    if (micRequests.some(r => String(r.uid) === String(tgUser.id))) {
+                        alert("Your request is already pending host approval.");
+                        return;
+                    }
                     const occupiedSeats = participants.map(p => p.seat_number);
-                    let emptySeat = 2;
+                    let emptySeat = activeRoom.is_partner_seat_open ? 1 : 2;
                     while(occupiedSeats.includes(emptySeat) && emptySeat <= 9) emptySeat++;
                     if (emptySeat <= 9) {
                         if (activeRoom.require_mic_request) {
@@ -1443,7 +1459,6 @@ INSTRUCTIONS:
                     }
                     else alert("All seats are currently full!");
                 }
-                else toggleMute();
             };
 
             const handleSeatClick = (seatNum, occupant) => {
@@ -1513,19 +1528,6 @@ INSTRUCTIONS:
 
             return (
                 <div className="flex-1 flex flex-col relative z-10">
-                    {/* Floating Gifts Overlay */}
-                    <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
-                        {floatingGifts.map(gift => (
-                            <div key={gift.id} className="absolute bottom-24 left-4 flex items-center gap-2 bg-[#010B1C]/80 backdrop-blur px-3 py-2 rounded-full border border-[#00FFFF]/30 shadow-[0_0_15px_rgba(0,255,255,0.2)]" style={{ animation: 'floatUp 4s ease-in-out forwards' }}>
-                                <span className="text-3xl">{gift.emoji}</span>
-                                <div className="text-white text-xs">
-                                    <p><span className="font-bold text-[#00FFFF]">{gift.senderName}</span> sent</p>
-                                    <p className="font-semibold">{gift.name}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    
                     <div className="px-4 py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur">
                         <div className="flex flex-col flex-1 overflow-hidden pr-2">
                             <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
@@ -1534,9 +1536,9 @@ INSTRUCTIONS:
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                            <button onClick={onMinimize} className="bg-[#0AE0D0]/10 text-[#0AE0D0] hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors" title="Minimize Room"><i className="fa-solid fa-compress"></i></button>
                             <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
                             <button onClick={() => leaveRoom()} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
+                            <button onClick={onMinimize} className="w-9 h-9 rounded-xl bg-gray-800/80 text-white hover:bg-gray-700 flex items-center justify-center transition-colors border border-gray-600 shadow-[0_0_10px_rgba(0,0,0,0.3)]" title="Minimize Room"><i className="fa-solid fa-compress-alt text-sm"></i></button>
                         </div>
                     </div>
                     <div className="p-6">
@@ -1549,7 +1551,7 @@ INSTRUCTIONS:
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-4">
+                    <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-24">
                         <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col justify-end">
                             <div className="flex flex-col gap-2">
                                 {chatMessages.map((msg, idx) => (
@@ -1571,25 +1573,27 @@ INSTRUCTIONS:
                         )}
                     </div>
 
-                    <div className="fixed bottom-[60px] w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-1.5 items-center z-20 pb-[env(safe-area-inset-bottom,_12px)]">
+                    <div className="fixed bottom-0 w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-1.5 items-center z-20 pb-[env(safe-area-inset-bottom,_12px)]">
                         <input 
                             value={chatInput} onChange={e=>setChatInput(e.target.value)} 
                             placeholder="Message room..." 
-                            className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF] min-w-[100px]"
+                            className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF] min-w-[80px]"
                             onKeyDown={(e) => { if(e.key==='Enter' && chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }}
                         />
-                        <button onClick={() => setShowGifts(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors bg-[#F9D33A]/10 text-[#F9D33A] hover:bg-[#F9D33A]/20">
-                            <i className="fa-solid fa-gift text-sm"></i>
-                        </button>
-                        <button onClick={() => setShowSFX(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors bg-[#00FFFF]/10 text-[#00FFFF] hover:bg-[#00FFFF]/20">
-                            <i className="fa-solid fa-music text-sm"></i>
+                        <button onClick={() => { if(chatInput.trim()) { sendChat(chatInput); setChatInput(''); } }} className="w-9 h-9 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center hover:bg-[#00d8d8] shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors">
+                            <i className="fa-solid fa-paper-plane text-sm"></i>
                         </button>
                         <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
                             <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
                         </button>
-                        <button onClick={handleBottomMicClick} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 ${!isSpeaker ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]' : isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
-                            {!isSpeaker ? <i className="fa-solid fa-hand text-sm"></i> : <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>}
+                        <button onClick={isSpeaker ? toggleMute : () => alert('Take a seat to use the mic!')} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
+                            <i className={`fa-solid ${isMuted || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
+                        {!isSpeaker && (
+                            <button onClick={handleBottomMicClick} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all shadow-[0_0_10px_rgba(79,70,229,0.5)] bg-indigo-600 text-white hover:bg-indigo-500">
+                                <i className="fa-solid fa-hand text-sm"></i>
+                            </button>
+                        )}
                         {isHost && <button onClick={() => setShowSettingsModal(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 transition-colors bg-transparent"><i className="fa-solid fa-sliders text-sm"></i></button>}
                     </div>
 
@@ -1716,44 +1720,6 @@ INSTRUCTIONS:
                         </div>
                     )}
                     {showSettingsModal && <RoomSettingsModal activeRoom={activeRoom} onClose={() => setShowSettingsModal(false)} onSave={updateRoomSettings} />}
-                    
-                    {showGifts && (
-                        <div className="fixed inset-0 bg-transparent z-[90]" onClick={() => setShowGifts(false)}>
-                            <div className="absolute bottom-[115px] left-4 bg-[#021633] border border-[#0AE0D0]/30 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,255,255,0.2)] flex gap-3 animate-in slide-in-from-bottom-5" onClick={e=>e.stopPropagation()}>
-                                <button onClick={() => sendGift('🌹', 'Rose')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
-                                    <span className="text-3xl">🌹</span><span className="text-[10px] text-[#A4DFE6] font-bold">Rose</span>
-                                </button>
-                                <button onClick={() => sendGift('👑', 'Crown')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
-                                    <span className="text-3xl">👑</span><span className="text-[10px] text-[#A4DFE6] font-bold">Crown</span>
-                                </button>
-                                <button onClick={() => sendGift('💖', 'Heart')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
-                                    <span className="text-3xl">💖</span><span className="text-[10px] text-[#A4DFE6] font-bold">Heart</span>
-                                </button>
-                                <button onClick={() => sendGift('🚀', 'Rocket')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors">
-                                    <span className="text-3xl">🚀</span><span className="text-[10px] text-[#A4DFE6] font-bold">Rocket</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {showSFX && (
-                        <div className="fixed inset-0 bg-transparent z-[90]" onClick={() => setShowSFX(false)}>
-                            <div className="absolute bottom-[115px] left-16 bg-[#021633] border border-[#0AE0D0]/30 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,255,255,0.2)] flex gap-3 animate-in slide-in-from-bottom-5" onClick={e=>e.stopPropagation()}>
-                                <button onClick={() => playSFXAction('applause')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
-                                    <i className="fa-solid fa-hands-clapping text-2xl text-yellow-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Applause</span>
-                                </button>
-                                <button onClick={() => playSFXAction('laughter')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
-                                    <i className="fa-solid fa-face-laugh-squint text-2xl text-orange-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Laugh</span>
-                                </button>
-                                <button onClick={() => playSFXAction('drumroll')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
-                                    <i className="fa-solid fa-drum text-2xl text-blue-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Drumroll</span>
-                                </button>
-                                <button onClick={() => playSFXAction('magic')} className="flex flex-col items-center gap-1 hover:bg-[#00FFFF]/10 p-2 rounded-xl transition-colors text-white">
-                                    <i className="fa-solid fa-wand-magic-sparkles text-2xl text-purple-400"></i><span className="text-[10px] text-[#A4DFE6] font-bold">Magic</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };
@@ -1766,7 +1732,7 @@ INSTRUCTIONS:
             const [msg, setMsg] = useState('');
             const [isTyping, setIsTyping] = useState(false);
             const [chats, setChats] = useState([
-                { id: 1, sender: 'ai', text: "Hello! I am ATAXY AI Mentor. I can help you solve Physics, Chemistry, and Biology doubts. Ask me anything!" }
+                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, a mentor to help all the students. I can help you solve Physics, Chemistry, and Biology doubts. Ask me anything!" }
             ]);
             const chatEndRef = useRef(null);
 
@@ -1781,7 +1747,7 @@ INSTRUCTIONS:
                 setMsg('');
                 setIsTyping(true);
 
-                const systemContext = "You are ATAXY AI Mentor, an expert tutor for NEET/JEE students. Answer clearly, accurately, and formatting nicely using Markdown.";
+                const systemContext = "You are ATAXY, a mentor to help all the students. Answer clearly, accurately, and formatting nicely using Markdown. You must never state that you are an AI.";
                 const aiReply = await fetchGeminiSecure(userMsg, chats.filter(c => c.id !== 1), systemContext); // Send history excluding welcome message
                 
                 setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiReply }]);
@@ -1794,8 +1760,8 @@ INSTRUCTIONS:
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-purple-500/30 shadow-inner" />
                             <div>
-                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY AI Mentor</h2>
-                                <p className="text-[10px] text-purple-500 font-bold tracking-wide">Powered by ATAXY AI</p>
+                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY Mentor</h2>
+                                <p className="text-[10px] text-purple-500 font-bold tracking-wide">Powered by ATAXY</p>
                             </div>
                         </div>
                     </div>
@@ -1912,7 +1878,6 @@ INSTRUCTIONS:
           const [loadedQuestions, setLoadedQuestions] = useState([]);
           const [questionsLoading, setQuestionsLoading] = useState(false);
           const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-          const [showExplanation, setShowExplanation] = useState(false);
 
           // 📈 Analytics State (Local Storage Only)
           const [studyStreak, setStudyStreak] = useState(() => safeGetJSON('ataxy_streak', null) || { count: 1, lastDate: new Date().toDateString() });
@@ -2211,14 +2176,12 @@ INSTRUCTIONS:
               if (!activePracticeChapter) {
                   setLoadedQuestions([]);
                   setCurrentQuestionIndex(0);
-                  setShowExplanation(false);
                   return;
               }
 
               const loadQuestions = () => {
                   setQuestionsLoading(true);
                   setCurrentQuestionIndex(0);
-                  setShowExplanation(false);
 
                   let allQuestions = [];
                   let gIdx = 1;
@@ -2411,7 +2374,6 @@ INSTRUCTIONS:
                  const handleNext = () => {
                      if (safeQuestionIndex < displayedQuestions.length - 1) {
                          setCurrentQuestionIndex(safeQuestionIndex + 1);
-                         setShowExplanation(false);
                          setTimeout(() => {
                              document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                          }, 50);
@@ -2421,7 +2383,6 @@ INSTRUCTIONS:
                  const handlePrevious = () => {
                      if (safeQuestionIndex > 0) {
                          setCurrentQuestionIndex(safeQuestionIndex - 1);
-                         setShowExplanation(false);
                          setTimeout(() => {
                              document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                          }, 50);
@@ -2431,7 +2392,6 @@ INSTRUCTIONS:
                  const scrollToQuestion = (idx) => {
                      setPracticeShowPalette(false);
                      setCurrentQuestionIndex(idx);
-                     setShowExplanation(false);
                      setTimeout(() => {
                          document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
                      }, 50);
@@ -2503,7 +2463,7 @@ INSTRUCTIONS:
                              <div className="mb-4">
                                  <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto no-scrollbar p-2 border border-gray-200 bg-gray-50 rounded-lg shadow-inner">
                                      <button 
-                                         onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowExplanation(false); }}
+                                         onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); }}
                                          className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-bold transition-all flex justify-between items-center border ${!practiceSelectedTopic ? 'bg-[#2563eb] text-white border-[#2563eb] shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`}
                                      >
                                          <span className="truncate pr-2">All Topics</span>
@@ -2512,7 +2472,7 @@ INSTRUCTIONS:
                                      {activePracticeChapter.topics?.map((t, idx) => (
                                          <button 
                                              key={idx}
-                                             onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); setShowExplanation(false); }}
+                                             onClick={() => { setPracticeSelectedTopic(t.name); setCurrentQuestionIndex(0); }}
                                              className={`w-full text-left px-4 py-2.5 rounded-md text-sm font-bold transition-all flex justify-between items-center border ${practiceSelectedTopic === t.name ? 'bg-[#2563eb] text-white border-[#2563eb] shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`}
                                          >
                                              <span className="truncate pr-2">{t.name}</span>
@@ -2523,9 +2483,9 @@ INSTRUCTIONS:
                              </div>
                              
                              <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                                 <button onClick={() => {setQuestionFilter('all'); setCurrentQuestionIndex(0); setShowExplanation(false);}} className={`px-4 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-gray-700 border-gray-300'}`}><i className="fa-solid fa-list-ol mr-1"></i> All Qs</button>
-                                 <button onClick={() => {setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); setShowExplanation(false);}} className={`px-4 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-700 border-gray-300'}`}><i className="fa-solid fa-bookmark mr-1"></i> Bookmarked</button>
-                                 <button onClick={() => {setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); setShowExplanation(false);}} className={`px-4 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 border-gray-300'}`}><i className="fa-solid fa-times-circle mr-1"></i> Incorrect</button>
+                                 <button onClick={() => {setQuestionFilter('all'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-gray-700 border-gray-300'}`}><i className="fa-solid fa-list-ol mr-1"></i> All Qs</button>
+                                 <button onClick={() => {setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-700 border-gray-300'}`}><i className="fa-solid fa-bookmark mr-1"></i> Bookmarked</button>
+                                 <button onClick={() => {setQuestionFilter('incorrect'); setCurrentQuestionIndex(0);}} className={`px-4 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 border-gray-300'}`}><i className="fa-solid fa-times-circle mr-1"></i> Incorrect</button>
                              </div>
 
                              <div className="flex justify-between items-center mb-2">
@@ -2548,7 +2508,7 @@ INSTRUCTIONS:
                                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
                                      <h3 className="font-bold text-gray-900 mb-2">No questions found</h3>
                                      <p className="text-sm text-gray-500 mb-4">No questions match your current filters.</p>
-                                     <button onClick={() => {setQuestionFilter('all'); setPracticeSelectedTopic(null); setShowExplanation(false);}} className="bg-[#2563eb] text-white font-semibold text-sm px-4 py-2 rounded-sm">Clear Filters</button>
+                                     <button onClick={() => {setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className="bg-[#2563eb] text-white font-semibold text-sm px-4 py-2 rounded-sm">Clear Filters</button>
                                  </div>
                              ) : (
                              <div className="bg-white border border-gray-300 shadow-sm overflow-hidden rounded-sm">
@@ -2607,18 +2567,8 @@ INSTRUCTIONS:
                                          </div>
                                          
                                          <div className="flex flex-wrap gap-2">
-                                             <button onClick={() => setShowExplanation(!showExplanation)} className={`border text-xs font-semibold px-4 py-2 rounded-sm shadow-sm transition-colors ${showExplanation ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                                                 {showExplanation ? 'Hide Explanation' : 'View Explanation'}
-                                             </button>
                                              <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
                                          </div>
-                                         
-                                         {showExplanation && (
-                                             <div className="mt-4 p-3 bg-white border border-gray-300 rounded-sm text-sm text-gray-800 shadow-sm animate-in fade-in">
-                                                 <p className="font-semibold text-gray-600 mb-2 text-xs uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb text-yellow-500"></i> Explanation</p>
-                                                 {currentQuestion.explanation ? <FormattedText text={currentQuestion.explanation} /> : <span className="italic text-gray-500">No explanation provided.</span>}
-                                             </div>
-                                         )}
                                      </div>
                                  )}
                                  
@@ -3219,15 +3169,17 @@ INSTRUCTIONS:
                     {showBookmarkViewer && renderBookmarkViewer()}
                     {showIncorrectViewer && renderIncorrectViewer()}
 
-                    {/* Main Bottom Navigation (Hidden in Quiz View) */}
-                    <div className="fixed bottom-0 w-full max-w-md bg-ataxy-background/90 backdrop-blur-md border-t border-ataxy-border flex justify-around pb-5 pt-3 z-[45] overflow-x-auto">
-                      <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'home' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-compass text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-                      <button onClick={() => { setCurrentTab('chat'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'chat' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
-                      <button onClick={() => { setCurrentTab('voice'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'voice' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
-                      <button onClick={() => { setCurrentTab('ai'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'ai' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">AI</span></button>
-                      <button onClick={() => { setCurrentTab('questions'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'questions' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
-                      <button onClick={() => { setCurrentTab('profile'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'profile' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
-                    </div>
+                    {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
+                    {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && currentTab === 'voice') && (
+                        <div className="fixed bottom-0 w-full max-w-md bg-ataxy-background/90 backdrop-blur-md border-t border-ataxy-border flex justify-around pb-5 pt-3 z-[45] overflow-x-auto">
+                          <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'home' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-compass text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+                          <button onClick={() => { setCurrentTab('chat'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'chat' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
+                          <button onClick={() => { setCurrentTab('voice'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'voice' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
+                              <button onClick={() => { setCurrentTab('ai'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'ai' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
+                          <button onClick={() => { setCurrentTab('questions'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'questions' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
+                          <button onClick={() => { setCurrentTab('profile'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'profile' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
+                        </div>
+                    )}
                   </>
                 )}
               </div>
