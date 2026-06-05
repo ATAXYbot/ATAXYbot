@@ -76,7 +76,14 @@ export default {
       let audio_base64 = null;
       try {
         const ttsUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${apiKey}`;
-        const ttsRes = await fetch(ttsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: text_response }] }], speechConfig: { voice: "Zephyr" } }) });
+        const ttsRes = await fetch(ttsUrl, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ 
+            contents: [{ parts: [{ text: text_response }] }], 
+            speechConfig: { voice: "Zephyr" } 
+          }) 
+        });
         if (ttsRes.ok) {
           const ttsData = await ttsRes.json();
           if (ttsData.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) { audio_base64 = ttsData.candidates[0].content.parts[0].inlineData.data; }
