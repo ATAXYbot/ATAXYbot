@@ -213,42 +213,25 @@
         // ==========================================
         // 🎵 GLOBAL AUDIO PLAYER ENGINE
         // ==========================================
-        function createWavBlob(base64Data) {
+        function createAudioBlob(base64Data) {
             const binary = atob(base64Data);
             const dataLength = binary.length;
-            const buffer = new ArrayBuffer(44 + dataLength);
-            const view = new DataView(buffer);
-
-            // RIFF chunk descriptor
-            view.setUint32(0, 0x52494646, false); // 'RIFF'
-            view.setUint32(4, 36 + dataLength, true); // file length
-            view.setUint32(8, 0x57415645, false); // 'WAVE'
-
-            // fmt sub-chunk
-            view.setUint32(12, 0x666d7420, false); // 'fmt '
-            view.setUint32(16, 16, true); // length of fmt data
-            view.setUint16(20, 1, true); // audio format (1 = PCM)
-            view.setUint16(22, 1, true); // number of channels (1 = Mono)
-            view.setUint32(24, 24000, true); // sample rate (24000 Hz)
-            view.setUint32(28, 24000 * 2, true); // byte rate (24000 * 1 * 2)
-            view.setUint16(32, 2, true); // block align (1 * 2)
-            view.setUint16(34, 16, true); // bits per sample (16)
-
-            // data sub-chunk
-            view.setUint32(36, 0x64617461, false); // 'data'
-            view.setUint32(40, dataLength, true); // data length
-
-            // write actual PCM data
-            const pcmData = new Uint8Array(buffer, 44);
+            const array = new Uint8Array(dataLength);
             for (let i = 0; i < dataLength; i++) {
-                pcmData[i] = binary.charCodeAt(i);
+                array[i] = binary.charCodeAt(i);
             }
-
-            return new Blob([buffer], { type: 'audio/wav' });
+            
+            // Safely sniff magic bytes to set correct MIME type for strict mobile WebViews
+            let mimeType = 'audio/mpeg'; // Default to MP3
+            if (dataLength > 4) {
+                if (array[0] === 82 && array[1] === 73 && array[2] === 70 && array[3] === 70) mimeType = 'audio/wav'; // RIFF
+                else if (array[0] === 79 && array[1] === 103 && array[2] === 103 && array[3] === 83) mimeType = 'audio/ogg'; // OggS
+            }
+            return new Blob([array], { type: mimeType });
         }
 
         const AIAudioPlayer = {
-            audioElement: typeof Audio !== 'undefined' ? new Audio() : null,
+            audioElement: typeof Audio !== 'undefined' ? (() => { const a = new Audio(); a.playsInline = true; return a; })() : null,
             currentId: null,
             isPaused: false,
             isSpeech: false,
@@ -269,7 +252,7 @@
                 if (base64Audio) {
                     this.isSpeech = false;
                     try {
-                        const blob = createWavBlob(base64Audio);
+                        const blob = createAudioBlob(base64Audio);
                         const blobUrl = URL.createObjectURL(blob);
 
                         if (this.audioElement) {
@@ -303,9 +286,16 @@
                 if (window.speechSynthesis) {
                     window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(textContent.replace(/\*|#/g, ''));
+                    utterance.lang = 'en-US';
+                    utterance.volume = 1;
+                    utterance.rate = 1;
                     utterance.onend = () => this.stop();
-                    utterance.onerror = () => this.stop();
-                    window.speechSynthesis.speak(utterance);
+                    utterance.onerror = (e) => { console.error("SpeechSynthesis Error:", e); this.stop(); };
+                    
+                    // Telegram Android WebView needs a tiny delay after cancel() to speak successfully
+                    setTimeout(() => {
+                        window.speechSynthesis.speak(utterance);
+                    }, 50);
                 }
                 if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: true });
             },
