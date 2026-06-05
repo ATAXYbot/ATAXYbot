@@ -244,10 +244,12 @@
                     if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: false });
                 } else if (textContent) {
                     this.isSpeech = true;
-                    const utterance = new SpeechSynthesisUtterance(textContent.replace(/\*|#/g, ''));
-                    utterance.onend = () => this.stop();
-                    utterance.onerror = () => this.stop();
-                    window.speechSynthesis.speak(utterance);
+                    if (window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance(textContent.replace(/\*|#/g, ''));
+                        utterance.onend = () => this.stop();
+                        utterance.onerror = () => this.stop();
+                        window.speechSynthesis.speak(utterance);
+                    }
                     if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: true });
                 }
             },
@@ -261,7 +263,7 @@
                         this.audio.pause();
                         this.isPaused = true;
                     }
-                } else if (this.isSpeech) {
+                } else if (this.isSpeech && window.speechSynthesis) {
                     if (window.speechSynthesis.paused) {
                         window.speechSynthesis.resume();
                         this.isPaused = false;
@@ -291,7 +293,7 @@
                         this.isPaused = false;
                     }
                     if (this.updateCallback) this.updateCallback({ id: this.currentId, isPaused: this.isPaused, isSpeech: this.isSpeech });
-                } else if (this.isSpeech) {
+                } else if (this.isSpeech && window.speechSynthesis) {
                     window.speechSynthesis.cancel();
                     this.isPaused = false;
                     const utterance = new SpeechSynthesisUtterance(this.currentText.replace(/\*|#/g, ''));
@@ -308,7 +310,9 @@
                     this.audio.currentTime = 0;
                     this.audio = null;
                 }
-                window.speechSynthesis.cancel();
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
                 
                 const prevCallback = this.updateCallback;
                 this.currentId = null;
@@ -2514,11 +2518,13 @@ INSTRUCTIONS:
                  const currentQuestion = displayedQuestions[safeQuestionIndex];
 
                  const triggerHaptic = (type = 'light') => {
-                     if (window.Telegram?.WebApp?.HapticFeedback) {
-                         if (type === 'success') window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                         else if (type === 'error') window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-                         else window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                     }
+                     try {
+                         if (window.Telegram?.WebApp?.HapticFeedback) {
+                             if (type === 'success' && window.Telegram.WebApp.HapticFeedback.notificationOccurred) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                             else if (type === 'error' && window.Telegram.WebApp.HapticFeedback.notificationOccurred) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                             else if (window.Telegram.WebApp.HapticFeedback.impactOccurred) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                         }
+                     } catch (e) {}
                  };
 
                  const toggleBookmark = (qId) => {
@@ -2545,7 +2551,11 @@ INSTRUCTIONS:
                      if (safeQuestionIndex < displayedQuestions.length - 1) {
                          setCurrentQuestionIndex(safeQuestionIndex + 1);
                          setTimeout(() => {
-                             document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                             try {
+                                 document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                             } catch (e) {
+                                 document.querySelector('[data-qa-card]')?.scrollIntoView();
+                             }
                          }, 50);
                      }
                  };
@@ -2554,7 +2564,11 @@ INSTRUCTIONS:
                      if (safeQuestionIndex > 0) {
                          setCurrentQuestionIndex(safeQuestionIndex - 1);
                          setTimeout(() => {
-                             document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                             try {
+                                 document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                             } catch (e) {
+                                 document.querySelector('[data-qa-card]')?.scrollIntoView();
+                             }
                          }, 50);
                      }
                  };
@@ -2563,7 +2577,11 @@ INSTRUCTIONS:
                      setPracticeShowPalette(false);
                      setCurrentQuestionIndex(idx);
                      setTimeout(() => {
-                         document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                         try {
+                             document.querySelector('[data-qa-card]')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                         } catch (e) {
+                             document.querySelector('[data-qa-card]')?.scrollIntoView();
+                         }
                      }, 50);
                  };
 
