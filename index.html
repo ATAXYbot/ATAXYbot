@@ -214,7 +214,7 @@
         // 🎵 GLOBAL AUDIO PLAYER ENGINE
         // ==========================================
         const AIAudioPlayer = {
-            audio: null,
+            audioElement: typeof Audio !== 'undefined' ? new Audio() : null,
             currentId: null,
             isPaused: false,
             isSpeech: false,
@@ -235,47 +235,50 @@
                 if (base64Audio) {
                     this.isSpeech = false;
                     try {
-                        // Fix for Mobile WebViews: Convert Base64 to Blob URL to bypass strict URI limits & MIME issues
-                        const binary = atob(base64Audio);
-                        const array = new Uint8Array(binary.length);
-                        for (let i = 0; i < binary.length; i++) {
-                            array[i] = binary.charCodeAt(i);
+                        if (this.audioElement) {
+                            this.audioElement.src = "data:audio/mpeg;base64," + base64Audio;
+                            this.audioElement.load();
+                            this.audioElement.onended = () => this.stop();
+                            this.audioElement.onerror = () => this.playBrowserTTS(textContent, id, callback);
+                            
+                            const playPromise = this.audioElement.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(err => {
+                                    console.error("Mobile Audio Blocked by Telegram:", err);
+                                    this.playBrowserTTS(textContent, id, callback);
+                                });
+                            }
                         }
-                        const blob = new Blob([array], { type: 'audio/mpeg' });
-                        const blobUrl = URL.createObjectURL(blob);
-                        
-                        this.audio = new Audio(blobUrl);
-                        this.audio.onended = () => { URL.revokeObjectURL(blobUrl); this.stop(); };
-                        this.audio.onerror = () => { URL.revokeObjectURL(blobUrl); this.stop(); };
-                        this.audio.play().catch(err => {
-                            console.error("Audio playback failed:", err);
-                            URL.revokeObjectURL(blobUrl);
-                            this.stop();
-                        });
                     } catch (e) {
                         console.error("Mobile audio conversion failed:", e);
-                        this.stop();
+                        this.playBrowserTTS(textContent, id, callback);
                     }
                     if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: false });
                 } else if (textContent) {
-                    this.isSpeech = true;
-                    if (window.speechSynthesis) {
-                        const utterance = new SpeechSynthesisUtterance(textContent.replace(/\*|#/g, ''));
-                        utterance.onend = () => this.stop();
-                        utterance.onerror = () => this.stop();
-                        window.speechSynthesis.speak(utterance);
-                    }
-                    if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: true });
+                    this.playBrowserTTS(textContent, id, callback);
                 }
             },
             
+            playBrowserTTS: function(textContent, id, callback) {
+                this.isSpeech = true;
+                this.currentBase64 = null;
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(textContent.replace(/\*|#/g, ''));
+                    utterance.onend = () => this.stop();
+                    utterance.onerror = () => this.stop();
+                    window.speechSynthesis.speak(utterance);
+                }
+                if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: true });
+            },
+
             togglePause: function() {
-                if (this.audio) {
-                    if (this.audio.paused) {
-                        this.audio.play();
+                if (!this.isSpeech && this.audioElement) {
+                    if (this.audioElement.paused) {
+                        this.audioElement.play();
                         this.isPaused = false;
                     } else {
-                        this.audio.pause();
+                        this.audioElement.pause();
                         this.isPaused = true;
                     }
                 } else if (this.isSpeech && window.speechSynthesis) {
@@ -291,20 +294,20 @@
             },
             
             seek: function(seconds) {
-                if (this.audio) {
-                    let targetTime = this.audio.currentTime + seconds;
-                    if (!isNaN(this.audio.duration)) {
-                        targetTime = Math.min(targetTime, this.audio.duration);
+                if (!this.isSpeech && this.audioElement) {
+                    let targetTime = this.audioElement.currentTime + seconds;
+                    if (!isNaN(this.audioElement.duration)) {
+                        targetTime = Math.min(targetTime, this.audioElement.duration);
                     }
-                    this.audio.currentTime = Math.max(0, targetTime);
+                    this.audioElement.currentTime = Math.max(0, targetTime);
                 }
             },
             
             restart: function() {
-                if (this.audio) {
-                    this.audio.currentTime = 0;
-                    if (this.audio.paused) {
-                        this.audio.play();
+                if (!this.isSpeech && this.audioElement) {
+                    this.audioElement.currentTime = 0;
+                    if (this.audioElement.paused) {
+                        this.audioElement.play();
                         this.isPaused = false;
                     }
                     if (this.updateCallback) this.updateCallback({ id: this.currentId, isPaused: this.isPaused, isSpeech: this.isSpeech });
@@ -320,10 +323,11 @@
             },
             
             stop: function() {
-                if (this.audio) {
-                    this.audio.pause();
-                    this.audio.currentTime = 0;
-                    this.audio = null;
+                if (this.audioElement) {
+                    this.audioElement.pause();
+                    this.audioElement.currentTime = 0;
+                    this.audioElement.onended = null;
+                    this.audioElement.onerror = null;
                 }
                 if (window.speechSynthesis) {
                     window.speechSynthesis.cancel();
