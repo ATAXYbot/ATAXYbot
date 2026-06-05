@@ -2466,7 +2466,11 @@ INSTRUCTIONS:
                                      <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">Practice All Topics</h3>
                                      <p className="text-blue-600 dark:text-blue-400 text-xs font-semibold mt-1">{totalQs} Questions Available</p>
                                  </div>
-                                 <button onClick={() => { setPracticeSelectedTopic(null); setShowQuiz(true); }} className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md transition-colors shadow-blue-500/30">
+                                 <button 
+                                     onClick={() => { if (totalQs > 0) { setPracticeSelectedTopic(null); setShowQuiz(true); } }} 
+                                     disabled={totalQs === 0}
+                                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors shrink-0 ${totalQs > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/30' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                                 >
                                      <i className="fa-solid fa-play ml-1"></i>
                                  </button>
                              </div>
@@ -2475,14 +2479,14 @@ INSTRUCTIONS:
                              
                              <div className="space-y-3">
                                  {activePracticeChapter.topics?.map((top, i) => (
-                                     <div key={i} onClick={() => { setPracticeSelectedTopic(top.name); setShowQuiz(true); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
+                                     <div key={i} onClick={() => { if (top.questions?.length > 0) { setPracticeSelectedTopic(top.name); setShowQuiz(true); } }} className={`bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm transition-all group ${top.questions?.length > 0 ? 'cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651]' : 'opacity-60'}`}>
                                          <div className="flex-1 mr-4">
                                              <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{top.name}</h4>
                                              <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{top.questions?.length || 0} Qs</p>
                                          </div>
-                                         <button className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:bg-[#00a651] group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+                                         <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 ${top.questions?.length > 0 ? 'group-hover:bg-[#00a651] group-hover:text-white' : ''} transition-colors flex items-center justify-center shrink-0`}>
                                              <i className="fa-solid fa-play ml-0.5 text-xs"></i>
-                                         </button>
+                                         </div>
                                      </div>
                                  ))}
                              </div>
