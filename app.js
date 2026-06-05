@@ -1,6 +1,6 @@
 // PART 1: BRANDING & CREDENTIALS CONFIGURATION
 const SUPABASE_URL = "https://kwzpnupjtvfrevpwfaao.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

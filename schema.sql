@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS ai_answers_cache (
   selected_option TEXT,
   user_query TEXT,
   ai_explanation TEXT,
+  audio_base64 TEXT,
   PRIMARY KEY (question_id, selected_option, user_query)
 );

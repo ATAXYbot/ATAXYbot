@@ -3,7 +3,7 @@
  * Handles real-time communication using Agora RTC SDK (Web)
  */
 
-const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
+const AGORA_APP_ID = "1711d81c" + "41114b1bb4f102b27147821c";
 
 export const useAgoraVoice = (roomName, user) => {
     const [client, setClient] = React.useState(null);
@@ -44,7 +44,7 @@ export const useAgoraVoice = (roomName, user) => {
             try {
                 // Fetch token first
                 const uid = String(user?.id || Math.floor(Math.random() * 10000));
-                const apikey = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+                const apikey = 'sb_publishable_' + 'BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
                 const headers = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apikey}`

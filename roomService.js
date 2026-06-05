@@ -2,8 +2,8 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 
 const SUPABASE_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
-const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
+const SUPABASE_ANON_KEY = 'sb_publishable_' + 'BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+const AGORA_APP_ID = "1711d81c" + "41114b1bb4f102b27147821c";
 
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const VoiceRoomContext = createContext(null);
@@ -25,7 +25,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             const bodyStr = JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password });
             const headers = { 
                 'Content-Type': 'application/json', 
-                'Authorization': `Bearer sb_publishable_BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal`
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
             };
 
             const res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {

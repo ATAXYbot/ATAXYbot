@@ -1,0 +1,8 @@
+name = "ataxy-mentor-proxy"
+main = "ataxy-mentor-proxy.js"
+compatibility_date = "2024-03-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gemini-cache"
+database_id = "91433377-5297-4924-b13c-7d414513210c"
