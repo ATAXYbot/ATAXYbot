@@ -234,13 +234,28 @@
 
                 if (base64Audio) {
                     this.isSpeech = false;
-                    this.audio = new Audio("data:audio/mp3;base64," + base64Audio);
-                    this.audio.onended = () => this.stop();
-                    this.audio.onerror = () => this.stop();
-                    this.audio.play().catch(err => {
-                        console.error("Audio playback failed:", err);
+                    try {
+                        // Fix for Mobile WebViews: Convert Base64 to Blob URL to bypass strict URI limits & MIME issues
+                        const binary = atob(base64Audio);
+                        const array = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            array[i] = binary.charCodeAt(i);
+                        }
+                        const blob = new Blob([array], { type: 'audio/mpeg' });
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        this.audio = new Audio(blobUrl);
+                        this.audio.onended = () => { URL.revokeObjectURL(blobUrl); this.stop(); };
+                        this.audio.onerror = () => { URL.revokeObjectURL(blobUrl); this.stop(); };
+                        this.audio.play().catch(err => {
+                            console.error("Audio playback failed:", err);
+                            URL.revokeObjectURL(blobUrl);
+                            this.stop();
+                        });
+                    } catch (e) {
+                        console.error("Mobile audio conversion failed:", e);
                         this.stop();
-                    });
+                    }
                     if (this.updateCallback) this.updateCallback({ id, isPaused: false, isSpeech: false });
                 } else if (textContent) {
                     this.isSpeech = true;
