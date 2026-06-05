@@ -106,7 +106,9 @@ export default {
         });
         if (ttsRes.ok) {
           const ttsData = await ttsRes.json();
-          if (ttsData.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) { audio_base64 = ttsData.candidates[0].content.parts[0].inlineData.data; }
+          if (ttsData.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) { 
+            audio_base64 = String(ttsData.candidates[0].content.parts[0].inlineData.data).trim(); 
+          }
         }
       } catch (ttsErr) { console.error("TTS generation failed:", ttsErr.message); }
 

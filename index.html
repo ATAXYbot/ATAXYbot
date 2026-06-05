@@ -213,24 +213,6 @@
         // ==========================================
         // 🎵 GLOBAL AUDIO PLAYER ENGINE
         // ==========================================
-        function createAudioBlob(base64Data) {
-            const binary = atob(base64Data);
-            const dataLength = binary.length;
-            const array = new Uint8Array(dataLength);
-            for (let i = 0; i < dataLength; i++) {
-                array[i] = binary.charCodeAt(i);
-            }
-            
-            // Safely sniff magic bytes
-            let mimeType = 'audio/mpeg'; // Default to MP3
-            if (dataLength > 4) {
-                if (array[0] === 82 && array[1] === 73 && array[2] === 70 && array[3] === 70) mimeType = 'audio/wav'; // RIFF
-                else if (array[0] === 79 && array[1] === 103 && array[2] === 103 && array[3] === 83) mimeType = 'audio/ogg'; // OggS
-                else if (array[0] === 73 && array[1] === 68 && array[2] === 51) mimeType = 'audio/mpeg'; // ID3
-            }
-            
-            return new Blob([array], { type: mimeType });
-        }
 
         const AIAudioPlayer = {
             audioElement: typeof Audio !== 'undefined' ? (() => { const a = new Audio(); a.playsInline = true; return a; })() : null,
@@ -254,20 +236,17 @@
                 if (base64Audio) {
                     this.isSpeech = false;
                     try {
-                        const blob = createAudioBlob(base64Audio);
-                        const blobUrl = URL.createObjectURL(blob);
-
                         if (this.audioElement) {
-                            this.audioElement.src = blobUrl;
+                            const audioUrl = 'data:audio/wav;base64,' + base64Audio;
+                            this.audioElement.src = audioUrl;
                             this.audioElement.load();
-                            this.audioElement.onended = () => { URL.revokeObjectURL(blobUrl); this.stop(); };
-                            this.audioElement.onerror = () => { URL.revokeObjectURL(blobUrl); this.playBrowserTTS(textContent, id, callback); };
+                            this.audioElement.onended = () => { this.stop(); };
+                            this.audioElement.onerror = (e) => { console.error("Audio Element Error:", e); this.playBrowserTTS(textContent, id, callback); };
                             
                             const playPromise = this.audioElement.play();
                             if (playPromise !== undefined) {
                                 playPromise.catch(err => {
                                     console.error("Mobile Audio Blocked by Telegram:", err);
-                                    URL.revokeObjectURL(blobUrl);
                                     this.playBrowserTTS(textContent, id, callback);
                                 });
                             }
