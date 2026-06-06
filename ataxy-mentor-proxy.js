@@ -27,22 +27,24 @@ export default {
 
       // The Cache Check
       try {
-        const stmt = env.DB.prepare('SELECT text_response, audio_base64 FROM ataxy_cache WHERE query_text = ?').bind(String(query_text));
-        const result = await stmt.first();
+        if (env.DB) {
+          const stmt = env.DB.prepare('SELECT text_response, audio_base64 FROM ataxy_cache WHERE query_text = ?').bind(String(query_text));
+          const result = await stmt.first();
 
-        if (result && result.text_response) {
-          return new Response(JSON.stringify({
-            cached: true,
-            text_response: result.text_response,
-            audio_base64: result.audio_base64
-          }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+          if (result && result.text_response) {
+            return new Response(JSON.stringify({
+              cached: true,
+              text_response: result.text_response,
+              audio_base64: result.audio_base64
+            }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+          }
         }
       } catch (dbError) {
         console.error('Database read error:', dbError);
       }
 
       // Step 3A: The Brain - Text Generation with Fallbacks
-      const textModels = ["gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.1-pro-preview"];
+      const textModels = ["gemini-3.1-pro", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
       let text_response = null;
       const apiKey = env.GEMINI_API_KEY;
       if (!apiKey) throw new Error("GEMINI_API_KEY is missing in the worker environment.");
@@ -60,7 +62,6 @@ export default {
             })
           });
           if (!res.ok) {
-            if (res.status === 429) continue; // Rate limited, try next model
             throw new Error(`Gemini API error: ${res.status}`);
           }
           const data = await res.json();
@@ -84,7 +85,9 @@ export default {
       } catch (ttsErr) { console.error("TTS generation failed:", ttsErr.message); }
 
       // Step 3C: Cache & Return
-      ctx.waitUntil(env.DB.prepare('INSERT OR REPLACE INTO ataxy_cache (query_text, text_response, audio_base64) VALUES (?, ?, ?)').bind(String(query_text), text_response, audio_base64).run().catch(e => console.error('Insert error:', e)));
+      if (env.DB) {
+        ctx.waitUntil(env.DB.prepare('INSERT OR REPLACE INTO ataxy_cache (query_text, text_response, audio_base64) VALUES (?, ?, ?)').bind(String(query_text), text_response, audio_base64).run().catch(e => console.error('Insert error:', e)));
+      }
       
       return new Response(JSON.stringify({ cached: false, text_response, audio_base64 }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
     } catch (error) {
