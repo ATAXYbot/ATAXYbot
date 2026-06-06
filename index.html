@@ -109,6 +109,53 @@
         /* NTA Exam Styling overrides */
         .katex-display { margin: 0.75em 0 !important; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
         .katex { font-size: 1.05em; }
+        
+        /* Addictive UI Custom Animations */
+        @keyframes slideUpFade {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.02); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulseSoft {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes float-soft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        @keyframes pop-bounce {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .animate-slide-up { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .animate-pulse-soft { animation: pulseSoft 2s infinite ease-in-out; }
+        .animate-float { animation: float-soft 3s ease-in-out infinite; }
+        .animate-pop-bounce { animation: pop-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
+        
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .dark .glass-panel { background: rgba(17, 24, 39, 0.85); border-color: rgba(255, 255, 255, 0.05); }
+        .active-tab-glow { filter: drop-shadow(0 0 10px var(--color-ataxy-accent-primary)); transform: scale(1.1); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        /* Device Safe Area padding */
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .safe-pt { padding-top: env(safe-area-inset-top, 20px); }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 scroll-smooth">
@@ -497,7 +544,7 @@
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-ataxy-background/95 backdrop-blur-md border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_env(safe-area-inset-top,_0px))] pt-[env(safe-area-inset-top,_0px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md glass-panel border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_env(safe-area-inset-top,_0px))] pt-[env(safe-area-inset-top,_0px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
                         <AtaxyLogo className="w-9 h-9 rounded-xl shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
                         <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
@@ -533,6 +580,7 @@
                 const checkVerification = async () => {
                     const savedState = safeGetStr('ataxy_verified', '');
                     if (savedState === 'true') {
+                        setIsCheckingSaved(false);
                         onVerify(tgUser);
                         return;
                     }
@@ -545,6 +593,7 @@
                                 const isRegistered = data.users?.some(u => String(u.telegram_user_id) === String(tgUser.id));
                                 if (isRegistered) {
                                     safeSetItem('ataxy_verified', 'true');
+                                setIsCheckingSaved(false);
                                     onVerify(tgUser);
                                     return;
                                 }
@@ -695,7 +744,7 @@ INSTRUCTIONS:
                     {showAIChat && (
                         <div className="w-full mt-3 bg-purple-50 dark:bg-gray-800/80 border border-purple-200 dark:border-purple-900/50 rounded-sm p-4 animate-in fade-in">
                             <div className="flex items-center gap-2 mb-4">
-                                <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] shadow-sm"><i className="fa-solid fa-robot"></i></div>
+                                <AtaxyLogo className="w-6 h-6 rounded-full border border-purple-500/50 shadow-sm" />
                                 <span className="font-bold text-xs text-purple-800 dark:text-purple-300">Context-Aware Mentor</span>
                             </div>
                             
@@ -1631,28 +1680,28 @@ INSTRUCTIONS:
                 const isOccupantMuted = occupant && (remoteMutedState[occupant.user_id] ?? (remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio));
                 
                 return (
-                    <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
+                    <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                         {occupant ? (
-                            <div className="relative">
+                            <div className="relative group">
                                 {dpUrl ? (
-                                    <img src={dpUrl} alt={occupant.user_name} className={`rounded-full object-cover border-2 transition-all ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110' : 'border-[#0AE0D0]/50'}`} />
+                                    <img src={dpUrl} alt={occupant.user_name} className={`rounded-full object-cover border-[3px] transition-all duration-300 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110' : 'border-[#0AE0D0]/50 group-hover:border-[#0AE0D0]'}`} />
                                 ) : (
-                                    <div className={`rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
-                                        {occupant.user_name.charAt(0)}
+                                    <div className={`rounded-full flex items-center justify-center font-black border-[3px] transition-all duration-300 bg-gradient-to-br from-[#00FFFF] to-blue-600 shadow-inner ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-2xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white group-hover:shadow-[0_0_15px_rgba(0,255,255,0.4)]'}`}>
+                                        {occupant.user_name.charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 {(isMe ? isMuted : isOccupantMuted) && (
-                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600">
-                                        <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
+                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-10">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <div className={`rounded-full border-2 border-dashed border-[#0AE0D0]/40 flex items-center justify-center bg-[#021633] ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} hover:bg-[#0AE0D0]/10`}>
-                        <i className="fa-solid fa-plus text-[#0AE0D0]/40"></i>
+                            <div className={`rounded-full border-2 border-dashed border-[#0AE0D0]/30 flex items-center justify-center bg-[#021633]/50 ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80 transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
+                                <i className="fa-solid fa-plus text-[#0AE0D0]/40"></i>
                             </div>
                         )}
-                <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? occupant.user_name : "\u00A0"}</span>
+                    <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupant ? occupant.user_name : "\u00A0"}</span>
                     </div>
                 )
             };
@@ -2011,6 +2060,146 @@ INSTRUCTIONS:
           const [tgUser, setTgUser] = useState(window.Telegram?.WebApp?.initDataUnsafe?.user || { first_name: "Student", id: "1001" });
           
           const voiceState = useGlobalVoice(tgUser);
+          const [showSplash, setShowSplash] = useState(true);
+          const [splashFading, setSplashFading] = useState(false);
+          const [pendingJumpQuestion, setPendingJumpQuestion] = useState(null);
+          const [returnPath, setReturnPath] = useState(null);
+
+          useEffect(() => {
+              const fadeTimer = setTimeout(() => setSplashFading(true), 1500);
+              const removeTimer = setTimeout(() => setShowSplash(false), 2000);
+              return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
+          }, []);
+
+          const handleBackRef = useRef(null);
+          
+          const handleBack = () => {
+              if (showAnalyticsModal) setShowAnalyticsModal(false);
+              else if (historyViewType) setHistoryViewType(null);
+              else if (showQuiz) {
+                  if (returnPath) {
+                      setHistoryViewType(returnPath.type);
+                      setCurrentTab('profile');
+                      setReturnPath(null);
+                      setShowQuiz(false);
+                      setActivePracticeChapter(null);
+                      setActivePracticeSubject(null);
+                  } else {
+                      setShowQuiz(false);
+                  }
+              }
+              else if (activePracticeChapter) setActivePracticeChapter(null);
+              else if (activePracticeSubject) setActivePracticeSubject(null);
+              else if (activePracticeFile) setActivePracticeFile(null);
+              else if (activePracticeBatch) setActivePracticeBatch(null);
+              else if (currentTab !== 'home') setCurrentTab('home');
+          };
+
+          const resetDeepState = () => {
+              setShowAnalyticsModal(false);
+              setHistoryViewType(null);
+              setShowQuiz(false);
+              setActivePracticeChapter(null);
+              setActivePracticeSubject(null);
+              setActivePracticeFile(null);
+              setActivePracticeBatch(null);
+              setReturnPath(null);
+          };
+
+          useEffect(() => { handleBackRef.current = handleBack; });
+
+          useEffect(() => {
+              const tg = window.Telegram?.WebApp;
+              if (!tg) return;
+              const onTgBack = () => { if (handleBackRef.current) handleBackRef.current(); };
+              tg.BackButton.onClick(onTgBack);
+              return () => tg.BackButton.offClick(onTgBack);
+          }, []);
+
+          const jumpToQuestion = (q) => {
+              setReturnPath({
+                  type: historyViewType
+              });
+              
+              const subject = qbankData.find(s => s.name === q.subjectName);
+              if (subject) {
+                  setActivePracticeSubject(subject);
+                  const chapter = subject.chapters?.find(c => c.name === q.chapterName);
+                  if (chapter) {
+                      setActivePracticeChapter(chapter);
+                      setPracticeSelectedTopic(q.topicName);
+                      setPendingJumpQuestion(q.id);
+                  }
+              }
+              setHistoryViewType(null);
+              setCurrentTab('questions');
+              setShowQuiz(true);
+          };
+
+          const renderExpandedQuestionDetails = (q) => {
+              const attempt = practiceAttempts[q.id];
+              return (
+                  <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 animate-in fade-in">
+                      {q.imageUrl && (
+                          <div className="mb-4 rounded-xl overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700 p-2">
+                              <img src={q.imageUrl} alt="Question" className="max-w-full max-h-48 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                          </div>
+                      )}
+                      <div className="flex flex-col border border-gray-300 dark:border-gray-700 rounded-sm overflow-hidden mb-4 relative">
+                           {q.options.map((opt, idx) => {
+                               const isSelected = attempt === idx;
+                               const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === q.correctOption;
+                               let bg = "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200";
+                               let numBg = "border-r border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400";
+                               if (isCorrectChoice) {
+                                   bg = "bg-[#e6f4ea] dark:bg-green-900/20 text-[#1e7e34] dark:text-green-400 font-semibold";
+                                   numBg = "border-r border-[#cce8d6] dark:border-green-800 bg-[#cce8d6] dark:bg-green-800 text-[#1e7e34] dark:text-green-400 font-semibold";
+                               } else if (isSelected) {
+                                   bg = "bg-[#fce8e6] dark:bg-red-900/20 text-[#c5221f] dark:text-red-400 font-semibold";
+                                   numBg = "border-r border-[#fad2cf] dark:border-red-800 bg-[#fad2cf] dark:bg-red-800 text-[#c5221f] dark:text-red-400 font-semibold";
+                               }
+                               return (
+                                   <div key={idx} className={`np-grid-btn w-full text-left flex items-stretch border-b border-gray-300 dark:border-gray-700 last:border-b-0 ${bg} relative`}>
+                                       <div className={`w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] ${numBg}`}>({idx + 1})</div>
+                                       <div className="p-3 text-sm w-full text-left break-words overflow-hidden pr-16"><FormattedText text={opt} /></div>
+                                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-end gap-1">
+                                           {isSelected && !isCorrectChoice && <span className="text-[9px] uppercase tracking-wider text-red-500 font-bold bg-white dark:bg-gray-900 px-1 rounded shadow-sm border border-red-100 dark:border-red-900"><i className="fa-solid fa-times"></i> Pick</span>}
+                                           {isCorrectChoice && <i className="fa-solid fa-check-circle text-green-600 dark:text-green-400 text-lg bg-white dark:bg-transparent rounded-full shadow-sm dark:shadow-none"></i>}
+                                       </div>
+                                   </div>
+                               );
+                           })}
+                       </div>
+                      {q.explanation && (
+                          <div className="p-3 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
+                              <p className="font-bold text-yellow-600 dark:text-yellow-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb"></i> Explanation</p>
+                              <FormattedText text={q.explanation} />
+                          </div>
+                      )}
+                      <div className="mb-4">
+                          <QuestionAIAssistant q={q} attemptIdx={attempt} />
+                      </div>
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                          <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-semibold text-blue-600 flex items-center gap-1">
+                                  <i className="fa-solid fa-pen-to-square"></i> My Notes
+                              </span>
+                          </div>
+                          <textarea
+                              value={questionNotes[q.id] || ''}
+                              onChange={(e) => setQuestionNotes(prev => ({...prev, [q.id]: e.target.value}))}
+                              placeholder="Write down your notes here..."
+                              className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-sm text-sm text-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-0 p-3 placeholder-gray-400 resize-none h-20 outline-none"
+                          ></textarea>
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                          <button onClick={(e) => { e.stopPropagation(); jumpToQuestion(q); }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-md transition-colors flex items-center gap-2">
+                              View in Practice <i className="fa-solid fa-arrow-right"></i>
+                          </button>
+                      </div>
+                  </div>
+              );
+          };
 
           const [currentTab, setCurrentTab] = useState('home'); 
           const [activePracticeSubject, setActivePracticeSubject] = useState(null);
@@ -2027,21 +2216,20 @@ INSTRUCTIONS:
           const [questionFilter, setQuestionFilter] = useState('all');
           const [showNoteInput, setShowNoteInput] = useState({});
 
-          // 🔖 Bookmark Viewer State
-          const [showBookmarkViewer, setShowBookmarkViewer] = useState(false);
-          const [bookmarkSearch, setBookmarkSearch] = useState('');
-          const [bookmarkSubjectFilter, setBookmarkSubjectFilter] = useState('');
-          const [bookmarkChapterFilter, setBookmarkChapterFilter] = useState('');
-          const [bookmarkTopicFilter, setBookmarkTopicFilter] = useState('');
-          const [activeBookmarkId, setActiveBookmarkId] = useState(null);
+          const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+          // 📊 Unified History Viewer State
+          const [historyViewType, setHistoryViewType] = useState(null); // 'bookmarks' | 'incorrect' | 'correct' | 'attempted'
+          const [historySearch, setHistorySearch] = useState('');
+          const [historySubjectFilter, setHistorySubjectFilter] = useState('');
+          const [historyChapterFilter, setHistoryChapterFilter] = useState('');
+          const [historyTopicFilter, setHistoryTopicFilter] = useState('');
+          const [activeHistoryId, setActiveHistoryId] = useState(null);
           
-          // ❌ Mistakes Revision Viewer State
-          const [showIncorrectViewer, setShowIncorrectViewer] = useState(false);
-          const [incorrectSearch, setIncorrectSearch] = useState('');
-          const [incorrectSubjectFilter, setIncorrectSubjectFilter] = useState('');
-          const [incorrectChapterFilter, setIncorrectChapterFilter] = useState('');
-          const [incorrectTopicFilter, setIncorrectTopicFilter] = useState('');
-          const [activeIncorrectId, setActiveIncorrectId] = useState(null);
+          useEffect(() => {
+              if (historyViewType && activeHistoryId) {
+                  setTimeout(() => document.getElementById(`history-item-${activeHistoryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+              }
+          }, [historyViewType, activeHistoryId]);
 
           const [qbankData, setQbankData] = useState([]);
           const [qbankError, setQbankError] = useState(null);
@@ -2350,13 +2538,32 @@ INSTRUCTIONS:
 
           useEffect(() => { setPracticeSelectedTopic(null); setPracticeShowPalette(false); }, [activePracticeChapter]);
 
-          const handleBack = () => {
-            if (showQuiz) setShowQuiz(false);
-            else if (activePracticeChapter) setActivePracticeChapter(null);
-            else if (activePracticeSubject) setActivePracticeSubject(null);
-            else if (activePracticeFile) setActivePracticeFile(null);
-            else if (activePracticeBatch) setActivePracticeBatch(null);
-          };
+          useEffect(() => {
+              const tg = window.Telegram?.WebApp;
+              if (!tg) return;
+              const isDeep = showAnalyticsModal || historyViewType || showQuiz || activePracticeChapter || activePracticeSubject || activePracticeFile || activePracticeBatch || currentTab !== 'home';
+              if (isDeep) {
+                  tg.BackButton.show();
+              } else {
+                  tg.BackButton.hide();
+              }
+          }, [showAnalyticsModal, historyViewType, showQuiz, activePracticeChapter, activePracticeSubject, activePracticeFile, activePracticeBatch, currentTab]);
+          useEffect(() => {
+              if (loadedQuestions.length > 0 && pendingJumpQuestion) {
+                  const relevantQuestions = practiceSelectedTopic ? loadedQuestions.filter(q => q.topicName === practiceSelectedTopic) : loadedQuestions;
+                  const idx = relevantQuestions.findIndex(q => q.id === pendingJumpQuestion);
+                  if (idx !== -1) {
+                      setCurrentQuestionIndex(idx);
+                  } else {
+                      const globalIdx = loadedQuestions.findIndex(q => q.id === pendingJumpQuestion);
+                      if (globalIdx !== -1) {
+                          setPracticeSelectedTopic(null);
+                          setCurrentQuestionIndex(globalIdx);
+                      }
+                  }
+                  setPendingJumpQuestion(null);
+              }
+          }, [loadedQuestions, pendingJumpQuestion, practiceSelectedTopic]);
 
           if (!isVerified) return <Gatekeeper onVerify={(user) => { setTgUser(user); setIsVerified(true); }} />;
 
@@ -2368,36 +2575,37 @@ INSTRUCTIONS:
              const addTarget = (e) => { e.preventDefault(); if(!newTarget.trim()) return; const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false }]; setTargetsData({...targetsData, [selectedDate]: u}); setNewTarget(""); };
 
              return ( 
-             <div className="pb-24 pt-4 animate-in fade-in">
-                 <div className="bg-gradient-to-r from-[#00A7A7] to-cyan-600 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-[0_0_15px_rgba(0,167,167,0.3)] dark:shadow-[0_0_15px_rgba(0,255,255,0.2)] border border-transparent dark:border-cyan-500/30 text-white mx-4 mb-6 relative overflow-hidden mt-4">
+         <div className="pb-24 pt-4 animate-in fade-in overflow-x-hidden">
+             <div className="bg-gradient-to-r from-[#00A7A7] via-[#008f8f] to-cyan-600 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-[0_10px_30px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_30px_rgba(0,255,255,0.2)] border border-transparent dark:border-cyan-500/30 text-white mx-4 mb-6 relative overflow-hidden mt-4 animate-pop-bounce transform hover:scale-[1.02] transition-transform duration-300">
+                     <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_100%] animate-[shimmer_3s_infinite]"></div>
                      <div className="relative z-10 flex justify-between items-center">
                          <div>
                              <h2 className="text-2xl font-bold">Hello, {tgUser.first_name}! 👋</h2>
                              <p className="text-cyan-100 dark:text-cyan-400 text-[11px] font-bold tracking-widest uppercase mt-1">Welcome to ATAXY</p>
-                             <p className="text-white/90 dark:text-gray-300 text-sm mt-0.5">Ready to crack your goals?</p>
+                             <p className="text-white/90 dark:text-gray-300 text-sm mt-0.5 font-medium">Ready to crack your goals?</p>
                          </div>
                          {tgUser?.photo_url ? (
-                             <img src={tgUser.photo_url} alt="Profile" className="h-14 w-14 rounded-full border-2 border-white/20 dark:border-cyan-500/50 shadow-inner shrink-0 object-cover" />
+                             <img src={tgUser.photo_url} alt="Profile" className="h-14 w-14 rounded-full border-[3px] border-white/30 dark:border-cyan-500/50 shadow-[0_0_15px_rgba(255,255,255,0.2)] shrink-0 object-cover" />
                          ) : (
-                             <div className="h-14 w-14 rounded-full border-2 border-white/20 dark:border-cyan-500/50 shadow-inner shrink-0 bg-white dark:bg-slate-800 flex items-center justify-center text-[#00A7A7] dark:text-cyan-400 font-bold text-xl uppercase">
+                             <div className="h-14 w-14 rounded-full border-[3px] border-white/30 dark:border-cyan-500/50 shadow-[0_0_15px_rgba(255,255,255,0.2)] shrink-0 bg-white dark:bg-slate-800 flex items-center justify-center text-[#00A7A7] dark:text-cyan-400 font-bold text-xl uppercase">
                                  {tgUser?.first_name ? tgUser.first_name.charAt(0) : 'S'}
                              </div>
                          )}
                      </div>
-                     <i className="fa-solid fa-rocket absolute -right-4 -bottom-4 text-6xl text-white opacity-10"></i>
+                     <i className="fa-solid fa-rocket absolute -right-2 -bottom-2 text-7xl text-white opacity-10 animate-float"></i>
                  </div>
                  
                  <div className="px-5 space-y-6">
-                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                     <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100">
                          <div className="flex justify-between items-center mb-4">
                              <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
                              <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
                          </div>
                          <div className="space-y-2 mb-4 min-h-[60px]">
                              {currentTargets.length === 0 ? <p className="text-xs text-gray-400 italic text-center py-2">No targets set. Add one below!</p> : currentTargets.map(t => (
-                                 <div key={t.id} className={`flex items-center justify-between p-2 rounded-lg transition-colors ${t.done ? 'bg-gray-50 dark:bg-gray-800 opacity-60' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700'}`}>
+                                 <div key={t.id} className={`flex items-center justify-between p-3 rounded-xl transition-all duration-300 transform ${t.done ? 'bg-gray-50 dark:bg-gray-800 opacity-60 scale-[0.98]' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md'}`}>
                                      <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${t.done ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-600'}`}>{t.done && <i className="fa-solid fa-check text-white text-[10px]"></i>}</div>
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${t.done ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-600'}`}>{t.done && <i className="fa-solid fa-check text-white text-xs animate-pop-in"></i>}</div>
                                         <span className={`text-sm font-medium ${t.done ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>{t.text}</span>
                                      </div>
                                      <button onClick={() => removeTarget(t.id)} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><i className="fa-solid fa-trash text-sm"></i></button>
@@ -2405,19 +2613,19 @@ INSTRUCTIONS:
                              ))}
                          </div>
                          <form onSubmit={addTarget} className="flex gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
-                             <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 dark:text-white" />
-                             <button type="submit" className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700 shadow-md"><i className="fa-solid fa-plus"></i></button>
+                             <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
+                             <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md"><i className="fa-solid fa-plus"></i></button>
                          </form>
                      </div>
-                     <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 mt-6">Study Modules</h3>
-                     <div className="grid grid-cols-2 gap-4 mb-6">
-                         <div onClick={() => setCurrentTab('questions')} className="bg-[#00a651] border border-[#008c44] shadow-[0_0_15px_rgba(0,166,81,0.3)] rounded-2xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95 transition-all relative overflow-hidden group">
-                             <i className="fa-solid fa-book-open text-4xl text-white mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                 <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 mt-6 animate-pop-bounce delay-200">Study Modules</h3>
+                 <div className="grid grid-cols-2 gap-4 mb-6 animate-pop-bounce delay-300">
+                         <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_25px_rgba(0,166,81,0.4)] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
+                             <i className="fa-solid fa-book-open text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
                              <h4 className="font-black text-white text-lg leading-tight">LN modules</h4>
                              <i className="fa-solid fa-leaf absolute -right-4 -bottom-4 text-6xl text-green-800/30"></i>
                          </div>
-                         <div onClick={() => setCurrentTab('questions')} className="bg-black dark:bg-gray-900 border border-gray-800 shadow-md rounded-2xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95 transition-all relative overflow-hidden group">
-                             <i className="fa-solid fa-layer-group text-4xl text-white mb-3 group-hover:-translate-y-1 transition-transform"></i>
+                         <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-lg shadow-gray-400/20 dark:shadow-none rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
+                             <i className="fa-solid fa-layer-group text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
                              <h4 className="font-black text-white text-lg leading-tight">Bablu Dablu<br/>modules</h4>
                              <i className="fa-solid fa-pen-nib absolute -right-4 -bottom-4 text-6xl text-white/5"></i>
                          </div>
@@ -2688,7 +2896,7 @@ INSTRUCTIONS:
                                              <img src={currentQuestion.imageUrl} alt="Question Image" className="w-full h-full object-contain" onError={(e) => {e.target.style.display = 'none'}} />
                                          </div>
                                      )}
-                                     <div className="flex flex-col border border-gray-300 rounded-sm overflow-hidden mb-5">
+                                     <div className="flex flex-col border border-gray-300 rounded-sm overflow-hidden mb-5 animate-pop-in delay-100">
                                          {currentQuestion.options.map((opt, idx) => {
                                              const isSelected = selectedOptionIdx === idx;
                                              const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === currentQuestion.correctOption;
@@ -2706,7 +2914,7 @@ INSTRUCTIONS:
                                                  }
                                              }
                                              return (
-                                                 <button key={idx} disabled={isAnswered} onClick={() => handleAttempt(currentQuestion.id, idx)} className={`np-grid-btn w-full text-left flex items-stretch transition-all border-b border-gray-300 last:border-b-0 ${bg} disabled:cursor-not-allowed`}>
+                                                 <button key={idx} disabled={isAnswered} onClick={() => handleAttempt(currentQuestion.id, idx)} className={`np-grid-btn w-full text-left flex items-stretch transition-all duration-200 border-b border-gray-300 last:border-b-0 ${bg} disabled:cursor-not-allowed active:scale-[0.99]`}>
                                                      <div className={`w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] ${numBg}`}>({idx + 1})</div>
                                                      <div className="p-3 text-sm w-full text-left break-words overflow-hidden"><FormattedText text={opt} /></div>
                                                  </button>
@@ -2715,10 +2923,10 @@ INSTRUCTIONS:
                                      </div>
                                  </div>
                                  {isAnswered && (
-                                     <div className={`p-4 border-t ${isCorrect ? 'bg-[#e6f4ea] border-[#cce8d6]' : 'bg-[#fce8e6] border-[#fad2cf]'} animate-in fade-in`}>
+                                     <div className={`p-4 border-t ${isCorrect ? 'bg-[#e6f4ea] border-[#cce8d6]' : 'bg-[#fce8e6] border-[#fad2cf]'} animate-pop-in`}>
                                          <div className="flex items-center justify-between mb-3">
                                              <div className="flex items-center gap-2">
-                                                 <i className={`fa-solid ${isCorrect ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600'} text-lg`}></i>
+                                                 <i className={`fa-solid ${isCorrect ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600'} text-lg animate-bounce`}></i>
                                                  <span className={`font-semibold text-sm ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
                                                      {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
                                                  </span>
@@ -2755,22 +2963,22 @@ INSTRUCTIONS:
                              </div>
                              )}
                          </div>
-                         <div className="fixed bottom-0 w-full max-w-md bg-gray-100 border-t border-gray-300 p-3 flex gap-3 z-[45]">
-                             <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="flex-1 bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-2.5 rounded-sm flex items-center justify-center gap-2 shadow-sm">
+                         <div className="fixed bottom-0 w-full max-w-md glass-panel border-t border-gray-300 dark:border-gray-800 p-3 flex gap-3 z-[45] safe-pb">
+                             <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform">
                                  <i className="fa-solid fa-arrow-left"></i> Previous
                              </button>
-                             <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="flex-1 bg-[#2563eb] border border-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-2.5 rounded-sm flex items-center justify-center gap-2 shadow-sm">
+                             <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 border-none text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-blue-500/30 active:scale-95 transition-transform">
                                  Save & Next <i className="fa-solid fa-arrow-right"></i>
                              </button>
                          </div>
                          {showPalette && (
                              <div className="fixed inset-0 bg-black/50 z-[99999] flex flex-col justify-end animate-in fade-in" onClick={() => setPracticeShowPalette(false)}>
-                                 <div className="bg-white rounded-t-sm p-4 max-h-[70vh] overflow-y-auto w-full max-w-md mx-auto" onClick={e => e.stopPropagation()}>
+                                 <div className="bg-white dark:bg-gray-900 rounded-t-3xl p-5 max-h-[75vh] overflow-y-auto w-full max-w-md mx-auto shadow-2xl safe-pb" onClick={e => e.stopPropagation()}>
                                      <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
-                                         <h3 className="font-bold text-gray-800 text-lg">Question Palette</h3>
-                                         <button onClick={() => setPracticeShowPalette(false)} className="text-gray-500 hover:text-gray-700"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                         <h3 className="font-bold text-gray-900 dark:text-white text-xl">Question Palette</h3>
+                                         <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
                                      </div>
-                                     <div className="grid grid-cols-6 gap-2">
+                             <div className="grid grid-cols-6 gap-2 animate-slide-up delay-100">
                                          {displayedQuestions.map((q, qIdx) => {
                                              const isAns = attempts[q.id] !== undefined;
                                              const selectedIdx = attempts[q.id];
@@ -2778,7 +2986,7 @@ INSTRUCTIONS:
                                              let bgClass = "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50";
                                              if (isAns) bgClass = isCorrect ? "bg-[#1e7e34] border-[#1e7e34] text-white" : "bg-[#c5221f] border-[#c5221f] text-white";
                                              return (
-                                                 <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square rounded-sm flex items-center justify-center font-semibold text-sm shadow-sm transition-all ${bgClass} ${safeQuestionIndex === qIdx ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}>
+                                                 <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square rounded-xl flex items-center justify-center font-bold text-sm shadow-sm transition-transform active:scale-90 ${bgClass} ${safeQuestionIndex === qIdx ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 scale-110' : ''}`}>
                                                      {qIdx + 1}
                                                  </button>
                                              );
@@ -2842,8 +3050,8 @@ INSTRUCTIONS:
 
                          <div className="grid grid-cols-2 gap-3">
                              {qbankData.length > 0 ? qbankData.map(sub => (
-                                 <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className="bg-white dark:bg-gray-900 p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all flex flex-col items-center justify-center text-center group">
-                                     <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">{sub.icon}</span>
+                                 <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center text-center group">
+                                     <span className="text-4xl mb-3 group-hover:-translate-y-1 transition-transform duration-300">{sub.icon}</span>
                                      <h3 className="font-bold text-gray-800 dark:text-gray-200 mt-2 group-hover:text-[#00a651] transition-colors">{sub.name}</h3>
                                      <p className="text-[10px] text-gray-500 mt-1">{sub.chapters?.length || 0} Chapters</p>
                                  </div>
@@ -2893,7 +3101,7 @@ INSTRUCTIONS:
                      </div>
                      <div className="space-y-4">
                          {PRACTICE_BATCHES.map(batch => (
-                                 <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-5 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-95 transition-all relative overflow-hidden ${batch.type === 'ln' ? 'bg-[#00a651] border border-[#008c44] shadow-[0_0_15px_rgba(0,166,81,0.3)] text-white' : 'bg-black dark:bg-gray-900 border border-gray-800 shadow-lg text-white'}`}>
+                                 <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-6 rounded-3xl cursor-pointer hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 relative overflow-hidden ${batch.type === 'ln' ? 'bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] text-white' : 'bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)] text-white'}`}>
                                  <div className="relative z-10">
                                          <h3 className="text-xl font-black mb-1 text-white">{batch.name}</h3>
                                          <p className={`text-xs font-medium ${batch.type === 'ln' ? 'text-green-100' : 'text-gray-400'}`}>{batch.files.length} Modules Available</p>
@@ -2906,159 +3114,27 @@ INSTRUCTIONS:
              );
           };
 
-          // --- BOOKMARK VIEWER (ADVANCED FILTERING) ---
-          const renderBookmarkViewer = () => {
-              const allBookmarked = [];
-              qbankData.forEach(sub => {
-                  sub.chapters?.forEach(chap => {
-                      chap.topics?.forEach(top => {
-                          top.questions?.forEach(q => {
-                              if (bookmarks.includes(q.id)) {
-                                  allBookmarked.push({
-                                      ...q,
-                                      subjectName: sub.name,
-                                      chapterName: chap.name,
-                                      topicName: top.name
-                                  });
-                              }
-                          });
-                      });
-                  });
-              });
-
-              let subjects = new Set();
-              let chapters = new Set();
-              let topics = new Set();
-
-              allBookmarked.forEach(q => {
-                  subjects.add(q.subjectName);
-                  if (!bookmarkSubjectFilter || q.subjectName === bookmarkSubjectFilter) {
-                      chapters.add(q.chapterName);
-                      if (!bookmarkChapterFilter || q.chapterName === bookmarkChapterFilter) {
-                          topics.add(q.topicName);
-                      }
-                  }
-              });
-
-              const filtered = allBookmarked.filter(q => {
-                  if (bookmarkSearch && !q.text.toLowerCase().includes(bookmarkSearch.toLowerCase())) return false;
-                  if (bookmarkSubjectFilter && q.subjectName !== bookmarkSubjectFilter) return false;
-                  if (bookmarkChapterFilter && q.chapterName !== bookmarkChapterFilter) return false;
-                  if (bookmarkTopicFilter && q.topicName !== bookmarkTopicFilter) return false;
-                  return true;
-              });
-
-              return (
-                  <div className="fixed inset-x-0 bottom-0 top-[calc(60px_+_env(safe-area-inset-top,_0px))] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
-                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
-                          <div className="flex items-center gap-3">
-                              <button onClick={() => setShowBookmarkViewer(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200">
-                                  <i className="fa-solid fa-arrow-left"></i>
-                              </button>
-                              <AtaxyLogo className="w-8 h-8 rounded-lg shadow-sm border border-yellow-200" />
-                              <h2 className="font-bold text-lg text-gray-900 dark:text-white leading-tight">ATAXY Bookmarks</h2>
-                          </div>
-                          <span className="text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 px-2 py-1 rounded shadow-sm">{filtered.length} Qs</span>
-                      </div>
-
-                      <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 space-y-3 z-10">
-                          <div className="relative">
-                              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                              <input type="text" placeholder="Search saved questions..." value={bookmarkSearch} onChange={e => setBookmarkSearch(e.target.value)} className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 outline-none transition-all" />
-                          </div>
-                          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                              <select value={bookmarkSubjectFilter} onChange={e => {setBookmarkSubjectFilter(e.target.value); setBookmarkChapterFilter(''); setBookmarkTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
-                                  <option value="">All Subjects</option>
-                                  {[...subjects].map(s => <option key={s} value={s}>{s}</option>)}
-                              </select>
-                              <select value={bookmarkChapterFilter} onChange={e => {setBookmarkChapterFilter(e.target.value); setBookmarkTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
-                                  <option value="">All Chapters</option>
-                                  {[...chapters].map(c => <option key={c} value={c}>{c}</option>)}
-                              </select>
-                              <select value={bookmarkTopicFilter} onChange={e => setBookmarkTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
-                                  <option value="">All Topics</option>
-                                  {[...topics].map(t => <option key={t} value={t}>{t}</option>)}
-                              </select>
-                          </div>
-                      </div>
-
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                          {filtered.length === 0 ? (
-                              <div className="text-center py-12">
-                                  <i className="fa-regular fa-bookmark text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
-                                  <p className="text-gray-500 dark:text-gray-400 font-medium">No bookmarks match your search.</p>
-                              </div>
-                          ) : filtered.map(q => {
-                              const isExpanded = activeBookmarkId === q.id;
-                              return (
-                                  <div key={q.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                                      <div className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveBookmarkId(isExpanded ? null : q.id)}>
-                                          <div className="flex flex-wrap gap-2 mb-2">
-                                              <span className="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">{q.subjectName}</span>
-                                              <span className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider truncate max-w-[200px]">{q.topicName}</span>
-                                          </div>
-                                          <div className="text-[15px] font-medium text-gray-800 dark:text-gray-200 line-clamp-3 mb-3">
-                                              <FormattedText text={q.text} className="inline" />
-                                          </div>
-                                          <div className="flex justify-between items-center text-xs">
-                                              <button onClick={(e) => { e.stopPropagation(); setBookmarks(prev => prev.filter(id => id !== q.id)); }} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1.5 rounded-lg font-bold transition-colors">
-                                                  <i className="fa-solid fa-trash"></i> Remove
-                                              </button>
-                                              <span className="text-blue-600 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg">{isExpanded ? 'Hide Details' : 'View Question'} <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} ml-1`}></i></span>
-                                          </div>
-                                      </div>
-                                      
-                                      {isExpanded && (
-                                          <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 animate-in fade-in">
-                                              {q.imageUrl && (
-                                                  <div className="mb-4 rounded-xl overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700 p-2">
-                                                      <img src={q.imageUrl} alt="Question" className="max-w-full max-h-48 object-contain" onError={(e) => e.target.style.display = 'none'} />
-                                                  </div>
-                                              )}
-                                              <div className="space-y-2 mb-4">
-                                                  {q.options.map((opt, i) => {
-                                                      const isCorrect = ['A','B','C','D'][i] === q.correctOption;
-                                                      return (
-                                                          <div key={i} className={`p-3 border rounded-xl text-sm ${isCorrect ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 font-bold' : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
-                                                              <span className="mr-2 opacity-60">({i+1})</span> <FormattedText text={opt} className="inline" />
-                                                              {isCorrect && <i className="fa-solid fa-check-circle ml-2 text-green-600 dark:text-green-400 float-right mt-0.5"></i>}
-                                                          </div>
-                                                      )
-                                                  })}
-                                              </div>
-                                              {q.explanation && (
-                                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
-                                                      <p className="font-bold text-yellow-600 dark:text-yellow-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb"></i> Explanation</p>
-                                                      <FormattedText text={q.explanation} />
-                                                  </div>
-                                              )}
-                                              {questionNotes[q.id] && (
-                                                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
-                                                      <p className="font-bold text-blue-600 dark:text-blue-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-note-sticky"></i> My Notes</p>
-                                                      <p className="whitespace-pre-wrap leading-relaxed">{questionNotes[q.id]}</p>
-                                                  </div>
-                                              )}
-                                          </div>
-                                      )}
-                                  </div>
-                              )
-                          })}
-                      </div>
-                  </div>
-              );
-          };
-
-          // --- MISTAKES (INCORRECT) VIEWER ---
-          const renderIncorrectViewer = () => {
-              const allIncorrect = [];
+          // --- UNIFIED HISTORY VIEWER (ADVANCED FILTERING) ---
+          const renderHistoryViewer = () => {
+              if (!historyViewType) return null;
+              const allItems = [];
               const perf = safeGetJSON('ataxy_practice_perf', null) || {};
 
               qbankData.forEach(sub => {
                   sub.chapters?.forEach(chap => {
                       chap.topics?.forEach(top => {
                           top.questions?.forEach(q => {
-                              if (perf[q.id] !== undefined && ['A','B','C','D'][perf[q.id]] !== q.correctOption) {
-                                  allIncorrect.push({
+                              let include = false;
+                              const isAns = perf[q.id] !== undefined;
+                              const isCorrect = isAns && ['A','B','C','D'][perf[q.id]] === q.correctOption;
+
+                              if (historyViewType === 'bookmarks' && bookmarks.includes(q.id)) include = true;
+                              else if (historyViewType === 'attempted' && isAns) include = true;
+                              else if (historyViewType === 'correct' && isCorrect) include = true;
+                              else if (historyViewType === 'incorrect' && isAns && !isCorrect) include = true;
+
+                              if (include) {
+                                  allItems.push({
                                       ...q,
                                       subjectName: sub.name,
                                       chapterName: chap.name,
@@ -3075,52 +3151,71 @@ INSTRUCTIONS:
               let chapters = new Set();
               let topics = new Set();
 
-              allIncorrect.forEach(q => {
+              allItems.forEach(q => {
                   subjects.add(q.subjectName);
-                  if (!incorrectSubjectFilter || q.subjectName === incorrectSubjectFilter) {
+                  if (!historySubjectFilter || q.subjectName === historySubjectFilter) {
                       chapters.add(q.chapterName);
-                      if (!incorrectChapterFilter || q.chapterName === incorrectChapterFilter) {
+                      if (!historyChapterFilter || q.chapterName === historyChapterFilter) {
                           topics.add(q.topicName);
                       }
                   }
               });
 
-              const filtered = allIncorrect.filter(q => {
-                  if (incorrectSearch && !q.text.toLowerCase().includes(incorrectSearch.toLowerCase())) return false;
-                  if (incorrectSubjectFilter && q.subjectName !== incorrectSubjectFilter) return false;
-                  if (incorrectChapterFilter && q.chapterName !== incorrectChapterFilter) return false;
-                  if (incorrectTopicFilter && q.topicName !== incorrectTopicFilter) return false;
+              const filtered = allItems.filter(q => {
+                  if (historySearch && !q.text.toLowerCase().includes(historySearch.toLowerCase())) return false;
+                  if (historySubjectFilter && q.subjectName !== historySubjectFilter) return false;
+                  if (historyChapterFilter && q.chapterName !== historyChapterFilter) return false;
+                  if (historyTopicFilter && q.topicName !== historyTopicFilter) return false;
                   return true;
               });
 
+              const config = {
+                  bookmarks: { 
+                      title: 'Bookmarks', icon: 'fa-bookmark', emptyMsg: 'No bookmarks found.',
+                      headerText: 'text-yellow-600 dark:text-yellow-500', badgeBg: 'bg-yellow-100 dark:bg-yellow-900/30', badgeText: 'text-yellow-800 dark:text-yellow-500', focusRing: 'focus:ring-yellow-500', borderIcon: 'border-yellow-200', tagBg: 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
+                  },
+                  attempted: { 
+                      title: 'Attempted Questions', icon: 'fa-list-ul', emptyMsg: 'No attempted questions yet.',
+                      headerText: 'text-blue-600 dark:text-blue-500', badgeBg: 'bg-blue-100 dark:bg-blue-900/30', badgeText: 'text-blue-800 dark:text-blue-500', focusRing: 'focus:ring-blue-500', borderIcon: 'border-blue-200', tagBg: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                  },
+                  correct: { 
+                      title: 'Correct Answers', icon: 'fa-check-circle', emptyMsg: 'No correct answers yet. Keep practicing!',
+                      headerText: 'text-green-600 dark:text-green-500', badgeBg: 'bg-green-100 dark:bg-green-900/30', badgeText: 'text-green-800 dark:text-green-500', focusRing: 'focus:ring-green-500', borderIcon: 'border-green-200', tagBg: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                  },
+                  incorrect: { 
+                      title: 'Mistakes to Review', icon: 'fa-times-circle', emptyMsg: 'Amazing! No mistakes found.',
+                      headerText: 'text-red-600 dark:text-red-500', badgeBg: 'bg-red-100 dark:bg-red-900/30', badgeText: 'text-red-800 dark:text-red-500', focusRing: 'focus:ring-red-500', borderIcon: 'border-red-200', tagBg: 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                  }
+              }[historyViewType];
+
               return (
-                  <div className="fixed inset-x-0 bottom-0 top-[calc(60px_+_env(safe-area-inset-top,_0px))] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-in slide-in-from-bottom duration-300 max-w-md mx-auto shadow-2xl">
+                  <div className="fixed inset-x-0 bottom-0 top-[calc(60px_+_env(safe-area-inset-top,_0px))] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up duration-300 max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
                       <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                           <div className="flex items-center gap-3">
-                              <button onClick={() => setShowIncorrectViewer(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200">
+                              <button onClick={() => setHistoryViewType(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
                                   <i className="fa-solid fa-arrow-left"></i>
                               </button>
-                              <AtaxyLogo className="w-8 h-8 rounded-lg shadow-sm border border-red-200" />
-                              <h2 className="font-black text-lg text-red-500 tracking-widest drop-shadow-[0_0_8px_rgba(255,0,0,0.4)]">ATAXY</h2>
+                              <AtaxyLogo className={`w-8 h-8 rounded-lg shadow-sm border ${config.borderIcon}`} />
+                              <h2 className={`font-bold text-lg ${config.headerText} leading-tight`}>{config.title}</h2>
                           </div>
-                          <span className="text-xs font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 px-2 py-1 rounded shadow-sm">{filtered.length} Qs</span>
+                          <span className={`text-xs font-bold ${config.badgeBg} ${config.badgeText} px-2 py-1 rounded shadow-sm`}>{filtered.length} Qs</span>
                       </div>
 
                       <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 space-y-3 z-10">
                           <div className="relative">
                               <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                              <input type="text" placeholder="Search incorrect questions..." value={incorrectSearch} onChange={e => setIncorrectSearch(e.target.value)} className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none transition-all" />
+                              <input type="text" placeholder={`Search ${config.title.toLowerCase()}...`} value={historySearch} onChange={e => setHistorySearch(e.target.value)} className={`w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 ${config.focusRing} outline-none transition-all`} />
                           </div>
                           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                              <select value={incorrectSubjectFilter} onChange={e => {setIncorrectSubjectFilter(e.target.value); setIncorrectChapterFilter(''); setIncorrectTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                              <select value={historySubjectFilter} onChange={e => {setHistorySubjectFilter(e.target.value); setHistoryChapterFilter(''); setHistoryTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
                                   <option value="">All Subjects</option>
                                   {[...subjects].map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
-                              <select value={incorrectChapterFilter} onChange={e => {setIncorrectChapterFilter(e.target.value); setIncorrectTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                              <select value={historyChapterFilter} onChange={e => {setHistoryChapterFilter(e.target.value); setHistoryTopicFilter('');}} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
                                   <option value="">All Chapters</option>
                                   {[...chapters].map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
-                              <select value={incorrectTopicFilter} onChange={e => setIncorrectTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                              <select value={historyTopicFilter} onChange={e => setHistoryTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
                                   <option value="">All Topics</option>
                                   {[...topics].map(t => <option key={t} value={t}>{t}</option>)}
                               </select>
@@ -3129,53 +3224,197 @@ INSTRUCTIONS:
 
                       <div className="flex-1 overflow-y-auto p-4 space-y-4">
                           {filtered.length === 0 ? (
-                              <div className="text-center py-12">
-                                  <i className="fa-solid fa-bullseye text-4xl text-green-400 mb-3"></i>
-                                  <p className="text-gray-500 dark:text-gray-400 font-medium">Amazing! No incorrect questions here.</p>
+                              <div className="text-center py-12 animate-pop-in">
+                                  <i className={`fa-solid ${config.icon} text-4xl text-gray-300 dark:text-gray-600 mb-3`}></i>
+                                  <p className="text-gray-500 dark:text-gray-400 font-medium">{config.emptyMsg}</p>
                               </div>
-                          ) : filtered.map(q => {
-                              const isExpanded = activeIncorrectId === q.id;
+                          ) : filtered.map((q, idx) => {
+                              const isExpanded = activeHistoryId === q.id;
                               return (
-                                  <div key={q.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                                      <div className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveIncorrectId(isExpanded ? null : q.id)}>
+                                  <div key={q.id} id={`history-item-${q.id}`} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden animate-slide-up" style={{ animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
+                                      <div className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveHistoryId(isExpanded ? null : q.id)}>
                                           <div className="flex flex-wrap gap-2 mb-2">
-                                              <span className="text-[9px] bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Mistake</span>
+                                              <span className={`text-[9px] ${config.tagBg} px-2 py-0.5 rounded font-bold uppercase tracking-wider`}>{config.title.split(' ')[0]}</span>
                                               <span className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider truncate max-w-[200px]">{q.topicName}</span>
                                           </div>
                                           <div className="text-[15px] font-medium text-gray-800 dark:text-gray-200 line-clamp-3 mb-3">
                                               <FormattedText text={q.text} className="inline" />
                                           </div>
-                                          <div className="flex justify-end items-center text-xs">
+                                          <div className="flex justify-between items-center text-xs">
+                                              {historyViewType === 'bookmarks' ? (
+                                                  <button onClick={(e) => { e.stopPropagation(); setBookmarks(prev => prev.filter(id => id !== q.id)); }} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1.5 rounded-lg font-bold transition-colors">
+                                                      <i className="fa-solid fa-trash"></i> Remove
+                                                  </button>
+                                              ) : <div></div>}
                                               <span className="text-blue-600 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg">{isExpanded ? 'Hide Solution' : 'Revise Mistake'} <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} ml-1`}></i></span>
                                           </div>
                                       </div>
                                       
-                                      {isExpanded && (
-                                          <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 animate-in fade-in">
-                                              <div className="space-y-2 mb-4">
-                                                  {q.options.map((opt, i) => {
-                                                      const isCorrect = ['A','B','C','D'][i] === q.correctOption;
-                                                      const wasSelected = q.userAttempt === i;
-                                                      return (
-                                                          <div key={i} className={`p-3 border rounded-xl text-sm ${isCorrect ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 font-bold' : wasSelected ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300 font-bold' : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'}`}>
-                                                              <span className="mr-2 opacity-60">({i+1})</span> <FormattedText text={opt} className="inline" />
-                                                              {isCorrect && <i className="fa-solid fa-check-circle ml-2 text-green-600 dark:text-green-400 float-right mt-0.5"></i>}
-                                                              {wasSelected && !isCorrect && <span className="float-right text-[10px] uppercase tracking-wider text-red-500 mt-1"><i className="fa-solid fa-times"></i> Your Pick</span>}
-                                                          </div>
-                                                      )
-                                                  })}
-                                              </div>
-                                              {q.explanation && (
-                                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
-                                                      <p className="font-bold text-yellow-600 dark:text-yellow-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb"></i> Explanation</p>
-                                                      <FormattedText text={q.explanation} />
-                                                  </div>
-                                              )}
-                                          </div>
-                                      )}
+                                      {isExpanded && renderExpandedQuestionDetails(q)}
                                   </div>
                               )
                           })}
+                      </div>
+                  </div>
+              );
+          };
+
+          // --- DETAILED ANALYTICS MODAL ---
+          const renderAnalyticsModal = () => {
+              if (!showAnalyticsModal) return null;
+              
+              const perf = safeGetJSON('ataxy_practice_perf', null) || {};
+             
+              const totalAttempted = Object.keys(perf).length;
+              let totalCorrect = 0;
+              let subjectStats = {};
+              let chapterStats = {};
+
+              qbankData.forEach(sub => {
+                  subjectStats[sub.name] = { attempted: 0, correct: 0 };
+                  sub.chapters?.forEach(chap => {
+                      chapterStats[chap.name] = { subject: sub.name, attempted: 0, correct: 0 };
+                      chap.topics?.forEach(top => top.questions?.forEach(q => {
+                          if(perf[q.id] !== undefined) {
+                              subjectStats[sub.name].attempted++;
+                              chapterStats[chap.name].attempted++;
+                              if(perf[q.id] === q.correct) {
+                                  totalCorrect++;
+                                  subjectStats[sub.name].correct++;
+                                  chapterStats[chap.name].correct++;
+                              }
+                          }
+                      }));
+                  });
+              });
+
+              const accuracy = totalAttempted > 0 ? Math.round((totalCorrect/totalAttempted)*100) : 0;
+              const totalIncorrect = totalAttempted - totalCorrect;
+
+              let strongestSub = null;
+              let weakestSub = null;
+              let maxAcc = -1;
+              let minAcc = 101;
+              
+              Object.keys(subjectStats).forEach(sub => {
+                  const s = subjectStats[sub];
+                  if (s.attempted > 0) {
+                      const acc = (s.correct / s.attempted) * 100;
+                      if (acc > maxAcc) { maxAcc = acc; strongestSub = sub; }
+                      if (acc < minAcc) { minAcc = acc; weakestSub = sub; }
+                  }
+              });
+
+              return (
+                  <div className="fixed inset-0 z-[200000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10 pt-[calc(16px_+_env(safe-area-inset-top,_0px))]">
+                          <div className="flex items-center gap-3">
+                              <button onClick={() => setShowAnalyticsModal(false)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
+                                  <i className="fa-solid fa-arrow-left"></i>
+                              </button>
+                              <h2 className="font-bold text-lg text-gray-900 dark:text-white leading-tight">Performance Analytics</h2>
+                          </div>
+                      </div>
+                      
+                      <div className="flex-1 overflow-y-auto p-5 pb-[calc(40px_+_env(safe-area-inset-bottom,_0px))] space-y-6">
+                          
+                          {/* OVERVIEW CARDS */}
+                          <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                  <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mb-1 z-10">{totalAttempted}</div>
+                                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider z-10">Total Questions</div>
+                                  <i className="fa-solid fa-layer-group absolute -right-2 -bottom-2 text-4xl text-gray-50 dark:text-gray-800/50"></i>
+                              </div>
+                              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                  <div className="text-3xl font-black text-[#00A7A7] dark:text-cyan-400 mb-1 z-10">{accuracy}%</div>
+                                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider z-10">Overall Accuracy</div>
+                                  <i className="fa-solid fa-bullseye absolute -right-2 -bottom-2 text-4xl text-gray-50 dark:text-gray-800/50"></i>
+                              </div>
+                              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                  <div className="text-3xl font-black text-green-500 dark:text-green-500 mb-1 z-10">{totalCorrect}</div>
+                                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider z-10">Correct Answers</div>
+                                  <i className="fa-solid fa-check absolute -right-2 -bottom-2 text-4xl text-gray-50 dark:text-gray-800/50"></i>
+                              </div>
+                              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                  <div className="text-3xl font-black text-red-500 dark:text-red-500 mb-1 z-10">{totalIncorrect}</div>
+                                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider z-10">Incorrect Answers</div>
+                                  <i className="fa-solid fa-xmark absolute -right-2 -bottom-2 text-4xl text-gray-50 dark:text-gray-800/50"></i>
+                              </div>
+                          </div>
+
+                          {/* STRONG & WEAK */}
+                          <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                                  <h4 className="font-bold text-xs mb-1 opacity-90 uppercase tracking-widest">Strongest Subject</h4>
+                                  <div className="text-lg font-black truncate leading-tight">{strongestSub || 'N/A'}</div>
+                                  {strongestSub && <div className="text-xs mt-1 font-semibold">{Math.round(maxAcc)}% Accuracy</div>}
+                                  <i className="fa-solid fa-dumbbell absolute -right-2 -bottom-2 text-5xl opacity-20"></i>
+                              </div>
+                              <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                                  <h4 className="font-bold text-xs mb-1 opacity-90 uppercase tracking-widest">Needs Focus</h4>
+                                  <div className="text-lg font-black truncate leading-tight">{weakestSub || 'N/A'}</div>
+                                  {weakestSub && <div className="text-xs mt-1 font-semibold">{Math.round(minAcc)}% Accuracy</div>}
+                                  <i className="fa-solid fa-temperature-empty absolute -right-2 -bottom-2 text-5xl opacity-20"></i>
+                              </div>
+                          </div>
+
+                          {/* SUBJECT PERFORMANCE */}
+                          <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                              <h4 className="font-bold text-gray-900 dark:text-white mb-4 text-lg"><i className="fa-solid fa-chart-bar text-blue-500 mr-2"></i> Subject Mastery</h4>
+                              <div className="space-y-5">
+                                 {Object.keys(subjectStats).map(subName => {
+                                     const s = subjectStats[subName];
+                                     const acc = s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0;
+                                     let barColor = 'bg-blue-500';
+                                     if(subName.toLowerCase().includes('phy')) barColor = 'bg-purple-500';
+                                     if(subName.toLowerCase().includes('bio') || subName.toLowerCase().includes('bot') || subName.toLowerCase().includes('zoo')) barColor = 'bg-green-500';
+                                     if(subName.toLowerCase().includes('chem')) barColor = 'bg-orange-500';
+                                     return (
+                                         <div key={subName}>
+                                             <div className="flex justify-between text-sm mb-1.5">
+                                                 <span className="font-bold text-gray-800 dark:text-gray-200">{subName}</span>
+                                                 <span className="font-bold text-gray-900 dark:text-white">{acc}% <span className="text-gray-400 font-normal text-xs">({s.correct}/{s.attempted})</span></span>
+                                             </div>
+                                             <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                                                 <div className={`${barColor} h-full rounded-full transition-all duration-1000`} style={{width: `${acc}%`}}></div>
+                                             </div>
+                                         </div>
+                                     );
+                                 })}
+                                 {Object.keys(subjectStats).length === 0 && <p className="text-sm text-gray-400 italic text-center py-4">No data available.</p>}
+                              </div>
+                          </div>
+
+                          {/* CHAPTER PERFORMANCE */}
+                          <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
+                              <h4 className="font-bold text-gray-900 dark:text-white mb-4 text-lg"><i className="fa-solid fa-book-open text-purple-500 mr-2"></i> Chapter Mastery (Top 5)</h4>
+                              <div className="space-y-4">
+                                  {Object.keys(chapterStats)
+                                    .filter(c => chapterStats[c].attempted > 0)
+                                    .sort((a,b) => chapterStats[b].attempted - chapterStats[a].attempted)
+                                    .slice(0, 5)
+                                    .map(chapName => {
+                                      const s = chapterStats[chapName];
+                                      const acc = s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0;
+                                      return (
+                                          <div key={chapName} className="border-b border-gray-100 dark:border-gray-800 pb-3 last:border-0 last:pb-0">
+                                              <div className="flex justify-between items-start mb-1">
+                                                  <div className="flex-1 pr-2">
+                                                      <div className="font-bold text-gray-800 dark:text-gray-200 text-sm line-clamp-1">{chapName}</div>
+                                                      <div className="text-[10px] text-gray-500 uppercase font-semibold">{s.subject}</div>
+                                                  </div>
+                                                  <div className="font-bold text-sm text-gray-900 dark:text-white shrink-0">{acc}%</div>
+                                              </div>
+                                              <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden mt-1">
+                                                  <div className={`h-full rounded-full transition-all duration-1000 ${acc >= 75 ? 'bg-green-500' : acc >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${acc}%`}}></div>
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+                                  {Object.values(chapterStats).every(c => c.attempted === 0) && <p className="text-sm text-gray-400 italic text-center py-4">No chapter data available.</p>}
+                              </div>
+                          </div>
+                          
                       </div>
                   </div>
               );
@@ -3207,54 +3446,61 @@ INSTRUCTIONS:
 
              return (
              <div className="pb-24 pt-6 px-5 animate-in fade-in">
-                 <div className="text-center mb-8 flex flex-col items-center">
+                 <div className="text-center mb-8 flex flex-col items-center animate-pop-bounce">
                      {tgUser?.photo_url ? (
-                         <img src={tgUser.photo_url} alt={tgUser.first_name} className="w-24 h-24 rounded-full border-4 border-white dark:border-slate-800 shadow-xl dark:shadow-[0_0_20px_rgba(0,243,255,0.2)] mb-4 object-cover" />
+                         <img src={tgUser.photo_url} alt={tgUser.first_name} className="w-28 h-28 rounded-full border-[4px] border-white dark:border-slate-800 shadow-[0_10px_25px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_25px_rgba(0,243,255,0.2)] mb-4 object-cover hover:scale-105 transition-transform" />
                      ) : (
-                         <div className="w-24 h-24 rounded-full border-4 border-white dark:border-slate-800 shadow-xl dark:shadow-[0_0_20px_rgba(0,243,255,0.2)] mb-4 flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-4xl font-black uppercase">
+                         <div className="w-28 h-28 rounded-full border-[4px] border-white dark:border-slate-800 shadow-[0_10px_25px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_25px_rgba(0,243,255,0.2)] mb-4 flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-5xl font-black uppercase hover:scale-105 transition-transform">
                              {tgUser?.first_name ? tgUser.first_name.charAt(0) : 'S'}
                          </div>
                      )}
                      <h2 className="text-2xl font-black text-gray-900 dark:text-white">{tgUser.first_name}</h2>
                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">ATAXY UID: {tgUser.id}</p>
+                     
+                     <button 
+                         onClick={() => setShowAnalyticsModal(true)}
+                         className="mt-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-black shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-transform active:scale-95 border border-blue-400/50"
+                     >
+                         <i className="fa-solid fa-chart-line"></i> View Detailed Analytics
+                     </button>
                  </div>
 
                  <h3 className="font-bold text-gray-800 dark:text-white mb-4 px-1 flex items-center gap-2">
                      <i className="fa-solid fa-chart-line text-primary-500 dark:text-neon-cyan"></i> Analytics Engine
                  </h3>
-                 <div className="grid grid-cols-2 gap-4 mb-4">
-                     <div className="ataxy-card p-5 flex flex-col justify-center items-center text-center cursor-pointer group" onClick={() => setShowBookmarkViewer(true)}>
-                         <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-400/10 text-yellow-500 dark:text-yellow-400 rounded-full flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform"><i className="fa-solid fa-bookmark"></i></div>
+                 <div className="grid grid-cols-2 gap-4 mb-4 animate-pop-bounce delay-100">
+                     <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col justify-center items-center text-center cursor-pointer group hover:border-yellow-500 active:scale-95 transition-all" onClick={() => setHistoryViewType('bookmarks')}>
+                         <div className="w-14 h-14 bg-yellow-50 dark:bg-yellow-400/10 text-yellow-500 dark:text-yellow-400 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:-translate-y-1 transition-transform"><i className="fa-solid fa-bookmark"></i></div>
                          <h4 className="font-black text-gray-900 dark:text-white text-2xl">{bookmarks.length}</h4>
                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">Bookmarked</p>
                      </div>
-                     <div className="ataxy-card p-5 flex flex-col justify-center items-center text-center">
-                         <div className="w-12 h-12 bg-green-50 dark:bg-neon-cyan/10 text-green-500 dark:text-neon-cyan rounded-full flex items-center justify-center text-xl mb-3"><i className="fa-solid fa-bullseye"></i></div>
+                     <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col justify-center items-center text-center cursor-pointer group hover:border-green-500 active:scale-95 transition-all" onClick={() => setHistoryViewType('correct')}>
+                         <div className="w-14 h-14 bg-green-50 dark:bg-neon-cyan/10 text-green-500 dark:text-neon-cyan rounded-full flex items-center justify-center text-2xl mb-3 group-hover:-translate-y-1 transition-transform"><i className="fa-solid fa-bullseye"></i></div>
                          <h4 className="font-black text-gray-900 dark:text-white text-2xl">{accuracy}%</h4>
                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">{totalCorrect}/{totalAttempted} Correct</p>
                      </div>
                  </div>
 
-                 <div className="bg-gradient-to-r from-orange-400 to-rose-500 dark:from-slate-900 dark:to-slate-800 dark:border dark:border-orange-500/30 rounded-3xl p-5 text-white shadow-lg dark:shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center justify-between mb-8">
+                 <div className="bg-gradient-to-r from-orange-400 via-red-500 to-rose-500 dark:from-slate-900 dark:to-slate-800 dark:border dark:border-orange-500/30 rounded-3xl p-6 text-white shadow-[0_10px_25px_rgba(249,115,22,0.3)] dark:shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center justify-between mb-8 animate-pop-bounce delay-200 hover:scale-[1.02] transition-transform">
                      <div>
                          <h4 className="font-black text-xl flex items-center gap-2 dark:text-orange-400"><i className="fa-solid fa-fire text-yellow-200 dark:text-orange-500"></i> {studyStreak.count} Day Mastery Streak!</h4>
                          <p className="text-sm text-white/90 dark:text-gray-300 font-medium mt-1">Keep practicing every day to maintain your streak.</p>
                      </div>
-                     <i className="fa-solid fa-bolt text-4xl opacity-20 dark:text-orange-500 dark:opacity-30"></i>
+                     <i className="fa-solid fa-bolt text-5xl opacity-20 dark:text-orange-500 dark:opacity-30 animate-pulse-soft"></i>
                  </div>
 
-                 <div className="ataxy-card p-5 mb-6">
+                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-800 mb-6 animate-slide-up delay-300">
                      <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-pie text-purple-500"></i> Detailed Analytics</h4>
                      <div className="grid grid-cols-3 gap-2 mb-5">
-                         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
+                         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => setHistoryViewType('attempted')}>
                              <div className="text-lg font-black text-gray-900 dark:text-white">{totalAttempted}</div>
                              <div className="text-[9px] text-gray-500 font-bold uppercase mt-1 tracking-wider">Attempted</div>
                          </div>
-                         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center border border-green-100 dark:border-green-900/30">
+                         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center border border-green-100 dark:border-green-900/30 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors" onClick={() => setHistoryViewType('correct')}>
                              <div className="text-lg font-black text-green-600 dark:text-green-400">{totalCorrect}</div>
                              <div className="text-[9px] text-green-600 dark:text-green-400 font-bold uppercase mt-1 tracking-wider">Correct</div>
                          </div>
-                         <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center border border-red-100 dark:border-red-900/30">
+                         <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center border border-red-100 dark:border-red-900/30 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" onClick={() => setHistoryViewType('incorrect')}>
                              <div className="text-lg font-black text-red-600 dark:text-red-400">{totalIncorrect}</div>
                              <div className="text-[9px] text-red-600 dark:text-red-400 font-bold uppercase mt-1 tracking-wider">Incorrect</div>
                          </div>
@@ -3284,16 +3530,16 @@ INSTRUCTIONS:
                      </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-3 mb-6">
-                     <div className="ataxy-card p-4 flex items-center gap-3 cursor-pointer hover:border-yellow-500 transition-colors" onClick={() => setShowBookmarkViewer(true)}>
-                         <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-lg shrink-0"><i className="fa-solid fa-bookmark"></i></div>
+                 <div className="grid grid-cols-2 gap-3 mb-6 animate-slide-up delay-500">
+                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3 cursor-pointer hover:border-yellow-500 hover:shadow-md active:scale-95 transition-all" onClick={() => setHistoryViewType('bookmarks')}>
+                         <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-xl shrink-0"><i className="fa-solid fa-bookmark"></i></div>
                          <div className="text-left">
                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">Bookmarks</h4>
                              <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{bookmarks.length} Saved</p>
                          </div>
                      </div>
-                     <div className="ataxy-card p-4 flex items-center gap-3 cursor-pointer hover:border-red-500 transition-colors" onClick={() => setShowIncorrectViewer(true)}>
-                         <div className="w-10 h-10 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center text-lg shrink-0"><i className="fa-solid fa-times-circle"></i></div>
+                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3 cursor-pointer hover:border-red-500 hover:shadow-md active:scale-95 transition-all" onClick={() => setHistoryViewType('incorrect')}>
+                         <div className="w-12 h-12 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center text-xl shrink-0"><i className="fa-solid fa-times-circle"></i></div>
                          <div className="text-left">
                              <h4 className="font-bold text-gray-900 dark:text-white text-sm">Mistakes</h4>
                              <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{totalIncorrect} Review</p>
@@ -3301,8 +3547,8 @@ INSTRUCTIONS:
                      </div>
                  </div>
 
-                 <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1">App Settings</h3>
-                 <div className="ataxy-card overflow-hidden mb-6">
+                 <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 animate-slide-up delay-500">App Settings</h3>
+                 <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 shadow-sm animate-slide-up delay-500">
                      <div className="p-4 flex items-center justify-between hover:border-ataxy-accent-primary cursor-pointer transition-colors" onClick={() => setIsDarkMode(!isDarkMode)}>
                          <div className="flex items-center gap-3 text-ataxy-text-primary"><i className={`fa-solid ${isDarkMode ? 'fa-moon text-yellow-400' : 'fa-sun text-orange-500'} w-5`}></i> <span className="font-bold uppercase tracking-widest text-[10px]">{isDarkMode ? 'Deep Space Focus' : 'Strategic Clarity'}</span></div>
                          <div className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${isDarkMode ? 'bg-ataxy-accent-primary shadow-neon' : 'bg-ataxy-border'}`}>
@@ -3315,7 +3561,14 @@ INSTRUCTIONS:
           };
 
           return (
-            <div className="min-h-screen font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950 pt-[calc(60px_+_env(safe-area-inset-top,_0px))]">
+            <div className="min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden bg-gray-50 dark:bg-gray-950 pt-[calc(60px_+_env(safe-area-inset-top,_0px))]">
+              {showSplash && (
+                  <div className={`fixed inset-0 z-[2000000] bg-[#010B1C] flex flex-col items-center justify-center transition-opacity duration-500 ${splashFading ? 'opacity-0' : 'opacity-100'}`}>
+                      <AtaxyLogo className="w-32 h-32 rounded-[2rem] shadow-[0_0_50px_rgba(0,167,167,0.8)] border-4 border-[#00A7A7] animate-pulse" />
+                      <h1 className="text-4xl font-black mt-6 text-white tracking-widest drop-shadow-[0_0_10px_rgba(0,255,255,0.8)]">ATAXY</h1>
+                      <p className="text-[#00FFFF] mt-2 tracking-widest uppercase text-sm font-bold animate-bounce mt-8">Loading Experience...</p>
+                  </div>
+              )}
               <TopNavBar />
               
               <div className="h-full w-full overflow-y-auto">
@@ -3328,18 +3581,18 @@ INSTRUCTIONS:
                     {currentTab === 'questions' && renderQuestionsView()}
                     {currentTab === 'profile' && renderProfileView()}
                     
-                    {showBookmarkViewer && renderBookmarkViewer()}
-                    {showIncorrectViewer && renderIncorrectViewer()}
+                    {renderAnalyticsModal()}
+                    {renderHistoryViewer()}
 
                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && currentTab === 'voice') && (
-                        <div className="fixed bottom-0 w-full max-w-md bg-ataxy-background/90 backdrop-blur-md border-t border-ataxy-border flex justify-around pb-5 pt-3 z-[45] overflow-x-auto">
-                          <button onClick={() => { setCurrentTab('home'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'home' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-compass text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-                          <button onClick={() => { setCurrentTab('chat'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'chat' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
-                          <button onClick={() => { setCurrentTab('voice'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'voice' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
-                              <button onClick={() => { setCurrentTab('ai'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'ai' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
-                          <button onClick={() => { setCurrentTab('questions'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'questions' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
-                          <button onClick={() => { setCurrentTab('profile'); handleBack(); }} className={`flex flex-col items-center gap-1 p-2 transition-colors shrink-0 active:scale-95 ${currentTab === 'profile' ? 'text-ataxy-accent-primary drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
+                        <div className="fixed bottom-0 w-full max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                          <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+                          <button onClick={() => { resetDeepState(); setCurrentTab('chat'); }} className={`flex flex-col items-center gap-1 p-2 transition-all shrink-0 ${currentTab === 'chat' ? 'text-ataxy-accent-primary active-tab-glow' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
+                          <button onClick={() => { resetDeepState(); setCurrentTab('voice'); }} className={`flex flex-col items-center gap-1 p-2 transition-all shrink-0 ${currentTab === 'voice' ? 'text-ataxy-accent-primary active-tab-glow' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
+                          <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">AI Mentor</span></button>
+                          <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
+                          <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
                         </div>
                     )}
                   </>
