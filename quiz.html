@@ -11,6 +11,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
 
+  <!-- 1. SDK Integration & Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
     :root {
       color-scheme: light;
@@ -34,6 +38,8 @@
       max-width: 720px;
       margin: 0 auto;
       padding: 18px 16px 32px;
+      /* 1. Fix the Overlap: Ensure content clears the system notch natively */
+      padding-top: calc(var(--tg-safe-area-inset-top, env(safe-area-inset-top)) + 18px);
     }
 
     .app-header {
@@ -165,10 +171,39 @@
       border-color: #2563eb;
     }
 
-    .option.selected {
-      background: #2563eb;
-      color: white;
-      border-color: #2563eb;
+    /* 3. High-End Micro-Interactions */
+    @keyframes sweep {
+      0% { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+    .correct-sweep {
+      background: linear-gradient(120deg, #dcfce7 0%, #bbf7d0 50%, #dcfce7 100%);
+      background-size: 200% auto;
+      animation: sweep 0.8s ease-out forwards;
+      border-color: #22c55e !important;
+      color: #15803d !important;
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+    .incorrect-shake {
+      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      border-color: #ef4444 !important;
+      background-color: #fef2f2 !important;
+      color: #b91c1c !important;
+    }
+
+    /* 4. Gamified Flow: Fade-in animation */
+    .fade-in-up {
+      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(15px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -180,6 +215,11 @@
         <h1>Quiz</h1>
       </div>
       <p class="app-subtitle">Practice questions for your selected topic.</p>
+      
+      <!-- 4. Gamified Flow: Glowing progress bar -->
+      <div class="w-full bg-gray-100 rounded-full h-1.5 mt-4 overflow-hidden relative">
+        <div id="progressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="width: 0%"></div>
+      </div>
     </header>
 
     <main class="content">
@@ -211,9 +251,40 @@
     const questionsContainer = document.getElementById('questionsContainer');
     const topicTitle = document.getElementById('topicTitle');
     const topicMeta = document.getElementById('topicMeta');
+    const progressBar = document.getElementById('progressBar');
+
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let isAnswering = false;
+
+    // 1. Fullscreen SDK Initialization
+    const initTelegramLayout = () => {
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        try {
+          if (typeof tg.requestFullscreen === 'function') {
+            tg.requestFullscreen();
+          }
+        } catch (e) {
+          console.warn('Native Fullscreen not supported:', e);
+        }
+      }
+    };
+
+    // 2. Physical Addiction: Telegram Haptics
+    const triggerHaptic = (type) => {
+      const tg = window.Telegram?.WebApp;
+      if (!tg?.HapticFeedback) return;
+      if (type === 'tap') tg.HapticFeedback.impactOccurred('medium');
+      else if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
+      else if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+    };
 
     const loadQuiz = async () => {
       try {
+        initTelegramLayout();
         const selection = JSON.parse(localStorage.getItem('practiceSelection') || '{}');
         
         if (!selection.subject || !selection.chapter || !selection.topic) {
@@ -246,7 +317,9 @@
           return;
         }
 
-        renderQuestions(data);
+        currentQuestions = data.slice(0, 15); // limit session size
+        currentQuestionIndex = 0;
+        renderSingleQuestion();
         statusMessage.textContent = '';
       } catch (error) {
         console.error('Error loading quiz:', error);
@@ -254,32 +327,75 @@
       }
     };
 
-    const renderQuestions = (questions) => {
+    const renderSingleQuestion = () => {
       questionsContainer.innerHTML = '';
+      isAnswering = false;
 
-      questions.slice(0, 10).forEach((q, idx) => {
-        const card = document.createElement('div');
-        card.className = 'question-card';
+      // Update dynamic progress bar
+      const progressPercent = (currentQuestionIndex / currentQuestions.length) * 100;
+      if (progressBar) progressBar.style.width = `${progressPercent}%`;
+
+      if (currentQuestionIndex >= currentQuestions.length) {
+        questionsContainer.innerHTML = '<div class="text-center py-10 font-bold text-gray-700 fade-in-up">Quiz Complete! Outstanding effort.</div>';
+        return;
+      }
+
+      const q = currentQuestions[currentQuestionIndex];
+
+      const card = document.createElement('div');
+      card.className = 'question-card fade-in-up';
 
         const questionText = document.createElement('div');
         questionText.className = 'question-text';
-        questionText.innerHTML = `Q${idx + 1}. ${q.question ? q.question.replace(/\n/g, '<br/>') : 'Question'}`;
+      questionText.innerHTML = `Q${currentQuestionIndex + 1}. ${q.question ? q.question.replace(/\n/g, '<br/>') : 'Question'}`;
         card.appendChild(questionText);
 
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'options';
+      
+      // Determine correct index safely based on backend schema
+      let correctIdx = parseInt(q.correct_answer || q.correct || 0, 10);
+      if (isNaN(correctIdx) && q.correct_option) correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+      if (isNaN(correctIdx)) correctIdx = 0;
 
         const options = [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean);
         options.forEach((opt, optIdx) => {
           const btn = document.createElement('button');
-          btn.className = 'option';
+        btn.className = 'option active:scale-95 transition-transform duration-200';
           btn.innerHTML = `<b>${String.fromCharCode(65 + optIdx)}.</b> ${opt.replace(/\n/g, '<br/>')}`;
+        
+        btn.onclick = () => {
+            if (isAnswering) return;
+            isAnswering = true;
+            
+            triggerHaptic('tap');
+            
+            if (optIdx === correctIdx) {
+                btn.classList.add('correct-sweep');
+                triggerHaptic('success');
+            } else {
+                btn.classList.add('incorrect-shake');
+                triggerHaptic('error');
+                
+                // Reveal the correct option automatically
+                const allBtns = optionsDiv.querySelectorAll('.option');
+                if (allBtns[correctIdx]) {
+                    allBtns[correctIdx].classList.add('correct-sweep', 'opacity-75');
+                }
+            }
+
+            // Auto-advance with fade-in-up transition after viewing the animation
+            setTimeout(() => {
+                currentQuestionIndex++;
+                renderSingleQuestion();
+            }, 1200);
+        };
+        
           optionsDiv.appendChild(btn);
         });
 
         card.appendChild(optionsDiv);
         questionsContainer.appendChild(card);
-      });
 
       const applyMath = () => {
         if (window.renderMathInElement) {
