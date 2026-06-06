@@ -2272,17 +2272,20 @@ INSTRUCTIONS:
           const [newTarget, setNewTarget] = useState("");
 
           useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
-          useEffect(() => { if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } }, []);
           useEffect(() => { 
-              if (window.Telegram?.WebApp) { 
-                  window.Telegram.WebApp.ready(); 
-                  window.Telegram.WebApp.expand(); 
+              const tg = window.Telegram?.WebApp;
+              if (tg) { 
+                  // 1. App Ready Signal: Tells Telegram the webview is fully loaded
+                  tg.ready(); 
+                  // 2. Expand Fallback: Expands the app to max height for older clients
+                  tg.expand(); 
+                  // 3. Native Fullscreen: Hides the system UI (time, battery, etc.)
                   try {
-                      if (window.Telegram.WebApp.requestFullscreen) {
-                          window.Telegram.WebApp.requestFullscreen();
+                      if (typeof tg.requestFullscreen === 'function') {
+                          tg.requestFullscreen();
                       }
                   } catch (e) {
-                      console.warn('Fullscreen request failed', e);
+                      console.warn('Fullscreen request failed or not supported:', e);
                   }
               } 
           }, []);
