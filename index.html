@@ -1345,17 +1345,15 @@ INSTRUCTIONS:
                             })
                             .on('broadcast', { event: 'mute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
-                                    setLocalAudioTrack(track => { 
-                                        if (track) try { track.setMuted(true); } catch(e) {} 
-                                        return track; 
-                                    });
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(true); } catch(e) {}
+                                    }
                                     setIsMuted(true);
                                 }
                             })
                             .on('broadcast', { event: 'kick' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     leaveRoom(agoraClient, roomData.id);
-                                    safeAlert("You were removed by the host.");
                                 }
                             })
                             .on('broadcast', { event: 'text_chat' }, ({ payload }) => {
@@ -1378,7 +1376,6 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     stepDown();
-                                    safeAlert("The host has moved you back to the audience.");
                                 }
                             })
                             .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
@@ -1393,7 +1390,6 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     takeSeat(0, roomData.id);
-                                    safeAlert("The previous host left. You are now the host.");
                                 }
                             })
                             .subscribe(async (status) => {
@@ -1540,11 +1536,13 @@ INSTRUCTIONS:
                         }
                     }
 
-                    await activeClient.setClientRole("host");
-                    const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
-                    setLocalAudioTrack(track);
-                    await activeClient.publish([track]);
-                    setIsMuted(false);
+                    if (!trackRef.current) {
+                        await activeClient.setClientRole("host");
+                        const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
+                        setLocalAudioTrack(track);
+                        await activeClient.publish([track]);
+                        setIsMuted(false);
+                    }
                 } catch (e) { 
                     console.error("Safe takeSeat failed:", e); 
                     safeAlert("Microphone access was denied or failed. Check browser permissions.");
@@ -1561,7 +1559,7 @@ INSTRUCTIONS:
                     const userIdString = String(tgData?.id || "1001");
 
                     if (r && String(r.host_user_id) === userIdString) {
-                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
                         if (remainingMics.length > 0) {
                             const nextHost = remainingMics[0];
                             await supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id);
@@ -1862,7 +1860,7 @@ INSTRUCTIONS:
                         safeAlert("Your request is already pending host approval.");
                         return;
                     }
-                    const occupiedSeats = participants.map(p => Number(p.seat_number));
+                    const occupiedSeats = participants.filter(p => p.seat_number !== null && p.seat_number !== undefined).map(p => Number(p.seat_number));
                     let emptySeat = activeRoom.is_partner_seat_open ? 1 : 2;
                     while(occupiedSeats.includes(emptySeat) && emptySeat <= 9) emptySeat++;
                     if (emptySeat <= 9) {
@@ -1982,13 +1980,13 @@ INSTRUCTIONS:
                     </div>
                     <div className="p-6">
                         <div className="flex justify-center gap-8 mb-8">
-                            {renderSeat(0, participants.find(p => Number(p.seat_number) === 0), "Host", true)}
-                            {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => Number(p.seat_number) === 1), "Partner", true)}
+                            {renderSeat(0, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0), "Host", true)}
+                            {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 1), "Partner", true)}
                         </div>
                         <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
                             {[2,3,4,5,6,7,8,9].map(i => (
                                 <React.Fragment key={i}>
-                                    {renderSeat(i, participants.find(p => Number(p.seat_number) === i), `Seat ${i}`)}
+                                    {renderSeat(i, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === i), `Seat ${i}`)}
                                 </React.Fragment>
                             ))}
                         </div>
@@ -2010,7 +2008,7 @@ INSTRUCTIONS:
                                 {audience.map(p => {
                                     const uName = p.user_name || "Unknown";
                                     return (
-                                    <div key={p.id} className="flex flex-col items-center gap-1 shrink-0 w-12" title={uName}>
+                                    <div key={p.user_id || Math.random()} className="flex flex-col items-center gap-1 shrink-0 w-12" title={uName}>
                                         {p.photo_url ? (
                                             <img src={p.photo_url} alt={uName} className="w-8 h-8 rounded-full object-cover border border-[#0AE0D0]/30" />
                                         ) : (
@@ -2210,8 +2208,8 @@ INSTRUCTIONS:
                                             </div>
                                             {isHost && p.user_id !== String(tgUser.id) && (
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => { safeConfirm(`Mute ${p.user_name}?`, () => sendHostAction('mute', p.user_id)); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
-                                                    <button onClick={() => { safeConfirm(`Kick ${p.user_name} from the room?`, () => sendHostAction('kick', p.user_id)); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
+                                                    <button onClick={() => { sendHostAction('mute', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
+                                                    <button onClick={() => { sendHostAction('kick', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
                                                 </div>
                                             )}
                                         </div>
