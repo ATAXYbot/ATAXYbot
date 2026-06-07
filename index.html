@@ -429,6 +429,45 @@
             );
         };
 
+        // ==========================================
+        // 🛡️ VOICE ROOM ERROR BOUNDARY
+        // ==========================================
+        class VoiceRoomErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error("Safely caught an error in Voice Room UI:", error, errorInfo);
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#010B1C] text-white h-full min-h-[300px]">
+                            <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-3xl mb-4 border border-red-500/50 shadow-[0_0_15px_rgba(255,0,0,0.4)] mx-auto">
+                                <i className="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <h3 className="text-xl font-bold mb-2">A minor sync error occurred</h3>
+                            <p className="text-[#A4DFE6] text-sm mb-6">We've protected your session. You don't need to leave the room.</p>
+                            <button 
+                                onClick={() => this.setState({ hasError: false, error: null })} 
+                                className="py-3 px-6 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105"
+                            >
+                                Soft Refresh Room
+                            </button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
         // =========================================================================
         // ⬇️ ADD YOUR PRACTICE QUESTIONS HERE (ALIEN PLATFORM QBANK) ⬇️
         // =========================================================================
@@ -4308,7 +4347,11 @@ INSTRUCTIONS:
                     {currentTab === 'home' && renderHomeView()}
                     {currentTab === 'chat' && <ChatView user={tgUser} />}
                     {currentTab === 'ai' && <AIMentorView />}
-                    {currentTab === 'voice' && <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />}
+                    {currentTab === 'voice' && (
+                        <VoiceRoomErrorBoundary>
+                            <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />
+                        </VoiceRoomErrorBoundary>
+                    )}
                     {currentTab === 'questions' && renderQuestionsView()}
                     {currentTab === 'profile' && renderProfileView()}
                     
