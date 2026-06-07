@@ -2015,24 +2015,6 @@ INSTRUCTIONS:
             const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
             const [isRefreshing, setIsRefreshing] = useState(false);
             
-            // Strict WePlay-style Graceful Teardown on unmount
-            const activeRoomRef = useRef(activeRoom);
-            const leaveRoomRef = useRef(leaveRoom);
-            useEffect(() => {
-                activeRoomRef.current = activeRoom;
-                leaveRoomRef.current = leaveRoom;
-            }, [activeRoom, leaveRoom]);
-
-            useEffect(() => {
-                const handleUnload = () => {
-                    if (activeRoomRef.current) leaveRoomRef.current();
-                };
-                window.addEventListener('beforeunload', handleUnload);
-                return () => {
-                    window.removeEventListener('beforeunload', handleUnload);
-                    if (activeRoomRef.current) leaveRoomRef.current();
-                };
-            }, []);
             
             const handleRefresh = async () => {
                 setIsRefreshing(true);
