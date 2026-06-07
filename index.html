@@ -4325,7 +4325,9 @@ INSTRUCTIONS:
               {/* Voice Room Global Overlay */}
               {voiceState.activeRoom && !voiceState.isMinimized && (
                   <div className="fixed inset-0 z-[150000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
-                      <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
+                      <VoiceRoomErrorBoundary>
+                          <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
+                      </VoiceRoomErrorBoundary>
                   </div>
               )}
 
