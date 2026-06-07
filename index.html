@@ -1376,9 +1376,6 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'mute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     setIsMuted(true);
-                                    if (trackRef.current) {
-                                        try { trackRef.current.setMuted(true); } catch(e) {}
-                                    }
                                     if (channelRef.current) {
                                         const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                                         channelRef.current.track({
@@ -1396,9 +1393,6 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'unmute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     setIsMuted(false);
-                                    if (trackRef.current) {
-                                        try { trackRef.current.setMuted(false); } catch(e) {}
-                                    }
                                     if (channelRef.current) {
                                         const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                                         channelRef.current.track({
@@ -1660,8 +1654,7 @@ INSTRUCTIONS:
                         setLocalAudioTrack(track);
                         await activeClient.publish([track]);
                     } else {
-                        // If they already have a track, we just unmute it in Agora!
-                        try { await trackRef.current.setMuted(false); } catch(e) {}
+                        // If they already have a track, we rely entirely on the Soft Mute Engine!
                     }
                 } catch (e) { 
                     console.error("Safe takeSeat failed:", e); 
@@ -1729,7 +1722,6 @@ INSTRUCTIONS:
                     const shouldMute = !isMuted;
                     
                     setIsMuted(shouldMute);
-                    try { await trackRef.current.setMuted(shouldMute); } catch(e) {}
                     
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
