@@ -1640,7 +1640,7 @@ INSTRUCTIONS:
                 dragRef.current.currentX = x;
                 dragRef.current.currentY = y;
                 if (widgetRef.current) {
-                    widgetRef.current.style.transform = `translate3d(calc(-50% + ${x}px), ${y}px, 0)`;
+                    widgetRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
                 }
             };
             const handleTouchEnd = () => {
@@ -1662,8 +1662,8 @@ INSTRUCTIONS:
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                     onClick={handleClick}
-                    style={{ transform: `translate3d(calc(-50% + ${dragRef.current.currentX}px), ${dragRef.current.currentY}px, 0)` }}
-                    className="fixed bottom-[75px] left-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] touch-none"
+                    style={{ transform: `translate3d(${dragRef.current.currentX}px, ${dragRef.current.currentY}px, 0)` }}
+                    className="fixed bottom-[80px] right-4 w-[280px] bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] touch-none"
                 >
                     <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] animate-pulse shrink-0"><i className="fa-solid fa-volume-high text-xs"></i></div>
