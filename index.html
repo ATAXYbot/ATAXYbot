@@ -1599,6 +1599,8 @@ INSTRUCTIONS:
                     // 🛡️ As requested: Muting is tied to the seats, not the users.
                     // Whenever a user changes seats, they are instantly given a fresh unmuted state.
                     const finalMuteState = false;
+                    
+                    const isNewSpeaker = !trackRef.current;
 
                     userSeatRef.current = seatIdx;
                     setIsMuted(finalMuteState);
