@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Detailed Analysis | ATAXY</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.03)',
+                        glassBorder: 'rgba(255, 255, 255, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        /* Safe Area Padding for notch devices */
+        .safe-pt { padding-top: max(16px, env(safe-area-inset-top)); }
+        .safe-pb { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+        
+        /* Hide Scrollbar */
+        ::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; background-color: #020813; color: #f3f4f6; }
+
+        /* Custom SVG Ring Animations */
+        .svg-ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 8;
+        }
+        .svg-ring-progress {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 251.2; /* 2 * PI * r (where r=40) */
+            stroke-dashoffset: 251.2; /* Start empty */
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Glassmorphic Cards */
+        .card-glass {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen safe-pt safe-pb px-4 flex flex-col font-sans">
+
+    <!-- 1. Header & Quick Metrics -->
+    <header class="flex items-center justify-between py-4 mb-2">
+        <div class="flex items-center gap-3">
+            <button onclick="goBack()" class="w-10 h-10 rounded-full card-glass flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="text-xl font-bold tracking-wide">Performance</h1>
+        </div>
+        <button onclick="refreshAnalysis(this)" class="w-10 h-10 rounded-full card-glass flex items-center justify-center text-cyan-400 hover:bg-cyan-900/30 active:scale-95 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </button>
+    </header>
+
+    <section class="grid grid-cols-2 gap-3 mb-6">
+        <div class="card-glass p-4 rounded-2xl relative overflow-hidden group">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Predicted AIR</p>
+            <h3 class="text-2xl font-black text-white">24,510</h3>
+            <i class="fa-solid fa-trophy absolute -right-2 -bottom-2 text-4xl text-yellow-500/10 group-hover:scale-110 transition-transform"></i>
+        </div>
+        <div class="card-glass p-4 rounded-2xl relative overflow-hidden group">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Percentile</p>
+            <h3 class="text-2xl font-black text-cyan-400">98.2<span class="text-sm">%</span></h3>
+            <i class="fa-solid fa-chart-line absolute -right-2 -bottom-2 text-4xl text-cyan-500/10 group-hover:scale-110 transition-transform"></i>
+        </div>
+        <div class="card-glass p-4 rounded-2xl relative overflow-hidden group">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Practised Qs</p>
+            <h3 class="text-2xl font-black text-white">1,204</h3>
+            <i class="fa-solid fa-layer-group absolute -right-2 -bottom-2 text-4xl text-white/5 group-hover:scale-110 transition-transform"></i>
+        </div>
+        <div class="card-glass p-4 rounded-2xl relative overflow-hidden group">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Correct Qs</p>
+            <h3 class="text-2xl font-black text-green-400">892</h3>
+            <i class="fa-solid fa-check-double absolute -right-2 -bottom-2 text-4xl text-green-500/10 group-hover:scale-110 transition-transform"></i>
+        </div>
+    </section>
+
+    <!-- 2. Circular Score Predictions (The Core Feature) -->
+    <section class="card-glass p-5 rounded-3xl mb-6 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/10"></div>
+        <div class="relative z-10">
+            <div class="text-center mb-6">
+                <h2 class="text-sm text-gray-400 font-bold uppercase tracking-widest mb-1">Predicted Score</h2>
+                <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">620 <span class="text-xl text-gray-500">/ 720</span></div>
+            </div>
+            
+            <div class="flex justify-around items-center">
+                <!-- Physics Ring -->
+                <div class="flex flex-col items-center gap-2">
+                    <div class="relative w-20 h-20">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle class="svg-ring-bg" cx="50" cy="50" r="40"></circle>
+                            <circle id="ring-phy" class="svg-ring-progress text-red-500" stroke="currentColor" cx="50" cy="50" r="40"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-sm font-bold">110</span>
+                            <span class="text-[8px] text-gray-400">/180</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Phy</span>
+                </div>
+                
+                <!-- Chemistry Ring -->
+                <div class="flex flex-col items-center gap-2">
+                    <div class="relative w-20 h-20">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle class="svg-ring-bg" cx="50" cy="50" r="40"></circle>
+                            <circle id="ring-chem" class="svg-ring-progress text-orange-400" stroke="currentColor" cx="50" cy="50" r="40"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-sm font-bold">160</span>
+                            <span class="text-[8px] text-gray-400">/180</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chem</span>
+                </div>
+
+                <!-- Biology Ring -->
+                <div class="flex flex-col items-center gap-2">
+                    <div class="relative w-20 h-20">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle class="svg-ring-bg" cx="50" cy="50" r="40"></circle>
+                            <circle id="ring-bio" class="svg-ring-progress text-green-400" stroke="currentColor" cx="50" cy="50" r="40"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-sm font-bold">350</span>
+                            <span class="text-[8px] text-gray-400">/360</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bio</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Subject Tabs & Chapter-wise Table -->
+    <section class="flex-1 flex flex-col">
+        <div class="flex gap-2 bg-gray-900/50 p-1.5 rounded-full mb-4 border border-white/5">
+            <button onclick="switchTab('Physics', this)" class="tab-btn active flex-1 py-2 rounded-full text-xs font-bold transition-all bg-gray-700 text-white shadow-md">Physics</button>
+            <button onclick="switchTab('Chemistry', this)" class="tab-btn flex-1 py-2 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white">Chemistry</button>
+            <button onclick="switchTab('Biology', this)" class="tab-btn flex-1 py-2 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white">Biology</button>
+        </div>
+
+        <div class="card-glass rounded-2xl overflow-hidden flex-1 mb-6">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[340px]">
+                    <thead>
+                        <tr class="text-[10px] uppercase tracking-wider text-gray-400 bg-black/20 border-b border-white/5">
+                            <th class="p-3 font-semibold">Chapter</th>
+                            <th class="p-3 font-semibold text-center">Qs</th>
+                            <th class="p-3 font-semibold text-center">Correct %</th>
+                            <th class="p-3 font-semibold text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-white/5 text-sm">
+                        <!-- Dynamic rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. JavaScript Logic -->
+    <script>
+        // Init Telegram SDK
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        // Haptic wrapper
+        const triggerHaptic = () => {
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        };
+
+        // Mock Data
+        const analysisData = {
+            Physics: [
+                { name: "Kinematics", questions: 45, correctPercent: 82 },
+                { name: "Laws of Motion", questions: 30, correctPercent: 55 },
+                { name: "Thermodynamics", questions: 0, correctPercent: 0 } // Weak Chapter
+            ],
+            Chemistry: [
+                { name: "Atomic Structure", questions: 50, correctPercent: 90 },
+                { name: "Equilibrium", questions: 12, correctPercent: 30 },
+                { name: "Redox Reactions", questions: 0, correctPercent: 0 } // Weak Chapter
+            ],
+            Biology: [
+                { name: "Human Reproduction", questions: 120, correctPercent: 95 },
+                { name: "Genetics", questions: 80, correctPercent: 88 },
+                { name: "Plant Physiology", questions: 15, correctPercent: 12 } // Weak Chapter
+            ]
+        };
+
+        // Tab Logic
+        function switchTab(subject, btnElement) {
+            triggerHaptic();
+            
+            // Update buttons styling
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-gray-700', 'text-white', 'shadow-md');
+                btn.classList.add('text-gray-400');
+            });
+            btnElement.classList.add('bg-gray-700', 'text-white', 'shadow-md');
+            btnElement.classList.remove('text-gray-400');
+
+            renderTable(subject);
+        }
+
+        function renderTable(subject) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            analysisData[subject].forEach(chap => {
+                const isWeak = chap.correctPercent === 0 || chap.questions === 0;
+                const rowClasses = isWeak ? 'bg-red-900/10 text-red-300' : 'hover:bg-white/5';
+                const titleClass = isWeak ? 'text-red-400' : 'text-gray-200';
+                
+                const tr = document.createElement('tr');
+                tr.className = `transition-colors ${rowClasses}`;
+                tr.innerHTML = `
+                    <td class="p-3 font-medium ${titleClass} truncate max-w-[120px]">${chap.name}</td>
+                    <td class="p-3 text-center text-gray-400 font-mono">${chap.questions}</td>
+                    <td class="p-3 text-center">
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="font-bold font-mono text-xs ${isWeak ? 'text-red-400' : 'text-cyan-400'}">${chap.correctPercent}%</span>
+                            <div class="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                <div class="h-full ${isWeak ? 'bg-red-500' : 'bg-cyan-500'} rounded-full" style="width: ${chap.correctPercent}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="generateDPP()" class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider hover:bg-indigo-500 hover:text-white transition-colors active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-bolt"></i> DPP
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Actions
+        function generateDPP() { triggerHaptic(); alert("Generating personalized DPP based on weak areas..."); }
+        function goBack() { triggerHaptic(); window.history.back(); }
+        function refreshAnalysis(btn) { triggerHaptic(); btn.querySelector('svg').classList.add('animate-spin'); setTimeout(() => btn.querySelector('svg').classList.remove('animate-spin'), 1000); }
+
+        // On Load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initial render
+            renderTable('Physics');
+
+            // Animate SVG Rings
+            // Circumference = 251.2
+            // Offset = circumference - (percentage * circumference / 100)
+            setTimeout(() => {
+                document.getElementById('ring-phy').style.strokeDashoffset = 251.2 - ((110/180) * 251.2);
+                document.getElementById('ring-chem').style.strokeDashoffset = 251.2 - ((160/180) * 251.2);
+                document.getElementById('ring-bio').style.strokeDashoffset = 251.2 - ((350/360) * 251.2);
+            }, 100);
+        });
+    </script>
+</body>
+</html>
