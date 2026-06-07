@@ -1178,14 +1178,25 @@ INSTRUCTIONS:
             useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
 
             const toggleSpeaker = () => {
-                const nextState = !isSpeakerMuted;
-                remoteUsers.forEach(user => {
-                    if (user.audioTrack) {
-                        user.audioTrack.setVolume(nextState ? 0 : 100);
+                setIsSpeakerMuted(prev => !prev);
+            };
+
+            // 🛡️ SOFT MUTE ENGINE (App-level volume control instead of hardware track manipulation)
+            useEffect(() => {
+                remoteUsers.forEach(rUser => {
+                    if (rUser.audioTrack) {
+                        const participant = participants.find(p => String(p.user_id) === String(rUser.uid));
+                        
+                        let seatMuted = false;
+                        if (participant && participant.seat_number !== null && participant.seat_number !== undefined) {
+                            seatMuted = mutedSeats[participant.seat_number];
+                        }
+                        
+                        const shouldBeMuted = (participant && participant.is_muted) || isSpeakerMuted || seatMuted;
+                        try { rUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100); } catch(e) {}
                     }
                 });
-                setIsSpeakerMuted(nextState);
-            };
+            }, [participants, remoteUsers, isSpeakerMuted, mutedSeats]);
 
             const [availableRooms, setAvailableRooms] = useState([]);
             const [chatMessages, setChatMessages] = useState([]);
@@ -1193,8 +1204,11 @@ INSTRUCTIONS:
             const [pendingInvite, setPendingInvite] = useState(null);
 
             // --- WEPLAY-STYLE FEATURES (EMOJIS, SFX) ---
-            const [remoteMutedState, setRemoteMutedState] = useState({});
             const [lockedSeats, setLockedSeats] = useState({});
+            const [mutedSeats, setMutedSeats] = useState({});
+            const mutedSeatsRef = useRef({});
+            useEffect(() => { mutedSeatsRef.current = mutedSeats; }, [mutedSeats]);
+            
             const [isMinimized, setIsMinimized] = useState(false);
 
             // --- ORPHANED ROOM CLEANUP ---
@@ -1301,7 +1315,14 @@ INSTRUCTIONS:
                     agoraClient.on("volume-indicator", (volumes) => {
                         setActiveSpeakers(prev => {
                             const newMap = { ...prev };
-                            volumes.forEach(v => { newMap[v.uid] = v.level > 5; });
+                            volumes.forEach(v => { 
+                                const p = participantsRef.current.find(pt => String(pt.user_id) === String(v.uid));
+                                let isSoftMuted = p ? p.is_muted : false;
+                                if (p && p.seat_number !== null && p.seat_number !== undefined) {
+                                    if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
+                                }
+                                newMap[v.uid] = (v.level > 5) && !isSoftMuted; 
+                            });
                             return newMap; 
                         });
                     });
@@ -1314,7 +1335,8 @@ INSTRUCTIONS:
                             user_id: String(tgUser.id),
                             user_name: tgUser.first_name || tgUser.username || "Unknown",
                             photo_url: tgUser.photo_url || null,
-                            seat_number: null
+                            seat_number: null,
+                            is_muted: true
                         };
 
                         const channel = supabase.channel(`room:${roomData.id}`, {
@@ -1345,10 +1367,32 @@ INSTRUCTIONS:
                             })
                             .on('broadcast', { event: 'mute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
-                                    if (trackRef.current) {
-                                        try { trackRef.current.setMuted(true); } catch(e) {}
-                                    }
                                     setIsMuted(true);
+                                    if (channelRef.current) {
+                                        const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                        channelRef.current.track({
+                                            user_id: String(tgData.id || "1001"),
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: true
+                                        });
+                                    }
+                                }
+                            })
+                            .on('broadcast', { event: 'unmute' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    setIsMuted(false);
+                                    if (channelRef.current) {
+                                        const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                        channelRef.current.track({
+                                            user_id: String(tgData.id || "1001"),
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: false
+                                        });
+                                    }
                                 }
                             })
                             .on('broadcast', { event: 'kick' }, ({ payload }) => {
@@ -1381,11 +1425,11 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
                                 triggerSFX(payload.type);
                             })
-                            .on('broadcast', { event: 'mute_state_changed' }, ({ payload }) => {
-                                setRemoteMutedState(prev => ({ ...prev, [payload.userId]: payload.isMuted }));
-                            })
                             .on('broadcast', { event: 'seat_lock' }, ({ payload }) => {
                                 setLockedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isLocked }));
+                            })
+                            .on('broadcast', { event: 'seat_mute' }, ({ payload }) => {
+                                setMutedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isMuted }));
                             })
                             .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
@@ -1399,7 +1443,8 @@ INSTRUCTIONS:
                                         user_id: String(tgData.id || "1001"),
                                         user_name: tgData.first_name || tgData.username || "Unknown",
                                         photo_url: tgData.photo_url || null,
-                                        seat_number: userSeatRef.current
+                                        seat_number: userSeatRef.current,
+                                        is_muted: true
                                     });
                                 }
                             });
@@ -1409,6 +1454,7 @@ INSTRUCTIONS:
                     setActiveRoom(roomData);
                     setChatMessages([]);
                     setLockedSeats({});
+                    setMutedSeats({});
                     setIsMinimized(false);
                     return agoraClient;
                 } catch (e) { 
@@ -1464,6 +1510,7 @@ INSTRUCTIONS:
                         setMicRequests([]);
                         setPendingInvite(null);
                         setLockedSeats({});
+                        setMutedSeats({});
                         setIsMinimized(false);
                     }
                 } catch (err) {
@@ -1522,13 +1569,15 @@ INSTRUCTIONS:
                     const userIdString = String(tgData?.id || "1001");
 
                     userSeatRef.current = seatIdx;
+                    setIsMuted(false);
 
                     if (supabase && channelRef.current) {
                         await channelRef.current.track({
                             user_id: userIdString,
                             user_name: username,
                             photo_url: photo_url,
-                            seat_number: seatIdx
+                            seat_number: seatIdx,
+                            is_muted: false
                         });
                         const rId = roomId || roomRef.current?.id;
                         if (seatIdx === 0 && rId) {
@@ -1574,6 +1623,7 @@ INSTRUCTIONS:
                     }
                     
                     userSeatRef.current = null;
+                    setIsMuted(true);
 
                     if (track) {
                         if (c) {
@@ -1593,10 +1643,10 @@ INSTRUCTIONS:
                             user_id: userIdString,
                             user_name: username,
                             photo_url: photo_url,
-                            seat_number: null
+                            seat_number: null,
+                            is_muted: true
                         });
                     }
-                    setIsMuted(true);
                 } catch (e) {
                     console.error("Safe stepDown failed:", e);
                 }
@@ -1607,16 +1657,17 @@ INSTRUCTIONS:
                     if (!trackRef.current) return;
                     const shouldMute = !isMuted;
                     
-                    try { await trackRef.current.setMuted(shouldMute); } catch(e) { console.warn("Track mute skip:", e); }
                     setIsMuted(shouldMute);
                     
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     if (channelRef.current) {
                         try {
-                            await channelRef.current.send({
-                                type: 'broadcast',
-                                event: 'mute_state_changed',
-                                payload: { userId: String(tgData?.id || "1001"), isMuted: shouldMute }
+                            await channelRef.current.track({
+                                user_id: String(tgData?.id || "1001"),
+                                user_name: tgData?.first_name || tgData?.username || "Unknown",
+                                photo_url: tgData?.photo_url || null,
+                                seat_number: userSeatRef.current,
+                                is_muted: shouldMute
                             });
                         } catch (e) { console.warn("Mute broadcast failed:", e); }
                     }
@@ -1659,7 +1710,7 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, remoteMutedState, triggerSFX, lockedSeats, setLockedSeats, isMinimized, setIsMinimized };
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
@@ -1841,7 +1892,7 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, remoteMutedState, triggerSFX, lockedSeats = {}, setLockedSeats = () => {} } = voiceState;
+            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {} } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -1916,18 +1967,14 @@ INSTRUCTIONS:
                 const speaking = occupant && activeSpeakers[occupant.user_id];
                 const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : occupant?.photo_url;
                 
-                // 🛡️ SAFE MUTE CHECK: Prevent TypeError crashes if user object isn't fully synced yet
+                // 🛡️ SAFE MUTE CHECK: Read directly from Supabase Presence
                 let isOccupantMuted = false;
                 if (occupant && occupant.user_id) {
-                    if (remoteMutedState[occupant.user_id] !== undefined) {
-                        isOccupantMuted = remoteMutedState[occupant.user_id];
-                    } else {
-                        const rUser = remoteUsers.find(r => String(r.uid) === String(occupant.user_id));
-                        if (rUser) isOccupantMuted = !rUser.hasAudio;
-                    }
+                    isOccupantMuted = !!occupant.is_muted;
                 }
                 
                 const isLocked = lockedSeats[seatNum];
+                const isSeatMuted = mutedSeats[seatNum];
                 
                 // 🛡️ SAFE OCCUPANT NAME: Prevent ReferenceError crashes
                 const occupantName = occupant ? (occupant.user_name || "Unknown") : (isLocked ? 'Locked' : label);
@@ -1943,15 +1990,22 @@ INSTRUCTIONS:
                                         {occupantName.charAt(0).toUpperCase()}
                                     </div>
                                 )}
-                                {(isMe ? isMuted : isOccupantMuted) && (
+                                {((isMe ? isMuted : isOccupantMuted) || isSeatMuted) ? (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-10">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
+                                    </div>
+                                ) : null}
+                            </div>
+                        ) : (
+                            <div className="relative group">
+                                <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/30 bg-[#021633]/50 hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
+                                    <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
+                                </div>
+                                {isSeatMuted && (
                                     <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-10">
                                         <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
                                     </div>
                                 )}
-                            </div>
-                        ) : (
-                            <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/30 bg-[#021633]/50 hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
-                                <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
                             </div>
                         )}
                         <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupantName}</span>
@@ -2078,7 +2132,19 @@ INSTRUCTIONS:
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant.user_name}</h3>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
+                                    {showActionModal.occupant.is_muted ? (
+                                        <button onClick={() => { sendHostAction('unmute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white rounded-xl font-bold transition-colors border border-green-500/50">Unmute Microphone</button>
+                                    ) : (
+                                        <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
+                                    )}
+                                    <button onClick={() => { 
+                                        const isMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted });
+                                        setMutedSeats(prev => ({...prev, [showActionModal.seatNum]: isMuted}));
+                                        setShowActionModal(null); 
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
                                     <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
                                     <button onClick={() => { sendBroadcast('lift_user', { target_uid: showActionModal.occupant.user_id }); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
                                     <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
@@ -2094,6 +2160,14 @@ INSTRUCTIONS:
                                 <h3 className="text-xl font-bold text-white mb-4">Manage Seat {showActionModal.seatNum}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.seatNum }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
+                                    <button onClick={() => { 
+                                        const isMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted });
+                                        setMutedSeats(prev => ({...prev, [showActionModal.seatNum]: isMuted}));
+                                        setShowActionModal(null); 
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
                                     <button onClick={() => { 
                                         const isLocked = !lockedSeats[showActionModal.seatNum];
                                         sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked });
@@ -2208,7 +2282,11 @@ INSTRUCTIONS:
                                             </div>
                                             {isHost && p.user_id !== String(tgUser.id) && (
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => { sendHostAction('mute', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
+                                                    {p.is_muted ? (
+                                                        <button onClick={() => { sendHostAction('unmute', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center hover:bg-green-500 hover:text-white" title="Unmute Mic"><i className="fa-solid fa-microphone text-xs"></i></button>
+                                                    ) : (
+                                                        <button onClick={() => { sendHostAction('mute', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
+                                                    )}
                                                     <button onClick={() => { sendHostAction('kick', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
                                                 </div>
                                             )}
