@@ -1670,36 +1670,23 @@ INSTRUCTIONS:
                     
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
+                    const username = tgData?.first_name || tgData?.username || "User";
+                    const photo_url = tgData?.photo_url || "";
 
-                    if (r && String(r.host_user_id) === userIdString) {
-                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
-                        if (remainingMics.length > 0) {
-                            const nextHost = remainingMics[0];
-                            try { await supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id); } catch(e) {}
-                            sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
-                        } else {
-                            if (r.room_type === 'temporary') {
-                                try { await supabase.from('voice_rooms').delete().eq('id', r.id); } catch(e) {}
-                            } else {
-                                try { await supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', r.id); } catch(e) {}
-                            }
-                        }
-                    }
-                    
                     userSeatRef.current = null;
                     setIsMuted(true);
 
                     // 🛡️ CRASH PREVENTION: We no longer unpublish from Agora when stepping down to audience. 
                     // The Soft Mute Engine automatically enforces Volume 0 for anyone without a seat.
                     
+                    // 🚀 INSTANT PUBLIC UPDATE
                     if (supabase && channelRef.current) {
-                        const username = tgData?.first_name || tgData?.username || "User";
-                        const photo_url = tgData?.photo_url || "";
-                        
                         setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: null, is_muted: true } : p));
                         
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: null, isMuted: true, userName: username, photoUrl: photo_url });
+                        
                         try {
-                            await channelRef.current.track({
+                            channelRef.current.track({
                                 user_id: userIdString,
                                 user_name: username,
                                 photo_url: photo_url,
@@ -1707,9 +1694,22 @@ INSTRUCTIONS:
                                 is_muted: true
                             });
                         } catch (e) {}
-                        
-                        // 🚀 INSTANT PUBLIC UPDATE
-                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: null, isMuted: true });
+                    }
+                    
+                    // Server background tasks (Ownership transfer)
+                    if (r && String(r.host_user_id) === userIdString) {
+                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                        if (remainingMics.length > 0) {
+                            const nextHost = remainingMics[0];
+                            try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
+                            sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                        } else {
+                            if (r.room_type === 'temporary') {
+                                try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch(e) {}
+                            } else {
+                                try { supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', r.id).then(); } catch(e) {}
+                            }
+                        }
                     }
                 } catch (e) {
                     console.error("Safe stepDown failed:", e);
