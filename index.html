@@ -190,6 +190,31 @@
         const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
 
         // ==========================================
+        // 🛡️ NATIVE TELEGRAM SAFE ALERTS & CONFIRMS
+        // ==========================================
+        const safeAlert = (msg) => {
+            try {
+                if (window.Telegram?.WebApp?.showAlert) {
+                    window.Telegram.WebApp.showAlert(msg);
+                } else {
+                    alert(msg);
+                }
+            } catch (e) { alert(msg); }
+        };
+
+        const safeConfirm = (msg, callback) => {
+            try {
+                if (window.Telegram?.WebApp?.showConfirm) {
+                    window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
+                        if (confirmed) callback();
+                    });
+                } else {
+                    if (confirm(msg)) callback();
+                }
+            } catch (e) { if (confirm(msg)) callback(); }
+        };
+
+        // ==========================================
         // 🤖 SECURE AI MULTI-MODEL FALLBACK ENGINE
         // ==========================================
         const fetchGeminiSecure = async (prompt, history = [], systemContext = "", question_id = null, selected_option = null) => {
@@ -1128,6 +1153,8 @@ INSTRUCTIONS:
             const clientRef = useRef(null);
             useEffect(() => { clientRef.current = client; }, [client]);
 
+            const userSeatRef = useRef(null);
+
             const [activeRoom, setActiveRoom] = useState(null);
             const roomRef = useRef(null);
             useEffect(() => { roomRef.current = activeRoom; }, [activeRoom]);
@@ -1235,7 +1262,7 @@ INSTRUCTIONS:
             const joinRoom = async (roomData, password = null) => {
                 try {
                     if (roomData.password && roomData.password !== password) {
-                        alert("Incorrect password!");
+                        safeAlert("Incorrect password!");
                         return false;
                     }
 
@@ -1297,20 +1324,23 @@ INSTRUCTIONS:
                                 const state = channel.presenceState();
                                 const currentParticipants = [];
                                 for (const id in state) {
-                                    if (state[id] && state[id][0]) currentParticipants.push(state[id][0]);
+                                    if (state[id] && state[id].length > 0) {
+                                        const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
+                                        currentParticipants.push(seatedConnection || state[id][0]);
+                                    }
                                 }
                                 setParticipants(currentParticipants);
                             })
                             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
                                 if (payload.new.is_live === false) {
-                                    alert("The live room has ended.");
+                                    safeAlert("The live room has ended.");
                                     leaveRoom(agoraClient, roomData.id);
                                 } else {
                                     setActiveRoom(payload.new);
                                 }
                             })
                             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, () => {
-                                alert("The host has closed the room.");
+                                safeAlert("The host has closed the room.");
                                 leaveRoom(agoraClient, roomData.id);
                             })
                             .on('broadcast', { event: 'mute' }, ({ payload }) => {
@@ -1322,7 +1352,7 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'kick' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     leaveRoom(agoraClient, roomData.id);
-                                    alert("You were removed by the host.");
+                                    safeAlert("You were removed by the host.");
                                 }
                             })
                             .on('broadcast', { event: 'text_chat' }, ({ payload }) => {
@@ -1345,7 +1375,7 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     stepDown();
-                                    alert("The host has moved you back to the audience.");
+                                    safeAlert("The host has moved you back to the audience.");
                                 }
                             })
                             .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
@@ -1360,12 +1390,18 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     takeSeat(0, roomData.id);
-                                    alert("The previous host left. You are now the host.");
+                                    safeAlert("The previous host left. You are now the host.");
                                 }
                             })
                             .subscribe(async (status) => {
                                 if (status === 'SUBSCRIBED') {
-                                    await channel.track(myPresenceState);
+                                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                    await channel.track({
+                                        user_id: String(tgData.id || "1001"),
+                                        user_name: tgData.first_name || tgData.username || "Unknown",
+                                        photo_url: tgData.photo_url || null,
+                                        seat_number: userSeatRef.current
+                                    });
                                 }
                             });
                         
@@ -1378,7 +1414,7 @@ INSTRUCTIONS:
                     return agoraClient;
                 } catch (e) { 
                     console.error("Join Error", e); 
-                    alert("Failed to join room: " + e.message);
+                    safeAlert("Failed to join room: " + e.message);
                     return false;
                 }
             };
@@ -1467,7 +1503,7 @@ INSTRUCTIONS:
                     if (error.code === '23505' || errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
                         errorMsg = "A room with this name already exists! Please choose a different name.";
                     }
-                    alert("Failed to create room: " + errorMsg);
+                    safeAlert("Failed to create room: " + errorMsg);
                     console.error("createRoom error:", error);
                     return false;
                 }
@@ -1485,6 +1521,8 @@ INSTRUCTIONS:
                     const username = tgData?.first_name || tgData?.username || "User";
                     const photo_url = tgData?.photo_url || "";
                     const userIdString = String(tgData?.id || "1001");
+
+                    userSeatRef.current = seatIdx;
 
                     if (supabase && channelRef.current) {
                         await channelRef.current.track({
@@ -1506,7 +1544,7 @@ INSTRUCTIONS:
                     setIsMuted(false);
                 } catch (e) { 
                     console.error("Safe takeSeat failed:", e); 
-                    alert("Microphone access was denied or failed. Check browser permissions.");
+                    safeAlert("Microphone access was denied or failed. Check browser permissions.");
                 }
             };
 
@@ -1534,6 +1572,8 @@ INSTRUCTIONS:
                         }
                     }
                     
+                    userSeatRef.current = null;
+
                     if (track) {
                         if (c) {
                             try { await c.unpublish([track]); } catch(e) {}
@@ -1578,7 +1618,7 @@ INSTRUCTIONS:
                     }
                 } catch (e) {
                     console.error("Safe mute toggle failed:", e);
-                    alert("Failed to toggle microphone.");
+                    safeAlert("Failed to toggle microphone.");
                 }
             };
 
@@ -1607,7 +1647,7 @@ INSTRUCTIONS:
                         if (errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
                             errorMsg = "A room with this name already exists! Please choose a different name.";
                         }
-                        alert("Failed to update room: " + errorMsg);
+                        safeAlert("Failed to update room: " + errorMsg);
                         return false;
                     }
                     return true;
@@ -1814,7 +1854,7 @@ INSTRUCTIONS:
             const handleBottomMicClick = () => {
                 if (!isSpeaker) {
                     if (micRequests.some(r => String(r.uid) === currentUserId)) {
-                        alert("Your request is already pending host approval.");
+                        safeAlert("Your request is already pending host approval.");
                         return;
                     }
                     const occupiedSeats = participants.map(p => Number(p.seat_number));
@@ -1824,12 +1864,12 @@ INSTRUCTIONS:
                         if (activeRoom.require_mic_request) {
                             const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                             sendBroadcast('request_seat', { uid: currentUserId, name: tgData.first_name, seatNum: emptySeat });
-                            alert("Requested to speak. Waiting for host approval.");
+                            safeAlert("Requested to speak. Waiting for host approval.");
                         } else {
                             takeSeat(emptySeat);
                         }
                     }
-                    else alert("All seats are currently full!");
+                    else safeAlert("All seats are currently full!");
                 }
             };
 
@@ -1837,7 +1877,7 @@ INSTRUCTIONS:
                 if (occupant) {
                     if (String(occupant.user_id) === currentUserId) {
                         if (isHost) {
-                            alert("As the host, your seat is permanently fixed.");
+                            safeAlert("As the host, your seat is permanently fixed.");
                         } else {
                             setShowActionModal({ type: 'self' });
                         }
@@ -1851,15 +1891,15 @@ INSTRUCTIONS:
                         }
                     } else if (isSpeaker) {
                         if (lockedSeats[seatNum]) {
-                            alert("This seat is locked by the host.");
+                            safeAlert("This seat is locked by the host.");
                             return;
                         }
-                        if (confirm("Are you sure you want to change your seat?")) {
+                        safeConfirm("Are you sure you want to change your seat?", () => {
                             takeSeat(seatNum);
-                        }
+                        });
                     } else {
                         if (lockedSeats[seatNum]) {
-                            alert("This seat is locked by the host.");
+                            safeAlert("This seat is locked by the host.");
                             return;
                         }
                         setShowActionModal({ type: 'empty_seat_audience', seatNum });
@@ -1984,7 +2024,7 @@ INSTRUCTIONS:
                                 takeSeat(0);
                                 setTimeout(toggleMute, 1000); 
                             } else {
-                                alert('Take a seat to use the mic!');
+                                safeAlert('Take a seat to use the mic!');
                             }
                         }} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
                             <i className={`fa-solid ${isMuted || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
@@ -2020,7 +2060,7 @@ INSTRUCTIONS:
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant.user_name}</h3>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={() => { sendHostAction('force_mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
+                                    <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
                                     <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
                                     <button onClick={() => { sendBroadcast('lift_user', { target_uid: showActionModal.occupant.user_id }); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
                                     <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
@@ -2058,7 +2098,7 @@ INSTRUCTIONS:
                                     <button onClick={() => {
                                         if (activeRoom.require_mic_request) {
                                             sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum: showActionModal.seatNum });
-                                            alert("Requested to take seat. Waiting for host approval.");
+                                            safeAlert("Requested to take seat. Waiting for host approval.");
                                         } else {
                                             takeSeat(showActionModal.seatNum);
                                         }
@@ -2082,7 +2122,7 @@ INSTRUCTIONS:
                                                 <div className="w-8 h-8 rounded-full bg-[#00FFFF] text-[#010B1C] flex items-center justify-center">{a.user_name[0]}</div>
                                                 {a.user_name}
                                             </div>
-                                            <button onClick={() => { sendBroadcast('invite_to_seat', { target_uid: a.user_id, seatNum: showActionModal.seatNum }); setShowActionModal(null); alert('Invite sent!'); }} className="bg-[#00FFFF] text-[#010B1C] px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(0,255,255,0.4)]">Invite</button>
+                                            <button onClick={() => { sendBroadcast('invite_to_seat', { target_uid: a.user_id, seatNum: showActionModal.seatNum }); setShowActionModal(null); safeAlert('Invite sent!'); }} className="bg-[#00FFFF] text-[#010B1C] px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(0,255,255,0.4)]">Invite</button>
                                         </div>
                                     ))}
                                 </div>
@@ -2150,8 +2190,8 @@ INSTRUCTIONS:
                                             </div>
                                             {isHost && p.user_id !== String(tgUser.id) && (
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => { if(confirm(`Mute ${p.user_name}?`)) sendHostAction('mute', p.user_id); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
-                                                    <button onClick={() => { if(confirm(`Kick ${p.user_name} from the room?`)) sendHostAction('kick', p.user_id); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
+                                                    <button onClick={() => { safeConfirm(`Mute ${p.user_name}?`, () => sendHostAction('mute', p.user_id)); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
+                                                    <button onClick={() => { safeConfirm(`Kick ${p.user_name} from the room?`, () => sendHostAction('kick', p.user_id)); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
                                                 </div>
                                             )}
                                         </div>
