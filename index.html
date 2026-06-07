@@ -1208,7 +1208,6 @@ INSTRUCTIONS:
             const [isMuted, setIsMuted] = useState(true);
             const isMutedRef = useRef(true);
             useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
-            const [remoteUsers, setRemoteUsers] = useState([]);
             const [activeSpeakers, setActiveSpeakers] = useState({});
             const [realtimeChannel, setRealtimeChannel] = useState(null);
             const channelRef = useRef(null);
@@ -1233,7 +1232,8 @@ INSTRUCTIONS:
 
             // 🛡️ SOFT MUTE ENGINE (App-level volume control instead of hardware track manipulation)
             useEffect(() => {
-                remoteUsers.forEach(rUser => {
+                if (!clientRef.current) return;
+                clientRef.current.remoteUsers.forEach(rUser => {
                     if (rUser.audioTrack) {
                         const participant = participants.find(p => String(p.user_id) === String(rUser.uid));
                         
@@ -1248,7 +1248,7 @@ INSTRUCTIONS:
                         try { rUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100); } catch(e) {}
                     }
                 });
-            }, [participants, remoteUsers, isSpeakerMuted, mutedSeats]);
+            }, [participants, isSpeakerMuted, mutedSeats]);
 
             const [availableRooms, setAvailableRooms] = useState([]);
             const [chatMessages, setChatMessages] = useState([]);
@@ -1267,6 +1267,12 @@ INSTRUCTIONS:
             useEffect(() => {
                 const handleBeforeUnload = () => {
                     if (roomRef.current && clientRef.current) {
+                        try {
+                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                            const userIdString = String(tgData?.id || "1001");
+                            const roomId = roomRef.current.id;
+                            navigator.sendBeacon(`https://kwzpnupjtvfrevpwfaao.supabase.co/rest/v1/room_participants?user_id=eq.${userIdString}&room_id=eq.${roomId}`, null);
+                        } catch(e) {}
                         leaveRoom(clientRef.current, roomRef.current.id, true);
                     }
                 };
@@ -1361,25 +1367,47 @@ INSTRUCTIONS:
                     
                     agoraClient.on("user-published", async (remoteUser, mediaType) => {
                         try {
-                            await agoraClient.subscribe(remoteUser, mediaType);
                             if (mediaType === "audio") {
-                                remoteUser.audioTrack.play();
-                                if (speakerMutedRef.current) {
-                                    remoteUser.audioTrack.setVolume(0);
+                                const userIdStr = String(remoteUser.uid);
+                                await agoraClient.subscribe(remoteUser, mediaType);
+                                
+                                // Safely play without binding to a DOM element container
+                                if (remoteUser.audioTrack) {
+                                    remoteUser.audioTrack.play();
+                                    if (speakerMutedRef.current) {
+                                        remoteUser.audioTrack.setVolume(0);
+                                    }
                                 }
+                                
+                                // Update only the mute state badge visually
+                                setParticipants(prev => prev.map(s => String(s.user_id) === userIdStr ? { ...s, is_muted: false } : s));
                             }
-                            setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
-                        } catch(e) {}
+                        } catch (err) {
+                            console.error("Safely bypassed user-published exception:", err);
+                        }
                     });
-                    agoraClient.on("user-unpublished", (remoteUser, mediaType) => {
+
+                    agoraClient.on("user-unpublished", async (remoteUser, mediaType) => {
                         try {
-                            setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
-                        } catch(e) {}
+                            if (mediaType === "audio") {
+                                const userIdStr = String(remoteUser.uid);
+                                // CRITICAL: NEVER call .stop() or .close() on remoteUser tracks manually!
+                                // Simply update the visual badge state. Agora cleans up internal memory.
+                                setParticipants(prev => prev.map(s => String(s.user_id) === userIdStr ? { ...s, is_muted: true } : s));
+                            }
+                        } catch (err) {
+                            console.error("Safely bypassed user-unpublished exception:", err);
+                        }
                     });
-                    agoraClient.on("user-left", (remoteUser) => {
+
+                    agoraClient.on("user-left", async (remoteUser) => {
                         try {
-                            setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
-                        } catch(e) {}
+                            const userIdStr = String(remoteUser.uid);
+                            // Clean up our visual grid array safely
+                            setParticipants(prev => prev.map(s => String(s.user_id) === userIdStr ? { ...s, seat_number: null, is_muted: true } : s));
+                        } catch (err) {
+                            console.error("Safely bypassed user-left exception:", err);
+                        }
                     });
 
                     let lastVolumeUpdate = 0;
@@ -1639,7 +1667,6 @@ INSTRUCTIONS:
                         setLocalAudioTrack(null);
                         setIsMuted(true);
                         setClient(null);
-                        setRemoteUsers([]);
                         setRealtimeChannel(null);
                         setChatMessages([]);
                         setMicRequests([]);
@@ -1912,7 +1939,7 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isConnecting };
+            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isConnecting };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
@@ -2124,7 +2151,7 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {}, isConnecting } = voiceState;
+            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {}, isConnecting } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
