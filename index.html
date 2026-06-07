@@ -1414,7 +1414,7 @@ INSTRUCTIONS:
                     agoraClient.enableAudioVolumeIndicator();
                     agoraClient.on("volume-indicator", (volumes) => {
                         const now = Date.now();
-                        if (now - lastVolumeUpdate < 200) return; // Debounce to ~5fps max
+                        if (now - lastVolumeUpdate < 100) return; // Debounce to ~10fps max for smooth UI
                         lastVolumeUpdate = now;
                         try {
                             setActiveSpeakers(prev => {
@@ -1428,9 +1428,16 @@ INSTRUCTIONS:
                                         if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
                                         notSeated = false;
                                     }
-                                    const isSpeaking = (v.level > 5) && !isSoftMuted && !notSeated; 
-                                    if (newMap[v.uid] !== isSpeaking) {
-                                        newMap[v.uid] = isSpeaking;
+                                    const level = (!isSoftMuted && !notSeated && v.level > 5) ? v.level : 0; 
+                                    if ((prev[v.uid] || 0) !== level) {
+                                        newMap[v.uid] = level;
+                                        changed = true;
+                                    }
+                                });
+                                // Zero out anyone who stopped speaking completely
+                                Object.keys(prev).forEach(uid => {
+                                    if (prev[uid] > 0 && !volumes.some(v => String(v.uid) === uid)) {
+                                        newMap[uid] = 0;
                                         changed = true;
                                     }
                                 });
@@ -2189,7 +2196,9 @@ INSTRUCTIONS:
                             safeAlert("This seat is locked by the host.");
                             return;
                         }
-                        takeSeat(seatNum); // Instant Seat Transfer (Bypasses Native Confirm Freezes)
+                        safeConfirm(`Are you sure you want to change to Seat ${seatNum}?`, () => {
+                            takeSeat(seatNum);
+                        });
                     } else {
                         if (lockedSeats[seatNum]) {
                             safeAlert("This seat is locked by the host.");
@@ -2203,7 +2212,20 @@ INSTRUCTIONS:
             const renderSeat = (seatNum, occupant, label, isLarge=false) => {
                 if (occupant && !occupant.user_id) return null; // Safe guard
                 const isMe = String(occupant?.user_id) === currentUserId;
-                const speaking = occupant && activeSpeakers[occupant.user_id];
+                
+                // --- Dynamic Audio Spark Visualizer Logic ---
+                const speakerLevel = (occupant && activeSpeakers[occupant.user_id]) || 0;
+                const speaking = speakerLevel > 5;
+                // speakerLevel from Agora is 0 to 100.
+                const intensity = Math.min(speakerLevel / 100, 1);
+                
+                const baseScale = isLarge ? 1.05 : 1.1;
+                const dynamicScale = speaking ? baseScale + (intensity * 0.2) : 1; 
+                const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
+                const ring1Scale = speaking ? dynamicScale * 1.15 : 0.8;
+                const ring2Scale = speaking ? dynamicScale * 1.35 : 0.8;
+                const rotateDeg = speaking ? intensity * 180 : 0;
+
                 const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : occupant?.photo_url;
                 
                 // 🛡️ SAFE MUTE CHECK: Read directly from Supabase Presence
@@ -2221,16 +2243,21 @@ INSTRUCTIONS:
                 return (
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                         {occupant ? (
-                            <div className="relative group">
+                            <div className="relative group flex items-center justify-center">
+                                {/* Frequency based animated sparks/rings */}
+                                <div className={`absolute inset-0 rounded-full bg-[#00FFFF] transition-all duration-200 ease-out pointer-events-none ${speaking ? 'opacity-100' : 'opacity-0'}`} style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity * 0.4, filter: 'blur(10px)' }}></div>
+                                <div className={`absolute inset-0 rounded-full border-2 border-[#00FFFF] border-dashed transition-all duration-200 ease-out pointer-events-none ${speaking ? 'opacity-100' : 'opacity-0'}`} style={{ transform: `scale(${ring1Scale}) rotate(${rotateDeg}deg)`, opacity: glowOpacity * 0.8 }}></div>
+                                <div className={`absolute inset-0 rounded-full border border-[#00FFFF] transition-all duration-300 ease-out pointer-events-none ${speaking ? 'opacity-100' : 'opacity-0'}`} style={{ transform: `scale(${ring2Scale}) rotate(-${rotateDeg}deg)`, opacity: glowOpacity * 0.4 }}></div>
+
                                 {dpUrl ? (
-                                    <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-[3px] transition-all duration-300 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_25px_rgba(0,255,255,0.9)] scale-110 ring-4 ring-[#00FFFF]/50 ring-offset-2 ring-offset-[#010B1C]' : 'border-[#0AE0D0]/50 group-hover:border-[#0AE0D0]'}`} />
+                                    <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-[3px] transition-all duration-200 ease-out relative z-10 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]' : 'border-[#0AE0D0]/50 group-hover:border-[#0AE0D0]'}`} style={speaking ? { transform: `scale(${baseScale})` } : {}} />
                                 ) : (
-                                    <div className={`rounded-full flex items-center justify-center font-black border-[3px] transition-all duration-300 bg-gradient-to-br from-[#00FFFF] to-blue-600 shadow-inner ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-2xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_25px_rgba(0,255,255,0.9)] scale-110 ring-4 ring-[#00FFFF]/50 ring-offset-2 ring-offset-[#010B1C] text-[#010B1C]' : 'border-transparent text-white group-hover:shadow-[0_0_15px_rgba(0,255,255,0.4)]'}`}>
+                                    <div className={`rounded-full flex items-center justify-center font-black border-[3px] transition-all duration-200 ease-out bg-gradient-to-br from-[#00FFFF] to-blue-600 shadow-inner relative z-10 ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-2xl'} ${speaking ? 'border-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.6)]' : 'border-transparent text-white group-hover:shadow-[0_0_15px_rgba(0,255,255,0.4)]'}`} style={speaking ? { transform: `scale(${baseScale})` } : {}}>
                                         {occupantName.charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 {((isMe ? isMuted : isOccupantMuted) || isSeatMuted) ? (
-                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-10">
+                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-20">
                                         <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
                                     </div>
                                 ) : null}
@@ -2254,13 +2281,13 @@ INSTRUCTIONS:
 
             return (
                 <div className="flex-1 flex flex-col relative z-10">
-                    <div className="px-4 py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur">
-                        <div className="flex items-center gap-3 overflow-hidden pr-2">
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(12px+env(safe-area-inset-top,0px))]">
+                        <div className="flex items-center gap-2 overflow-hidden pr-2 flex-1 min-w-0">
                             <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors" title="Back to Rooms">
                                 <i className="fa-solid fa-arrow-left"></i>
                             </button>
-                            <div className="flex flex-col flex-1 overflow-hidden pr-2">
-                                <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
+                            <div className="flex flex-col overflow-hidden min-w-0">
+                                <h2 className="text-lg sm:text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
                                 <p className="text-xs text-[#00FFFF] font-bold">
                                     <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> {activeRoom.room_type} Room
                                 </p>
@@ -2377,14 +2404,6 @@ INSTRUCTIONS:
                                     ) : (
                                         <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
                                     )}
-                                    <button onClick={() => { 
-                                        const isMuted = !mutedSeats[showActionModal.seatNum];
-                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted });
-                                        setMutedSeats(prev => ({...prev, [showActionModal.seatNum]: isMuted}));
-                                        setShowActionModal(null); 
-                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
-                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
-                                    </button>
                                     <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
                                     <button onClick={() => { sendHostAction('lift_user', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
                                     <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
@@ -2400,14 +2419,6 @@ INSTRUCTIONS:
                                 <h3 className="text-xl font-bold text-white mb-4">Manage Seat {showActionModal.seatNum}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.seatNum }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
-                                    <button onClick={() => { 
-                                        const isMuted = !mutedSeats[showActionModal.seatNum];
-                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted });
-                                        setMutedSeats(prev => ({...prev, [showActionModal.seatNum]: isMuted}));
-                                        setShowActionModal(null); 
-                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
-                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
-                                    </button>
                                     <button onClick={() => { 
                                         const isLocked = !lockedSeats[showActionModal.seatNum];
                                         sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked });
