@@ -1730,7 +1730,7 @@ INSTRUCTIONS:
                     
                     if (channelRef.current) {
                         try {
-                            await channelRef.current.track({
+                            channelRef.current.track({
                                 user_id: userIdString,
                                 user_name: tgData?.first_name || tgData?.username || "Unknown",
                                 photo_url: tgData?.photo_url || null,
