@@ -1188,11 +1188,13 @@ INSTRUCTIONS:
                         const participant = participants.find(p => String(p.user_id) === String(rUser.uid));
                         
                         let seatMuted = false;
+                        let notSeated = true;
                         if (participant && participant.seat_number !== null && participant.seat_number !== undefined) {
                             seatMuted = mutedSeats[participant.seat_number];
+                            notSeated = false;
                         }
                         
-                        const shouldBeMuted = (participant && participant.is_muted) || isSpeakerMuted || seatMuted;
+                        const shouldBeMuted = (participant && participant.is_muted) || isSpeakerMuted || seatMuted || notSeated;
                         try { rUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100); } catch(e) {}
                     }
                 });
@@ -1320,10 +1322,12 @@ INSTRUCTIONS:
                             volumes.forEach(v => { 
                                 const p = participantsRef.current.find(pt => String(pt.user_id) === String(v.uid));
                                 let isSoftMuted = p ? p.is_muted : false;
+                                let notSeated = true;
                                 if (p && p.seat_number !== null && p.seat_number !== undefined) {
                                     if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
+                                    notSeated = false;
                                 }
-                                newMap[v.uid] = (v.level > 5) && !isSoftMuted; 
+                                newMap[v.uid] = (v.level > 5) && !isSoftMuted && !notSeated; 
                             });
                             return newMap; 
                         });
@@ -1380,6 +1384,8 @@ INSTRUCTIONS:
                                             is_muted: true
                                         });
                                     }
+                                } else {
+                                    setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: true } : p));
                                 }
                             })
                             .on('broadcast', { event: 'unmute' }, ({ payload }) => {
@@ -1395,11 +1401,15 @@ INSTRUCTIONS:
                                             is_muted: false
                                         });
                                     }
+                                } else {
+                                    setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: false } : p));
                                 }
                             })
                             .on('broadcast', { event: 'kick' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     leaveRoom(agoraClient, roomData.id);
+                                } else {
+                                    setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
                                 }
                             })
                             .on('broadcast', { event: 'text_chat' }, ({ payload }) => {
@@ -1422,6 +1432,8 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     stepDown();
+                                } else {
+                                    setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: null, is_muted: true } : p));
                                 }
                             })
                             .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
@@ -1433,6 +1445,9 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'seat_mute' }, ({ payload }) => {
                                 setMutedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isMuted }));
                             })
+                            .on('broadcast', { event: 'change_seat' }, ({ payload }) => {
+                                setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: payload.seatNum, is_muted: payload.isMuted } : p));
+                            })
                             .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     takeSeat(0, roomData.id);
@@ -1441,8 +1456,19 @@ INSTRUCTIONS:
                             .subscribe(async (status) => {
                                 if (status === 'SUBSCRIBED') {
                                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                    const userIdString = String(tgData.id || "1001");
+                                    setParticipants(prev => {
+                                        if (prev.some(p => String(p.user_id) === userIdString)) return prev;
+                                        return [...prev, {
+                                            user_id: userIdString,
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: true
+                                        }];
+                                    });
                                     await channel.track({
-                                        user_id: String(tgData.id || "1001"),
+                                        user_id: userIdString,
                                         user_name: tgData.first_name || tgData.username || "Unknown",
                                         photo_url: tgData.photo_url || null,
                                         seat_number: userSeatRef.current,
@@ -1570,29 +1596,47 @@ INSTRUCTIONS:
                     const photo_url = tgData?.photo_url || "";
                     const userIdString = String(tgData?.id || "1001");
 
+                    // 🛡️ As requested: Muting is tied to the seats, not the users.
+                    // Whenever a user changes seats, they are instantly given a fresh unmuted state.
+                    const finalMuteState = false;
+
                     userSeatRef.current = seatIdx;
-                    setIsMuted(false);
+                    setIsMuted(finalMuteState);
 
                     if (supabase && channelRef.current) {
-                        await channelRef.current.track({
-                            user_id: userIdString,
-                            user_name: username,
-                            photo_url: photo_url,
-                            seat_number: seatIdx,
-                            is_muted: false
+                        setParticipants(prev => {
+                            const exists = prev.some(p => String(p.user_id) === userIdString);
+                            if (exists) {
+                                return prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: seatIdx, is_muted: finalMuteState } : p);
+                            } else {
+                                return [...prev, { user_id: userIdString, user_name: username, photo_url: photo_url, seat_number: seatIdx, is_muted: finalMuteState }];
+                            }
                         });
+                        
+                        try {
+                            channelRef.current.track({
+                                user_id: userIdString,
+                                user_name: username,
+                                photo_url: photo_url,
+                                seat_number: seatIdx,
+                                is_muted: finalMuteState
+                            });
+                        } catch(e) {}
+                        
+                        // Instantly notify everyone in the room of the new seat without waiting for network sync
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: seatIdx, isMuted: finalMuteState });
+                        
                         const rId = roomId || roomRef.current?.id;
                         if (seatIdx === 0 && rId) {
-                            await supabase.from('voice_rooms').update({ host_user_id: userIdString }).eq('id', rId);
+                            try { await supabase.from('voice_rooms').update({ host_user_id: userIdString }).eq('id', rId); } catch(e) {}
                         }
                     }
 
-                    if (!trackRef.current) {
+                    if (isNewSpeaker) {
                         await activeClient.setClientRole("host");
                         const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
                         setLocalAudioTrack(track);
                         await activeClient.publish([track]);
-                        setIsMuted(false);
                     }
                 } catch (e) { 
                     console.error("Safe takeSeat failed:", e); 
@@ -1627,20 +1671,15 @@ INSTRUCTIONS:
                     userSeatRef.current = null;
                     setIsMuted(true);
 
-                    if (track) {
-                        if (c) {
-                            try { await c.unpublish([track]); } catch(e) {}
-                        }
-                        try { track.stop(); } catch(e){}
-                        try { track.close(); } catch(e){}
-                        setLocalAudioTrack(null);
-                    }
-                    if (c) {
-                        try { await c.setClientRole("audience"); } catch(e) {}
-                    }
+                    // 🛡️ CRASH PREVENTION: We no longer unpublish from Agora when stepping down to audience. 
+                    // The Soft Mute Engine automatically enforces Volume 0 for anyone without a seat.
+                    
                     if (supabase && channelRef.current) {
                         const username = tgData?.first_name || tgData?.username || "User";
                         const photo_url = tgData?.photo_url || "";
+                        
+                        setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: null, is_muted: true } : p));
+                        
                         try {
                             await channelRef.current.track({
                                 user_id: userIdString,
@@ -1664,10 +1703,14 @@ INSTRUCTIONS:
                     setIsMuted(shouldMute);
                     
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+                    
+                    setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, is_muted: shouldMute } : p));
+                    
                     if (channelRef.current) {
                         try {
                             await channelRef.current.track({
-                                user_id: String(tgData?.id || "1001"),
+                                user_id: userIdString,
                                 user_name: tgData?.first_name || tgData?.username || "Unknown",
                                 photo_url: tgData?.photo_url || null,
                                 seat_number: userSeatRef.current,
@@ -1684,6 +1727,19 @@ INSTRUCTIONS:
                 try {
                     if (channelRef.current && String(roomRef.current?.host_user_id) === String(tgUser.id)) {
                         channelRef.current.send({ type: 'broadcast', event: action, payload: { target_uid: String(targetUid) } });
+                        
+                        // 🚀 OPTIMISTIC UI UPDATES FOR HOST (Zero Delay)
+                        setParticipants(prev => {
+                            if (action === 'kick') return prev.filter(p => String(p.user_id) !== String(targetUid));
+                            return prev.map(p => {
+                                if (String(p.user_id) === String(targetUid)) {
+                                    if (action === 'mute') return { ...p, is_muted: true };
+                                    if (action === 'unmute') return { ...p, is_muted: false };
+                                    if (action === 'lift_user') return { ...p, seat_number: null, is_muted: true };
+                                }
+                                return p;
+                            });
+                        });
                     }
                 } catch (e) { console.warn("Host Action Error:", e); }
             };
@@ -1964,9 +2020,7 @@ INSTRUCTIONS:
                             safeAlert("This seat is locked by the host.");
                             return;
                         }
-                        safeConfirm("Are you sure you want to change your seat?", () => {
-                            takeSeat(seatNum);
-                        });
+                        takeSeat(seatNum); // Instant Seat Transfer (Bypasses Native Confirm Freezes)
                     } else {
                         if (lockedSeats[seatNum]) {
                             safeAlert("This seat is locked by the host.");
