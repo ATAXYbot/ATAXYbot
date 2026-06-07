@@ -19,10 +19,53 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     const [realtimeChannel, setRealtimeChannel] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
 
+    // NEW: WePlay features
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [availableRooms, setAvailableRooms] = useState([]);
+    const [lockedSeats, setLockedSeats] = useState({});
+
+    // Telegram Profile Extraction
+    const tgUserExt = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser || {};
+    const tgId = String(tgUserExt.id || "1001");
+    const tgName = tgUserExt.first_name || tgUserExt.username || "Anonymous";
+    const tgPhoto = tgUserExt.photo_url || null;
+
+    useEffect(() => {
+        if (!supabase) return;
+        fetchAvailableRooms();
+        const channel = supabase.channel('public:rooms')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {
+                fetchAvailableRooms();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => {
+                fetchAvailableRooms();
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, []);
+
+    const fetchAvailableRooms = async () => {
+        const { data, error } = await supabase.from('rooms').select('*, room_participants(count)').eq('is_live', true);
+        if (data && !error) setAvailableRooms(data);
+    };
+
+    const createRoom = async (roomName) => {
+        if (!supabase) return;
+        try {
+            const { data, error } = await supabase.from('rooms').insert({
+                channel_name: roomName, host_user_id: tgId, is_live: true, room_type: 'temporary'
+            }).select().single();
+            if (error) throw error;
+            if (data) joinRoom(data);
+        } catch (e) {
+            alert("Failed to create room: " + e.message);
+        }
+    };
+
     const joinRoom = async (roomData, password = null) => {
         try {
             // 1. Fetch Token
-            const bodyStr = JSON.stringify({ channelName: roomData.channel_name, uid: String(tgUser.id), password });
+            const bodyStr = JSON.stringify({ channelName: roomData.channel_name, uid: tgId, password });
             const headers = { 
                 'Content-Type': 'application/json', 
                 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
@@ -63,18 +106,18 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             agoraClient.on("volume-indicator", (volumes) => {
                 setActiveSpeakers(prev => {
                     const newMap = { ...prev };
-                    volumes.forEach(v => { newMap[v.uid] = v.level > 5; });
+                    volumes.forEach(v => { newMap[v.uid] = v.level > 10; });
                     return newMap; 
                 });
             });
 
             // CRITICAL: Join using String User Account
             await agoraClient.setClientRole("audience");
-            await agoraClient.join(AGORA_APP_ID, String(roomData.channel_name), token, String(tgUser?.id || "1001"));
+            await agoraClient.join(AGORA_APP_ID, String(roomData.channel_name), token, tgId);
             
             // 3. Setup Supabase Realtime Ephemeral Channel
             await supabase.from('room_participants').upsert({
-                room_id: roomData.id, user_id: String(tgUser.id), user_name: tgUser.first_name, seat_number: null
+                room_id: roomData.id, user_id: tgId, user_name: tgName, photo_url: tgPhoto, seat_number: null
             });
 
             const channel = supabase.channel(`room:${roomData.id}`)
@@ -82,13 +125,16 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
                     fetchParticipants(roomData.id);
                 })
                 .on('broadcast', { event: 'kick' }, (payload) => {
-                    if (payload.targetUserId === String(tgUser.id)) leaveRoom();
+                    if (payload.targetUserId === tgId) leaveRoom();
                 })
-                .on('broadcast', { event: 'mute' }, (payload) => {
-                    if (payload.targetUserId === String(tgUser.id)) {
+                .on('broadcast', { event: 'force_mute' }, (payload) => {
+                    if (payload.targetUserId === tgId) {
                         setLocalAudioTrack(t => { t?.setMuted(true); return t; });
                         setIsMuted(true);
                     }
+                })
+                .on('broadcast', { event: 'seat_lock' }, (payload) => {
+                    setLockedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isLocked }));
                 })
                 .on('broadcast', { event: 'text_chat' }, (payload) => {
                     setChatMessages(prev => [...prev, payload]);
@@ -99,6 +145,8 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             fetchParticipants(roomData.id);
             setActiveRoom(roomData);
             setChatMessages([]);
+            setIsMinimized(false);
+            setLockedSeats({});
             return true;
         } catch (e) {
             alert("Failed to join room: " + e.message);
@@ -115,7 +163,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         if (localAudioTrack) { localAudioTrack.stop(); localAudioTrack.close(); }
         if (client) await client.leave();
         if (activeRoom) {
-            await supabase.from('room_participants').delete().match({ room_id: activeRoom.id, user_id: String(tgUser.id) });
+            await supabase.from('room_participants').delete().match({ room_id: activeRoom.id, user_id: tgId });
             if (realtimeChannel) supabase.removeChannel(realtimeChannel);
         }
         setActiveRoom(null);
@@ -124,6 +172,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         setRemoteUsers([]);
         setRealtimeChannel(null);
         setChatMessages([]);
+        setIsMinimized(false);
     };
 
     const toggleMute = async () => {
@@ -149,17 +198,32 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     };
 
     const sendChat = (text) => {
-        const payload = { userId: String(tgUser.id), userName: tgUser.first_name, text, time: new Date().toISOString() };
+        const payload = { userId: tgId, userName: tgName, text, time: new Date().toISOString() };
         realtimeChannel?.send({ type: 'broadcast', event: 'text_chat', payload });
         setChatMessages(prev => [...prev, payload]); // Optimistic update
     };
 
-    const hostAction = (action, targetUserId) => {
-        realtimeChannel?.send({ type: 'broadcast', event: action, payload: { targetUserId: String(targetUserId) } });
+    const hostAction = (action, targetUserId, extraPayload = {}) => {
+        realtimeChannel?.send({ type: 'broadcast', event: action, payload: { targetUserId: targetUserId ? String(targetUserId) : null, ...extraPayload } });
+    };
+
+    const takeSeat = async (seatNumber) => {
+        if (!activeRoom) return;
+        await supabase.from('room_participants').update({ seat_number: seatNumber }).match({ room_id: activeRoom.id, user_id: tgId });
+    };
+
+    const leaveSeat = async () => {
+        if (!activeRoom) return;
+        await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: activeRoom.id, user_id: tgId });
     };
 
     return (
-        <VoiceRoomContext.Provider value={{ client, activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, joinRoom, leaveRoom, toggleMute, sendChat, hostAction }}>
+        <VoiceRoomContext.Provider value={{ 
+            client, activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, 
+            joinRoom, leaveRoom, toggleMute, sendChat, hostAction,
+            isMinimized, setIsMinimized, availableRooms,
+            takeSeat, leaveSeat, lockedSeats, createRoom, tgId 
+        }}>
             {children}
         </VoiceRoomContext.Provider>
     );

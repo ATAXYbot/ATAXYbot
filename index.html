@@ -1167,6 +1167,8 @@ INSTRUCTIONS:
 
             // --- WEPLAY-STYLE FEATURES (EMOJIS, SFX) ---
             const [remoteMutedState, setRemoteMutedState] = useState({});
+            const [lockedSeats, setLockedSeats] = useState({});
+            const [isMinimized, setIsMinimized] = useState(false);
 
             const triggerSFX = (type) => {
                 const sfxUrls = {
@@ -1341,6 +1343,9 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'mute_state_changed' }, ({ payload }) => {
                                 setRemoteMutedState(prev => ({ ...prev, [payload.userId]: payload.isMuted }));
                             })
+                            .on('broadcast', { event: 'seat_lock' }, ({ payload }) => {
+                                setLockedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isLocked }));
+                            })
                             .subscribe();
                         
                         setRealtimeChannel(channel);
@@ -1348,6 +1353,8 @@ INSTRUCTIONS:
                     }
                     setActiveRoom(roomData);
                     setChatMessages([]);
+                    setLockedSeats({});
+                    setIsMinimized(false);
                     return agoraClient;
                 } catch (e) { 
                     console.error("Join Error", e); 
@@ -1398,6 +1405,8 @@ INSTRUCTIONS:
                 setChatMessages([]);
                 setMicRequests([]);
                 setPendingInvite(null);
+                setLockedSeats({});
+                setIsMinimized(false);
             };
 
             const createRoom = async (name, type, password = null) => {
@@ -1585,14 +1594,51 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, remoteMutedState, triggerSFX };
+            return { client, activeRoom, availableRooms, participants, remoteUsers, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, remoteMutedState, triggerSFX, lockedSeats, setLockedSeats, isMinimized, setIsMinimized };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
             const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom } = voiceState;
+            const [pos, setPos] = useState({ x: 0, y: 0 });
+            const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
+
             if (!activeRoom) return null;
+
+            const handleTouchStart = (e) => {
+                dragRef.current.isDragging = true;
+                dragRef.current.hasMoved = false;
+                dragRef.current.startX = e.touches[0].clientX - dragRef.current.currentX;
+                dragRef.current.startY = e.touches[0].clientY - dragRef.current.currentY;
+            };
+            const handleTouchMove = (e) => {
+                if (!dragRef.current.isDragging) return;
+                const x = e.touches[0].clientX - dragRef.current.startX;
+                const y = e.touches[0].clientY - dragRef.current.startY;
+                if (Math.abs(x - dragRef.current.currentX) > 5 || Math.abs(y - dragRef.current.currentY) > 5) {
+                    dragRef.current.hasMoved = true;
+                }
+                dragRef.current.currentX = x;
+                dragRef.current.currentY = y;
+                setPos({ x, y });
+            };
+            const handleTouchEnd = () => {
+                dragRef.current.isDragging = false;
+            };
+            const handleClick = (e) => {
+                if (!dragRef.current.hasMoved) {
+                    onRestore();
+                }
+            };
+
             return (
-                <div onClick={onRestore} className="fixed bottom-[75px] left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] transition-transform">
+                <div 
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={handleClick}
+                    style={{ transform: `translate3d(calc(-50% + ${pos.x}px), ${pos.y}px, 0)` }}
+                    className="fixed bottom-[75px] left-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] transition-transform touch-none"
+                >
                     <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] animate-pulse shrink-0"><i className="fa-solid fa-volume-high text-xs"></i></div>
                         <div className="truncate">
@@ -1635,6 +1681,36 @@ INSTRUCTIONS:
                         </div>
 
                         <div className="space-y-4 pb-20">
+                            {availableRooms.length === 0 ? (
+                                <div className="text-center py-10 text-gray-500">
+                                    <i className="fa-solid fa-headset text-4xl mb-3 opacity-50"></i>
+                                    <p>No active voice rooms right now.</p>
+                                    <p className="text-xs mt-1">Be the first to create one!</p>
+                                </div>
+                            ) : (
+                                availableRooms.map(room => {
+                                    const isPremium = room.room_type === 'permanent';
+                                    return (
+                                        <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
+                                            {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
+                                            <div className="relative z-10 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                        {room.channel_name} 
+                                                        {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                    </h3>
+                                                    <div className="flex text-sm text-[#A4DFE6]">
+                                                        <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {room.host_user_id.substring(0,5)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
+                                                    <i className="fa-solid fa-arrow-right"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            )}
                         </div>
                     </div>
                     {showCreateModal && <CreateRoomModal onClose={() => setShowCreateModal(false)} onCreate={createRoom} />}
@@ -1691,7 +1767,7 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
-            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, remoteMutedState, triggerSFX } = voiceState;
+            const { activeRoom, participants, remoteUsers, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, remoteMutedState, triggerSFX, lockedSeats = {}, setLockedSeats = () => {} } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -1737,24 +1813,27 @@ INSTRUCTIONS:
                             setShowActionModal({ type: 'self' });
                         }
                     } else if (isHost) {
-                        setShowActionModal({ type: 'host_target', occupant });
+                        setShowActionModal({ type: 'host_target', occupant, seatNum });
                     }
                 } else {
                     if (isHost) {
-                        if (seatNum !== 0) { // Host can't move, can only invite to empty seats
-                            setShowActionModal({ type: 'invite_to_seat', seatNum });
+                        if (seatNum !== 0) { 
+                            setShowActionModal({ type: 'empty_seat_host', seatNum });
                         }
                     } else if (isSpeaker) {
+                        if (lockedSeats[seatNum]) {
+                            alert("This seat is locked by the host.");
+                            return;
+                        }
                         if (confirm("Are you sure you want to change your seat?")) {
                             takeSeat(seatNum);
                         }
                     } else {
-                        if (activeRoom.require_mic_request) {
-                            sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum });
-                            alert("Requested to take seat. Waiting for host approval.");
-                        } else {
-                            takeSeat(seatNum);
+                        if (lockedSeats[seatNum]) {
+                            alert("This seat is locked by the host.");
+                            return;
                         }
+                        setShowActionModal({ type: 'empty_seat_audience', seatNum });
                     }
                 }
             };
@@ -1765,6 +1844,7 @@ INSTRUCTIONS:
                 const speaking = occupant && activeSpeakers[occupant.user_id];
                 const dpUrl = isMe ? tgUser.photo_url : occupant?.photo_url;
                 const isOccupantMuted = occupant && (remoteMutedState[occupant.user_id] ?? (remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio));
+                const isLocked = lockedSeats[seatNum];
                 
                 return (
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
@@ -1784,11 +1864,11 @@ INSTRUCTIONS:
                                 )}
                             </div>
                         ) : (
-                            <div className={`rounded-full border-2 border-dashed border-[#0AE0D0]/30 flex items-center justify-center bg-[#021633]/50 ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80 transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
-                                <i className="fa-solid fa-plus text-[#0AE0D0]/40"></i>
+                            <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/30 bg-[#021633]/50 hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
+                                <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
                             </div>
                         )}
-                    <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupant ? occupant.user_name : "\u00A0"}</span>
+                    <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupant ? occupant.user_name : (isLocked ? 'Locked' : label)}</span>
                     </div>
                 )
             };
@@ -1864,7 +1944,7 @@ INSTRUCTIONS:
                         <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
                             <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
                         </button>
-                        <button onClick={isSpeaker ? toggleMute : () => alert('Take a seat to use the mic!')} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
+                        <button onClick={isSpeaker ? (myParticipant?.seat_number === null && isHost ? () => takeSeat(0) : toggleMute) : () => alert('Take a seat to use the mic!')} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
                             <i className={`fa-solid ${isMuted || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
                         {!isSpeaker && (
@@ -1886,7 +1966,7 @@ INSTRUCTIONS:
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={() => { stepDown(); setShowActionModal(null); }} className="py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-bold transition-colors shadow-sm">Stand Up (Listen Only)</button>
+                                    <button onClick={() => { stepDown(); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Move to Audience</button>
                                     <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
                                 </div>
                             </div>
@@ -1898,9 +1978,50 @@ INSTRUCTIONS:
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant.user_name}</h3>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Mic</button>
-                                    <button onClick={() => { sendBroadcast('lift_user', { target_uid: showActionModal.occupant.user_id }); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Lift Up (To Audience)</button>
-                                    <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick User</button>
+                                    <button onClick={() => { sendHostAction('force_mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
+                                    <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
+                                    <button onClick={() => { sendBroadcast('lift_user', { target_uid: showActionModal.occupant.user_id }); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
+                                    <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'empty_seat_host' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat {showActionModal.seatNum}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.seatNum }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
+                                    <button onClick={() => { 
+                                        const isLocked = !lockedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked });
+                                        setLockedSeats(prev => ({...prev, [showActionModal.seatNum]: isLocked}));
+                                        setShowActionModal(null); 
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${lockedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white border-red-500/50'}`}>
+                                        {lockedSeats[showActionModal.seatNum] ? 'Unlock Seat' : 'Lock Seat'}
+                                    </button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'empty_seat_audience' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.seatNum}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => {
+                                        if (activeRoom.require_mic_request) {
+                                            sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum: showActionModal.seatNum });
+                                            alert("Requested to take seat. Waiting for host approval.");
+                                        } else {
+                                            takeSeat(showActionModal.seatNum);
+                                        }
+                                        setShowActionModal(null);
+                                    }} className="py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105">Take Mic Seat</button>
                                     <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
                                 </div>
                             </div>
@@ -2197,6 +2318,9 @@ INSTRUCTIONS:
                   } else {
                       setShowQuiz(false);
                   }
+              }
+              else if (voiceState.activeRoom && !voiceState.isMinimized) {
+                  voiceState.setIsMinimized(true);
               }
               else if (activePracticeChapter) setActivePracticeChapter(null);
               else if (activePracticeSubject) setActivePracticeSubject(null);
@@ -2684,13 +2808,13 @@ INSTRUCTIONS:
           useEffect(() => {
               const tg = window.Telegram?.WebApp;
               if (!tg) return;
-              const isDeep = showAnalyticsModal || historyViewType || showQuiz || activePracticeChapter || activePracticeSubject || activePracticeFile || activePracticeBatch || currentTab !== 'home';
+              const isDeep = showAnalyticsModal || historyViewType || showQuiz || activePracticeChapter || activePracticeSubject || activePracticeFile || activePracticeBatch || currentTab !== 'home' || (voiceState.activeRoom && !voiceState.isMinimized);
               if (isDeep) {
                   tg.BackButton.show();
               } else {
                   tg.BackButton.hide();
               }
-          }, [showAnalyticsModal, historyViewType, showQuiz, activePracticeChapter, activePracticeSubject, activePracticeFile, activePracticeBatch, currentTab]);
+          }, [showAnalyticsModal, historyViewType, showQuiz, activePracticeChapter, activePracticeSubject, activePracticeFile, activePracticeBatch, currentTab, voiceState.activeRoom, voiceState.isMinimized]);
           useEffect(() => {
               if (loadedQuestions.length > 0 && pendingJumpQuestion) {
                   const relevantQuestions = practiceSelectedTopic ? loadedQuestions.filter(q => q.topicName === practiceSelectedTopic) : loadedQuestions;
@@ -3905,7 +4029,7 @@ INSTRUCTIONS:
                     {currentTab === 'home' && renderHomeView()}
                     {currentTab === 'chat' && <ChatView user={tgUser} />}
                     {currentTab === 'ai' && <AIMentorView />}
-                    {currentTab === 'voice' && (voiceState.activeRoom ? <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => setCurrentTab('home')} /> : <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />)}
+                    {currentTab === 'voice' && <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />}
                     {currentTab === 'questions' && renderQuestionsView()}
                     {currentTab === 'profile' && renderProfileView()}
                     
@@ -3913,7 +4037,7 @@ INSTRUCTIONS:
                     {renderHistoryViewer()}
 
                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
-                    {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && currentTab === 'voice') && (
+                    {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && (
                         <div className="fixed bottom-0 w-full max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)]">
                           <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
                           <button onClick={() => { resetDeepState(); setCurrentTab('chat'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chat' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
@@ -3927,8 +4051,15 @@ INSTRUCTIONS:
                 )}
               </div>
 
-              {/* Floating Voice Widget is completely global now (except inside the voice tab itself) */}
-              {voiceState.activeRoom && currentTab !== 'voice' && <FloatingVoiceWidget voiceState={voiceState} onRestore={() => setCurrentTab('voice')} />}
+              {/* Voice Room Global Overlay */}
+              {voiceState.activeRoom && !voiceState.isMinimized && (
+                  <div className="fixed inset-0 z-[150000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
+                      <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
+                  </div>
+              )}
+
+              {/* Floating Voice Widget is completely global now */}
+              {voiceState.activeRoom && voiceState.isMinimized && <FloatingVoiceWidget voiceState={voiceState} onRestore={() => voiceState.setIsMinimized(false)} />}
 
               {/* Clear Progress Confirmation Modal */}
               {confirmClearScope && (
