@@ -1212,16 +1212,9 @@ INSTRUCTIONS:
             useEffect(() => {
                 if (!supabase) return;
                 
-                supabase.from('room_participants').delete().eq('user_id', String(tgUser.id)).then(() => {
-                    fetchRooms();
-                });
-
                 const channel = supabase.channel('voice_rooms_sync')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_rooms' }, () => {
                         fetchRooms();
-                    })
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => {
-                        fetchRooms(); 
                     })
                     .subscribe();
                 return () => { supabase.removeChannel(channel); };
@@ -1278,17 +1271,23 @@ INSTRUCTIONS:
                     await agoraClient.join(AGORA_APP_ID, String(roomData.id), token, String(tgUser?.id || "1001"));
                     
                     if (supabase) {
-                        await supabase.from('room_participants').upsert({
-                            room_id: roomData.id,
+                        const myPresenceState = {
                             user_id: String(tgUser.id),
                             user_name: tgUser.first_name || tgUser.username || "Unknown",
                             photo_url: tgUser.photo_url || null,
                             seat_number: null
-                        });
+                        };
 
-                        const channel = supabase.channel(`room:${roomData.id}`)
-                            .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants', filter: `room_id=eq.${roomData.id}` }, () => {
-                                fetchParticipants(roomData.id);
+                        const channel = supabase.channel(`room:${roomData.id}`, {
+                            config: { presence: { key: String(tgUser.id) } }
+                        })
+                            .on('presence', { event: 'sync' }, () => {
+                                const state = channel.presenceState();
+                                const currentParticipants = [];
+                                for (const id in state) {
+                                    if (state[id] && state[id][0]) currentParticipants.push(state[id][0]);
+                                }
+                                setParticipants(currentParticipants);
                             })
                             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
                                 if (payload.new.is_live === false) {
@@ -1346,10 +1345,19 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'seat_lock' }, ({ payload }) => {
                                 setLockedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isLocked }));
                             })
-                            .subscribe();
+                            .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    takeSeat(0, roomData.id);
+                                    alert("The previous host left. You are now the host.");
+                                }
+                            })
+                            .subscribe(async (status) => {
+                                if (status === 'SUBSCRIBED') {
+                                    await channel.track(myPresenceState);
+                                }
+                            });
                         
                         setRealtimeChannel(channel);
-                        fetchParticipants(roomData.id);
                     }
                     setActiveRoom(roomData);
                     setChatMessages([]);
@@ -1361,11 +1369,6 @@ INSTRUCTIONS:
                     alert("Failed to join room: " + e.message);
                     return false;
                 }
-            };
-
-            const fetchParticipants = async (roomId) => {
-                const { data } = await supabase.from('room_participants').select('*').eq('room_id', roomId);
-                if (data) setParticipants(data);
             };
 
             const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id) => {
@@ -1384,7 +1387,7 @@ INSTRUCTIONS:
                         if (remainingMics.length > 0) {
                             const nextHost = remainingMics[0];
                             await supabase.from('voice_rooms').update({ host_user_id: nextHost.user_id }).eq('id', roomId);
-                            await supabase.from('room_participants').update({ seat_number: 0 }).match({ room_id: roomId, user_id: nextHost.user_id });
+                            sendBroadcast('promote_to_host', { target_uid: nextHost.user_id });
                         } else {
                             if (r.room_type === 'temporary') {
                                 await supabase.from('voice_rooms').delete().eq('id', roomId);
@@ -1393,8 +1396,10 @@ INSTRUCTIONS:
                             }
                         }
                     }
-                    await supabase.from('room_participants').delete().match({ room_id: roomId, user_id: String(tgUser.id) });
-                    if (channelRef.current) supabase.removeChannel(channelRef.current);
+                    if (channelRef.current) {
+                        try { await channelRef.current.untrack(); } catch(e) {}
+                        supabase.removeChannel(channelRef.current);
+                    }
                 }
                 setActiveRoom(null);
                 setLocalAudioTrack(null);
@@ -1463,11 +1468,17 @@ INSTRUCTIONS:
                     // Immediately claim the seat in DB so UI updates instantly (Runs asynchronously)
                     if (supabase) {
                         const rId = roomId || roomRef.current?.id;
-                        supabase.from('room_participants').update({ seat_number: seatIdx }).match({ room_id: rId, user_id: String(tgUser.id) }).then(() => {
-                            if (seatIdx === 0) {
+                        if (channelRef.current) {
+                            channelRef.current.track({
+                                user_id: String(tgUser.id),
+                                user_name: tgUser.first_name || tgUser.username || "Unknown",
+                                photo_url: tgUser.photo_url || null,
+                                seat_number: seatIdx
+                            });
+                            if (seatIdx === 0 && rId) {
                                 supabase.from('voice_rooms').update({ host_user_id: String(tgUser.id) }).eq('id', rId);
                             }
-                        }).catch(e => console.error("Seat update error:", e));
+                        }
                     }
 
                     // Request microphone track immediately to preserve the gesture token
@@ -1496,7 +1507,7 @@ INSTRUCTIONS:
                     if (remainingMics.length > 0) {
                         const nextHost = remainingMics[0];
                         await supabase.from('voice_rooms').update({ host_user_id: nextHost.user_id }).eq('id', r.id);
-                        await supabase.from('room_participants').update({ seat_number: 0 }).match({ room_id: r.id, user_id: nextHost.user_id });
+                        sendBroadcast('promote_to_host', { target_uid: nextHost.user_id });
                     } else {
                         if (r.room_type === 'temporary') {
                             await supabase.from('voice_rooms').delete().eq('id', r.id);
@@ -1515,8 +1526,13 @@ INSTRUCTIONS:
                     setLocalAudioTrack(null);
                 }
                 if (c) await c.setClientRole("audience");
-                if (supabase && r) {
-                    await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: r.id, user_id: String(tgUser.id) });
+                if (supabase && channelRef.current) {
+                    await channelRef.current.track({
+                        user_id: String(tgUser.id),
+                        user_name: tgUser.first_name || tgUser.username || "Unknown",
+                        photo_url: tgUser.photo_url || null,
+                        seat_number: null
+                    });
                 }
                 setIsMuted(true);
             };
@@ -1599,8 +1615,8 @@ INSTRUCTIONS:
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
             const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom } = voiceState;
-            const [pos, setPos] = useState({ x: 0, y: 0 });
             const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
+            const widgetRef = useRef(null);
 
             if (!activeRoom) return null;
 
@@ -1609,6 +1625,9 @@ INSTRUCTIONS:
                 dragRef.current.hasMoved = false;
                 dragRef.current.startX = e.touches[0].clientX - dragRef.current.currentX;
                 dragRef.current.startY = e.touches[0].clientY - dragRef.current.currentY;
+                if (widgetRef.current) {
+                    widgetRef.current.style.transition = 'none';
+                }
             };
             const handleTouchMove = (e) => {
                 if (!dragRef.current.isDragging) return;
@@ -1619,10 +1638,15 @@ INSTRUCTIONS:
                 }
                 dragRef.current.currentX = x;
                 dragRef.current.currentY = y;
-                setPos({ x, y });
+                if (widgetRef.current) {
+                    widgetRef.current.style.transform = `translate3d(calc(-50% + ${x}px), ${y}px, 0)`;
+                }
             };
             const handleTouchEnd = () => {
                 dragRef.current.isDragging = false;
+                if (widgetRef.current) {
+                    widgetRef.current.style.transition = '';
+                }
             };
             const handleClick = (e) => {
                 if (!dragRef.current.hasMoved) {
@@ -1632,12 +1656,13 @@ INSTRUCTIONS:
 
             return (
                 <div 
+                    ref={widgetRef}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                     onClick={handleClick}
-                    style={{ transform: `translate3d(calc(-50% + ${pos.x}px), ${pos.y}px, 0)` }}
-                    className="fixed bottom-[75px] left-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] transition-transform touch-none"
+                    style={{ transform: `translate3d(calc(-50% + ${dragRef.current.currentX}px), ${dragRef.current.currentY}px, 0)` }}
+                    className="fixed bottom-[75px] left-1/2 w-[90%] max-w-sm bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] touch-none"
                 >
                     <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] animate-pulse shrink-0"><i className="fa-solid fa-volume-high text-xs"></i></div>
