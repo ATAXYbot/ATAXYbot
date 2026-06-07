@@ -1,5 +1,5 @@
 // LAYER 4: PREMIUM INTERFACE 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useVoiceRoom } from '../services/roomService';
 
 export const VoiceRoomsTab = ({ tgUser }) => {
@@ -8,6 +8,25 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     const [selectedSeat, setSelectedSeat] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRoomName, setNewRoomName] = useState('');
+
+    // Strict WePlay-style Graceful Teardown on unmount
+    const activeRoomRef = useRef(activeRoom);
+    const leaveRoomRef = useRef(leaveRoom);
+    useEffect(() => {
+        activeRoomRef.current = activeRoom;
+        leaveRoomRef.current = leaveRoom;
+    }, [activeRoom, leaveRoom]);
+
+    useEffect(() => {
+        const handleUnload = () => {
+            if (activeRoomRef.current) leaveRoomRef.current();
+        };
+        window.addEventListener('beforeunload', handleUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleUnload);
+            if (activeRoomRef.current) leaveRoomRef.current();
+        };
+    }, []);
 
     // --- 1. ACTIVE ROOM LAYOUT (Inside Room) ---
     if (activeRoom && !isMinimized) {
