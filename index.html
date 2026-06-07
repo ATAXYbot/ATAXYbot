@@ -1167,6 +1167,8 @@ INSTRUCTIONS:
             useEffect(() => { trackRef.current = localAudioTrack; }, [localAudioTrack]);
 
             const [isMuted, setIsMuted] = useState(true);
+            const isMutedRef = useRef(true);
+            useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
             const [remoteUsers, setRemoteUsers] = useState([]);
             const [activeSpeakers, setActiveSpeakers] = useState({});
             const [realtimeChannel, setRealtimeChannel] = useState(null);
@@ -1374,6 +1376,9 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'mute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     setIsMuted(true);
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(true); } catch(e) {}
+                                    }
                                     if (channelRef.current) {
                                         const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                                         channelRef.current.track({
@@ -1391,6 +1396,9 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'unmute' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     setIsMuted(false);
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(false); } catch(e) {}
+                                    }
                                     if (channelRef.current) {
                                         const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                                         channelRef.current.track({
@@ -1411,6 +1419,9 @@ INSTRUCTIONS:
                                 } else {
                                     setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
                                 }
+                            })
+                            .on('broadcast', { event: 'mute_toggle' }, ({ payload }) => {
+                                setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: payload.isMuted } : p));
                             })
                             .on('broadcast', { event: 'text_chat' }, ({ payload }) => {
                                 setChatMessages(prev => [...prev, payload]);
@@ -1457,22 +1468,24 @@ INSTRUCTIONS:
                                 if (status === 'SUBSCRIBED') {
                                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                                     const userIdString = String(tgData.id || "1001");
+                                    const currentSeat = userSeatRef.current;
+                                    const currentMute = isMutedRef.current;
                                     setParticipants(prev => {
                                         if (prev.some(p => String(p.user_id) === userIdString)) return prev;
                                         return [...prev, {
                                             user_id: userIdString,
                                             user_name: tgData.first_name || tgData.username || "Unknown",
                                             photo_url: tgData.photo_url || null,
-                                            seat_number: userSeatRef.current,
-                                            is_muted: true
+                                            seat_number: currentSeat,
+                                            is_muted: currentMute
                                         }];
                                     });
                                     await channel.track({
                                         user_id: userIdString,
                                         user_name: tgData.first_name || tgData.username || "Unknown",
                                         photo_url: tgData.photo_url || null,
-                                        seat_number: userSeatRef.current,
-                                        is_muted: true
+                                        seat_number: currentSeat,
+                                        is_muted: currentMute
                                     });
                                 }
                             });
@@ -1515,10 +1528,17 @@ INSTRUCTIONS:
                                 supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
                                 sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                             } else {
-                                if (r.room_type === 'temporary') {
-                                    supabase.from('voice_rooms').delete().eq('id', roomId).then();
+                                const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
+                                if (audienceMembers.length > 0) {
+                                    const nextHost = audienceMembers[0];
+                                    supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
+                                    sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                                 } else {
-                                    supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', roomId).then();
+                                    if (r.room_type === 'temporary') {
+                                        supabase.from('voice_rooms').delete().eq('id', roomId).then();
+                                    } else {
+                                        supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', roomId).then();
+                                    }
                                 }
                             }
                         }
@@ -1639,6 +1659,9 @@ INSTRUCTIONS:
                         const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
                         setLocalAudioTrack(track);
                         await activeClient.publish([track]);
+                    } else {
+                        // If they already have a track, we just unmute it in Agora!
+                        try { await trackRef.current.setMuted(false); } catch(e) {}
                     }
                 } catch (e) { 
                     console.error("Safe takeSeat failed:", e); 
@@ -1691,6 +1714,9 @@ INSTRUCTIONS:
                                 is_muted: true
                             });
                         } catch (e) {}
+                        
+                        // 🚀 INSTANT PUBLIC UPDATE
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: null, isMuted: true });
                     }
                 } catch (e) {
                     console.error("Safe stepDown failed:", e);
@@ -1703,6 +1729,7 @@ INSTRUCTIONS:
                     const shouldMute = !isMuted;
                     
                     setIsMuted(shouldMute);
+                    try { await trackRef.current.setMuted(shouldMute); } catch(e) {}
                     
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
@@ -1719,6 +1746,9 @@ INSTRUCTIONS:
                                 is_muted: shouldMute
                             });
                         } catch (e) { console.warn("Mute broadcast failed:", e); }
+                        
+                        // 🚀 INSTANT PUBLIC UPDATE
+                        sendBroadcast('mute_toggle', { target_uid: userIdString, isMuted: shouldMute });
                     }
                 } catch (e) {
                     console.error("Safe mute toggle failed:", e);
