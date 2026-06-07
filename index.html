@@ -1352,12 +1352,18 @@ INSTRUCTIONS:
                     });
                     agoraClient.on("user-unpublished", (remoteUser, mediaType) => {
                         try {
-                            setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
+                            // WORKAROUND: Keep track running at volume 0 instead of removing from state to prevent app crashes
+                            if (remoteUser.audioTrack) {
+                                remoteUser.audioTrack.setVolume(0);
+                            }
                         } catch(e) {}
                     });
                     agoraClient.on("user-left", (remoteUser) => {
                         try {
-                            setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+                            // WORKAROUND: Keep track running at volume 0 instead of removing from state to prevent app crashes
+                            if (remoteUser.audioTrack) {
+                                remoteUser.audioTrack.setVolume(0);
+                            }
                         } catch(e) {}
                     });
 
