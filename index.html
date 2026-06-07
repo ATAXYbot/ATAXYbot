@@ -1170,6 +1170,17 @@ INSTRUCTIONS:
             const [lockedSeats, setLockedSeats] = useState({});
             const [isMinimized, setIsMinimized] = useState(false);
 
+            // --- ORPHANED ROOM CLEANUP ---
+            useEffect(() => {
+                const handleBeforeUnload = () => {
+                    if (roomRef.current && clientRef.current) {
+                        leaveRoom(clientRef.current, roomRef.current.id, true);
+                    }
+                };
+                window.addEventListener("beforeunload", handleBeforeUnload);
+                return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+            }, []);
+
             const triggerSFX = (type) => {
                 const sfxUrls = {
                     applause: 'https://actions.google.com/sounds/v1/crowds/crowd_cheer.ogg',
@@ -1372,93 +1383,97 @@ INSTRUCTIONS:
                 }
             };
 
-            const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id) => {
-                const r = roomRef.current;
-                if (localAudioTrack) { 
-                    localAudioTrack.stop(); 
-                    localAudioTrack.close(); 
-                    setLocalAudioTrack(null);
-                }
-                if (forcedClient) { try { await forcedClient.leave(); } catch (e) {} }
-                if (supabase && r && roomId) {
-                    if (String(r.host_user_id) === String(tgUser.id)) {
-                        // I am the host leaving. Find another speaker to make host.
-                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number > 0 && String(p.user_id) !== String(tgUser.id)).sort((a,b) => a.seat_number - b.seat_number);
-                        
-                        if (remainingMics.length > 0) {
-                            const nextHost = remainingMics[0];
-                            await supabase.from('voice_rooms').update({ host_user_id: nextHost.user_id }).eq('id', roomId);
-                            sendBroadcast('promote_to_host', { target_uid: nextHost.user_id });
-                        } else {
-                            if (r.room_type === 'temporary') {
-                                await supabase.from('voice_rooms').delete().eq('id', roomId);
+            const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id, isUnloading = false) => {
+                try {
+                    const r = roomRef.current;
+                    const track = trackRef.current;
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+
+                    if (track) { 
+                        try { if (forcedClient) await forcedClient.unpublish([track]); } catch(e) {}
+                        track.stop(); 
+                        track.close(); 
+                        if (!isUnloading) setLocalAudioTrack(null);
+                    }
+                    if (forcedClient) { try { await forcedClient.leave(); } catch (e) {} }
+                    
+                    if (supabase && r && roomId) {
+                        if (String(r.host_user_id) === userIdString) {
+                            const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                            if (remainingMics.length > 0) {
+                                const nextHost = remainingMics[0];
+                                supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
+                                sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                             } else {
-                                await supabase.from('voice_rooms').update({ is_live: false, host_user_id: r.owner_id }).eq('id', roomId);
+                                if (r.room_type === 'temporary') {
+                                    supabase.from('voice_rooms').delete().eq('id', roomId).then();
+                                } else {
+                                    supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', roomId).then();
+                                }
                             }
                         }
+                        if (channelRef.current) {
+                            try { channelRef.current.untrack(); } catch(e) {}
+                            supabase.removeChannel(channelRef.current);
+                        }
                     }
-                    if (channelRef.current) {
-                        try { await channelRef.current.untrack(); } catch(e) {}
-                        supabase.removeChannel(channelRef.current);
+                    if (!isUnloading) {
+                        setActiveRoom(null);
+                        setLocalAudioTrack(null);
+                        setIsMuted(true);
+                        setClient(null);
+                        setRemoteUsers([]);
+                        setRealtimeChannel(null);
+                        setChatMessages([]);
+                        setMicRequests([]);
+                        setPendingInvite(null);
+                        setLockedSeats({});
+                        setIsMinimized(false);
                     }
+                } catch (err) {
+                    console.error("Safe leaveRoom failed:", err);
                 }
-                setActiveRoom(null);
-                setLocalAudioTrack(null);
-                setIsMuted(true);
-                setClient(null);
-                setRemoteUsers([]);
-                setRealtimeChannel(null);
-                setChatMessages([]);
-                setMicRequests([]);
-                setPendingInvite(null);
-                setLockedSeats({});
-                setIsMinimized(false);
             };
 
             const createRoom = async (name, type, password = null) => {
                 if (!supabase) return;
-                
-                // Pre-request microphone to preserve user gesture token
-                let preTrack = null;
                 try {
-                    preTrack = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
-                    setLocalAudioTrack(preTrack);
-                } catch(e) {
-                    console.warn("Mic pre-request denied, will retry on seat", e);
-                }
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
 
-                const { data, error } = await supabase.from('voice_rooms').insert({
-                    channel_name: name,
-                    host_user_id: String(tgUser.id),
-                    owner_id: type === 'permanent' ? String(tgUser.id) : null,
-                    room_type: type,
-                    require_mic_request: false,
-                    password: password || null,
-                    is_live: true
-                }).select().single();
-                
-                if (error) {
+                    const { data, error } = await supabase.from('voice_rooms').insert({
+                        channel_name: name,
+                        host_user_id: userIdString,
+                        owner_id: type === 'permanent' ? userIdString : null,
+                        room_type: type,
+                        require_mic_request: false,
+                        password: password || null,
+                        is_live: true
+                    }).select().single();
+                    
+                    if (error) throw error;
+
+                    if (data) {
+                        const agoraClient = await joinRoom(data, password);
+                        if (agoraClient) {
+                            await takeSeat(0, data.id, agoraClient);
+                            return true;
+                        }
+                    }
+                    return false;
+                } catch (error) {
                     let errorMsg = error.message;
                     if (error.code === '23505' || errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
                         errorMsg = "A room with this name already exists! Please choose a different name.";
                     }
                     alert("Failed to create room: " + errorMsg);
-                    if(preTrack) { preTrack.stop(); preTrack.close(); setLocalAudioTrack(null); }
                     console.error("createRoom error:", error);
                     return false;
                 }
-
-                if (data) {
-                    const agoraClient = await joinRoom(data, password);
-                    if (agoraClient) {
-                        await takeSeat(0, data.id, agoraClient, preTrack);
-                        return true;
-                    }
-                }
-                return false;
             };
 
-            const takeSeat = async (seatIdx, roomId = roomRef.current?.id, passedClient = null, passedTrack = null) => {
+            const takeSeat = async (seatIdx, roomId = roomRef.current?.id, passedClient = null) => {
                 try {
                     const activeClient = passedClient || clientRef.current;
                     if (!activeClient) {
@@ -1466,114 +1481,104 @@ INSTRUCTIONS:
                         return;
                     }
                     
-                    // Immediately claim the seat in DB so UI updates instantly (Runs asynchronously)
-                    if (supabase) {
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const username = tgData?.first_name || tgData?.username || "User";
+                    const photo_url = tgData?.photo_url || "";
+                    const userIdString = String(tgData?.id || "1001");
+
+                    if (supabase && channelRef.current) {
+                        await channelRef.current.track({
+                            user_id: userIdString,
+                            user_name: username,
+                            photo_url: photo_url,
+                            seat_number: seatIdx
+                        });
                         const rId = roomId || roomRef.current?.id;
-                        if (channelRef.current) {
-                            channelRef.current.track({
-                                user_id: String(tgUser.id),
-                                user_name: tgUser.first_name || tgUser.username || "Unknown",
-                                photo_url: tgUser.photo_url || null,
-                                seat_number: seatIdx
-                            });
-                            if (seatIdx === 0 && rId) {
-                                supabase.from('voice_rooms').update({ host_user_id: String(tgUser.id) }).eq('id', rId);
-                            }
+                        if (seatIdx === 0 && rId) {
+                            await supabase.from('voice_rooms').update({ host_user_id: userIdString }).eq('id', rId);
                         }
                     }
 
-                    // Request microphone track immediately to preserve the gesture token
-                    let track = passedTrack || trackRef.current;
-                    if (!track) {
-                        track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
-                        setLocalAudioTrack(track);
-                    }
                     await activeClient.setClientRole("host");
-                    try { await activeClient.publish([track]); } catch(e) {}
+                    const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
+                    setLocalAudioTrack(track);
+                    await activeClient.publish([track]);
                     setIsMuted(false);
                 } catch (e) { 
-                    console.error("Seat error", e); 
-                    alert("You are seated, but microphone access was denied. Check your browser/Telegram permissions.");
+                    console.error("Safe takeSeat failed:", e); 
+                    alert("Microphone access was denied or failed. Check browser permissions.");
                 }
             };
 
             const stepDown = async () => {
-                const track = trackRef.current;
-                const c = clientRef.current;
-                const r = roomRef.current;
-                
-                if (r && String(r.host_user_id) === String(tgUser.id)) {
-                    // Host stepping down.
-                    const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number > 0 && String(p.user_id) !== String(tgUser.id)).sort((a,b) => a.seat_number - b.seat_number);
-                    if (remainingMics.length > 0) {
-                        const nextHost = remainingMics[0];
-                        await supabase.from('voice_rooms').update({ host_user_id: nextHost.user_id }).eq('id', r.id);
-                        sendBroadcast('promote_to_host', { target_uid: nextHost.user_id });
-                    } else {
-                        if (r.room_type === 'temporary') {
-                            await supabase.from('voice_rooms').delete().eq('id', r.id);
+                try {
+                    const track = trackRef.current;
+                    const c = clientRef.current;
+                    const r = roomRef.current;
+                    
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+
+                    if (r && String(r.host_user_id) === userIdString) {
+                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                        if (remainingMics.length > 0) {
+                            const nextHost = remainingMics[0];
+                            await supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id);
+                            sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                         } else {
-                            await supabase.from('voice_rooms').update({ is_live: false, host_user_id: r.owner_id }).eq('id', r.id);
+                            if (r.room_type === 'temporary') {
+                                await supabase.from('voice_rooms').delete().eq('id', r.id);
+                            } else {
+                                await supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', r.id);
+                            }
                         }
                     }
-                }
-                
-                if (track) {
-                    track.stop();
-                    track.close();
-                    if (c) {
-                        try { await c.unpublish([track]); } catch(e) {}
+                    
+                    if (track) {
+                        if (c) {
+                            try { await c.unpublish([track]); } catch(e) {}
+                        }
+                        track.stop();
+                        track.close();
+                        setLocalAudioTrack(null);
                     }
-                    setLocalAudioTrack(null);
+                    if (c) {
+                        await c.setClientRole("audience");
+                    }
+                    if (supabase && channelRef.current) {
+                        const username = tgData?.first_name || tgData?.username || "User";
+                        const photo_url = tgData?.photo_url || "";
+                        await channelRef.current.track({
+                            user_id: userIdString,
+                            user_name: username,
+                            photo_url: photo_url,
+                            seat_number: null
+                        });
+                    }
+                    setIsMuted(true);
+                } catch (e) {
+                    console.error("Safe stepDown failed:", e);
                 }
-                if (c) await c.setClientRole("audience");
-                if (supabase && channelRef.current) {
-                    await channelRef.current.track({
-                        user_id: String(tgUser.id),
-                        user_name: tgUser.first_name || tgUser.username || "Unknown",
-                        photo_url: tgUser.photo_url || null,
-                        seat_number: null
-                    });
-                }
-                setIsMuted(true);
             };
 
             const toggleMute = async () => {
-                if (!clientRef.current) return;
                 try {
-                    if (trackRef.current) {
-                        const shouldMute = !isMuted;
-                        // Using setEnabled directly controls capturing at the hardware level, more reliable on PC/mobile to prevent crashes
-                        await trackRef.current.setEnabled(!shouldMute);
-                        setIsMuted(shouldMute);
-                        
-                        // Broadcast state globally
-                        if (channelRef.current) {
-                            channelRef.current.send({
-                                type: 'broadcast',
-                                event: 'mute_state_changed',
-                                payload: { userId: String(tgUser.id), isMuted: shouldMute }
-                            });
-                        }
-                    } else {
-                        // Recover track if missing
-                        const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
-                        await clientRef.current.setClientRole("host");
-                        await clientRef.current.publish([track]);
-                        setLocalAudioTrack(track);
-                        setIsMuted(false);
-                        
-                        if (channelRef.current) {
-                            channelRef.current.send({
-                                type: 'broadcast',
-                                event: 'mute_state_changed',
-                                payload: { userId: String(tgUser.id), isMuted: false }
-                            });
-                        }
+                    if (!trackRef.current) return;
+                    const shouldMute = !isMuted;
+                    await trackRef.current.setMuted(shouldMute);
+                    setIsMuted(shouldMute);
+                    
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    if (channelRef.current) {
+                        channelRef.current.send({
+                            type: 'broadcast',
+                            event: 'mute_state_changed',
+                            payload: { userId: String(tgData?.id || "1001"), isMuted: shouldMute }
+                        });
                     }
                 } catch (e) {
-                    console.error("Mute error", e);
-                    alert("Microphone access denied. Please check your browser/Telegram permissions.");
+                    console.error("Safe mute toggle failed:", e);
+                    alert("Failed to toggle microphone.");
                 }
             };
 
@@ -1800,15 +1805,10 @@ INSTRUCTIONS:
             const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
 
-            const currentUserId = String(tgUser.id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+            const currentUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
             const isHost = String(activeRoom.host_user_id) === currentUserId;
             const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
             const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
-
-            // Strictly limit seating mapped to DB states as Number types for checks
-            const hostSeat = participants.find(p => Number(p.seat_number) === 0);
-            const partnerSeat = participants.find(p => Number(p.seat_number) === 1);
-            const micSeats = Array.from({length: 8}, (_, i) => participants.find(p => Number(p.seat_number) === i + 2) || null);
             const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
 
             const handleBottomMicClick = () => {
@@ -1923,11 +1923,15 @@ INSTRUCTIONS:
                     </div>
                     <div className="p-6">
                         <div className="flex justify-center gap-8 mb-8">
-                            {renderSeat(0, hostSeat, "Host", true)}
-                            {activeRoom.is_partner_seat_open && renderSeat(1, partnerSeat, "Partner", true)}
+                            {renderSeat(0, participants.find(p => Number(p.seat_number) === 0), "Host", true)}
+                            {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => Number(p.seat_number) === 1), "Partner", true)}
                         </div>
                         <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
-                            {micSeats.map((occupant, i) => <React.Fragment key={i}>{renderSeat(i+2, occupant, `Seat ${i+2}`)}</React.Fragment>)}
+                            {[2,3,4,5,6,7,8,9].map(i => (
+                                <React.Fragment key={i}>
+                                    {renderSeat(i, participants.find(p => Number(p.seat_number) === i), `Seat ${i}`)}
+                                </React.Fragment>
+                            ))}
                         </div>
                     </div>
 
