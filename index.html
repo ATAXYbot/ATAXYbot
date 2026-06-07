@@ -1364,6 +1364,8 @@ INSTRUCTIONS:
                             if (remoteUser.audioTrack) {
                                 remoteUser.audioTrack.setVolume(0);
                             }
+                            // Instantly remove them from visual seats and audience when they exit the room
+                            setParticipants(prev => prev.filter(p => String(p.user_id) !== String(remoteUser.uid)));
                         } catch(e) {}
                     });
 
