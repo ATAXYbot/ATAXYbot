@@ -1800,27 +1800,30 @@ INSTRUCTIONS:
             const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
 
-            const isHost = String(activeRoom.host_user_id) === String(tgUser.id);
-            const myParticipant = participants.find(p => String(p.user_id) === String(tgUser.id));
+            const currentUserId = String(tgUser.id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+            const isHost = String(activeRoom.host_user_id) === currentUserId;
+            const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
             const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
 
-            const hostSeat = participants.find(p => p.seat_number === 0);
-            const partnerSeat = participants.find(p => p.seat_number === 1);
-            const micSeats = Array.from({length: 8}, (_, i) => participants.find(p => p.seat_number === i + 2) || null);
-            const audience = participants.filter(p => p.seat_number === null);
+            // Strictly limit seating mapped to DB states as Number types for checks
+            const hostSeat = participants.find(p => Number(p.seat_number) === 0);
+            const partnerSeat = participants.find(p => Number(p.seat_number) === 1);
+            const micSeats = Array.from({length: 8}, (_, i) => participants.find(p => Number(p.seat_number) === i + 2) || null);
+            const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
 
             const handleBottomMicClick = () => {
                 if (!isSpeaker) {
-                    if (micRequests.some(r => String(r.uid) === String(tgUser.id))) {
+                    if (micRequests.some(r => String(r.uid) === currentUserId)) {
                         alert("Your request is already pending host approval.");
                         return;
                     }
-                    const occupiedSeats = participants.map(p => p.seat_number);
+                    const occupiedSeats = participants.map(p => Number(p.seat_number));
                     let emptySeat = activeRoom.is_partner_seat_open ? 1 : 2;
                     while(occupiedSeats.includes(emptySeat) && emptySeat <= 9) emptySeat++;
                     if (emptySeat <= 9) {
                         if (activeRoom.require_mic_request) {
-                            sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum: emptySeat });
+                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                            sendBroadcast('request_seat', { uid: currentUserId, name: tgData.first_name, seatNum: emptySeat });
                             alert("Requested to speak. Waiting for host approval.");
                         } else {
                             takeSeat(emptySeat);
@@ -1832,7 +1835,7 @@ INSTRUCTIONS:
 
             const handleSeatClick = (seatNum, occupant) => {
                 if (occupant) {
-                    if (occupant.user_id === String(tgUser.id)) {
+                    if (String(occupant.user_id) === currentUserId) {
                         if (isHost) {
                             alert("As the host, your seat is permanently fixed.");
                         } else {
@@ -1866,9 +1869,9 @@ INSTRUCTIONS:
 
             const renderSeat = (seatNum, occupant, label, isLarge=false) => {
                 if (occupant && !occupant.user_id) return null; // Safe guard
-                const isMe = occupant?.user_id === String(tgUser.id);
+                const isMe = String(occupant?.user_id) === currentUserId;
                 const speaking = occupant && activeSpeakers[occupant.user_id];
-                const dpUrl = isMe ? tgUser.photo_url : occupant?.photo_url;
+                const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : occupant?.photo_url;
                 const isOccupantMuted = occupant && (remoteMutedState[occupant.user_id] ?? (remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio));
                 const isLocked = lockedSeats[seatNum];
                 
@@ -1970,7 +1973,16 @@ INSTRUCTIONS:
                         <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
                             <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
                         </button>
-                        <button onClick={isSpeaker ? (myParticipant?.seat_number === null && isHost ? () => takeSeat(0) : toggleMute) : () => alert('Take a seat to use the mic!')} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
+                        <button onClick={() => {
+                            if (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined) {
+                                toggleMute();
+                            } else if (isHost) {
+                                takeSeat(0);
+                                setTimeout(toggleMute, 1000); 
+                            } else {
+                                alert('Take a seat to use the mic!');
+                            }
+                        }} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
                             <i className={`fa-solid ${isMuted || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
                         {!isSpeaker && (
