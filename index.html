@@ -1310,7 +1310,6 @@ INSTRUCTIONS:
                         setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
                     });
                     agoraClient.on("user-unpublished", (remoteUser, mediaType) => {
-                        if (mediaType === "audio" && remoteUser.audioTrack) remoteUser.audioTrack.stop();
                         setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
                     });
                     agoraClient.on("user-left", (remoteUser) => {
@@ -2009,7 +2008,7 @@ INSTRUCTIONS:
                     }
                     const occupiedSeats = participants.filter(p => p.seat_number !== null && p.seat_number !== undefined).map(p => Number(p.seat_number));
                     let emptySeat = activeRoom.is_partner_seat_open ? 1 : 2;
-                    while(occupiedSeats.includes(emptySeat) && emptySeat <= 9) emptySeat++;
+                    while((occupiedSeats.includes(emptySeat) || lockedSeats[emptySeat]) && emptySeat <= 9) emptySeat++;
                     if (emptySeat <= 9) {
                         if (activeRoom.require_mic_request) {
                             const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
