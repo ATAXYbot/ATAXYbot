@@ -1300,38 +1300,46 @@ INSTRUCTIONS:
                     setClient(agoraClient);
                     
                     agoraClient.on("user-published", async (remoteUser, mediaType) => {
-                        await agoraClient.subscribe(remoteUser, mediaType);
-                        if (mediaType === "audio") {
-                            remoteUser.audioTrack.play();
-                            if (speakerMutedRef.current) {
-                                remoteUser.audioTrack.setVolume(0);
+                        try {
+                            await agoraClient.subscribe(remoteUser, mediaType);
+                            if (mediaType === "audio") {
+                                remoteUser.audioTrack.play();
+                                if (speakerMutedRef.current) {
+                                    remoteUser.audioTrack.setVolume(0);
+                                }
                             }
-                        }
-                        setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
+                            setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
+                        } catch(e) {}
                     });
                     agoraClient.on("user-unpublished", (remoteUser, mediaType) => {
-                        setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
+                        try {
+                            setRemoteUsers(prev => Array.from(new Map([...prev, [remoteUser.uid, remoteUser]]).values()));
+                        } catch(e) {}
                     });
                     agoraClient.on("user-left", (remoteUser) => {
-                        setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+                        try {
+                            setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+                        } catch(e) {}
                     });
 
                     agoraClient.enableAudioVolumeIndicator();
                     agoraClient.on("volume-indicator", (volumes) => {
-                        setActiveSpeakers(prev => {
-                            const newMap = { ...prev };
-                            volumes.forEach(v => { 
-                                const p = participantsRef.current.find(pt => String(pt.user_id) === String(v.uid));
-                                let isSoftMuted = p ? p.is_muted : false;
-                                let notSeated = true;
-                                if (p && p.seat_number !== null && p.seat_number !== undefined) {
-                                    if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
-                                    notSeated = false;
-                                }
-                                newMap[v.uid] = (v.level > 5) && !isSoftMuted && !notSeated; 
+                        try {
+                            setActiveSpeakers(prev => {
+                                const newMap = { ...prev };
+                                volumes.forEach(v => { 
+                                    const p = participantsRef.current.find(pt => String(pt.user_id) === String(v.uid));
+                                    let isSoftMuted = p ? p.is_muted : false;
+                                    let notSeated = true;
+                                    if (p && p.seat_number !== null && p.seat_number !== undefined) {
+                                        if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
+                                        notSeated = false;
+                                    }
+                                    newMap[v.uid] = (v.level > 5) && !isSoftMuted && !notSeated; 
+                                });
+                                return newMap; 
                             });
-                            return newMap; 
-                        });
+                        } catch(e) {}
                     });
 
                     await agoraClient.setClientRole("audience");
