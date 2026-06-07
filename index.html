@@ -1239,9 +1239,11 @@ INSTRUCTIONS:
             };
 
             const sendBroadcast = (event, payload) => {
-                if (channelRef.current) {
-                    channelRef.current.send({ type: 'broadcast', event: event, payload: payload });
-                }
+                try {
+                    if (channelRef.current) {
+                        channelRef.current.send({ type: 'broadcast', event: event, payload: payload });
+                    }
+                } catch (e) { console.warn("Broadcast Error:", e); }
             };
 
             const fetchRooms = async () => {
@@ -1611,13 +1613,13 @@ INSTRUCTIONS:
                         const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
                         if (remainingMics.length > 0) {
                             const nextHost = remainingMics[0];
-                            await supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id);
+                            try { await supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id); } catch(e) {}
                             sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                         } else {
                             if (r.room_type === 'temporary') {
-                                await supabase.from('voice_rooms').delete().eq('id', r.id);
+                                try { await supabase.from('voice_rooms').delete().eq('id', r.id); } catch(e) {}
                             } else {
-                                await supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', r.id);
+                                try { await supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', r.id); } catch(e) {}
                             }
                         }
                     }
@@ -1634,18 +1636,20 @@ INSTRUCTIONS:
                         setLocalAudioTrack(null);
                     }
                     if (c) {
-                        await c.setClientRole("audience");
+                        try { await c.setClientRole("audience"); } catch(e) {}
                     }
                     if (supabase && channelRef.current) {
                         const username = tgData?.first_name || tgData?.username || "User";
                         const photo_url = tgData?.photo_url || "";
-                        await channelRef.current.track({
-                            user_id: userIdString,
-                            user_name: username,
-                            photo_url: photo_url,
-                            seat_number: null,
-                            is_muted: true
-                        });
+                        try {
+                            await channelRef.current.track({
+                                user_id: userIdString,
+                                user_name: username,
+                                photo_url: photo_url,
+                                seat_number: null,
+                                is_muted: true
+                            });
+                        } catch (e) {}
                     }
                 } catch (e) {
                     console.error("Safe stepDown failed:", e);
@@ -1677,9 +1681,11 @@ INSTRUCTIONS:
             };
 
             const sendHostAction = (action, targetUid) => {
-                if (channelRef.current && String(roomRef.current?.host_user_id) === String(tgUser.id)) {
-                    channelRef.current.send({ type: 'broadcast', event: action, payload: { target_uid: String(targetUid) } });
-                }
+                try {
+                    if (channelRef.current && String(roomRef.current?.host_user_id) === String(tgUser.id)) {
+                        channelRef.current.send({ type: 'broadcast', event: action, payload: { target_uid: String(targetUid) } });
+                    }
+                } catch (e) { console.warn("Host Action Error:", e); }
             };
 
             const sendChat = (text) => {
@@ -1784,6 +1790,13 @@ INSTRUCTIONS:
             const { availableRooms, fetchRooms, createRoom, joinRoom } = voiceState;
             const [showCreateModal, setShowCreateModal] = useState(false);
             const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
+            const [isRefreshing, setIsRefreshing] = useState(false);
+            
+            const handleRefresh = async () => {
+                setIsRefreshing(true);
+                await fetchRooms();
+                setTimeout(() => setIsRefreshing(false), 500);
+            };
             
             const handleJoinClick = (room) => {
                 if (room.password) {
@@ -1800,7 +1813,10 @@ INSTRUCTIONS:
                         <p className="text-xs text-[#A4DFE6] mb-5">Join active voice rooms to discuss and study live.</p>
                         
                         <div className="flex gap-2 mb-6">
-                            <button onClick={() => setShowCreateModal(true)} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2">
+                            <button onClick={handleRefresh} className="bg-[#021633] text-[#00FFFF] border border-[#00FFFF]/30 hover:bg-[#0AE0D0]/20 py-3 px-4 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center active:scale-95 shrink-0">
+                                <i className={`fa-solid fa-sync-alt ${isRefreshing ? 'animate-spin' : ''}`}></i>
+                            </button>
+                            <button onClick={() => setShowCreateModal(true)} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95">
                                 <i className="fa-solid fa-plus"></i> Create Room
                             </button>
                         </div>
