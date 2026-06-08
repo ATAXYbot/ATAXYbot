@@ -1682,7 +1682,7 @@ INSTRUCTIONS:
                             })
                             .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
-                                    stepDown();
+                                    stepDown(true);
                                     safeAlert("You have been moved to the audience by the host.");
                                 } else {
                                     setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: null, is_muted: true } : p));
@@ -1696,6 +1696,19 @@ INSTRUCTIONS:
                             })
                             .on('broadcast', { event: 'seat_mute' }, ({ payload }) => {
                                 setMutedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isMuted }));
+                                if (payload.isMuted && userSeatRef.current === payload.seatNum) {
+                                    safeAlert("Your seat has been muted by the host.");
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(true); trackRef.current.setEnabled(false); } catch(e){}
+                                        lastAppliedMuteRef.current = true;
+                                    }
+                                } else if (!payload.isMuted && userSeatRef.current === payload.seatNum) {
+                                    const effectiveMute = isMutedRef.current;
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(effectiveMute); trackRef.current.setEnabled(!effectiveMute); } catch(e){}
+                                        lastAppliedMuteRef.current = effectiveMute;
+                                    }
+                                }
                             })
                             .on('broadcast', { event: 'change_seat' }, ({ payload }) => {
                                 setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: payload.seatNum, is_muted: payload.isMuted } : p));
@@ -1971,9 +1984,9 @@ INSTRUCTIONS:
                 }
             };
 
-            const stepDown = async () => {
-                if (isProcessingRef.current) return;
-                setIsProcessing(true);
+            const stepDown = async (bypassLock = false) => {
+                if (!bypassLock && isProcessingRef.current) return;
+                if (!bypassLock) setIsProcessing(true);
                 try {
                     const track = trackRef.current;
                     const c = clientRef.current;
@@ -2024,7 +2037,7 @@ INSTRUCTIONS:
                 } catch (e) {
                     console.error("Safe stepDown failed:", e);
                 } finally {
-                    setIsProcessing(false);
+                    if (!bypassLock) setIsProcessing(false);
                 }
             };
 
