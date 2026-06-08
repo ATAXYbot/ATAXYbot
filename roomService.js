@@ -23,6 +23,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     const [isMinimized, setIsMinimized] = useState(false);
     const [availableRooms, setAvailableRooms] = useState([]);
     const [lockedSeats, setLockedSeats] = useState({});
+    const [mutedSeats, setMutedSeats] = useState({});
 
     // Telegram Profile Extraction
     const tgUserExt = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser || {};
@@ -136,6 +137,9 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
                 .on('broadcast', { event: 'seat_lock' }, (payload) => {
                     setLockedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isLocked }));
                 })
+                .on('broadcast', { event: 'seat_mute' }, (payload) => {
+                    setMutedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isMuted }));
+                })
                 .on('broadcast', { event: 'text_chat' }, (payload) => {
                     setChatMessages(prev => [...prev, payload]);
                 })
@@ -147,6 +151,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             setChatMessages([]);
             setIsMinimized(false);
             setLockedSeats({});
+            setMutedSeats({});
             return true;
         } catch (e) {
             alert("Failed to join room: " + e.message);
@@ -173,10 +178,19 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         setRealtimeChannel(null);
         setChatMessages([]);
         setIsMinimized(false);
+        setMutedSeats({});
     };
 
     const toggleMute = async () => {
         if (!client) return;
+
+        const myParticipant = participants.find(p => p.user_id === tgId);
+        if (myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined) {
+            if (mutedSeats[myParticipant.seat_number]) {
+                alert("This seat is currently muted by the host. You cannot unmute.");
+                return;
+            }
+        }
 
         try {
             if (!localAudioTrack) {
@@ -209,6 +223,12 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
 
     const takeSeat = async (seatNumber) => {
         if (!activeRoom) return;
+        if (mutedSeats[seatNumber]) {
+            if (localAudioTrack) {
+                await localAudioTrack.setMuted(true);
+            }
+            setIsMuted(true);
+        }
         await supabase.from('room_participants').update({ seat_number: seatNumber }).match({ room_id: activeRoom.id, user_id: tgId });
     };
 
@@ -217,12 +237,43 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: activeRoom.id, user_id: tgId });
     };
 
+    // 1. LOCAL MICROPHONE LAW (Enforce seat-based muting on the local user)
+    useEffect(() => {
+        const enforceLocalMute = async () => {
+            const myParticipant = participants.find(p => p.user_id === tgId);
+            if (myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined) {
+                const seatNum = myParticipant.seat_number;
+                if (mutedSeats[seatNum] && localAudioTrack && !isMuted) {
+                    await localAudioTrack.setMuted(true);
+                    setIsMuted(true);
+                }
+            }
+        };
+        enforceLocalMute();
+    }, [mutedSeats, participants, localAudioTrack, isMuted, tgId]);
+
+    // 2. REMOTE STREAM GATEKEEPER (Fail-safe audio leak prevention via volume)
+    useEffect(() => {
+        if (!client) return;
+        client.remoteUsers.forEach(rUser => {
+            if (rUser.audioTrack) {
+                const participant = participants.find(p => String(p.user_id) === String(rUser.uid));
+                let seatMuted = false;
+                if (participant && participant.seat_number !== null && participant.seat_number !== undefined) {
+                    seatMuted = !!mutedSeats[participant.seat_number];
+                }
+                const shouldBeMuted = (participant && participant.is_muted) || seatMuted;
+                try { rUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100); } catch (e) {}
+            }
+        });
+    }, [mutedSeats, participants, client, remoteUsers]);
+
     return (
         <VoiceRoomContext.Provider value={{ 
             client, activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, 
             joinRoom, leaveRoom, toggleMute, sendChat, hostAction,
             isMinimized, setIsMinimized, availableRooms,
-            takeSeat, leaveSeat, lockedSeats, createRoom, tgId 
+            takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, tgId 
         }}>
             {children}
         </VoiceRoomContext.Provider>

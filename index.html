@@ -1350,6 +1350,10 @@ INSTRUCTIONS:
                         setIsConnecting(true);
                     }
                     
+                    // 🛡️ FRESH START: Always force user into audience state upon entry
+                    userSeatRef.current = null;
+                    setIsMuted(true);
+                    
                     // Connection Lock: Explicitly leave if already connecting/connected to prevent Race Conditions
                     if (clientRef.current && (clientRef.current.connectionState === "CONNECTED" || clientRef.current.connectionState === "CONNECTING")) {
                         try { await clientRef.current.unpublish(); } catch(e) {}
@@ -1534,7 +1538,13 @@ INSTRUCTIONS:
                                 if (newPresences && newPresences.length > 0) {
                                     if (String(key) !== String(tgUser.id)) {
                                         const userName = newPresences[0].user_name || 'Someone';
-                                        setChatMessages(prev => [...prev, { isSystem: true, text: `${userName} entered`, time: Date.now() }]);
+                                        const msgId = Date.now() + Math.random().toString();
+                                        setChatMessages(prev => [...prev, { id: msgId, isSystem: true, text: `${userName} entered`, time: Date.now() }]);
+                                        
+                                        // 🛡️ SYSTEM NOTIFICATION: Disappear dynamically after 4 seconds
+                                        setTimeout(() => {
+                                            setChatMessages(prev => prev.filter(m => m.id !== msgId));
+                                        }, 4000);
                                     }
                                     // Add to participants so they show up instantly without waiting for sync
                                     setParticipants(prev => prev.some(p => String(p.user_id) === String(key)) ? prev : [...prev, newPresences[0]]);
@@ -1698,6 +1708,10 @@ INSTRUCTIONS:
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
 
+                    // 🛡️ FRESH START: Clear local state memory immediately on exit
+                    userSeatRef.current = null;
+                    setIsMuted(true);
+
                     // 🚀 EXPLICIT BROADCAST BEFORE DISCONNECTING FOR INSTANT UI REMOVAL
                     try {
                         if (channelRef.current) {
@@ -1835,11 +1849,15 @@ INSTRUCTIONS:
 
                     // 🛡️ As requested: Muting is tied to the seats, not the users.
                     // Whenever a user changes seats, they are instantly given a fresh unmuted state.
-                    const finalMuteState = false;
+                    const finalMuteState = mutedSeatsRef.current[seatIdx] ? true : false;
                     
                     const isNewSpeaker = !trackRef.current;
 
                     userSeatRef.current = seatIdx;
+                    
+                    if (!isNewSpeaker && trackRef.current) {
+                        await trackRef.current.setMuted(finalMuteState);
+                    }
                     setIsMuted(finalMuteState);
 
                     if (supabase && channelRef.current) {
@@ -1874,6 +1892,7 @@ INSTRUCTIONS:
                     if (isNewSpeaker) {
                         await activeClient.setClientRole("host");
                         const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
+                        if (finalMuteState) await track.setMuted(true);
                         setLocalAudioTrack(track);
                         await activeClient.publish([track]);
                     }
@@ -1950,6 +1969,10 @@ INSTRUCTIONS:
 
             const toggleMute = async () => {
                 if (isConnectingRef.current) return;
+                if (userSeatRef.current !== null && userSeatRef.current !== undefined && mutedSeatsRef.current[userSeatRef.current]) {
+                    safeAlert("This seat is currently muted by the host.");
+                    return;
+                }
                 setIsConnecting(true);
                 try {
                     if (!trackRef.current) return;
@@ -2005,7 +2028,7 @@ INSTRUCTIONS:
             };
 
             const sendChat = (text) => {
-                const payload = { userId: String(tgUser.id), userName: tgUser.first_name, text, time: new Date().toISOString() };
+                const payload = { id: Date.now() + Math.random().toString(), userId: String(tgUser.id), userName: tgUser.first_name, text, time: new Date().toISOString() };
                 realtimeChannel?.send({ type: 'broadcast', event: 'text_chat', payload });
                 setChatMessages(prev => [...prev, payload]); // Optimistic update
             };
@@ -2425,13 +2448,13 @@ INSTRUCTIONS:
                                 {chatMessages.map((msg, idx) => {
                                     if (msg.isSystem) {
                                         return (
-                                            <div key={idx} className="bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm">
+                                            <div key={msg.id || idx} className="bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm animate-in fade-in zoom-in duration-300">
                                                 <i className="fa-solid fa-shoe-prints"></i> {msg.text}
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div key={idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%]">
+                                        <div key={msg.id || idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2">
                                             <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
                                             <span className="text-white">{msg.text}</span>
                                         </div>
@@ -2520,6 +2543,14 @@ INSTRUCTIONS:
                                     ) : (
                                         <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
                                     )}
+                                    <button onClick={() => { 
+                                        const isSeatMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted: isSeatMuted });
+                                        setMutedSeats(prev => ({...prev, [showActionModal.seatNum]: isSeatMuted}));
+                                        setShowActionModal(null); 
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
                                     <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
                                     <button onClick={() => { sendHostAction('lift_user', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
                                     <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
@@ -2535,6 +2566,14 @@ INSTRUCTIONS:
                                 <h3 className="text-xl font-bold text-white mb-4">Manage Seat {showActionModal.seatNum}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.seatNum }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
+                                    <button onClick={() => { 
+                                        const isSeatMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted: isSeatMuted });
+                                        setMutedSeats(prev => ({...prev, [showActionModal.seatNum]: isSeatMuted}));
+                                        setShowActionModal(null); 
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
                                     <button onClick={() => { 
                                         const isLocked = !lockedSeats[showActionModal.seatNum];
                                         sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked });
@@ -2746,7 +2785,7 @@ INSTRUCTIONS:
             };
 
             return (
-                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-gray-50 dark:bg-gray-950">
+                <div className="pb-[calc(140px_+_env(safe-area-inset-bottom,_0px))] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-gray-50 dark:bg-gray-950">
                     <div className="fixed top-[calc(60px_+_env(safe-area-inset-top,_0px))] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-purple-500/30 shadow-inner" />
@@ -2789,7 +2828,7 @@ INSTRUCTIONS:
                         <div ref={chatEndRef} />
                     </div>
 
-                    <form onSubmit={sendMsg} className="fixed bottom-[65px] w-full max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
+                    <form onSubmit={sendMsg} className="fixed bottom-[calc(72px_+_env(safe-area-inset-bottom,_0px))] w-full max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
                         <input value={msg} onChange={e => setMsg(e.target.value)} type="text" placeholder="Ask your doubt..." className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-0 focus:outline-none text-gray-900 dark:text-white" />
                         <button type="submit" disabled={isTyping} className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center hover:bg-purple-700 shadow-md transition-colors"><i className="fa-solid fa-arrow-up text-sm"></i></button>
                     </form>
@@ -4579,7 +4618,6 @@ INSTRUCTIONS:
                 {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                   <>
                     {currentTab === 'home' && renderHomeView()}
-                    {currentTab === 'chat' && <ChatView user={tgUser} />}
                     {currentTab === 'ai' && <AIMentorView />}
                     {currentTab === 'voice' && (
                         <VoiceRoomErrorBoundary>
@@ -4596,9 +4634,8 @@ INSTRUCTIONS:
                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && (
                         <div className="fixed bottom-0 w-full max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)]">
                           <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-                          <button onClick={() => { resetDeepState(); setCurrentTab('chat'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chat' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Chat</span></button>
                           <button onClick={() => { resetDeepState(); setCurrentTab('voice'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'voice' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
-                          <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">AI Mentor</span></button>
+                          <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
                           <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
                           <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
                         </div>
@@ -4609,7 +4646,7 @@ INSTRUCTIONS:
 
               {/* Voice Room Global Overlay */}
               {voiceState.activeRoom && !voiceState.isMinimized && (
-                  <div className="fixed inset-0 z-[150000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
+                  <div className="fixed inset-0 z-[1500000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
                       <VoiceRoomErrorBoundary>
                           <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
                       </VoiceRoomErrorBoundary>

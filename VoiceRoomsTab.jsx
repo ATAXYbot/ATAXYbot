@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useVoiceRoom } from '../services/roomService';
 
 export const VoiceRoomsTab = ({ tgUser }) => {
-    const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, createRoom, tgId, joinRoom } = useVoiceRoom();
+    const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, tgId, joinRoom } = useVoiceRoom();
     const [chatInput, setChatInput] = useState('');
     const [selectedSeat, setSelectedSeat] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,6 +39,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
             const isMe = occupant?.user_id === tgId;
             const speaking = occupant && activeSpeakers[occupant.user_id];
             const isLocked = lockedSeats[seatNum];
+            const isSeatMuted = mutedSeats[seatNum];
             
             return (
                 <div onClick={() => setSelectedSeat({ seatNum, occupant })} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
@@ -47,15 +48,22 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                             <div className={`rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 overflow-hidden ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
                                 {occupant.photo_url ? <img src={occupant.photo_url} alt="DP" className="w-full h-full object-cover" /> : occupant.user_name.charAt(0)}
                             </div>
-                            {(isMe ? isMuted : remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio) && (
-                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600">
+                            {((isMe ? isMuted : remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio) || isSeatMuted) && (
+                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600 z-10">
                                     <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633] hover:bg-[#0AE0D0]/10'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'}`}>
-                            <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-microphone-lines text-[#0AE0D0]/40'}`}></i>
+                        <div className="relative">
+                            <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633] hover:bg-[#0AE0D0]/10'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'}`}>
+                                <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-microphone-lines text-[#0AE0D0]/40'}`}></i>
+                            </div>
+                            {isSeatMuted && (
+                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600 z-10">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
+                                </div>
+                            )}
                         </div>
                     )}
                     <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? (isMe ? "Me" : occupant.user_name) : (isLocked ? 'Locked' : label)}</span>
@@ -130,7 +138,10 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                                         <button onClick={() => { leaveSeat(); setSelectedSeat(null); }} className="p-3 bg-red-500/20 text-red-400 rounded-xl font-bold border border-red-500/30">Move to Audience</button>
                                     ) : isHost ? (
                                         <>
-                                            <button onClick={() => { hostAction('force_mute', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">Mute Microphone</button>
+                                            <button onClick={() => { hostAction('force_mute', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">Mute User's Mic</button>
+                                            <button onClick={() => { hostAction('seat_mute', null, { seatNumber: selectedSeat.seatNum, isMuted: !mutedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className={`p-3 rounded-xl font-bold border ${mutedSeats[selectedSeat.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/30'}`}>
+                                                {mutedSeats[selectedSeat.seatNum] ? "Unmute Seat" : "Mute Seat"}
+                                            </button>
                                             <button onClick={() => { hostAction('kick', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-xl font-bold border border-red-500/30">Kick from Room</button>
                                             <button onClick={() => { hostAction('assign_mod', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-xl font-bold border border-blue-500/30">Assign Admin/Mod</button>
                                         </>
@@ -139,7 +150,12 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                                     <>
                                         <button onClick={() => { takeSeat(selectedSeat.seatNum); setSelectedSeat(null); }} className="p-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)]">Take Mic Seat</button>
                                         {isHost && (
-                                            <button onClick={() => { hostAction('seat_lock', null, { seatNumber: selectedSeat.seatNum, isLocked: !lockedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">{lockedSeats[selectedSeat.seatNum] ? "Unlock Seat" : "Lock Seat"}</button>
+                                            <>
+                                                <button onClick={() => { hostAction('seat_mute', null, { seatNumber: selectedSeat.seatNum, isMuted: !mutedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className={`p-3 rounded-xl font-bold border ${mutedSeats[selectedSeat.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/30'}`}>
+                                                    {mutedSeats[selectedSeat.seatNum] ? "Unmute Seat" : "Mute Seat"}
+                                                </button>
+                                                <button onClick={() => { hostAction('seat_lock', null, { seatNumber: selectedSeat.seatNum, isLocked: !lockedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">{lockedSeats[selectedSeat.seatNum] ? "Unlock Seat" : "Lock Seat"}</button>
+                                            </>
                                         )}
                                     </>
                                 )}
