@@ -1231,6 +1231,9 @@ INSTRUCTIONS:
             };
             const isConnecting = isConnectingState;
 
+            // 🛡️ GHOST BUSTER: Prevents reappearance of users due to sync race conditions
+            const recentlyLeftRef = useRef(new Set());
+
             const toggleSpeaker = () => {
                 setIsSpeakerMuted(prev => !prev);
             };
@@ -1408,6 +1411,12 @@ INSTRUCTIONS:
                     agoraClient.on("user-left", async (remoteUser) => {
                         try {
                             const userIdStr = String(remoteUser.uid);
+                            // 🛡️ GHOST BUSTER: Add to recently left list to prevent sync race condition
+                            recentlyLeftRef.current.add(userIdStr);
+                            setTimeout(() => {
+                                recentlyLeftRef.current.delete(userIdStr);
+                            }, 15000); // Clear after 15s
+
                             // Instantly remove from UI
                             setParticipants(prev => prev.filter(s => String(s.user_id) !== userIdStr));
                         } catch (err) {
@@ -1485,6 +1494,11 @@ INSTRUCTIONS:
                                 let localUserFoundInState = false;
 
                                 for (const id in state) {
+                                    // 🛡️ GHOST BUSTER: Do not re-add users who we know have recently left.
+                                    if (recentlyLeftRef.current.has(String(id))) {
+                                        continue;
+                                    }
+
                                     if (state[id] && state[id].length > 0) {
                                         if (String(id) === myIdStr) {
                                             // 🛡️ ANTI-RUBBERBANDING: Trust local refs for the local user instantly
@@ -1671,7 +1685,7 @@ INSTRUCTIONS:
                     // 🚀 EXPLICIT BROADCAST BEFORE DISCONNECTING FOR INSTANT UI REMOVAL
                     try {
                         if (channelRef.current) {
-                            channelRef.current.send({ type: 'broadcast', event: 'user_left', payload: { target_uid: userIdString } });
+                            await channelRef.current.send({ type: 'broadcast', event: 'user_left', payload: { target_uid: userIdString } });
                         }
                     } catch (e) {}
 
