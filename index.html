@@ -443,13 +443,13 @@
             }
 
             componentDidCatch(error, errorInfo) {
-                console.error("Safely caught an error in Voice Room UI:", error, errorInfo);
+                console.error("Safely caught an error in UI:", error, errorInfo);
             }
 
             render() {
                 if (this.state.hasError) {
                     return (
-                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#010B1C] text-white h-full min-h-[300px]">
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#010B1C] text-white h-screen w-full relative z-[2000000]">
                             <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-3xl mb-4 border border-red-500/50 shadow-[0_0_15px_rgba(255,0,0,0.4)] mx-auto">
                                 <i className="fa-solid fa-triangle-exclamation"></i>
                             </div>
@@ -459,7 +459,7 @@
                                 onClick={() => this.setState({ hasError: false, error: null })} 
                                 className="py-3 px-6 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105"
                             >
-                                Soft Refresh Room
+                                Refresh Connection
                             </button>
                         </div>
                     );
@@ -1223,13 +1223,13 @@ INSTRUCTIONS:
             useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
 
             // 🛡️ STRICT CONNECTION DEBOUNCE LOCK
-            const [isConnectingState, setIsConnectingState] = useState(false);
-            const isConnectingRef = useRef(false);
-            const setIsConnecting = (val) => {
-                isConnectingRef.current = val;
-                setIsConnectingState(val);
+            const [isProcessingState, setIsProcessingState] = useState(false);
+            const isProcessingRef = useRef(false);
+            const setIsProcessing = (val) => {
+                isProcessingRef.current = val;
+                setIsProcessingState(val);
             };
-            const isConnecting = isConnectingState;
+            const isProcessing = isProcessingState;
 
             // 🛡️ GHOST BUSTER: Prevents reappearance of users due to sync race conditions
             const recentlyLeftRef = useRef(new Set());
@@ -1237,6 +1237,83 @@ INSTRUCTIONS:
             const toggleSpeaker = () => {
                 setIsSpeakerMuted(prev => !prev);
             };
+
+            // 2. STATE-TRIGGERED AUDIO ENGINE (The WePlay Secret)
+            // Hardware follows state strictly, never the other way around.
+            useEffect(() => {
+                const syncHardwareWithState = async () => {
+                    if (!clientRef.current) return;
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+                    
+                    const myParticipant = participants.find(p => String(p.user_id) === userIdString);
+                    const hasSeat = myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined;
+                    
+                    try {
+                        if (hasSeat) {
+                            if (!trackRef.current) {
+                                await clientRef.current.setClientRole("host");
+                                const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
+                                if (myParticipant.is_muted) await track.setMuted(true);
+                                setLocalAudioTrack(track);
+                                await clientRef.current.publish([track]);
+                            } else {
+                                if (myParticipant.is_muted !== isMutedRef.current) {
+                                    await trackRef.current.setMuted(myParticipant.is_muted);
+                                    setIsMuted(myParticipant.is_muted);
+                                }
+                            }
+                        } else {
+                            if (trackRef.current) {
+                                const track = trackRef.current;
+                                try { await clientRef.current.unpublish([track]); } catch(e) {}
+                                try { track.stop(); } catch(e) {}
+                                try { track.close(); } catch(e) {}
+                                setLocalAudioTrack(null);
+                                await clientRef.current.setClientRole("audience");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Hardware sync failed:", error);
+                    }
+                };
+                syncHardwareWithState();
+            }, [participants, tgUser]);
+
+            // 1. LOCAL MICROPHONE LAW (Enforce seat-based muting on the local user)
+            useEffect(() => {
+                const enforceLocalMute = async () => {
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+                    const myParticipant = participants.find(p => String(p.user_id) === userIdString);
+                    
+                    if (myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined) {
+                        const seatNum = myParticipant.seat_number;
+                        if (mutedSeats[seatNum] && trackRef.current && !isMutedRef.current) {
+                            try {
+                                await trackRef.current.setMuted(true);
+                                setIsMuted(true);
+                                
+                                setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, is_muted: true } : p));
+                                
+                                if (channelRef.current) {
+                                    channelRef.current.track({
+                                        user_id: userIdString,
+                                        user_name: tgData?.first_name || tgData?.username || "Unknown",
+                                        photo_url: tgData?.photo_url || null,
+                                        seat_number: seatNum,
+                                        is_muted: true
+                                    });
+                                    sendBroadcast('mute_toggle', { target_uid: userIdString, isMuted: true });
+                                }
+                            } catch (e) {
+                                console.error("Local mute enforcement failed:", e);
+                            }
+                        }
+                    }
+                };
+                enforceLocalMute();
+            }, [mutedSeats, participants, tgUser]);
 
             // 🛡️ SOFT MUTE ENGINE (App-level volume control instead of hardware track manipulation)
             useEffect(() => {
@@ -1346,8 +1423,8 @@ INSTRUCTIONS:
             const joinRoom = async (roomData, password = null, bypassLock = false) => {
                 try {
                     if (!bypassLock) {
-                        if (isConnectingRef.current) return false;
-                        setIsConnecting(true);
+                        if (isProcessingRef.current) return false;
+                        setIsProcessing(true);
                     }
                     
                     // 🛡️ FRESH START: Always force user into audience state upon entry
@@ -1388,9 +1465,18 @@ INSTRUCTIONS:
                                 // Safely play without binding to a DOM element container
                                 if (remoteUser.audioTrack) {
                                     remoteUser.audioTrack.play();
-                                    if (speakerMutedRef.current) {
-                                        remoteUser.audioTrack.setVolume(0);
+                                    
+                                    // 3. SAFE REMOTE TRACK HANDLING: Immediately mute if not explicitly seated
+                                    const participant = participantsRef.current.find(p => String(p.user_id) === userIdStr);
+                                    let seatMuted = false;
+                                    let notSeated = true;
+                                    if (participant && participant.seat_number !== null && participant.seat_number !== undefined) {
+                                        seatMuted = !!mutedSeatsRef.current[participant.seat_number];
+                                        notSeated = false;
                                     }
+                                    const shouldBeMuted = (participant && participant.is_muted) || speakerMutedRef.current || seatMuted || notSeated;
+                                    
+                                    remoteUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100);
                                 }
                                 
                                 // Update only the mute state badge visually
@@ -1477,6 +1563,7 @@ INSTRUCTIONS:
                         } catch(e) {}
                     });
 
+                    // 1. AUDIENCE DEFAULT: Force audience role on entry
                     await agoraClient.setClientRole("audience");
                     await agoraClient.join(AGORA_APP_ID, String(roomData.id), token, String(tgUser?.id || "1001"));
                     
@@ -1695,13 +1782,13 @@ INSTRUCTIONS:
                     safeAlert("Failed to join room: " + e.message);
                     return false;
                 } finally {
-                    if (!bypassLock) setIsConnecting(false);
+                    if (!bypassLock) setIsProcessing(false);
                 }
             };
 
             const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id, isUnloading = false) => {
-                if (!isUnloading && isConnectingRef.current) return;
-                if (!isUnloading) setIsConnecting(true);
+                if (!isUnloading && isProcessingRef.current) return;
+                if (!isUnloading) setIsProcessing(true);
                 try {
                     const r = roomRef.current;
                     const track = trackRef.current;
@@ -1785,14 +1872,14 @@ INSTRUCTIONS:
                 } catch (err) {
                     console.error("Safe leaveRoom failed:", err);
                 } finally {
-                    if (!isUnloading) setIsConnecting(false);
+                    if (!isUnloading) setIsProcessing(false);
                 }
             };
 
             const createRoom = async (name, type, password = null) => {
                 if (!supabase) return;
-                if (isConnectingRef.current) return false;
-                setIsConnecting(true);
+                if (isProcessingRef.current) return false;
+                setIsProcessing(true);
                 try {
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
@@ -1826,15 +1913,15 @@ INSTRUCTIONS:
                     console.error("createRoom error:", error);
                     return false;
                 } finally {
-                    setIsConnecting(false);
+                    setIsProcessing(false);
                 }
             };
 
             const takeSeat = async (seatIdx, roomId = roomRef.current?.id, passedClient = null, bypassLock = false) => {
                 try {
                     if (!bypassLock) {
-                        if (isConnectingRef.current) return;
-                        setIsConnecting(true);
+                        if (isProcessingRef.current) return;
+                        setIsProcessing(true);
                     }
                     const activeClient = passedClient || clientRef.current;
                     if (!activeClient) {
@@ -1851,13 +1938,8 @@ INSTRUCTIONS:
                     // Whenever a user changes seats, they are instantly given a fresh unmuted state.
                     const finalMuteState = mutedSeatsRef.current[seatIdx] ? true : false;
                     
-                    const isNewSpeaker = !trackRef.current;
-
                     userSeatRef.current = seatIdx;
                     
-                    if (!isNewSpeaker && trackRef.current) {
-                        await trackRef.current.setMuted(finalMuteState);
-                    }
                     setIsMuted(finalMuteState);
 
                     if (supabase && channelRef.current) {
@@ -1888,25 +1970,17 @@ INSTRUCTIONS:
                             try { await supabase.from('voice_rooms').update({ host_user_id: userIdString }).eq('id', rId); } catch(e) {}
                         }
                     }
-
-                    if (isNewSpeaker) {
-                        await activeClient.setClientRole("host");
-                        const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
-                        if (finalMuteState) await track.setMuted(true);
-                        setLocalAudioTrack(track);
-                        await activeClient.publish([track]);
-                    }
                 } catch (e) { 
                     console.error("Safe takeSeat failed:", e); 
                     safeAlert("Microphone access was denied or failed. Check browser permissions.");
                 } finally {
-                    if (!bypassLock) setIsConnecting(false);
+                    if (!bypassLock) setIsProcessing(false);
                 }
             };
 
             const stepDown = async () => {
-                if (isConnectingRef.current) return;
-                setIsConnecting(true);
+                if (isProcessingRef.current) return;
+                setIsProcessing(true);
                 try {
                     const track = trackRef.current;
                     const c = clientRef.current;
@@ -1919,14 +1993,6 @@ INSTRUCTIONS:
 
                     userSeatRef.current = null;
                     setIsMuted(true);
-
-                    if (track && c) {
-                        try { await c.unpublish([track]); } catch(e) {}
-                        try { track.stop(); } catch(e) {}
-                        try { track.close(); } catch(e) {}
-                        setLocalAudioTrack(null);
-                        await c.setClientRole("audience");
-                    }
                     
                     // 🚀 INSTANT PUBLIC UPDATE
                     if (supabase && channelRef.current) {
@@ -1963,17 +2029,17 @@ INSTRUCTIONS:
                 } catch (e) {
                     console.error("Safe stepDown failed:", e);
                 } finally {
-                    setIsConnecting(false);
+                    setIsProcessing(false);
                 }
             };
 
             const toggleMute = async () => {
-                if (isConnectingRef.current) return;
+                if (isProcessingRef.current) return;
                 if (userSeatRef.current !== null && userSeatRef.current !== undefined && mutedSeatsRef.current[userSeatRef.current]) {
                     safeAlert("This seat is currently muted by the host.");
                     return;
                 }
-                setIsConnecting(true);
+                setIsProcessing(true);
                 try {
                     if (!trackRef.current) return;
                     const shouldMute = !isMuted;
@@ -2002,7 +2068,7 @@ INSTRUCTIONS:
                 } catch (e) {
                     console.error("Safe mute toggle failed:", e);
                 } finally {
-                    setIsConnecting(false);
+                    setIsProcessing(false);
                 }
             };
 
@@ -2055,11 +2121,11 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isConnecting, currentMusic, setCurrentMusic };
+            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isProcessing, currentMusic, setCurrentMusic };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
-            const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom, isConnecting } = voiceState;
+            const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom, isProcessing } = voiceState;
             const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
             const widgetRef = useRef(null);
 
@@ -2117,16 +2183,16 @@ INSTRUCTIONS:
                         </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                        <button onClick={(e) => { e.stopPropagation(); if(!isConnecting) toggleMute(); }} disabled={isConnecting} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'} ${isConnecting ? 'opacity-50 cursor-wait' : ''}`}><i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-xs`}></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); if(!isProcessing) toggleMute(); }} disabled={isProcessing} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}><i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-xs`}></i></button>
                         <button onClick={(e) => { e.stopPropagation(); toggleSpeaker(); }} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isSpeakerMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-xs`}></i></button>
-                        <button onClick={(e) => { e.stopPropagation(); if(!isConnecting) leaveRoom(); }} disabled={isConnecting} className={`w-9 h-9 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors ${isConnecting ? 'opacity-50 cursor-wait' : ''}`}><i className="fa-solid fa-phone-slash text-xs"></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); if(!isProcessing) leaveRoom(); }} disabled={isProcessing} className={`w-9 h-9 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}><i className="fa-solid fa-phone-slash text-xs"></i></button>
                     </div>
                 </div>
             );
         };
 
         const VoiceRoomsTab = ({ tgUser, voiceState }) => {
-            const { activeRoom, leaveRoom, availableRooms, fetchRooms, createRoom, joinRoom, isConnecting } = voiceState;
+            const { activeRoom, leaveRoom, availableRooms, fetchRooms, createRoom, joinRoom, isProcessing } = voiceState;
             const [showCreateModal, setShowCreateModal] = useState(false);
             const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
             const [isRefreshing, setIsRefreshing] = useState(false);
@@ -2139,7 +2205,7 @@ INSTRUCTIONS:
             };
             
             const handleJoinClick = (room) => {
-                if (isConnecting) return;
+                if (isProcessing) return;
                 if (room.password) {
                     setSelectedRoomToJoin(room);
                 } else {
@@ -2173,7 +2239,7 @@ INSTRUCTIONS:
                                 availableRooms.map(room => {
                                     const isPremium = room.room_type === 'permanent';
                                     return (
-                                        <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 transition-all ${isConnecting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
+                                        <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
                                             {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
                                             <div className="relative z-10 flex justify-between items-center">
                                                 <div>
@@ -2257,7 +2323,7 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
-            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {}, isConnecting, currentMusic, setCurrentMusic } = voiceState;
+            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {}, isProcessing, currentMusic, setCurrentMusic } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -2419,7 +2485,7 @@ INSTRUCTIONS:
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                             <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
-                            <button onClick={() => !isConnecting && leaveRoom()} disabled={isConnecting} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isConnecting ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
+                            <button onClick={() => !isProcessing && leaveRoom()} disabled={isProcessing} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
                         </div>
                     </div>
                     {currentMusic && (
@@ -2496,7 +2562,7 @@ INSTRUCTIONS:
                             <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
                         </button>
                         <button onClick={() => {
-                            if (isConnecting) return;
+                            if (isProcessing) return;
                             if (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined) {
                                 toggleMute();
                             } else if (isHost) {
@@ -2504,7 +2570,7 @@ INSTRUCTIONS:
                             } else {
                                 safeAlert('Take a seat to use the mic!');
                             }
-                        }} disabled={isConnecting} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'} ${isConnecting ? 'opacity-50 cursor-wait' : ''}`}>
+                        }} disabled={isProcessing} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>
                             <i className={`fa-solid ${isMuted || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
                         {!isSpeaker && (
@@ -4600,6 +4666,7 @@ INSTRUCTIONS:
           };
 
           return (
+            <VoiceRoomErrorBoundary>
             <div className="min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden pt-[calc(60px_+_env(safe-area-inset-top,_0px))]">
               
               {/* Addictive Animated Ambient Background for Blank Spaces */}
@@ -4620,9 +4687,7 @@ INSTRUCTIONS:
                     {currentTab === 'home' && renderHomeView()}
                     {currentTab === 'ai' && <AIMentorView />}
                     {currentTab === 'voice' && (
-                        <VoiceRoomErrorBoundary>
-                            <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />
-                        </VoiceRoomErrorBoundary>
+                        <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />
                     )}
                     {currentTab === 'questions' && renderQuestionsView()}
                     {currentTab === 'profile' && renderProfileView()}
@@ -4647,9 +4712,7 @@ INSTRUCTIONS:
               {/* Voice Room Global Overlay */}
               {voiceState.activeRoom && !voiceState.isMinimized && (
                   <div className="fixed inset-0 z-[1500000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
-                      <VoiceRoomErrorBoundary>
-                          <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
-                      </VoiceRoomErrorBoundary>
+                      <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
                   </div>
               )}
 
@@ -4676,6 +4739,7 @@ INSTRUCTIONS:
               )}
 
             </div>
+            </VoiceRoomErrorBoundary>
           );
         }
 

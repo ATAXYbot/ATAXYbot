@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useVoiceRoom } from '../services/roomService';
 
 export const VoiceRoomsTab = ({ tgUser }) => {
-    const { activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, tgId, joinRoom } = useVoiceRoom();
+    const { activeRoom, roomParticipants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, tgId, joinRoom } = useVoiceRoom();
     const [chatInput, setChatInput] = useState('');
     const [selectedSeat, setSelectedSeat] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -31,9 +31,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     // --- 1. ACTIVE ROOM LAYOUT (Inside Room) ---
     if (activeRoom && !isMinimized) {
         const isHost = String(activeRoom.host_user_id) === tgId;
-        const hostSeat = participants.find(p => p.seat_number === 0);
-        const partnerSeat = participants.find(p => p.seat_number === 1);
-        const micSeats = Array.from({length: 8}, (_, i) => participants.find(p => p.seat_number === i + 2) || null);
+        const WEPLAY_SEATS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         const renderSeat = (seatNum, occupant, label, isLarge=false) => {
             const isMe = occupant?.user_id === tgId;
@@ -93,12 +91,18 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                 <div className="p-6 pb-2">
                     {/* Upper Deck (Host & Partner) */}
                     <div className="flex justify-center gap-8 mb-8">
-                        {renderSeat(0, hostSeat, "Host", true)}
-                        {activeRoom.is_partner_seat_open && renderSeat(1, partnerSeat, "Partner", true)}
+                    {WEPLAY_SEATS.slice(0, 2).map(seatNum => {
+                        if (seatNum === 1 && !activeRoom.is_partner_seat_open) return null;
+                        const occupant = roomParticipants.find(p => p.seat_number === seatNum);
+                        return <React.Fragment key={seatNum}>{renderSeat(seatNum, occupant, seatNum === 0 ? "Host" : "Partner", true)}</React.Fragment>;
+                    })}
                     </div>
                     {/* Lower Deck (Seats 2-9) */}
                     <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
-                        {micSeats.map((occupant, i) => <React.Fragment key={i}>{renderSeat(i+2, occupant, `Seat ${i+2}`)}</React.Fragment>)}
+                    {WEPLAY_SEATS.slice(2).map(seatNum => {
+                        const occupant = roomParticipants.find(p => p.seat_number === seatNum);
+                        return <React.Fragment key={seatNum}>{renderSeat(seatNum, occupant, `Seat ${seatNum}`)}</React.Fragment>;
+                    })}
                     </div>
                 </div>
 
