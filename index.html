@@ -1613,6 +1613,9 @@ INSTRUCTIONS:
                                     takeSeat(0, roomData.id);
                                 }
                             })
+                            .on('broadcast', { event: 'user_left' }, ({ payload }) => {
+                                setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
+                            })
                             .subscribe(async (status) => {
                                 if (status === 'SUBSCRIBED') {
                                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
@@ -1665,6 +1668,13 @@ INSTRUCTIONS:
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
 
+                    // 🚀 EXPLICIT BROADCAST BEFORE DISCONNECTING FOR INSTANT UI REMOVAL
+                    try {
+                        if (channelRef.current) {
+                            channelRef.current.send({ type: 'broadcast', event: 'user_left', payload: { target_uid: userIdString } });
+                        }
+                    } catch (e) {}
+
                     // 1. Safely stop and close localAudioTrack ONLY if it exists. Set it to null.
                     if (track) { 
                         try { track.stop(); } catch(e){}
@@ -1709,7 +1719,7 @@ INSTRUCTIONS:
                             }
                         }
                         if (channelRef.current) {
-                            try { channelRef.current.untrack(); } catch(e) {}
+                            try { await channelRef.current.untrack(); } catch(e) {}
                             supabase.removeChannel(channelRef.current);
                         }
                     }
