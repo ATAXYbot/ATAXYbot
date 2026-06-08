@@ -2400,6 +2400,8 @@ INSTRUCTIONS:
             const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
             const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
             const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
+            const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
+            const effectiveMutedUI = isMuted || mySeatMuted;
 
             const handleBottomMicClick = () => {
                 if (!isSpeaker) {
@@ -2655,8 +2657,8 @@ INSTRUCTIONS:
                             } else {
                                 safeAlert('Take a seat to use the mic!');
                             }
-                        }} disabled={isProcessing} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : isMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>
-                            <i className={`fa-solid ${isMuted || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
+                        }} disabled={isProcessing} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : effectiveMutedUI ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>
+                            <i className={`fa-solid ${effectiveMutedUI || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
                         {!isSpeaker && (
                             <button onClick={handleBottomMicClick} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all shadow-[0_0_10px_rgba(79,70,229,0.5)] bg-indigo-600 text-white hover:bg-indigo-500">
