@@ -50,11 +50,24 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         if (data && !error) setAvailableRooms(data);
     };
 
-    const createRoom = async (roomName) => {
+    const createRoom = async (roomName, roomType = 'temporary') => {
         if (!supabase) return;
         try {
+            // 1. THE ONE-ROOM ENFORCEMENT CHECK
+            if (roomType === 'advance') {
+                const { data: existing } = await supabase.from('rooms')
+                    .select('id')
+                    .eq('host_user_id', String(tgId))
+                    .eq('room_type', 'advance');
+                
+                if (existing && existing.length > 0) {
+                    alert("You can only own one permanent Advance Room.");
+                    return;
+                }
+            }
+
             const { data, error } = await supabase.from('rooms').insert({
-                channel_name: roomName, host_user_id: tgId, is_live: true, room_type: 'temporary'
+                channel_name: roomName, host_user_id: String(tgId), is_live: true, room_type: roomType, locked_seats: []
             }).select().single();
             if (error) throw error;
             if (data) joinRoom(data);
@@ -143,6 +156,12 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
                 .on('broadcast', { event: 'text_chat' }, (payload) => {
                     setChatMessages(prev => [...prev, payload]);
                 })
+                .on('broadcast', { event: 'HOST_CHANGED' }, (payload) => {
+                    setActiveRoom(prev => prev ? { ...prev, host_user_id: payload.newHostId } : null);
+                })
+                .on('broadcast', { event: 'ROOM_UPDATED' }, (payload) => {
+                    setActiveRoom(prev => prev ? { ...prev, ...payload } : null);
+                })
                 .subscribe();
             
             setRealtimeChannel(channel);
@@ -150,7 +169,14 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             setActiveRoom(roomData);
             setChatMessages([]);
             setIsMinimized(false);
-            setLockedSeats({});
+            
+            // Pre-load DB locked seats state into UI dictionary
+            setLockedSeats(
+                (roomData.locked_seats || []).reduce((acc, seatNum) => {
+                    acc[seatNum] = true;
+                    return acc;
+                }, {})
+            );
             setMutedSeats({});
             return true;
         } catch (e) {
@@ -168,7 +194,52 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         if (localAudioTrack) { localAudioTrack.stop(); localAudioTrack.close(); }
         if (client) await client.leave();
         if (activeRoom) {
-            await supabase.from('room_participants').delete().match({ room_id: activeRoom.id, user_id: tgId });
+            try {
+                // 1. Remove the user from the room_participants table
+                await supabase.from('room_participants')
+                    .delete()
+                    .match({ room_id: activeRoom.id, user_id: String(tgId) });
+
+                // 2. Query remaining participants to check for termination or host transfer
+                const { data: remaining, error: queryError } = await supabase
+                    .from('room_participants')
+                    .select('*')
+                    .eq('room_id', activeRoom.id)
+                    .order('created_at', { ascending: true }); // Oldest remaining user first
+
+                if (!queryError && remaining) {
+                    const count = remaining.length;
+
+                    // 3. AUTOMATIC TERMINATION CONSTRAINTS
+                    if (count === 0 && activeRoom.room_type === 'temporary') {
+                        await supabase.from('rooms')
+                            .update({ is_live: false })
+                            .eq('id', activeRoom.id);
+                    } 
+                    // 4. AUTOMATIC HOST TRANSFER CONSTRAINTS
+                    else if (count > 0 && String(activeRoom.host_user_id) === String(tgId)) {
+                        const nextHost = remaining[0];
+                        
+                        await supabase.from('rooms')
+                            .update({ host_user_id: String(nextHost.user_id) })
+                            .eq('id', activeRoom.id);
+                        
+                        await supabase.from('room_participants')
+                            .update({ seat_number: 0 })
+                            .eq('room_id', activeRoom.id)
+                            .eq('user_id', String(nextHost.user_id));
+                        
+                        realtimeChannel?.send({
+                            type: 'broadcast',
+                            event: 'HOST_CHANGED',
+                            payload: { newHostId: String(nextHost.user_id), roomId: activeRoom.id }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error during graceful room exit flow:", error);
+            }
+
             if (realtimeChannel) supabase.removeChannel(realtimeChannel);
         }
         setActiveRoom(null);
@@ -217,8 +288,39 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         setChatMessages(prev => [...prev, payload]); // Optimistic update
     };
 
+    const updateRoomSettings = async (updates) => {
+        if (!activeRoom || activeRoom.room_type !== 'advance') return;
+        try {
+            await supabase.from('rooms').update(updates).eq('id', activeRoom.id);
+            setActiveRoom(prev => ({ ...prev, ...updates }));
+            
+            realtimeChannel?.send({ type: 'broadcast', event: 'ROOM_UPDATED', payload: updates });
+        } catch(e) {
+            console.error("Failed to update settings", e);
+        }
+    };
+
     const hostAction = (action, targetUserId, extraPayload = {}) => {
         realtimeChannel?.send({ type: 'broadcast', event: action, payload: { targetUserId: targetUserId ? String(targetUserId) : null, ...extraPayload } });
+
+        if (activeRoom && activeRoom.room_type === 'advance') {
+            if (action === 'assign_mod' && targetUserId) {
+                supabase.from('room_participants')
+                    .update({ is_admin: extraPayload.isAdmin })
+                    .match({ room_id: activeRoom.id, user_id: String(targetUserId) })
+                    .then(); // Fire and forget
+            }
+            if (action === 'seat_lock') {
+                let currentLocked = activeRoom.locked_seats || [];
+                if (extraPayload.isLocked && !currentLocked.includes(extraPayload.seatNumber)) {
+                    currentLocked.push(extraPayload.seatNumber);
+                } else if (!extraPayload.isLocked) {
+                    currentLocked = currentLocked.filter(s => s !== extraPayload.seatNumber);
+                }
+                supabase.from('rooms').update({ locked_seats: currentLocked }).eq('id', activeRoom.id).then();
+                setActiveRoom(prev => ({ ...prev, locked_seats: currentLocked }));
+            }
+        }
     };
 
     const takeSeat = async (seatNumber) => {
@@ -273,7 +375,7 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             client, activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, 
             joinRoom, leaveRoom, toggleMute, sendChat, hostAction,
             isMinimized, setIsMinimized, availableRooms,
-            takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, tgId 
+            takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, updateRoomSettings, tgId 
         }}>
             {children}
         </VoiceRoomContext.Provider>

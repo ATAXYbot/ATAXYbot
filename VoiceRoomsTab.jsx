@@ -3,11 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { useVoiceRoom } from '../services/roomService';
 
 export const VoiceRoomsTab = ({ tgUser }) => {
-    const { activeRoom, roomParticipants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, tgId, joinRoom } = useVoiceRoom();
+    const { activeRoom, roomParticipants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, updateRoomSettings, tgId, joinRoom } = useVoiceRoom();
     const [chatInput, setChatInput] = useState('');
     const [selectedSeat, setSelectedSeat] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRoomName, setNewRoomName] = useState('');
+    const [createRoomType, setCreateRoomType] = useState('temporary');
+    const [dashboardFilter, setDashboardFilter] = useState('active');
+
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [editRoomName, setEditRoomName] = useState('');
+    const [editAnnouncement, setEditAnnouncement] = useState('');
+    const [editDpUrl, setEditDpUrl] = useState('');
 
     // Strict WePlay-style Graceful Teardown on unmount
     const activeRoomRef = useRef(activeRoom);
@@ -31,6 +38,8 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     // --- 1. ACTIVE ROOM LAYOUT (Inside Room) ---
     if (activeRoom && !isMinimized) {
         const isHost = String(activeRoom.host_user_id) === tgId;
+        const myParticipant = roomParticipants.find(p => String(p.user_id) === String(tgId));
+        const isAdmin = isHost || myParticipant?.is_admin;
         const WEPLAY_SEATS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         const renderSeat = (seatNum, occupant, label, isLarge=false) => {
@@ -78,7 +87,17 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                             <i className="fa-solid fa-chevron-down"></i>
                         </button>
                         <div className="flex flex-col">
-                            <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">{activeRoom.channel_name}</h2>
+                            <h2 className="text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] flex items-center">
+                                {activeRoom.channel_name}
+                                {isHost && activeRoom.room_type === 'advance' && (
+                                    <button onClick={() => {
+                                        setEditRoomName(activeRoom.channel_name || '');
+                                        setEditAnnouncement(activeRoom.announcement || '');
+                                        setEditDpUrl(activeRoom.room_dp_url || '');
+                                        setShowSettingsModal(true);
+                                    }} className="ml-2 text-[#0AE0D0] hover:text-white text-base transition-colors"><i className="fa-solid fa-gear"></i></button>
+                                )}
+                            </h2>
                             <p className="text-xs text-[#00FFFF] font-bold">
                                 <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> Live
                             </p>
@@ -86,6 +105,14 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                     </div>
                     <button onClick={leaveRoom} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
                 </div>
+
+                {/* Permanent Settings: Announcement Render */}
+                {activeRoom.announcement && (
+                    <div className="mx-6 mt-4 p-3 bg-[#021633]/80 rounded-xl border border-[#0AE0D0]/20 text-xs text-[#A4DFE6] shadow-lg backdrop-blur">
+                        <i className="fa-solid fa-bullhorn text-[#00FFFF] mr-2 animate-pulse"></i>
+                        {activeRoom.announcement}
+                    </div>
+                )}
                 
                 {/* Spatial Seating Canvas */}
                 <div className="p-6 pb-2">
@@ -140,20 +167,32 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                                 {selectedSeat.occupant ? (
                                     selectedSeat.occupant.user_id === tgId ? (
                                         <button onClick={() => { leaveSeat(); setSelectedSeat(null); }} className="p-3 bg-red-500/20 text-red-400 rounded-xl font-bold border border-red-500/30">Move to Audience</button>
-                                    ) : isHost ? (
+                                    ) : isAdmin ? (
                                         <>
                                             <button onClick={() => { hostAction('force_mute', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">Mute User's Mic</button>
                                             <button onClick={() => { hostAction('seat_mute', null, { seatNumber: selectedSeat.seatNum, isMuted: !mutedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className={`p-3 rounded-xl font-bold border ${mutedSeats[selectedSeat.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/30'}`}>
                                                 {mutedSeats[selectedSeat.seatNum] ? "Unmute Seat" : "Mute Seat"}
                                             </button>
                                             <button onClick={() => { hostAction('kick', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-xl font-bold border border-red-500/30">Kick from Room</button>
-                                            <button onClick={() => { hostAction('assign_mod', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-xl font-bold border border-blue-500/30">Assign Admin/Mod</button>
+                                            {isHost && (
+                                                <button onClick={() => { hostAction('assign_mod', selectedSeat.occupant.user_id, { isAdmin: !selectedSeat.occupant.is_admin }); setSelectedSeat(null); }} className="p-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-xl font-bold border border-blue-500/30">
+                                                    {selectedSeat.occupant.is_admin ? "Remove Admin" : "Assign Admin/Mod"}
+                                                </button>
+                                            )}
                                         </>
                                     ) : null
                                 ) : (
                                     <>
-                                        <button onClick={() => { takeSeat(selectedSeat.seatNum); setSelectedSeat(null); }} className="p-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)]">Take Mic Seat</button>
-                                        {isHost && (
+                                        <button onClick={() => { 
+                                            if (lockedSeats[selectedSeat.seatNum] && !isAdmin) {
+                                                alert("This seat is locked by the admin.");
+                                                return;
+                                            }
+                                            takeSeat(selectedSeat.seatNum); 
+                                            setSelectedSeat(null); 
+                                        }} className="p-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)]">Take Mic Seat</button>
+                                        
+                                        {isAdmin && (
                                             <>
                                                 <button onClick={() => { hostAction('seat_mute', null, { seatNumber: selectedSeat.seatNum, isMuted: !mutedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className={`p-3 rounded-xl font-bold border ${mutedSeats[selectedSeat.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/30'}`}>
                                                     {mutedSeats[selectedSeat.seatNum] ? "Unmute Seat" : "Mute Seat"}
@@ -168,29 +207,106 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                         </div>
                     </div>
                 )}
+
+                {/* Permanent Settings Modal */}
+                {showSettingsModal && (
+                    <div className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                        <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+                            <h3 className="text-xl font-black text-[#00FFFF] mb-4">Room Settings</h3>
+                            <div className="mb-4">
+                                <label className="text-xs text-[#A4DFE6] font-bold mb-1 block">Room Title</label>
+                                <input value={editRoomName} onChange={e=>setEditRoomName(e.target.value)} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-3 py-2 text-white text-sm focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="mb-4">
+                                <label className="text-xs text-[#A4DFE6] font-bold mb-1 block">Display Picture URL</label>
+                                <input value={editDpUrl} onChange={e=>setEditDpUrl(e.target.value)} placeholder="https://..." className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-3 py-2 text-white text-sm focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="mb-6">
+                                <label className="text-xs text-[#A4DFE6] font-bold mb-1 block">Announcement</label>
+                                <textarea value={editAnnouncement} onChange={e=>setEditAnnouncement(e.target.value)} rows="3" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-3 py-2 text-white text-sm focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setShowSettingsModal(false)} className="flex-1 p-3 bg-white/5 text-gray-400 rounded-xl font-bold border border-white/10">Cancel</button>
+                                <button onClick={() => { updateRoomSettings({ channel_name: editRoomName, room_dp_url: editDpUrl, announcement: editAnnouncement }); setShowSettingsModal(false); }} className="flex-1 p-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_10px_rgba(0,255,255,0.3)] text-black">Save Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
 
     // --- 2. DISCOVERY DASHBOARD (Outside Room) ---
+    const myAdvanceRoom = availableRooms.find(r => String(r.owner_id) === String(tgId) && (r.room_type === 'advance' || r.room_type === 'permanent'));
+
+    let displayRooms = [];
+    if (dashboardFilter === 'active') {
+        displayRooms = [...availableRooms].sort((a, b) => {
+            const countA = a.room_participants?.[0]?.count || a.room_participants?.length || 0;
+            const countB = b.room_participants?.[0]?.count || b.room_participants?.length || 0;
+            return countB - countA;
+        });
+    } else {
+        // Mock data for recent and joined views as requested
+        displayRooms = [];
+    }
+
     return (
         <div className="pb-[80px] flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white relative">
             <div className="p-4 flex-1 overflow-y-auto">
-                <h2 className="text-2xl font-black mb-1 text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
-                <p className="text-xs text-[#A4DFE6] mb-5">Join active voice rooms to discuss and study live.</p>
+                <h2 className="text-2xl font-black mb-4 text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
                 
-                <div className="flex gap-2 mb-6">
-                    <button onClick={() => setShowCreateModal(true)} className="flex-1 bg-white/5 hover:bg-white/10 border border-[#0AE0D0]/30 py-3 rounded-xl font-bold transition-all text-[11px] uppercase tracking-wider">
-                        + Create Temp (Free)
-                    </button>
-                    <button className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-[11px] uppercase tracking-wider">
-                        <i className="fa-solid fa-crown mr-1"></i> Unlock Advanced
-                    </button>
+                {/* 1. Top Section: Pinned Advance Room */}
+                <div className="mb-6">
+                    {myAdvanceRoom ? (
+                        <div onClick={() => joinRoom(myAdvanceRoom)} className="bg-gradient-to-br from-[#1a1c02] to-[#010B1C] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                            <span className="absolute top-0 right-0 bg-gradient-to-r from-[#D4AF37] to-[#F9D33A] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">My Advance Room</span>
+                            <div className="relative z-10 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(212,175,55,0.5)]">
+                                        {myAdvanceRoom.channel_name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                            {myAdvanceRoom.channel_name} 
+                                            {myAdvanceRoom.password && <i className="fa-solid fa-lock text-[#F9D33A] text-xs"></i>}
+                                        </h3>
+                                        <div className="flex text-sm text-[#F9D33A] gap-3">
+                                            <span><i className="fa-solid fa-crown mr-1"></i> Host: You</span>
+                                            <span><i className="fa-solid fa-headphones mr-1"></i> {myAdvanceRoom.room_participants?.[0]?.count || myAdvanceRoom.room_participants?.length || 0} Listens</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:text-[#010B1C] transition-colors">
+                                    <i className="fa-solid fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <button onClick={() => { setCreateRoomType('advance'); setShowCreateModal(true); }} className="w-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F9D33A]/10 hover:from-[#D4AF37]/30 hover:to-[#F9D33A]/20 border border-[#D4AF37]/50 border-dashed py-4 rounded-2xl font-bold transition-all text-sm uppercase tracking-wider text-[#F9D33A] flex flex-col items-center justify-center gap-2">
+                            <i className="fa-solid fa-crown text-2xl drop-shadow-[0_0_8px_rgba(249,211,58,0.5)]"></i>
+                            Create Premium Advance Room
+                        </button>
+                    )}
                 </div>
 
+                {/* 2. Middle Section: Navigation Buttons */}
+                <div className="flex gap-2 mb-6 bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20">
+                    <button onClick={() => setDashboardFilter('active')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'active' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
+                        Active
+                    </button>
+                    <button onClick={() => setDashboardFilter('recent')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'recent' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
+                        Recent
+                    </button>
+                    <button onClick={() => setDashboardFilter('joined')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'joined' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
+                        Joined
+                    </button>
+                </div>
+                
+                {/* 3. Bottom Section: Dynamic List */}
                 <div className="space-y-4 pb-20">
-                    {availableRooms.map(room => {
-                        const isPremium = room.room_type === 'permanent';
+                    {displayRooms.length > 0 ? displayRooms.map(room => {
+                        const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
                         const listenerCount = room.room_participants?.[0]?.count || room.room_participants?.length || 0;
                         return (
                             <div key={room.id} onClick={() => joinRoom(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF] hover:shadow-[0_0_10px_rgba(0,255,255,0.3)]'}`}>
@@ -217,7 +333,12 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                                 </div>
                             </div>
                         )
-                    })}
+                    }) : (
+                        <div className="text-center py-10 text-gray-500">
+                            <i className="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
+                            <p>No rooms found for this filter.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -225,14 +346,18 @@ export const VoiceRoomsTab = ({ tgUser }) => {
             {showCreateModal && (
                 <div className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
                     <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
-                        <h3 className="text-2xl font-black text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.4)]">Create Voice Lounge</h3>
+                        <h3 className="text-2xl font-black text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.4)]">{createRoomType === 'advance' ? 'Create Premium Lounge' : 'Create Voice Lounge'}</h3>
+                        <div className="flex gap-2 mb-5">
+                            <button onClick={() => setCreateRoomType('temporary')} className={`flex-1 py-2 text-xs font-bold rounded-lg border ${createRoomType === 'temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'border-transparent text-gray-400 bg-white/5'}`}>Temporary Room</button>
+                            <button onClick={() => setCreateRoomType('advance')} className={`flex-1 py-2 text-xs font-bold rounded-lg border ${createRoomType === 'advance' ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-gray-400 bg-white/5'}`}>Advance Room</button>
+                        </div>
                         <div className="mb-6">
                             <label className="text-xs text-[#A4DFE6] font-bold mb-2 block uppercase tracking-wider">Room Name</label>
                             <input value={newRoomName} onChange={e=>setNewRoomName(e.target.value)} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF] focus:shadow-[0_0_10px_rgba(0,255,255,0.2)] transition-all placeholder:text-[#0AE0D0]/30" placeholder="e.g. Chill Beats & Chat" />
                         </div>
                         <div className="flex gap-3">
                             <button onClick={() => setShowCreateModal(false)} className="flex-1 p-3.5 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl font-bold transition-colors border border-white/10">Cancel</button>
-                            <button onClick={async () => { if(newRoomName.trim()){ await createRoom(newRoomName); setShowCreateModal(false); setNewRoomName(''); } }} className="flex-1 p-3.5 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:scale-105 transition-transform uppercase tracking-wider">Go Live</button>
+                            <button onClick={async () => { if(newRoomName.trim()){ await createRoom(newRoomName, createRoomType); setShowCreateModal(false); setNewRoomName(''); } }} className="flex-1 p-3.5 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:scale-105 transition-transform uppercase tracking-wider">Go Live</button>
                         </div>
                     </div>
                 </div>

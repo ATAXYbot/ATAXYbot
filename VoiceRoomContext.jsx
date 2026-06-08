@@ -2,9 +2,10 @@ import React, { createContext, useContext, useState } from 'react';
 
 export const VoiceRoomContext = createContext(null);
 
-export const VoiceRoomProvider = ({ children, tgUser, activeRoom, supabase }) => {
+export const VoiceRoomProvider = ({ children, tgUser, activeRoom, supabase, agoraClient, mutedSeats = {} }) => {
     // 1. Supabase Source of Truth for Room Participants
     const [roomParticipants, setRoomParticipants] = useState([]);
+    const [localAudioTrack, setLocalAudioTrack] = useState(null);
 
     const takeSeat = async (seatNum) => {
         if (!tgUser) return;
@@ -43,7 +44,6 @@ export const VoiceRoomProvider = ({ children, tgUser, activeRoom, supabase }) =>
 
             if (error) throw error;
             
-            // Success: Trigger Agora hardware / audio publishing here
         } catch (error) {
             console.error("Failed to take seat, reverting state:", error);
             
@@ -53,8 +53,58 @@ export const VoiceRoomProvider = ({ children, tgUser, activeRoom, supabase }) =>
         }
     };
 
+    // --- 1. SEAT-BASED AUDIO TRACK CONTROL ---
+    useEffect(() => {
+        const syncAgoraState = async () => {
+            if (!tgUser || !agoraClient) return;
+            
+            const tgId = String(tgUser.id);
+            const myParticipant = roomParticipants.find(p => String(p.user_id) === tgId);
+
+            if (myParticipant && myParticipant.seat_number !== null) {
+                const seatNum = myParticipant.seat_number;
+                
+                if (mutedSeats[seatNum]) {
+                    if (localAudioTrack) await localAudioTrack.setMuted(true);
+                } else {
+                    await agoraClient.setClientRole("host");
+                    if (!localAudioTrack) {
+                        const track = await window.AgoraRTC.createMicrophoneAudioTrack();
+                        await agoraClient.publish(track);
+                        setLocalAudioTrack(track);
+                    } else {
+                        await localAudioTrack.setMuted(false);
+                    }
+                }
+            } else {
+                await agoraClient.setClientRole("audience");
+            }
+        };
+        syncAgoraState();
+    }, [roomParticipants, mutedSeats, tgUser, agoraClient, localAudioTrack]);
+
+    // --- 2. FAIL-SAFE CLEANUP ON UNMOUNT ---
+    useEffect(() => {
+        return () => {
+            const cleanup = async () => {
+                if (!agoraClient) return;
+                try {
+                    if (localAudioTrack) {
+                        localAudioTrack.stop();
+                        localAudioTrack.close();
+                    }
+                    await agoraClient.unpublish();
+                    await agoraClient.leave();
+                } catch(e) {
+                    console.log("Safe exit bypassed hardware conflict: ", e);
+                }
+            };
+            cleanup();
+        };
+    }, [agoraClient, localAudioTrack]);
+
     return (
-        <VoiceRoomContext.Provider value={{ roomParticipants, setRoomParticipants, takeSeat }}>
+        <VoiceRoomContext.Provider value={{ roomParticipants, setRoomParticipants, takeSeat, localAudioTrack }}>
             {children}
         </VoiceRoomContext.Provider>
     );
