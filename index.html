@@ -1271,6 +1271,8 @@ INSTRUCTIONS:
             
             const [isMinimized, setIsMinimized] = useState(false);
 
+            const [currentMusic, setCurrentMusic] = useState(null);
+
             // --- ORPHANED ROOM CLEANUP ---
             useEffect(() => {
                 const handleBeforeUnload = () => {
@@ -1527,6 +1529,17 @@ INSTRUCTIONS:
                                 }
                                 setParticipants(currentParticipants);
                             })
+                            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                                recentlyLeftRef.current.delete(String(key));
+                                if (newPresences && newPresences.length > 0) {
+                                    if (String(key) !== String(tgUser.id)) {
+                                        const userName = newPresences[0].user_name || 'Someone';
+                                        setChatMessages(prev => [...prev, { isSystem: true, text: `${userName} entered`, time: Date.now() }]);
+                                    }
+                                    // Add to participants so they show up instantly without waiting for sync
+                                    setParticipants(prev => prev.some(p => String(p.user_id) === String(key)) ? prev : [...prev, newPresences[0]]);
+                                }
+                            })
                             .on('presence', { event: 'leave' }, ({ key }) => {
                                 setParticipants(prev => prev.filter(p => String(p.user_id) !== String(key)));
                             })
@@ -1626,6 +1639,9 @@ INSTRUCTIONS:
                                 if (payload.target_uid === String(tgUser.id)) {
                                     takeSeat(0, roomData.id);
                                 }
+                            })
+                            .on('broadcast', { event: 'music_status' }, ({ payload }) => {
+                                setCurrentMusic(payload);
                             })
                             .on('broadcast', { event: 'user_left' }, ({ payload }) => {
                                 setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
@@ -1750,6 +1766,7 @@ INSTRUCTIONS:
                         setLockedSeats({});
                         setMutedSeats({});
                         setIsMinimized(false);
+                        setCurrentMusic(null);
                     }
                 } catch (err) {
                     console.error("Safe leaveRoom failed:", err);
@@ -2015,7 +2032,7 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isConnecting };
+            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isConnecting, currentMusic, setCurrentMusic };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
@@ -2161,10 +2178,11 @@ INSTRUCTIONS:
             );
         };
 
-        const RoomSettingsModal = ({ activeRoom, onClose, onSave }) => {
+        const RoomSettingsModal = ({ activeRoom, onClose, onSave, currentMusic, onUpdateMusic }) => {
             const [name, setName] = useState(activeRoom.channel_name);
             const [password, setPassword] = useState(activeRoom.password || '');
             const [requireMic, setRequireMic] = useState(activeRoom.require_mic_request || false);
+            const [musicTitle, setMusicTitle] = useState(currentMusic?.title || '');
             const [isSubmitting, setIsSubmitting] = useState(false);
 
             const handleSubmit = async (e) => {
@@ -2198,6 +2216,13 @@ INSTRUCTIONS:
                                     </button>
                                 </div>
                             </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Currently Playing (Music)</label>
+                                <div className="flex gap-2">
+                                    <input type="text" value={musicTitle} onChange={e=>setMusicTitle(e.target.value)} placeholder="e.g. Lofi Study Beats" className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <button type="button" onClick={() => onUpdateMusic(musicTitle)} className="bg-[#00FFFF]/20 text-[#00FFFF] border border-[#00FFFF]/50 px-4 rounded-xl font-bold hover:bg-[#00FFFF] hover:text-[#010B1C] transition-colors shadow-[0_0_10px_rgba(0,255,255,0.2)]">Set</button>
+                                </div>
+                            </div>
                             <div className="flex gap-3 mt-6">
                                 <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
                                 <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Saving...' : 'Save'}</button>
@@ -2209,7 +2234,7 @@ INSTRUCTIONS:
         };
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
-            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {}, isConnecting } = voiceState;
+            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => {}, mutedSeats = {}, setMutedSeats = () => {}, isConnecting, currentMusic, setCurrentMusic } = voiceState;
             const [showActionModal, setShowActionModal] = useState(null);
             const [showParticipantsModal, setShowParticipantsModal] = useState(false);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -2348,6 +2373,13 @@ INSTRUCTIONS:
                 )
             };
 
+            const handleUpdateMusic = (title) => {
+                const payload = title ? { title, isPlaying: true } : null;
+                sendBroadcast('music_status', payload);
+                setCurrentMusic(payload);
+                safeAlert(title ? "Music status updated!" : "Music status cleared.");
+            };
+
             return (
                 <div className="flex-1 flex flex-col relative z-10">
                     <div className="px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(12px+env(safe-area-inset-top,0px))]">
@@ -2367,6 +2399,12 @@ INSTRUCTIONS:
                             <button onClick={() => !isConnecting && leaveRoom()} disabled={isConnecting} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isConnecting ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
                         </div>
                     </div>
+                    {currentMusic && (
+                        <div className="absolute top-[calc(70px+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 bg-[#021633]/80 backdrop-blur-md border border-[#00FFFF]/40 rounded-full px-4 py-1.5 flex items-center gap-2 z-20 shadow-[0_0_15px_rgba(0,255,255,0.2)] w-max max-w-[90%]">
+                            <i className="fa-solid fa-music text-[#00FFFF] animate-pulse text-[10px]"></i>
+                            <span className="text-[#E0F7FA] text-xs font-bold truncate">{currentMusic.title}</span>
+                        </div>
+                    )}
                     <div className="p-6">
                         <div className="flex justify-center gap-8 mb-8">
                             {renderSeat(0, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0), "Host", true)}
@@ -2384,12 +2422,21 @@ INSTRUCTIONS:
                     <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-24">
                         <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col justify-end">
                             <div className="flex flex-col gap-2">
-                                {chatMessages.map((msg, idx) => (
-                                    <div key={idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%]">
-                                        <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
-                                        <span className="text-white">{msg.text}</span>
-                                    </div>
-                                ))}
+                                {chatMessages.map((msg, idx) => {
+                                    if (msg.isSystem) {
+                                        return (
+                                            <div key={idx} className="bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm">
+                                                <i className="fa-solid fa-shoe-prints"></i> {msg.text}
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div key={idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%]">
+                                            <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
+                                            <span className="text-white">{msg.text}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         {audience.length > 0 && (
@@ -2623,7 +2670,7 @@ INSTRUCTIONS:
                             </div>
                         </div>
                     )}
-                    {showSettingsModal && <RoomSettingsModal activeRoom={activeRoom} onClose={() => setShowSettingsModal(false)} onSave={updateRoomSettings} />}
+                    {showSettingsModal && <RoomSettingsModal activeRoom={activeRoom} onClose={() => setShowSettingsModal(false)} onSave={updateRoomSettings} currentMusic={currentMusic} onUpdateMusic={handleUpdateMusic} />}
                 </div>
             );
         };
