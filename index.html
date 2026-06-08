@@ -1201,13 +1201,18 @@ INSTRUCTIONS:
             const [participants, setParticipants] = useState([]);
             const participantsRef = useRef([]);
             useEffect(() => { participantsRef.current = participants; }, [participants]);
-            const [localAudioTrack, setLocalAudioTrack] = useState(null);
+            
+            // 🚀 INSTANT SYNC REFS: Eliminates 1-render desync crashes on fast seat hopping
+            const [localAudioTrackState, setLocalAudioTrackState] = useState(null);
             const trackRef = useRef(null);
-            useEffect(() => { trackRef.current = localAudioTrack; }, [localAudioTrack]);
+            const setLocalAudioTrack = (val) => { trackRef.current = val; setLocalAudioTrackState(val); };
+            const localAudioTrack = localAudioTrackState;
 
-            const [isMuted, setIsMuted] = useState(true);
+            const [isMutedState, setIsMutedState] = useState(true);
             const isMutedRef = useRef(true);
-            useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+            const setIsMuted = (val) => { isMutedRef.current = val; setIsMutedState(val); };
+            const isMuted = isMutedState;
+            
             const [activeSpeakers, setActiveSpeakers] = useState({});
             const [realtimeChannel, setRealtimeChannel] = useState(null);
             const channelRef = useRef(null);
@@ -1403,8 +1408,8 @@ INSTRUCTIONS:
                     agoraClient.on("user-left", async (remoteUser) => {
                         try {
                             const userIdStr = String(remoteUser.uid);
-                            // Clean up our visual grid array safely
-                            setParticipants(prev => prev.map(s => String(s.user_id) === userIdStr ? { ...s, seat_number: null, is_muted: true } : s));
+                            // Instantly remove from UI
+                            setParticipants(prev => prev.filter(s => String(s.user_id) !== userIdStr));
                         } catch (err) {
                             console.error("Safely bypassed user-left exception:", err);
                         }
@@ -1420,24 +1425,35 @@ INSTRUCTIONS:
                             setActiveSpeakers(prev => {
                                 const newMap = { ...prev };
                                 let changed = false;
+                                
+                                const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                const myUidStr = String(tgData?.id || "1001");
+
                                 volumes.forEach(v => { 
-                                    const p = participantsRef.current.find(pt => String(pt.user_id) === String(v.uid));
+                                    const uidStr = String(v.uid);
+                                    const p = participantsRef.current.find(pt => String(pt.user_id) === uidStr);
+                                    
                                     let isSoftMuted = p ? p.is_muted : false;
+                                    // STRICT LOCAL MUTE OVERRIDE: Prevent ghost voice ring when speaking loudly
+                                    if (uidStr === myUidStr) {
+                                        isSoftMuted = isMutedRef.current;
+                                    }
+
                                     let notSeated = true;
                                     if (p && p.seat_number !== null && p.seat_number !== undefined) {
                                         if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
                                         notSeated = false;
                                     }
                                     const level = (!isSoftMuted && !notSeated && v.level > 5) ? v.level : 0; 
-                                    if ((prev[v.uid] || 0) !== level) {
-                                        newMap[v.uid] = level;
+                                    if ((prev[uidStr] || 0) !== level) {
+                                        newMap[uidStr] = level;
                                         changed = true;
                                     }
                                 });
                                 // Zero out anyone who stopped speaking completely
-                                Object.keys(prev).forEach(uid => {
-                                    if (prev[uid] > 0 && !volumes.some(v => String(v.uid) === uid)) {
-                                        newMap[uid] = 0;
+                                Object.keys(prev).forEach(uidStr => {
+                                    if (prev[uidStr] > 0 && !volumes.some(v => String(v.uid) === uidStr)) {
+                                        newMap[uidStr] = 0;
                                         changed = true;
                                     }
                                 });
@@ -1464,13 +1480,41 @@ INSTRUCTIONS:
                             .on('presence', { event: 'sync' }, () => {
                                 const state = channel.presenceState();
                                 const currentParticipants = [];
+                                const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                const myIdStr = String(tgData?.id || "1001");
+                                let localUserFoundInState = false;
+
                                 for (const id in state) {
                                     if (state[id] && state[id].length > 0) {
-                                        const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
-                                        currentParticipants.push(seatedConnection || state[id][0]);
+                                        if (String(id) === myIdStr) {
+                                            // 🛡️ ANTI-RUBBERBANDING: Trust local refs for the local user instantly
+                                            localUserFoundInState = true;
+                                            currentParticipants.push({
+                                                ...state[id][0],
+                                                seat_number: userSeatRef.current,
+                                                is_muted: isMutedRef.current
+                                            });
+                                        } else {
+                                            const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
+                                            currentParticipants.push(seatedConnection || state[id][0]);
+                                        }
+                                    }
+                                }
+                                
+                                if (!localUserFoundInState) {
+                                    const localP = participantsRef.current.find(p => String(p.user_id) === myIdStr);
+                                    if (localP) {
+                                        currentParticipants.push({
+                                            ...localP,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: isMutedRef.current
+                                        });
                                     }
                                 }
                                 setParticipants(currentParticipants);
+                            })
+                            .on('presence', { event: 'leave' }, ({ key }) => {
+                                setParticipants(prev => prev.filter(p => String(p.user_id) !== String(key)));
                             })
                             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
                                 if (payload.new.is_live === false) {
@@ -1671,6 +1715,7 @@ INSTRUCTIONS:
                     }
                     if (!isUnloading) {
                         setActiveRoom(null);
+                        setParticipants([]);
                         setLocalAudioTrack(null);
                         setIsMuted(true);
                         setClient(null);
@@ -2216,15 +2261,15 @@ INSTRUCTIONS:
                 // --- Dynamic Audio Spark Visualizer Logic ---
                 const speakerLevel = (occupant && activeSpeakers[occupant.user_id]) || 0;
                 const speaking = speakerLevel > 5;
-                // speakerLevel from Agora is 0 to 100.
-                const intensity = Math.min(speakerLevel / 100, 1);
+                // speakerLevel from Agora is 0 to 100. Normalize so 5-100 becomes ~0-1
+                const intensity = Math.min((speakerLevel - 5) / 95, 1);
                 
                 const baseScale = isLarge ? 1.05 : 1.1;
-                const dynamicScale = speaking ? baseScale + (intensity * 0.2) : 1; 
-                const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
-                const ring1Scale = speaking ? dynamicScale * 1.15 : 0.8;
-                const ring2Scale = speaking ? dynamicScale * 1.35 : 0.8;
-                const rotateDeg = speaking ? intensity * 180 : 0;
+                const dynamicScale = speaking ? baseScale + (intensity * 0.25) : 1; 
+                const glowOpacity = speaking ? 0.4 + (intensity * 0.6) : 0;
+                const ring1Scale = speaking ? dynamicScale * 1.2 : 0.8;
+                const ring2Scale = speaking ? dynamicScale * 1.45 : 0.8;
+                const rotateDeg = speaking ? intensity * 360 : 0;
 
                 const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : occupant?.photo_url;
                 
@@ -2483,7 +2528,14 @@ INSTRUCTIONS:
                                 <p className="text-sm text-[#A4DFE6] mb-6">The host invited you to take Seat {pendingInvite.seatNum}. Do you accept?</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
-                                    <button onClick={() => { takeSeat(pendingInvite.seatNum); setPendingInvite(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
+                                    <button onClick={() => { 
+                                        if (lockedSeats[pendingInvite.seatNum]) {
+                                            sendBroadcast('seat_lock', { seatNum: pendingInvite.seatNum, isLocked: false });
+                                            setLockedSeats(prev => ({...prev, [pendingInvite.seatNum]: false}));
+                                        }
+                                        takeSeat(pendingInvite.seatNum); 
+                                        setPendingInvite(null); 
+                                    }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
                                 </div>
                             </div>
                         </div>
