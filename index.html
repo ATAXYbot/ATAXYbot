@@ -1231,8 +1231,12 @@ INSTRUCTIONS:
             };
             const isProcessing = isProcessingState;
 
-            // 🛡️ GHOST BUSTER: Prevents reappearance of users due to sync race conditions
-            const recentlyLeftRef = useRef(new Set());
+            // 🛡️ GHOST BUSTER: Anti-Rubberbanding. Prevents reappearance of old states due to sync race conditions
+            const recentlyChangedRef = useRef(new Set());
+            const markRecentlyChanged = (uid) => {
+                recentlyChangedRef.current.add(String(uid));
+                setTimeout(() => recentlyChangedRef.current.delete(String(uid)), 3000);
+            };
 
             const toggleSpeaker = () => {
                 setIsSpeakerMuted(prev => !prev);
@@ -1251,17 +1255,17 @@ INSTRUCTIONS:
                     
                     try {
                         if (hasSeat) {
+                            const seatIsMuted = mutedSeats[myParticipant.seat_number] || false;
+                            const effectiveMute = isMutedRef.current || seatIsMuted;
+
                             if (!trackRef.current) {
                                 await clientRef.current.setClientRole("host");
                                 const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
-                                if (myParticipant.is_muted) await track.setMuted(true);
+                                await track.setMuted(effectiveMute);
                                 setLocalAudioTrack(track);
                                 await clientRef.current.publish([track]);
                             } else {
-                                if (myParticipant.is_muted !== isMutedRef.current) {
-                                    await trackRef.current.setMuted(myParticipant.is_muted);
-                                    setIsMuted(myParticipant.is_muted);
-                                }
+                                await trackRef.current.setMuted(effectiveMute);
                             }
                         } else {
                             if (trackRef.current) {
@@ -1278,42 +1282,7 @@ INSTRUCTIONS:
                     }
                 };
                 syncHardwareWithState();
-            }, [participants, tgUser]);
-
-            // 1. LOCAL MICROPHONE LAW (Enforce seat-based muting on the local user)
-            useEffect(() => {
-                const enforceLocalMute = async () => {
-                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
-                    const userIdString = String(tgData?.id || "1001");
-                    const myParticipant = participants.find(p => String(p.user_id) === userIdString);
-                    
-                    if (myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined) {
-                        const seatNum = myParticipant.seat_number;
-                        if (mutedSeats[seatNum] && trackRef.current && !isMutedRef.current) {
-                            try {
-                                await trackRef.current.setMuted(true);
-                                setIsMuted(true);
-                                
-                                setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, is_muted: true } : p));
-                                
-                                if (channelRef.current) {
-                                    channelRef.current.track({
-                                        user_id: userIdString,
-                                        user_name: tgData?.first_name || tgData?.username || "Unknown",
-                                        photo_url: tgData?.photo_url || null,
-                                        seat_number: seatNum,
-                                        is_muted: true
-                                    });
-                                    sendBroadcast('mute_toggle', { target_uid: userIdString, isMuted: true });
-                                }
-                            } catch (e) {
-                                console.error("Local mute enforcement failed:", e);
-                            }
-                        }
-                    }
-                };
-                enforceLocalMute();
-            }, [mutedSeats, participants, tgUser]);
+            }, [participants, tgUser, mutedSeats]);
 
             // 🛡️ SOFT MUTE ENGINE (App-level volume control instead of hardware track manipulation)
             useEffect(() => {
@@ -1503,11 +1472,8 @@ INSTRUCTIONS:
                     agoraClient.on("user-left", async (remoteUser) => {
                         try {
                             const userIdStr = String(remoteUser.uid);
-                            // 🛡️ GHOST BUSTER: Add to recently left list to prevent sync race condition
-                            recentlyLeftRef.current.add(userIdStr);
-                            setTimeout(() => {
-                                recentlyLeftRef.current.delete(userIdStr);
-                            }, 15000); // Clear after 15s
+                            // 🛡️ GHOST BUSTER: Add to recently changed list to prevent sync race condition
+                            markRecentlyChanged(userIdStr);
 
                             // Instantly remove from UI
                             setParticipants(prev => prev.filter(s => String(s.user_id) !== userIdStr));
@@ -1582,37 +1548,33 @@ INSTRUCTIONS:
                             .on('presence', { event: 'sync' }, () => {
                                 const state = channel.presenceState();
                                 const currentParticipants = [];
-                                const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
-                                const myIdStr = String(tgData?.id || "1001");
-                                let localUserFoundInState = false;
 
                                 for (const id in state) {
-                                    // 🛡️ GHOST BUSTER: Do not re-add users who we know have recently left.
-                                    if (recentlyLeftRef.current.has(String(id))) {
+                                    // 🛡️ GHOST BUSTER: Do not overwrite users who recently changed state locally.
+                                    if (recentlyChangedRef.current.has(String(id))) {
+                                        const localP = participantsRef.current.find(p => String(p.user_id) === String(id));
+                                        if (localP) currentParticipants.push(localP);
                                         continue;
                                     }
 
                                     if (state[id] && state[id].length > 0) {
-                                        if (String(id) === myIdStr) {
-                                            // 🛡️ ANTI-RUBBERBANDING: Trust local refs for the local user instantly
-                                            localUserFoundInState = true;
-                                            currentParticipants.push({
-                                                ...state[id][0],
-                                                seat_number: userSeatRef.current,
-                                                is_muted: isMutedRef.current
-                                            });
-                                        } else {
-                                            const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
-                                            currentParticipants.push(seatedConnection || state[id][0]);
-                                        }
+                                        const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
+                                        currentParticipants.push(seatedConnection || state[id][0]);
                                     }
                                 }
                                 
-                                if (!localUserFoundInState) {
+                                // Ensure local user is always present if recently changed
+                                const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                const myIdStr = String(tgData?.id || "1001");
+                                if (recentlyChangedRef.current.has(myIdStr) && !currentParticipants.some(p => String(p.user_id) === myIdStr)) {
                                     const localP = participantsRef.current.find(p => String(p.user_id) === myIdStr);
                                     if (localP) {
+                                        currentParticipants.push(localP);
+                                    } else {
                                         currentParticipants.push({
-                                            ...localP,
+                                            user_id: myIdStr,
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
                                             seat_number: userSeatRef.current,
                                             is_muted: isMutedRef.current
                                         });
@@ -1621,7 +1583,7 @@ INSTRUCTIONS:
                                 setParticipants(currentParticipants);
                             })
                             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                                recentlyLeftRef.current.delete(String(key));
+                                if (recentlyChangedRef.current.has(String(key))) return; // Ignored if we caused it locally
                                 if (newPresences && newPresences.length > 0) {
                                     if (String(key) !== String(tgUser.id)) {
                                         const userName = newPresences[0].user_name || 'Someone';
@@ -1634,10 +1596,11 @@ INSTRUCTIONS:
                                         }, 4000);
                                     }
                                     // Add to participants so they show up instantly without waiting for sync
-                                    setParticipants(prev => prev.some(p => String(p.user_id) === String(key)) ? prev : [...prev, newPresences[0]]);
+                                    setParticipants(prev => prev.some(p => String(p.user_id) === String(key)) ? prev.map(p => String(p.user_id) === String(key) ? newPresences[0] : p) : [...prev, newPresences[0]]);
                                 }
                             })
                             .on('presence', { event: 'leave' }, ({ key }) => {
+                                if (recentlyChangedRef.current.has(String(key))) return;
                                 setParticipants(prev => prev.filter(p => String(p.user_id) !== String(key)));
                             })
                             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
@@ -1799,6 +1762,8 @@ INSTRUCTIONS:
                     userSeatRef.current = null;
                     setIsMuted(true);
 
+                    markRecentlyChanged(userIdString);
+
                     // 🚀 EXPLICIT BROADCAST BEFORE DISCONNECTING FOR INSTANT UI REMOVAL
                     try {
                         if (channelRef.current) {
@@ -1934,21 +1899,21 @@ INSTRUCTIONS:
                     const photo_url = tgData?.photo_url || "";
                     const userIdString = String(tgData?.id || "1001");
 
-                    // 🛡️ As requested: Muting is tied to the seats, not the users.
-                    // Whenever a user changes seats, they are instantly given a fresh unmuted state.
-                    const finalMuteState = mutedSeatsRef.current[seatIdx] ? true : false;
+                    // 🛡️ WePlay Replica: Personal mute state is preserved when hopping seats.
+                    // The seat's mute state is an independent layer applied on top.
+                    const currentMute = isMutedRef.current;
                     
                     userSeatRef.current = seatIdx;
                     
-                    setIsMuted(finalMuteState);
+                    markRecentlyChanged(userIdString);
 
                     if (supabase && channelRef.current) {
                         setParticipants(prev => {
                             const exists = prev.some(p => String(p.user_id) === userIdString);
                             if (exists) {
-                                return prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: seatIdx, is_muted: finalMuteState } : p);
+                                return prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: seatIdx, is_muted: currentMute } : p);
                             } else {
-                                return [...prev, { user_id: userIdString, user_name: username, photo_url: photo_url, seat_number: seatIdx, is_muted: finalMuteState }];
+                                return [...prev, { user_id: userIdString, user_name: username, photo_url: photo_url, seat_number: seatIdx, is_muted: currentMute }];
                             }
                         });
                         
@@ -1958,12 +1923,12 @@ INSTRUCTIONS:
                                 user_name: username,
                                 photo_url: photo_url,
                                 seat_number: seatIdx,
-                                is_muted: finalMuteState
+                                is_muted: currentMute
                             });
                         } catch(e) {}
                         
                         // Instantly notify everyone in the room of the new seat without waiting for network sync
-                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: seatIdx, isMuted: finalMuteState });
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: seatIdx, isMuted: currentMute });
                         
                         const rId = roomId || roomRef.current?.id;
                         if (seatIdx === 0 && rId) {
@@ -1994,6 +1959,8 @@ INSTRUCTIONS:
                     userSeatRef.current = null;
                     setIsMuted(true);
                     
+                    markRecentlyChanged(userIdString);
+
                     // 🚀 INSTANT PUBLIC UPDATE
                     if (supabase && channelRef.current) {
                         setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: null, is_muted: true } : p));
@@ -2049,6 +2016,8 @@ INSTRUCTIONS:
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
                     
+                    markRecentlyChanged(userIdString);
+
                     setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, is_muted: shouldMute } : p));
                     
                     if (channelRef.current) {
@@ -2196,7 +2165,10 @@ INSTRUCTIONS:
             const [showCreateModal, setShowCreateModal] = useState(false);
             const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
             const [isRefreshing, setIsRefreshing] = useState(false);
+            const [dashboardFilter, setDashboardFilter] = useState('active');
             
+            const tgUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
+            const myAdvanceRoom = availableRooms.find(r => String(r.owner_id) === tgUserId && (r.room_type === 'permanent' || r.room_type === 'advance'));
             
             const handleRefresh = async () => {
                 setIsRefreshing(true);
@@ -2213,42 +2185,94 @@ INSTRUCTIONS:
                 }
             };
 
+            let displayRooms = [];
+            if (dashboardFilter === 'active') {
+                displayRooms = availableRooms.filter(r => r.id !== myAdvanceRoom?.id);
+            } else {
+                displayRooms = []; // Mock recent/joined
+            }
+
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white">
                     <div className="p-4 flex-1 overflow-y-auto">
-                        <h2 className="text-2xl font-black mb-1 text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
-                        <p className="text-xs text-[#A4DFE6] mb-5">Join active voice rooms to discuss and study live.</p>
-                        
-                        <div className="flex gap-2 mb-6">
-                            <button onClick={handleRefresh} className="bg-[#021633] text-[#00FFFF] border border-[#00FFFF]/30 hover:bg-[#0AE0D0]/20 py-3 px-4 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center active:scale-95 shrink-0">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-black text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
+                            <button onClick={handleRefresh} className="text-[#00FFFF] hover:text-white transition-colors p-2">
                                 <i className={`fa-solid fa-sync-alt ${isRefreshing ? 'animate-spin' : ''}`}></i>
                             </button>
-                            <button onClick={() => setShowCreateModal(true)} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95">
-                                <i className="fa-solid fa-plus"></i> Create Room
-                            </button>
                         </div>
-
-                        <div className="space-y-4 pb-20">
-                            {availableRooms.length === 0 ? (
-                                <div className="text-center py-10 text-gray-500">
-                                    <i className="fa-solid fa-headset text-4xl mb-3 opacity-50"></i>
-                                    <p>No active voice rooms right now.</p>
-                                    <p className="text-xs mt-1">Be the first to create one!</p>
+                        
+                        {/* Pinned Advance Room Section */}
+                        <div className="mb-6">
+                            {myAdvanceRoom ? (
+                                <div onClick={() => handleJoinClick(myAdvanceRoom)} className={`bg-gradient-to-br from-[#1a1c02] to-[#010B1C] rounded-2xl p-4 transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)]`}>
+                                    <span className="absolute top-0 right-0 bg-gradient-to-r from-[#D4AF37] to-[#F9D33A] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">My Advance Room</span>
+                                    <div className="relative z-10 flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(212,175,55,0.5)] overflow-hidden">
+                                                {myAdvanceRoom.room_dp_url ? <img src={myAdvanceRoom.room_dp_url} className="w-full h-full object-cover" /> : myAdvanceRoom.channel_name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                    {myAdvanceRoom.channel_name} 
+                                                    {myAdvanceRoom.password && <i className="fa-solid fa-lock text-[#F9D33A] text-xs"></i>}
+                                                </h3>
+                                                <div className="flex text-sm text-[#F9D33A] gap-3">
+                                                    <span><i className="fa-solid fa-crown mr-1"></i> Host: You</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:text-[#010B1C] transition-colors">
+                                            <i className="fa-solid fa-arrow-right"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
-                                availableRooms.map(room => {
-                                    const isPremium = room.room_type === 'permanent';
+                                <button onClick={() => setShowCreateModal(true)} className="w-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F9D33A]/10 hover:from-[#D4AF37]/30 hover:to-[#F9D33A]/20 border border-[#D4AF37]/50 border-dashed py-4 rounded-2xl font-bold transition-all text-sm uppercase tracking-wider text-[#F9D33A] flex flex-col items-center justify-center gap-2">
+                                    <i className="fa-solid fa-crown text-2xl drop-shadow-[0_0_8px_rgba(249,211,58,0.5)]"></i>
+                                    Create Premium Advance Room
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Navigation Buttons */}
+                        <div className="flex gap-2 mb-6 bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20">
+                            <button onClick={() => setDashboardFilter('active')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'active' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>Active</button>
+                            <button onClick={() => setDashboardFilter('recent')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'recent' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>Recent</button>
+                            <button onClick={() => setDashboardFilter('joined')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'joined' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>Joined</button>
+                        </div>
+                        
+                        {!myAdvanceRoom && (
+                            <button onClick={() => setShowCreateModal(true)} className="w-full mb-6 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95">
+                                <i className="fa-solid fa-plus"></i> Create Temporary Room
+                            </button>
+                        )}
+
+                        <div className="space-y-4 pb-20">
+                            {displayRooms.length === 0 ? (
+                                <div className="text-center py-10 text-gray-500">
+                                    <i className="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
+                                    <p>No rooms found for this filter.</p>
+                                </div>
+                            ) : (
+                                displayRooms.map(room => {
+                                    const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
                                     return (
                                         <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
                                             {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
                                             <div className="relative z-10 flex justify-between items-center">
-                                                <div>
-                                                    <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
-                                                        {room.channel_name} 
-                                                        {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
-                                                    </h3>
-                                                    <div className="flex text-sm text-[#A4DFE6]">
-                                                        <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {room.host_user_id.substring(0,5)}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(0,255,255,0.5)] overflow-hidden">
+                                                        {room.room_dp_url ? <img src={room.room_dp_url} className="w-full h-full object-cover" /> : room.channel_name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                            {room.channel_name} 
+                                                            {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                        </h3>
+                                                        <div className="flex text-sm text-[#A4DFE6] gap-3">
+                                                            <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {room.host_user_id.substring(0,5)}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
@@ -2488,6 +2512,12 @@ INSTRUCTIONS:
                             <button onClick={() => !isProcessing && leaveRoom()} disabled={isProcessing} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
                         </div>
                     </div>
+                    {activeRoom.announcement && (
+                        <div className="mx-4 mt-3 p-3 bg-[#021633]/80 rounded-xl border border-[#D4AF37]/40 text-xs text-[#F9D33A] shadow-[0_0_10px_rgba(212,175,55,0.2)] backdrop-blur flex items-start gap-2 animate-in slide-in-from-top-2 z-20 relative">
+                            <i className="fa-solid fa-bullhorn mt-0.5 animate-pulse"></i>
+                            <span>{activeRoom.announcement}</span>
+                        </div>
+                    )}
                     {currentMusic && (
                         <div className="absolute top-[calc(70px+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 bg-[#021633]/80 backdrop-blur-md border border-[#00FFFF]/40 rounded-full px-4 py-1.5 flex items-center gap-2 z-20 shadow-[0_0_15px_rgba(0,255,255,0.2)] w-max max-w-[90%]">
                             <i className="fa-solid fa-music text-[#00FFFF] animate-pulse text-[10px]"></i>
