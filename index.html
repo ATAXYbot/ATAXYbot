@@ -1581,6 +1581,10 @@ INSTRUCTIONS:
                                     }
                                 }
                                 setParticipants(currentParticipants);
+
+                                if ((roomData.room_type === 'advance' || roomData.room_type === 'permanent') && !currentParticipants.some(p => String(p.user_id) === String(roomData.host_user_id))) {
+                                    setLockedSeats(prev => ({ ...prev, 1:true, 2:true, 3:true, 4:true, 5:true, 6:true, 7:true, 8:true, 9:true }));
+                                }
                             })
                             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
                                 if (recentlyChangedRef.current.has(String(key))) return; // Ignored if we caused it locally
@@ -1679,6 +1683,7 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     stepDown();
+                                    safeAlert("You have been moved to the audience by the host.");
                                 } else {
                                     setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: null, is_muted: true } : p));
                                 }
@@ -1698,6 +1703,7 @@ INSTRUCTIONS:
                             .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
                                     takeSeat(0, roomData.id);
+                                    safeAlert("The previous host stepped down. You have been promoted to Host!");
                                 }
                             })
                             .on('broadcast', { event: 'music_status' }, ({ payload }) => {
@@ -1705,6 +1711,15 @@ INSTRUCTIONS:
                             })
                             .on('broadcast', { event: 'user_left' }, ({ payload }) => {
                                 setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
+                            })
+                            .on('broadcast', { event: 'advance_host_left' }, () => {
+                                if (String(tgUser.id) !== String(roomData.host_user_id)) {
+                                    if (userSeatRef.current !== null && userSeatRef.current !== undefined) {
+                                        stepDown();
+                                        safeAlert("The host has left the Advance Room. All users have been moved to the audience.");
+                                    }
+                                }
+                                setLockedSeats(prev => ({ ...prev, 1:true, 2:true, 3:true, 4:true, 5:true, 6:true, 7:true, 8:true, 9:true }));
                             })
                             .subscribe(async (status) => {
                                 if (status === 'SUBSCRIBED') {
@@ -1794,23 +1809,27 @@ INSTRUCTIONS:
                         try { await supabase.from('room_participants').delete().eq('user_id', userIdString).eq('room_id', roomId); } catch(e) {}
                         
                         if (String(r.host_user_id) === userIdString) {
-                            const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
-                            if (remainingMics.length > 0) {
-                                const nextHost = remainingMics[0];
-                                supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
-                                sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
-                            } else {
-                                const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
-                                if (audienceMembers.length > 0) {
-                                    const nextHost = audienceMembers[0];
+                            if (r.room_type === 'temporary') {
+                                const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                                if (remainingMics.length > 0) {
+                                    const nextHost = remainingMics[0];
                                     supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
                                     sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                                 } else {
-                                    if (r.room_type === 'temporary') {
-                                        supabase.from('voice_rooms').delete().eq('id', roomId).then();
+                                    const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
+                                    if (audienceMembers.length > 0) {
+                                        const nextHost = audienceMembers[0];
+                                        supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
+                                        sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                                     } else {
-                                        supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', roomId).then();
+                                        supabase.from('voice_rooms').delete().eq('id', roomId).then();
                                     }
+                                }
+                            } else if (r.room_type === 'advance' || r.room_type === 'permanent') {
+                                // Advance Room: Host left the room
+                                // Normal users lift up automatically and seats lock
+                                if (channelRef.current) {
+                                    try { await channelRef.current.send({ type: 'broadcast', event: 'advance_host_left', payload: {} }); } catch(e) {}
                                 }
                             }
                         }
@@ -1980,16 +1999,14 @@ INSTRUCTIONS:
                     
                     // Server background tasks (Ownership transfer)
                     if (r && String(r.host_user_id) === userIdString) {
-                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
-                        if (remainingMics.length > 0) {
-                            const nextHost = remainingMics[0];
-                            try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
-                            sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
-                        } else {
-                            if (r.room_type === 'temporary') {
-                                try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch(e) {}
+                        if (r.room_type === 'temporary') {
+                            const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                            if (remainingMics.length > 0) {
+                                const nextHost = remainingMics[0];
+                                try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
+                                sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                             } else {
-                                try { supabase.from('voice_rooms').update({ is_live: false, host_user_id: String(r.owner_id) }).eq('id', r.id).then(); } catch(e) {}
+                                try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch(e) {}
                             }
                         }
                     }
@@ -2385,8 +2402,8 @@ INSTRUCTIONS:
             const handleSeatClick = (seatNum, occupant) => {
                 if (occupant) {
                     if (String(occupant.user_id) === currentUserId) {
-                        if (isHost) {
-                            safeAlert("As the host, your seat is permanently fixed.");
+                        if (isHost && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent')) {
+                            safeAlert("As the host of an Advance Room, your seat is permanently yours.");
                         } else {
                             setShowActionModal({ type: 'self' });
                         }
@@ -2418,6 +2435,7 @@ INSTRUCTIONS:
 
             const renderSeat = (seatNum, occupant, label, isLarge=false) => {
                 if (occupant && !occupant.user_id) return null; // Safe guard
+                const isOfflineHost = occupant?.is_offline_host;
                 const isMe = String(occupant?.user_id) === currentUserId;
                 
                 // --- Dynamic Audio Spark Visualizer Logic ---
@@ -2433,7 +2451,7 @@ INSTRUCTIONS:
                 const ring2Scale = speaking ? dynamicScale * 1.45 : 0.8;
                 const rotateDeg = speaking ? intensity * 360 : 0;
 
-                const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : occupant?.photo_url;
+                const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : (isOfflineHost ? activeRoom.room_dp_url : occupant?.photo_url);
                 
                 // 🛡️ SAFE MUTE CHECK: Read directly from Supabase Presence
                 let isOccupantMuted = false;
@@ -2445,7 +2463,7 @@ INSTRUCTIONS:
                 const isSeatMuted = mutedSeats[seatNum];
                 
                 // 🛡️ SAFE OCCUPANT NAME: Prevent ReferenceError crashes
-                const occupantName = occupant ? (occupant.user_name || "Unknown") : (isLocked ? 'Locked' : label);
+                const occupantName = occupant ? (isOfflineHost ? 'Host' : (occupant.user_name || "Unknown")) : (isLocked ? 'Locked' : label);
                 
                 return (
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
@@ -2463,11 +2481,20 @@ INSTRUCTIONS:
                                         {occupantName.charAt(0).toUpperCase()}
                                     </div>
                                 )}
-                                {((isMe ? isMuted : isOccupantMuted) || isSeatMuted) ? (
+                                {isOfflineHost && (
+                                    <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-20 overflow-hidden">
+                                        <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded-full backdrop-blur-sm">Left</span>
+                                    </div>
+                                )}
+                                {isSeatMuted ? (
+                                    <div className="absolute -bottom-1 -right-1 bg-red-900/90 rounded-full w-6 h-6 flex items-center justify-center border-2 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] z-20">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white"></i>
+                                    </div>
+                                ) : ((isMe ? isMuted : isOccupantMuted) ? (
                                     <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-20">
                                         <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
                                     </div>
-                                ) : null}
+                                ) : null)}
                             </div>
                         ) : (
                             <div className="relative group">
@@ -2475,8 +2502,8 @@ INSTRUCTIONS:
                                     <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
                                 </div>
                                 {isSeatMuted && (
-                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-lg z-10">
-                                        <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
+                                    <div className="absolute -bottom-1 -right-1 bg-red-900/90 rounded-full w-6 h-6 flex items-center justify-center border-2 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white"></i>
                                     </div>
                                 )}
                             </div>
@@ -2526,7 +2553,11 @@ INSTRUCTIONS:
                     )}
                     <div className="p-6">
                         <div className="flex justify-center gap-8 mb-8">
-                            {renderSeat(0, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0), "Host", true)}
+                            {renderSeat(0, 
+                                participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0) || 
+                                ((activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && !participants.some(p => String(p.user_id) === String(activeRoom.host_user_id)) ? { is_offline_host: true, user_id: activeRoom.host_user_id, user_name: "Host" } : undefined), 
+                                "Host", true
+                            )}
                             {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 1), "Partner", true)}
                         </div>
                         <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
@@ -2544,8 +2575,8 @@ INSTRUCTIONS:
                                 {chatMessages.map((msg, idx) => {
                                     if (msg.isSystem) {
                                         return (
-                                            <div key={msg.id || idx} className="bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm animate-in fade-in zoom-in duration-300">
-                                                <i className="fa-solid fa-shoe-prints"></i> {msg.text}
+                                            <div key={msg.id || idx} className={`bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm animate-in fade-in zoom-in duration-300 ${msg.type === 'entry' ? 'bg-gradient-to-r from-[#00FFFF]/20 to-blue-500/20 text-[#00FFFF] border-[#00FFFF]/40 shadow-[0_0_10px_rgba(0,255,255,0.2)] font-bold' : ''}`}>
+                                                <i className={`fa-solid ${msg.type === 'entry' ? 'fa-plane-arrival' : 'fa-shoe-prints'}`}></i> {msg.text}
                                             </div>
                                         );
                                     }
