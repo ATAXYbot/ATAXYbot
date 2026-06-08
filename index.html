@@ -1706,6 +1706,9 @@ INSTRUCTIONS:
                                     safeAlert("The previous host stepped down. You have been promoted to Host!");
                                 }
                             })
+                            .on('broadcast', { event: 'host_transfer_instant' }, ({ payload }) => {
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: payload.host_uid } : prev);
+                            })
                             .on('broadcast', { event: 'music_status' }, ({ payload }) => {
                                 setCurrentMusic(payload);
                             })
@@ -1814,13 +1817,17 @@ INSTRUCTIONS:
                                 if (remainingMics.length > 0) {
                                     const nextHost = remainingMics[0];
                                     supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
+                                    setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
                                     sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                    sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                                 } else {
                                     const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
                                     if (audienceMembers.length > 0) {
                                         const nextHost = audienceMembers[0];
                                         supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
+                                        setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
                                         sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                        sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                                     } else {
                                         supabase.from('voice_rooms').delete().eq('id', roomId).then();
                                     }
@@ -1952,6 +1959,8 @@ INSTRUCTIONS:
                         const rId = roomId || roomRef.current?.id;
                         if (seatIdx === 0 && rId) {
                             try { await supabase.from('voice_rooms').update({ host_user_id: userIdString }).eq('id', rId); } catch(e) {}
+                            setActiveRoom(prev => prev ? { ...prev, host_user_id: userIdString } : prev);
+                            sendBroadcast('host_transfer_instant', { host_uid: userIdString });
                         }
                     }
                 } catch (e) { 
@@ -2004,7 +2013,9 @@ INSTRUCTIONS:
                             if (remainingMics.length > 0) {
                                 const nextHost = remainingMics[0];
                                 try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
                                 sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                             } else {
                                 try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch(e) {}
                             }
