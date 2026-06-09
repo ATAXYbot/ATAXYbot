@@ -5,7 +5,16 @@ import { createClient } from '@supabase/supabase-js';
 // Initialize Supabase
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kwzpnupjtvfrevpwfaao.supabase.co';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_...';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    realtime: {
+        worker: true,
+        heartbeatCallback: (status) => {
+            if (status === 'disconnected') {
+                try { supabase.realtime.connect(); } catch (e) { console.error("Reconnect failed", e); }
+            }
+        }
+    }
+});
 
 export default function VoiceRoomTab({ tgUser }) {
     const currentUserId = String(tgUser?.id || Math.floor(Math.random() * 10000));
@@ -24,6 +33,7 @@ export default function VoiceRoomTab({ tgUser }) {
     const [showParticipantsModal, setShowParticipantsModal] = useState(false);
     const chatEndRef = useRef(null);
     
+    const [fullScreenImage, setFullScreenImage] = useState(null);
     const [isLocalMuted, setIsLocalMuted] = useState(true);
 
     useEffect(() => {
@@ -181,15 +191,16 @@ export default function VoiceRoomTab({ tgUser }) {
         await supabase.from('room_seats').update({ is_muted_by_host: !currentMuted }).eq('room_id', activeRoom.id).eq('seat_index', index);
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!chatInput.trim()) return;
+    const handleSendMessage = async (e, imageUrl = null) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!chatInput.trim() && !imageUrl) return;
         await supabase.from('room_messages').insert({
             room_id: activeRoom.id,
             user_id: currentUserId,
             user_name: currentUserName,
             user_avatar: currentUserAvatar,
-            message: chatInput
+            message: chatInput || '📸 Sent an image',
+            image_url: imageUrl
         });
         setChatInput('');
     };
@@ -272,18 +283,54 @@ export default function VoiceRoomTab({ tgUser }) {
                 </div>
                 
                 {/* Chat Messages */}
-                <div className="flex-1 overflow-y-auto mt-2 space-y-2 pb-2">
-                    {messages.map(m => (
-                        <div key={m.id} className="bg-gray-700 p-2.5 rounded-xl text-sm w-fit max-w-[80%] shadow-sm">
-                            <span className="font-bold text-blue-400 mr-2">{m.user_name}:</span>
-                            <span className="text-gray-100">{m.message}</span>
-                        </div>
-                    ))}
-                    <div ref={chatEndRef} />
+                <div className="flex-1 overflow-y-auto mt-2 flex flex-col pointer-events-auto overscroll-contain">
+                    <div className="flex flex-col gap-2 mt-auto pb-2">
+                        {messages.map(m => (
+                            <div key={m.id} className="bg-gray-700 p-2.5 rounded-xl text-sm w-fit max-w-[80%] shadow-sm">
+                                <span className="font-bold text-blue-400 mr-2">{m.user_name}:</span>
+                                <span className="text-gray-100">{m.message}</span>
+                                {m.image_url && (
+                                    <div 
+                                        className="mt-2 rounded-lg overflow-hidden border border-gray-600 max-w-[200px] cursor-pointer"
+                                        onClick={() => setFullScreenImage(m.image_url)}
+                                    >
+                                        <img src={m.image_url} alt="attached" className="w-full h-auto object-cover" />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        <div ref={chatEndRef} />
+                    </div>
                 </div>
 
                 {/* Chat Input */}
                 <form onSubmit={handleSendMessage} className="mt-2 flex gap-2 shrink-0 pb-20">
+                    <button type="button" onClick={() => document.getElementById('chat-img-upload-vr').click()} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-gray-600 shrink-0 shadow-md">
+                        <i className="fa-solid fa-image text-xs"></i>
+                    </button>
+                    <input type="file" id="chat-img-upload-vr" accept="image/*" className="hidden" onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width, height = img.height;
+                                const maxDim = 800;
+                                if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                                else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                                canvas.width = width; canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                                handleSendMessage(null, compressedBase64);
+                            };
+                            img.src = ev.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = '';
+                    }} />
                     <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder="Send a message..." className="flex-1 bg-gray-900 border border-gray-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
                     <button type="submit" className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 shrink-0 shadow-md"><i className="fa-solid fa-paper-plane text-xs"></i></button>
                 </form>
@@ -317,6 +364,14 @@ export default function VoiceRoomTab({ tgUser }) {
                             ))}
                         </div>
                     </div>
+                </div>
+            )}
+            
+            {/* Full Screen Image Overlay */}
+            {fullScreenImage && (
+                <div className="fixed inset-0 bg-black/95 z-[5000] flex items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={() => setFullScreenImage(null)}>
+                    <img src={fullScreenImage} alt="Fullscreen" className="max-w-full max-h-full object-contain" />
+                    <button className="absolute top-4 right-4 text-white text-3xl font-bold p-2"><i className="fa-solid fa-xmark"></i></button>
                 </div>
             )}
         </div>

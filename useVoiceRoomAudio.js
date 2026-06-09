@@ -127,6 +127,19 @@ export function useVoiceRoomAudio(supabase, roomId, currentSeatIndex, currentUse
                     });
                 }
             };
+            
+            peer.onconnectionstatechange = () => {
+                if (peer.connectionState === 'disconnected' || peer.connectionState === 'failed') {
+                    console.log('WebRTC connection lost. Attempting to reconnect...');
+                    if (channelRef.current) {
+                        channelRef.current.send({
+                            type: 'broadcast',
+                            event: 'peer-join',
+                            payload: { senderId: currentUserId, isSpeaker: amISpeaker }
+                        });
+                    }
+                }
+            };
 
             peer.ontrack = (event) => {
                 setRemoteStreams(prev => ({
@@ -140,8 +153,24 @@ export function useVoiceRoomAudio(supabase, roomId, currentSeatIndex, currentUse
         };
 
         initWebRTC();
+        
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && channelRef.current) {
+                if (supabase.realtime.connectionState !== 'OPEN') {
+                    try { supabase.realtime.connect(); } catch (e) {}
+                }
+                const isSpeaker = currentSeatIndex !== null && currentSeatIndex >= 0 && currentSeatIndex <= 3;
+                channelRef.current.send({
+                    type: 'broadcast',
+                    event: 'peer-join',
+                    payload: { senderId: currentUserId, isSpeaker }
+                });
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             if (channelRef.current) {
                 channelRef.current.send({
                     type: 'broadcast',

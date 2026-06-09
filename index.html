@@ -867,6 +867,16 @@
 
                     return peer;
                 };
+                
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible' && channelRef.current) {
+                        if (supabase.realtime.connectionState !== 'OPEN') {
+                            try { supabase.realtime.connect(); } catch (e) {}
+                        }
+                        channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker } });
+                    }
+                };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 initAudio().then(() => {
                     const channel = supabase.channel(`webrtc_${roomId}`);
@@ -955,6 +965,7 @@
                 });
 
                 return () => {
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
                     if (channelRef.current) {
                         channelRef.current.send({
                             type: 'broadcast', event: 'peer_leave', payload: { senderId: currentUserId }
@@ -1050,6 +1061,7 @@
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
             const [roomToJoinWithPassword, setRoomToJoinWithPassword] = useState(null);
             const [joinPasswordInput, setJoinPasswordInput] = useState('');
+            const [fullScreenImage, setFullScreenImage] = useState(null);
             const [showVCCreateModal, setShowVCCreateModal] = useState(false);
             const [vcCreateName, setVcCreateName] = useState('');
             const [vcCreateType, setVcCreateType] = useState('temporary');
@@ -1691,15 +1703,15 @@
                         </div>
 
                     {/* Chat Messages */}
-                    <div className="flex-1 overflow-y-auto mx-2 sm:mx-4 mt-2 mb-2 bg-gradient-to-b from-transparent to-[#021633]/40 border border-[#0AE0D0]/10 rounded-2xl p-2 flex flex-col shadow-sm">
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-1 flex flex-col justify-end">
-                            <div className="flex flex-col gap-2 justify-end min-h-full">
+                    <div className="flex-1 overflow-y-auto mx-2 sm:mx-4 mt-2 mb-2 bg-gradient-to-b from-transparent to-[#021633]/40 border border-[#0AE0D0]/10 rounded-2xl p-2 flex flex-col shadow-sm pointer-events-auto overscroll-contain">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-1 flex flex-col">
+                            <div className="flex flex-col gap-2 mt-auto pb-2">
                                 {messages.map(m => (
                                     <div key={m.id} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-1.5 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2 shadow-sm">
                                         <span className="font-bold text-[#A4DFE6] mr-2">{m.user_name}:</span>
                                         <span className="text-white">{m.message}</span>
                                         {m.image_url && (
-                                            <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px]">
+                                            <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px] cursor-pointer" onClick={() => setFullScreenImage(m.image_url)}>
                                                 <img src={m.image_url} alt="attached" className="w-full h-auto object-cover" />
                                             </div>
                                         )}
@@ -1988,6 +2000,14 @@
                             </div>
                         </div>
                     )}
+                    
+                    {/* Full Screen Image Overlay */}
+                    {fullScreenImage && (
+                        <div className="fixed inset-0 bg-black/95 z-[5000] flex items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={() => setFullScreenImage(null)}>
+                            <img src={fullScreenImage} alt="Fullscreen" className="max-w-full max-h-full object-contain" />
+                            <button className="absolute top-4 right-4 text-white text-3xl font-bold p-2"><i className="fa-solid fa-xmark"></i></button>
+                        </div>
+                    )}
                 </div>
             );
 
@@ -2268,6 +2288,14 @@ INSTRUCTIONS:
                             </div>
                         </div>
                     )}
+                    
+                    {/* Full Screen Image Overlay */}
+                    {fullScreenImage && (
+                        <div className="fixed inset-0 bg-black/95 z-[5000] flex items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={() => setFullScreenImage(null)}>
+                            <img src={fullScreenImage} alt="Fullscreen" className="max-w-full max-h-full object-contain" />
+                            <button className="absolute top-4 right-4 text-white text-3xl font-bold p-2"><i className="fa-solid fa-xmark"></i></button>
+                        </div>
+                    )}
                 </div>
             )
         };
@@ -2278,7 +2306,16 @@ INSTRUCTIONS:
         const SUPABASE_PROXY_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co'; // Connect directly to fix WebSockets
         const SUPABASE_ANON_KEY = 'sb_publishable_' + 'BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
         const AGORA_APP_ID = "1711d81c" + "41114b1bb4f102b27147821c";
-        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY) : null;
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY, {
+            realtime: {
+                worker: true,
+                heartbeatCallback: (status) => {
+                    if (status === 'disconnected' && window.supabase && supabase.realtime) {
+                        try { supabase.realtime.connect(); } catch (e) {}
+                    }
+                }
+            }
+        }) : null;
 
         async function getAgoraToken(channelName, userId, password = null) {
             try {
@@ -3623,6 +3660,7 @@ INSTRUCTIONS:
             const [showSettingsModal, setShowSettingsModal] = useState(false);
             const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
+            const [fullScreenImage, setFullScreenImage] = useState(null);
 
             const currentUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
             const isHost = String(activeRoom.host_user_id) === currentUserId;
@@ -3813,8 +3851,8 @@ INSTRUCTIONS:
                     </div>
 
                     <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-24">
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col justify-end">
-                            <div className="flex flex-col gap-2">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col pointer-events-auto overscroll-contain">
+                            <div className="flex flex-col gap-2 mt-auto pb-2">
                                 {chatMessages.map((msg, idx) => {
                                     if (msg.isSystem) {
                                         return (
@@ -3828,7 +3866,7 @@ INSTRUCTIONS:
                                             <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
                                             <span className="text-white">{msg.text}</span>
                                             {msg.imageUrl && (
-                                                <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px]">
+                                                <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px] cursor-pointer" onClick={() => setFullScreenImage(msg.imageUrl)}>
                                                     <img src={msg.imageUrl} alt="attached" className="w-full h-auto object-cover" />
                                                 </div>
                                             )}
