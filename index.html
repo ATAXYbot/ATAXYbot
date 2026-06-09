@@ -1763,6 +1763,73 @@
                             </div>
                         </div>
                     )}
+                    {showRoomSettingsModal && (
+                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300]" onClick={() => setShowRoomSettingsModal(false)}>
+                            <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-black mb-4 text-[#00FFFF]"><i className="fa-solid fa-gear mr-2"></i>Room Settings</h3>
+                                
+                                <div className="mb-4 flex items-center gap-4">
+                                    <div className="w-16 h-16 rounded-full bg-[#010B1C] border-2 border-[#0AE0D0]/50 overflow-hidden flex items-center justify-center shrink-0">
+                                        <img id="edit-room-photo-preview" src={activeRoom.host_photo || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} className="w-full h-full object-cover" style={{ display: activeRoom.host_photo ? 'block' : 'none' }} />
+                                        {!activeRoom.host_photo && <i id="edit-room-photo-icon" className="fa-solid fa-image text-gray-500 text-2xl"></i>}
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Profile Picture</label>
+                                        <input type="file" accept="image/*" id="edit-room-photo" onChange={(e) => {
+                                            const f = e.target.files[0]; if (!f) return;
+                                            const r = new FileReader(); r.onload = (ev) => {
+                                                const img = new Image(); img.onload = () => {
+                                                    const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 400;
+                                                    if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
+                                                    c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+                                                    const base64 = c.toDataURL('image/jpeg', 0.8);
+                                                    document.getElementById('edit-room-photo').dataset.b64 = base64;
+                                                    document.getElementById('edit-room-photo-preview').src = base64;
+                                                    document.getElementById('edit-room-photo-preview').style.display = 'block';
+                                                    if (document.getElementById('edit-room-photo-icon')) document.getElementById('edit-room-photo-icon').style.display = 'none';
+                                                }; img.src = ev.target.result;
+                                            }; r.readAsDataURL(f);
+                                        }} className="text-[10px] w-full file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#00FFFF]/20 file:text-[#00FFFF] hover:file:bg-[#00FFFF]/30 cursor-pointer" />
+                                    </div>
+                                </div>
+
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input type="text" id="edit-room-name" defaultValue={activeRoom.room_name} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password (Optional)</label>
+                                <input type="text" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                
+                                <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-6">
+                                    <span className="text-sm font-bold text-white">Disable Text Chat</span>
+                                    <input type="checkbox" id="edit-chat-disabled" defaultChecked={activeRoom.chat_disabled || false} className="w-5 h-5 accent-[#00FFFF]" />
+                                </div>
+                                
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowRoomSettingsModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                    <button onClick={async (e) => {
+                                        const btn = e.target; btn.innerText = 'Saving...'; btn.disabled = true;
+                                        const newName = document.getElementById('edit-room-name').value;
+                                        const newPass = document.getElementById('edit-room-pass').value;
+                                        const chatOff = document.getElementById('edit-chat-disabled').checked;
+                                        const photoInput = document.getElementById('edit-room-photo');
+                                        const photo = photoInput.dataset.b64 || activeRoom.host_photo || '';
+                                        
+                                        await supabase.from('active_rooms').update({ room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }).eq('id', activeRoom.id);
+                                        
+                                        if (photo !== activeRoom.host_photo) {
+                                            await supabase.from('room_seats').update({ photo_url: photo }).eq('room_id', activeRoom.id).eq('user_id', currentUserId);
+                                            const expectedSeat = { ...seats[0], photo_url: photo };
+                                            setSeats(prev => { const n = [...prev]; n[0] = expectedSeat; return n; });
+                                            if (activeChannelRef.current) activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: expectedSeat } });
+                                        }
+                                        
+                                        setActiveRoom(prev => ({...prev, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo}));
+                                        setShowRoomSettingsModal(false); safeAlert("Room settings updated successfully!");
+                                    }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
 
@@ -1775,7 +1842,7 @@
                     {isVisible && activeRoom && isMinimized && renderDashboard()}
                     {activeRoom && isMinimized && (
                         <VCFloatingWidget 
-                            activeRoom={activeRoom} isLocalMuted={isLocalMuted} 
+                            activeRoom={activeRoom} isLocalMuted={isLocalMuted || mySeatMuted} 
                             onRestore={() => { if(onNavigate) onNavigate('vc'); setIsMinimized(false); }} 
                             toggleMute={() => { if(mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else safeAlert('Take a seat to use mic!'); }} 
                         />
@@ -2084,7 +2151,7 @@ INSTRUCTIONS:
                 return data.token;
             } catch (error) {
                 console.error("Token acquisition failed:", error);
-                alert("Could not retrieve voice security token: " + error.message);
+                safeAlert("Could not retrieve voice security token: " + error.message);
                 throw error;
             }
         }
@@ -3809,6 +3876,20 @@ INSTRUCTIONS:
                             </div>
                         </div>
                     )}
+                    {showActionModal && showActionModal.type === 'empty_seat_audience' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.seatNum}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => {
+                                        takeSeat(showActionModal.seatNum);
+                                        setShowActionModal(null);
+                                    }} className="py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105">Take Mic Seat</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {showActionModal && showActionModal.type === 'change_seat_self' && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
@@ -3846,7 +3927,7 @@ INSTRUCTIONS:
                                                         <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 text-lg">{String(c.user_name || 'U').charAt(0).toUpperCase()}</div>
                                                     )}
                                                     <div className="flex flex-col">
-                                                        <span>{String(c.user_name || 'User')}</span>
+                                                        <span className="truncate max-w-[150px]">{String(c.user_name || 'User')}</span>
                                                         <span className="text-[10px] text-[#A4DFE6] font-normal">{c.isSeated ? `Currently on Seat ${c.seat_index}` : 'In Audience'}</span>
                                                     </div>
                                                 </div>
