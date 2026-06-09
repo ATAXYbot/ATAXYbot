@@ -71,5 +71,15 @@ CREATE POLICY "Enable all actions for public" ON public.room_seats FOR ALL USING
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.room_audience;
 CREATE POLICY "Enable all actions for public" ON public.room_audience FOR ALL USING (true) WITH CHECK (true);
 
+-- Add new columns for Telegram names and profile photos safely
+ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_name TEXT DEFAULT 'Host';
+ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_photo TEXT;
+
+ALTER TABLE public.room_seats ADD COLUMN IF NOT EXISTS user_name TEXT;
+ALTER TABLE public.room_seats ADD COLUMN IF NOT EXISTS photo_url TEXT;
+
+ALTER TABLE public.room_audience ADD COLUMN IF NOT EXISTS user_name TEXT;
+ALTER TABLE public.room_audience ADD COLUMN IF NOT EXISTS photo_url TEXT;
+
 -- THIS IS THE CRITICAL LINE THAT FIXES YOUR CACHE ERROR:
 NOTIFY pgrst, 'reload schema';

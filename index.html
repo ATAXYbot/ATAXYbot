@@ -954,7 +954,11 @@
 
         const VCVoiceRoomTab = ({ tgUser }) => {
             const currentUserId = String(tgUser?.id || "1001");
+            const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
+            const currentUserPhoto = tgUser?.photo_url || "";
+
             const [activeRoom, setActiveRoom] = useState(null);
+            const [availableVCRooms, setAvailableVCRooms] = useState([]);
             const [seats, setSeats] = useState([null, null, null, null]);
             const [audience, setAudience] = useState([]);
             
@@ -1013,6 +1017,19 @@
                 return () => { supabase.removeChannel(chan); supabase.removeChannel(actionChan); };
             }, [activeRoom]);
 
+            useEffect(() => {
+                if (activeRoom || !supabase) return;
+                const fetchRooms = async () => {
+                    const { data } = await supabase.from('active_rooms').select('*').order('created_at', { ascending: false });
+                    if (data) setAvailableVCRooms(data);
+                };
+                fetchRooms();
+                const chan = supabase.channel('vc_public_rooms')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'active_rooms' }, fetchRooms)
+                    .subscribe();
+                return () => supabase.removeChannel(chan);
+            }, [activeRoom]);
+
             const handleCreateRoom = async () => {
                 setIsCreating(true);
                 setRoomError('');
@@ -1023,8 +1040,10 @@
                 }
                 try {
                     const { data, error } = await supabase.from('active_rooms').insert({
-                        room_name: 'NEET Physics Doubt Session',
-                        host_id: currentUserId
+                        room_name: `${currentUserName}'s Room`,
+                        host_id: currentUserId,
+                        host_name: currentUserName,
+                        host_photo: currentUserPhoto
                     }).select().single();
 
                     if (error) {
@@ -1036,7 +1055,11 @@
 
                     if (data) {
                         const initialSeats = [0, 1, 2, 3].map(i => ({
-                            room_id: data.id, seat_index: i, user_id: i === 0 ? currentUserId : null
+                            room_id: data.id, 
+                            seat_index: i, 
+                            user_id: i === 0 ? currentUserId : null,
+                            user_name: i === 0 ? currentUserName : null,
+                            photo_url: i === 0 ? currentUserPhoto : null
                         }));
                         const { error: seatErr } = await supabase.from('room_seats').insert(initialSeats);
                         if (seatErr) safeAlert("Seat Error: " + seatErr.message);
@@ -1050,10 +1073,13 @@
                 setIsCreating(false);
             };
 
-            const joinRoomBy5Digit = async (roomId5Digit) => {
-                const { data: room } = await supabase.from('active_rooms').select('*').eq('room_id_5_digit', roomId5Digit).single();
-                if (!room) { safeAlert('Room not found'); return; }
-                const { error } = await supabase.from('room_audience').insert({ room_id: room.id, user_id: currentUserId });
+            const joinRoom = async (room) => {
+                const { error } = await supabase.from('room_audience').insert({ 
+                    room_id: room.id, 
+                    user_id: currentUserId,
+                    user_name: currentUserName,
+                    photo_url: currentUserPhoto
+                });
                 if (error) {
                     if (error.message?.includes('capacity') || error.details?.includes('capacity')) {
                         safeAlert("Room is Full! Please join another room or create your own.");
@@ -1063,6 +1089,12 @@
                 } else {
                     setActiveRoom(room); setShowJoinModal(false);
                 }
+            };
+
+            const joinRoomBy5Digit = async (roomId5Digit) => {
+                const { data: room } = await supabase.from('active_rooms').select('*').eq('room_id_5_digit', roomId5Digit).single();
+                if (!room) { safeAlert('Room not found'); return; }
+                joinRoom(room);
             };
 
             const handleExitRoom = async () => {
@@ -1077,14 +1109,16 @@
 
             const takeSeat = async (idx) => {
                 if (mySeatIndex !== null) return;
-                await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
-                await supabase.from('room_seats').update({ user_id: currentUserId }).eq('room_id', activeRoom.id).eq('seat_index', idx);
-                setIsLocalMuted(true);
+                try {
+                    await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
+                    await supabase.from('room_seats').update({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto }).eq('room_id', activeRoom.id).eq('seat_index', idx);
+                    setIsLocalMuted(false); // Enable mic by default when taking seat
+                } catch(e) { safeAlert("Failed to take seat: " + e.message); }
             };
 
-            const moveToAudience = async (targetId, idx) => {
-                await supabase.from('room_seats').update({ user_id: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', idx);
-                try { await supabase.from('room_audience').insert({ room_id: activeRoom.id, user_id: targetId }); } catch(e) {}
+            const moveToAudience = async (targetId, idx, targetName, targetPhoto) => {
+                await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', idx);
+                try { await supabase.from('room_audience').insert({ room_id: activeRoom.id, user_id: targetId, user_name: targetName || 'User', photo_url: targetPhoto || '' }); } catch(e) {}
             };
 
             const toggleSeatLock = async (index, currentLocked) => {
@@ -1109,12 +1143,38 @@
                             </div>
                         )}
 
-                        <button onClick={handleCreateRoom} disabled={isCreating} className="w-full bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] py-4 rounded-2xl font-black shadow-[0_0_20px_rgba(0,255,255,0.4)] hover:scale-105 transition-transform text-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isCreating ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i> Creating...</> : "Create New Room"}
-                        </button>
-                        <button onClick={() => setShowJoinModal(true)} className="w-full bg-[#021633] border border-[#0AE0D0]/30 text-[#00FFFF] py-4 rounded-2xl font-black hover:bg-[#00FFFF]/10 transition-colors text-lg">
-                            Join by 5-Digit ID
-                        </button>
+                        <div className="w-full flex gap-3 mt-4">
+                            <button onClick={handleCreateRoom} disabled={isCreating} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] py-4 rounded-2xl font-black shadow-[0_0_20px_rgba(0,255,255,0.4)] hover:scale-105 transition-transform text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isCreating ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i></> : <><i className="fa-solid fa-plus mr-1"></i> New Room</>}
+                            </button>
+                            <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 text-[#00FFFF] py-4 rounded-2xl font-black hover:bg-[#00FFFF]/10 transition-colors text-sm">
+                                <i className="fa-solid fa-hashtag mr-1"></i> Join by ID
+                            </button>
+                        </div>
+
+                        <div className="w-full mt-6 bg-[#021633]/50 rounded-3xl border border-[#0AE0D0]/20 p-4 flex-1 overflow-y-auto no-scrollbar">
+                            <h3 className="font-black text-[#A4DFE6] mb-4 text-sm uppercase tracking-widest flex items-center gap-2"><i className="fa-solid fa-satellite-dish text-[#00FFFF]"></i> Active Rooms</h3>
+                            <div className="space-y-3">
+                                {availableVCRooms.length === 0 ? (
+                                    <p className="text-center text-gray-500 text-xs italic py-6">No active rooms found. Be the first to create one!</p>
+                                ) : (
+                                    availableVCRooms.map(room => (
+                                        <div key={room.id} onClick={() => joinRoom(room)} className="bg-[#010B1C] border border-[#0AE0D0]/20 p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:border-[#00FFFF] hover:shadow-[0_0_10px_rgba(0,255,255,0.2)] transition-all">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] font-black border border-[#00FFFF]/40 bg-cover bg-center" style={room.host_photo ? { backgroundImage: `url(${room.host_photo})` } : {}}>
+                                                    {!room.host_photo && (room.host_name ? room.host_name[0].toUpperCase() : 'H')}
+                                                </div>
+                                                <div className="flex flex-col text-left">
+                                                    <h4 className="text-sm font-bold text-white leading-tight line-clamp-1">{room.room_name}</h4>
+                                                    <p className="text-[10px] text-[#A4DFE6] mt-0.5"><i className="fa-solid fa-crown text-yellow-400 mr-1"></i> {room.host_name || room.host_id.substring(0,4)}</p>
+                                                </div>
+                                            </div>
+                                            <button className="bg-[#00FFFF] text-[#010B1C] px-3 py-1.5 rounded-lg text-xs font-black shadow-sm active:scale-95">Join</button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
 
                         {showJoinModal && (
                             <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
@@ -1164,21 +1224,22 @@
                                 const isOccupied = seat && seat.user_id;
                                 const isLocked = seat && seat.is_locked;
                                 const isHostSeat = idx === 0;
+                                const occupantName = isOccupied ? (seat.user_name || `User ${seat.user_id.substring(0,4)}`) : `Seat ${idx}`;
                                 
                                 return (
                                     <div key={idx} className="flex flex-col items-center gap-3 relative">
                                         {isOccupied ? (
                                             <div className="relative cursor-pointer group" onClick={() => {
                                                 if (seat.user_id === currentUserId) {
-                                                    safeConfirm("Move to Audience?", () => moveToAudience(currentUserId, idx));
+                                                    safeConfirm("Move to Audience?", () => moveToAudience(currentUserId, idx, seat.user_name, seat.photo_url));
                                                 } else if (isHost) {
-                                                    const action = prompt(`Host Actions for Seat ${idx}:\n1. Mute/Unmute Mic\n2. Boot to Audience\nEnter 1 or 2:`);
+                                                    const action = prompt(`Host Actions for ${occupantName}:\n1. Mute/Unmute Mic\n2. Boot to Audience\nEnter 1 or 2:`);
                                                     if (action === '1') toggleSeatMuteByHost(idx, seat.is_muted_by_host);
-                                                    if (action === '2') moveToAudience(seat.user_id, idx);
+                                                    if (action === '2') moveToAudience(seat.user_id, idx, seat.user_name, seat.photo_url);
                                                 }
                                             }}>
-                                                <div className={`w-24 h-24 rounded-full border-4 flex items-center justify-center text-3xl font-black shadow-inner transition-transform group-hover:scale-105 ${isHostSeat ? 'border-[#F9D33A] bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] text-[#010B1C] shadow-[0_0_20px_rgba(249,211,58,0.5)]' : 'border-[#00FFFF] bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white shadow-[0_0_20px_rgba(0,255,255,0.4)]'}`}>
-                                                    {seat.user_id.substring(0, 2).toUpperCase()}
+                                                <div className={`w-24 h-24 rounded-full border-4 flex items-center justify-center text-3xl font-black shadow-inner transition-transform group-hover:scale-105 bg-gradient-to-br bg-cover bg-center ${isHostSeat ? 'border-[#F9D33A] from-[#D4AF37] to-[#F9D33A] text-[#010B1C] shadow-[0_0_20px_rgba(249,211,58,0.5)]' : 'border-[#00FFFF] from-[#00A7A7] to-blue-600 text-white shadow-[0_0_20px_rgba(0,255,255,0.4)]'}`} style={seat.photo_url ? { backgroundImage: `url(${seat.photo_url})` } : {}}>
+                                                    {!seat.photo_url && (seat.user_name ? seat.user_name.substring(0, 2).toUpperCase() : seat.user_id.substring(0, 2).toUpperCase())}
                                                 </div>
                                                 {isHostSeat && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#F9D33A] text-[#010B1C] text-[10px] px-3 py-0.5 rounded-full font-black border border-[#D4AF37] shadow-sm">HOST</span>}
                                                 {seat.is_muted_by_host && (
@@ -1206,7 +1267,7 @@
                                             </div>
                                         )}
                                         <span className="text-xs font-bold text-[#E0F7FA] bg-[#021633] px-3 py-1 rounded-full border border-[#0AE0D0]/20">
-                                            {isOccupied ? `User ${seat.user_id.substring(0,4)}` : `Seat ${idx}`}
+                                            {occupantName}
                                         </span>
                                     </div>
                                 );
@@ -1229,13 +1290,13 @@
                                                 supabase.channel(`actions_${activeRoom.id}`).send({
                                                     type: 'broadcast', event: 'invite', payload: { target: m.user_id, seatIndex: seats.findIndex(s => !s || !s.user_id) }
                                                 });
-                                                safeAlert(`Invitation sent to User ${m.user_id.substring(0,4)}`);
+                                                safeAlert(`Invitation sent to ${m.user_name || 'User'}`);
                                             }
                                         }}>
-                                            <div className="w-14 h-14 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 flex items-center justify-center text-lg font-black text-[#00FFFF] shadow-inner group-hover:border-[#00FFFF] transition-colors">
-                                                {m.user_id.substring(0, 2).toUpperCase()}
+                                            <div className="w-14 h-14 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 flex items-center justify-center text-lg font-black text-[#00FFFF] shadow-inner group-hover:border-[#00FFFF] transition-colors bg-cover bg-center" style={m.photo_url ? { backgroundImage: `url(${m.photo_url})` } : {}}>
+                                                {!m.photo_url && (m.user_name ? m.user_name.substring(0, 2).toUpperCase() : m.user_id.substring(0, 2).toUpperCase())}
                                             </div>
-                                            <span className="text-[10px] font-bold text-[#A4DFE6] truncate w-full text-center bg-[#010B1C] px-1 py-0.5 rounded">User {m.user_id.substring(0, 4)}</span>
+                                            <span className="text-[10px] font-bold text-[#A4DFE6] truncate w-full text-center bg-[#010B1C] px-1 py-0.5 rounded">{m.user_name || `User ${m.user_id.substring(0, 4)}`}</span>
                                         </div>
                                     ))}
                                 </div>
