@@ -1031,6 +1031,12 @@
             
             const chatEndRef = useRef(null);
 
+            useEffect(() => {
+                const handleGlobalMinimize = () => setIsMinimized(true);
+                window.addEventListener('minimize_vc_room', handleGlobalMinimize);
+                return () => window.removeEventListener('minimize_vc_room', handleGlobalMinimize);
+            }, []);
+
             const mySeat = seats.find(s => s && s.user_id === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
             const isMutedByHost = mySeat ? mySeat.is_muted_by_host : false;
@@ -1267,25 +1273,35 @@
                 }
             };
 
-            const takeSeat = async (idx) => {
-                if (mySeatIndex !== null) return;
+            const takeSeat = async (idx, roomId = activeRoom?.id) => {
                 const existingSeat = seats[idx] || {};
+                const oldSeatIndex = mySeatIndex;
                 
                 // 1. Optimistic UI Update (Zero lag for user)
-                setSeats(prev => prev.map((s, i) => i === idx ? { ...s, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } : (s?.user_id === currentUserId ? { ...s, user_id: null, user_name: null, photo_url: null } : s)));
-                setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
+                setSeats(prev => prev.map((s, i) => {
+                    if (i === idx) return { ...s, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false };
+                    if (i === oldSeatIndex) return { ...s, seat_index: oldSeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: s?.is_locked || false, is_muted_by_host: s?.is_muted_by_host || false };
+                    return s;
+                }));
+                if (oldSeatIndex === null) {
+                    setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
+                }
                 setIsLocalMuted(existingSeat.is_muted_by_host || false);
 
                 // 2. Instant Broadcast (Zero lag for everyone else)
                 if (activeChannelRef.current) {
-                    activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
-                    activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } } });
+                    if (oldSeatIndex !== null) {
+                        activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: roomId, seat_index: oldSeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: seats[oldSeatIndex]?.is_locked || false, is_muted_by_host: seats[oldSeatIndex]?.is_muted_by_host || false } } });
+                    } else {
+                        activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
+                    }
+                    activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: roomId, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } } });
                 }
 
                 try {
                     // 3. Atomic Database Transaction via RPC
                     const { error } = await supabase.rpc('move_to_seat', { 
-                        p_room_id: activeRoom.id, 
+                        p_room_id: roomId, 
                         p_seat_index: idx, 
                         p_user_id: currentUserId,
                         p_user_name: currentUserName,
@@ -1295,7 +1311,6 @@
                 } catch(e) { 
                     safeAlert("Failed to take seat: " + e.message); 
                     fetchRoomData(activeRoom.id); // Rollback to actual state
-                    if (activeChannelRef.current) activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } } });
                 }
             };
 
@@ -1448,7 +1463,7 @@
                     {/* Header */}
                     <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+env(safe-area-inset-top,0px))]">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
-                            <button onClick={() => setIsMinimized(true)} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
+                    <button onClick={() => { setIsMinimized(true); if(onNavigate) onNavigate('vc'); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
                                 <i className="fa-solid fa-arrow-left"></i>
                             </button>
                             <div className="flex flex-col overflow-hidden min-w-0">
@@ -1531,7 +1546,7 @@
                                                     if (!isLocked) setShowActionModal({ type: 'change_seat_self', seatNum: idx });
                                                     else safeAlert("This seat is locked by the host.");
                                                 } else if (!isLocked) {
-                                                    setShowActionModal({ type: 'empty_seat_audience', seatNum: idx });
+                                                    takeSeat(idx);
                                                 } else {
                                                     safeAlert("This seat is locked by the host.");
                                                 }
@@ -1612,16 +1627,6 @@
                             <i className={`fa-solid ${isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost) ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
                         
-                        {mySeatIndex === null && !isHost && (
-                            <button onClick={() => {
-                                const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && (!s || !s.user_id) && (!s || !s.is_locked));
-                                if(emptySeatIdx !== -1) takeSeat(emptySeatIdx);
-                                else safeAlert("All seats are currently full or locked!");
-                            }} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all shadow-[0_0_10px_rgba(79,70,229,0.5)] bg-indigo-600 text-white hover:bg-indigo-500">
-                                <i className="fa-solid fa-hand text-sm"></i>
-                            </button>
-                        )}
-
                         <div className="flex-1 relative flex items-center min-w-[80px]">
                             <button disabled={!isHost && activeRoom.chat_disabled} onClick={() => document.getElementById('vc-chat-img').click()} className={`absolute left-3 transition-colors z-10 ${(!isHost && activeRoom.chat_disabled) ? 'text-gray-600' : 'text-[#A4DFE6] hover:text-[#00FFFF]'}`}><i className="fa-solid fa-image text-sm"></i></button>
                             <input type="file" id="vc-chat-img" accept="image/*" className="hidden" disabled={!isHost && activeRoom.chat_disabled} onChange={(e) => {
@@ -1847,7 +1852,7 @@
                             toggleMute={() => { if(mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else safeAlert('Take a seat to use mic!'); }} 
                         />
                     )}
-                    {isVisible && activeRoom && !isMinimized && renderActiveRoom()}
+                    {activeRoom && !isMinimized && renderActiveRoom()}
                     
                     {Object.keys(remoteStreams).map(peerId => (
                         <audio key={peerId} id={`audio-${peerId}`} autoPlay playsInline muted={isSpeakerMuted} className="hidden" />
@@ -3474,28 +3479,6 @@ INSTRUCTIONS:
             const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
             const effectiveMutedUI = isMuted || mySeatMuted;
 
-            const handleBottomMicClick = () => {
-                if (!isSpeaker) {
-                    if (micRequests.some(r => String(r.uid) === currentUserId)) {
-                        safeAlert("Your request is already pending host approval.");
-                        return;
-                    }
-                    const occupiedSeats = participants.filter(p => p.seat_number !== null && p.seat_number !== undefined).map(p => Number(p.seat_number));
-                    let emptySeat = activeRoom.is_partner_seat_open ? 1 : 2;
-                    while((occupiedSeats.includes(emptySeat) || lockedSeats[emptySeat]) && emptySeat <= 9) emptySeat++;
-                    if (emptySeat <= 9) {
-                        if (activeRoom.require_mic_request) {
-                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
-                            sendBroadcast('request_seat', { uid: currentUserId, name: tgData.first_name, seatNum: emptySeat });
-                            safeAlert("Requested to speak. Waiting for host approval.");
-                        } else {
-                            takeSeat(emptySeat);
-                        }
-                    }
-                    else safeAlert("All seats are currently full!");
-                }
-            };
-
             const handleSeatClick = (seatNum, occupant) => {
                 if (occupant) {
                     if (String(occupant.user_id) === currentUserId) {
@@ -3525,7 +3508,17 @@ INSTRUCTIONS:
                             safeAlert("This seat is locked by the host.");
                             return;
                         }
-                        setShowActionModal({ type: 'empty_seat_audience', seatNum });
+                        if (activeRoom.require_mic_request) {
+                            if (micRequests.some(r => String(r.uid) === currentUserId)) {
+                                safeAlert("Your request is already pending host approval.");
+                                return;
+                            }
+                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                            sendBroadcast('request_seat', { uid: currentUserId, name: tgData.first_name, seatNum: seatNum });
+                            safeAlert("Requested to speak. Waiting for host approval.");
+                        } else {
+                            takeSeat(seatNum);
+                        }
                     }
                 }
             };
@@ -3730,12 +3723,6 @@ INSTRUCTIONS:
                             <i className={`fa-solid ${effectiveMutedUI || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                         </button>
                         
-                        {!isSpeaker && (
-                            <button onClick={handleBottomMicClick} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all shadow-[0_0_10px_rgba(79,70,229,0.5)] bg-indigo-600 text-white hover:bg-indigo-500">
-                                <i className="fa-solid fa-hand text-sm"></i>
-                            </button>
-                        )}
-
                         {/* MIDDLE: Input Bar with Embedded Image Upload Icon */}
                         <div className="flex-1 relative flex items-center min-w-[80px]">
                             <button onClick={() => document.getElementById('chat-image-upload').click()} className="absolute left-3 text-[#A4DFE6] hover:text-[#00FFFF] transition-colors z-10">
@@ -3851,21 +3838,6 @@ INSTRUCTIONS:
                                     }} className={`py-3 rounded-xl font-bold transition-colors border ${lockedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white border-red-500/50'}`}>
                                         {lockedSeats[showActionModal.seatNum] ? 'Unlock Seat' : 'Lock Seat'}
                                     </button>
-                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showActionModal && showActionModal.type === 'empty_seat_audience' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.seatNum}</h3>
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={() => {
-                                        takeSeat(showActionModal.seatNum);
-                                        setShowActionModal(null);
-                                    }} className="py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105">Take Mic Seat</button>
                                     <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
                                 </div>
                             </div>
@@ -4220,10 +4192,10 @@ INSTRUCTIONS:
                   }
               }
               else if (voiceState.activeRoom && !voiceState.isMinimized) { voiceState.setIsMinimized(true); }
-              else if (vcRoomActive && !vcRoomMinimized) { setCurrentTab('home'); }
-              else if (voiceState.activeRoom && !voiceState.isMinimized) {
-                  voiceState.setIsMinimized(true);
-              }
+          else if (vcRoomActive && !vcRoomMinimized) { 
+              window.dispatchEvent(new Event('minimize_vc_room')); 
+              setCurrentTab('vc');
+          }
               else if (activePracticeChapter) setActivePracticeChapter(null);
               else if (activePracticeSubject) setActivePracticeSubject(null);
               else if (activePracticeFile) setActivePracticeFile(null);
