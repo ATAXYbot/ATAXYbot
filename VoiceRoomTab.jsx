@@ -131,7 +131,13 @@ export default function VoiceRoomTab({ tgUser }) {
         setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
         setIsLocalMuted(true);
         
-        const { error } = await supabase.rpc('move_to_seat', { p_room_id: activeRoom.id, p_seat_index: index, p_user_id: currentUserId });
+        const { error } = await supabase.rpc('move_to_seat', { 
+            p_room_id: activeRoom.id, 
+            p_seat_index: index, 
+            p_user_id: currentUserId,
+            p_user_name: tgUser?.first_name || tgUser?.username || "Student",
+            p_photo_url: tgUser?.photo_url || ""
+        });
         if (error) {
             alert("Failed to take seat: " + error.message);
             // Refresh to restore correct state

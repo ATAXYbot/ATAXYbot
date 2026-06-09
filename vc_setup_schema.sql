@@ -57,7 +57,7 @@ DROP TRIGGER IF EXISTS enforce_seat_capacity ON public.room_seats;
 CREATE TRIGGER enforce_seat_capacity BEFORE UPDATE ON public.room_seats FOR EACH ROW WHEN (OLD.user_id IS NULL AND NEW.user_id IS NOT NULL) EXECUTE FUNCTION public.check_room_capacity();
 
 -- Atomic Seat Movement RPC (One single transaction for zero desync)
-CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT)
+CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT, p_user_name TEXT DEFAULT NULL, p_photo_url TEXT DEFAULT NULL)
 RETURNS BOOLEAN AS $$
 DECLARE
     v_target_locked BOOLEAN;
@@ -79,7 +79,7 @@ BEGIN
     -- 2. Clear user from ANY other seat they currently occupy in this room
     UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id AND seat_index != p_seat_index;
     -- 3. Update the target seat with the user
-    UPDATE public.room_seats SET user_id = p_user_id WHERE room_id = p_room_id AND seat_index = p_seat_index;
+    UPDATE public.room_seats SET user_id = p_user_id, user_name = p_user_name, photo_url = p_photo_url WHERE room_id = p_room_id AND seat_index = p_seat_index;
     -- 4. Remove the user from the room_audience table
     DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = p_user_id;
 

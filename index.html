@@ -831,9 +831,14 @@
                         } catch(e) {
                             console.error("Mic error:", e);
                         }
-                    } else if (!amISpeaker && localStreamRef.current) {
-                        localStreamRef.current.getTracks().forEach(t => t.stop());
-                        localStreamRef.current = null;
+                    } else if (!amISpeaker) {
+                        if (localStreamRef.current) {
+                            localStreamRef.current.getTracks().forEach(t => t.stop());
+                            localStreamRef.current = null;
+                        }
+                        Object.values(peersRef.current).forEach(p => p.close());
+                        peersRef.current = {};
+                        setRemoteStreams({});
                     }
                 };
 
@@ -1144,17 +1149,31 @@
 
             const takeSeat = async (idx) => {
                 if (mySeatIndex !== null) return;
+                
+                // 1. Optimistic UI Update (Zero lag for user)
+                setSeats(prev => prev.map((s, i) => i === idx ? { ...s, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto } : (s?.user_id === currentUserId ? { ...s, user_id: null, user_name: null, photo_url: null } : s)));
+                setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
+                setIsLocalMuted(false);
+
                 try {
-                    await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
-                    const { data: updatedSeat, error } = await supabase.from('room_seats').update({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto }).eq('room_id', activeRoom.id).eq('seat_index', idx).select().single();
+                    // 2. Atomic Database Transaction via RPC
+                    const { error } = await supabase.rpc('move_to_seat', { 
+                        p_room_id: activeRoom.id, 
+                        p_seat_index: idx, 
+                        p_user_id: currentUserId,
+                        p_user_name: currentUserName,
+                        p_photo_url: currentUserPhoto
+                    });
                     if (error) throw error;
                     
+                    // 3. Instant Broadcast (Bypasses DB event delay)
                     const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`);
                     channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
-                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: updatedSeat } });
-
-                    setIsLocalMuted(false); 
-                } catch(e) { safeAlert("Failed to take seat: " + e.message); }
+                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false } } });
+                } catch(e) { 
+                    safeAlert("Failed to take seat: " + e.message); 
+                    fetchRoomData(activeRoom.id); // Rollback to actual state
+                }
             };
 
             const moveToAudience = async (targetId, idx, targetName, targetPhoto) => {
