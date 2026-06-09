@@ -967,6 +967,8 @@
             const [isLocalMuted, setIsLocalMuted] = useState(true);
             const [isCreating, setIsCreating] = useState(false);
             const [roomError, setRoomError] = useState('');
+            const [showActionModal, setShowActionModal] = useState(null);
+            const [pendingInvite, setPendingInvite] = useState(null);
 
             const mySeat = seats.find(s => s && s.user_id === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
@@ -991,7 +993,9 @@
                 const { data: audData } = await supabase.from('room_audience').select('*').eq('room_id', activeRoom.id);
                 
                 const newSeats = [null, null, null, null];
-                if (seatData) seatData.forEach(s => newSeats[s.seat_index] = s);
+                if (seatData) {
+                    seatData.forEach(s => { if(s.seat_index >= 0 && s.seat_index <= 3) newSeats[s.seat_index] = s; });
+                }
                 setSeats(newSeats);
                 setAudience(audData || []);
             };
@@ -1010,7 +1014,7 @@
 
                 const actionChan = supabase.channel(`actions_${activeRoom.id}`)
                     .on('broadcast', { event: 'invite' }, ({ payload }) => {
-                        if (payload.target === currentUserId) safeAlert(`You were invited by the host to take Seat ${payload.seatIndex}!`);
+                        if (payload.target === currentUserId) setPendingInvite(payload);
                     })
                     .subscribe();
 
@@ -1111,22 +1115,27 @@
                 if (mySeatIndex !== null) return;
                 try {
                     await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
-                    await supabase.from('room_seats').update({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto }).eq('room_id', activeRoom.id).eq('seat_index', idx);
-                    setIsLocalMuted(false); // Enable mic by default when taking seat
+                    const { error } = await supabase.from('room_seats').update({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto }).eq('room_id', activeRoom.id).eq('seat_index', idx);
+                    if (error) throw error;
+                    setIsLocalMuted(false); 
+                    fetchRoomData(); // Force instant UI update
                 } catch(e) { safeAlert("Failed to take seat: " + e.message); }
             };
 
             const moveToAudience = async (targetId, idx, targetName, targetPhoto) => {
                 await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', idx);
                 try { await supabase.from('room_audience').insert({ room_id: activeRoom.id, user_id: targetId, user_name: targetName || 'User', photo_url: targetPhoto || '' }); } catch(e) {}
+                fetchRoomData();
             };
 
             const toggleSeatLock = async (index, currentLocked) => {
                 await supabase.from('room_seats').update({ is_locked: !currentLocked }).eq('room_id', activeRoom.id).eq('seat_index', index);
+                fetchRoomData();
             };
 
             const toggleSeatMuteByHost = async (index, currentMuted) => {
                 await supabase.from('room_seats').update({ is_muted_by_host: !currentMuted }).eq('room_id', activeRoom.id).eq('seat_index', index);
+                fetchRoomData();
             };
 
             if (!activeRoom) {
@@ -1231,11 +1240,9 @@
                                         {isOccupied ? (
                                             <div className="relative cursor-pointer group" onClick={() => {
                                                 if (seat.user_id === currentUserId) {
-                                                    safeConfirm("Move to Audience?", () => moveToAudience(currentUserId, idx, seat.user_name, seat.photo_url));
+                                                    setShowActionModal({ type: 'self', idx });
                                                 } else if (isHost) {
-                                                    const action = prompt(`Host Actions for ${occupantName}:\n1. Mute/Unmute Mic\n2. Boot to Audience\nEnter 1 or 2:`);
-                                                    if (action === '1') toggleSeatMuteByHost(idx, seat.is_muted_by_host);
-                                                    if (action === '2') moveToAudience(seat.user_id, idx, seat.user_name, seat.photo_url);
+                                                    setShowActionModal({ type: 'host_target', idx, seat });
                                                 }
                                             }}>
                                                 <div className={`w-24 h-24 rounded-full border-4 flex items-center justify-center text-3xl font-black shadow-inner transition-transform group-hover:scale-105 bg-gradient-to-br bg-cover bg-center ${isHostSeat ? 'border-[#F9D33A] from-[#D4AF37] to-[#F9D33A] text-[#010B1C] shadow-[0_0_20px_rgba(249,211,58,0.5)]' : 'border-[#00FFFF] from-[#00A7A7] to-blue-600 text-white shadow-[0_0_20px_rgba(0,255,255,0.4)]'}`} style={seat.photo_url ? { backgroundImage: `url(${seat.photo_url})` } : {}}>
@@ -1251,11 +1258,11 @@
                                         ) : (
                                             <div className={`w-24 h-24 rounded-full border-[3px] border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${isLocked ? 'border-red-500/50 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633]/50 hover:bg-[#0AE0D0]/20'}`} onClick={() => {
                                                 if (isHost) {
-                                                    const action = prompt("Seat Actions:\n1. Lock/Unlock\n2. Pre-mute Seat\nEnter 1 or 2:");
-                                                    if (action === '1') toggleSeatLock(idx, isLocked);
-                                                    if (action === '2') toggleSeatMuteByHost(idx, seat ? seat.is_muted_by_host : false);
+                                                    setShowActionModal({ type: 'empty_seat_host', idx, seat });
                                                 } else if (!isLocked) {
                                                     takeSeat(idx);
+                                                } else {
+                                                    safeAlert("This seat is locked by the host.");
                                                 }
                                             }}>
                                                 <i className={`fa-solid ${isLocked ? 'fa-lock text-red-500/50' : 'fa-plus text-[#0AE0D0]/50'} text-3xl`}></i>
@@ -1287,10 +1294,7 @@
                                     {audience.map(m => (
                                         <div key={m.user_id} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => {
                                             if (isHost) {
-                                                supabase.channel(`actions_${activeRoom.id}`).send({
-                                                    type: 'broadcast', event: 'invite', payload: { target: m.user_id, seatIndex: seats.findIndex(s => !s || !s.user_id) }
-                                                });
-                                                safeAlert(`Invitation sent to ${m.user_name || 'User'}`);
+                                                setShowActionModal({ type: 'invite', target: m });
                                             }
                                         }}>
                                             <div className="w-14 h-14 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 flex items-center justify-center text-lg font-black text-[#00FFFF] shadow-inner group-hover:border-[#00FFFF] transition-colors bg-cover bg-center" style={m.photo_url ? { backgroundImage: `url(${m.photo_url})` } : {}}>
@@ -1310,6 +1314,84 @@
                             <button onClick={() => setIsLocalMuted(!isLocalMuted)} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-all active:scale-90 border-2 ${isLocalMuted ? 'bg-red-500 text-white border-red-400' : 'bg-[#00FFFF] text-[#010B1C] border-white'}`}>
                                 <i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
                             </button>
+                        </div>
+                    )}
+
+                    {/* Action Modals */}
+                    {showActionModal && showActionModal.type === 'self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { moveToAudience(currentUserId, showActionModal.idx, currentUserName, currentUserPhoto); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Move to Audience</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'host_target' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.seat.user_name}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {showActionModal.seat.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => { moveToAudience(showActionModal.seat.user_id, showActionModal.idx, showActionModal.seat.user_name, showActionModal.seat.photo_url); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'empty_seat_host' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.idx}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { toggleSeatLock(showActionModal.idx, showActionModal.seat?.is_locked); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat?.is_locked ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white border-red-500/50'}`}>
+                                        {showActionModal.seat?.is_locked ? 'Unlock Seat' : 'Lock Seat'}
+                                    </button>
+                                    <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat?.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat?.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {showActionModal.seat?.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'invite' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal.target.user_name}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { 
+                                        const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
+                                        if(emptySeatIdx !== -1) {
+                                            supabase.channel(`actions_${activeRoom.id}`).send({
+                                                type: 'broadcast', event: 'invite', payload: { target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName }
+                                            });
+                                            safeAlert(`Invitation sent to ${showActionModal.target.user_name}`);
+                                        } else {
+                                            safeAlert("No empty unlocked seats available!");
+                                        }
+                                        setShowActionModal(null); 
+                                    }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Stage</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {pendingInvite && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPendingInvite(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-microphone"></i></div>
+                                <h3 className="text-xl font-bold text-white mb-2">Stage Invitation</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">{pendingInvite.hostName} invited you to take Seat {pendingInvite.seatIndex}.</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
+                                    <button onClick={() => { takeSeat(pendingInvite.seatIndex); setPendingInvite(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
