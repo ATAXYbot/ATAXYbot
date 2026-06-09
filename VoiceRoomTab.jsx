@@ -139,10 +139,8 @@ export default function VoiceRoomTab({ tgUser }) {
             p_photo_url: tgUser?.photo_url || ""
         });
         if (error) {
-            alert("Failed to take seat: " + error.message);
-            // Refresh to restore correct state
-            const { data: seatData } = await supabase.from('room_seats').select('*').eq('room_id', activeRoom.id);
-            if (seatData) setSeats([null, null, null, null].map((_, i) => seatData.find(s => s.seat_index === i) || null));
+            console.error("Failed to take seat:", error.message);
+            setSeats(prev => prev.map((s, i) => i === index ? { ...s, user_id: null } : s));
         }
     };
 

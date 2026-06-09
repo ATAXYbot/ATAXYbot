@@ -56,6 +56,10 @@ CREATE TRIGGER enforce_room_capacity BEFORE INSERT ON public.room_audience FOR E
 DROP TRIGGER IF EXISTS enforce_seat_capacity ON public.room_seats;
 CREATE TRIGGER enforce_seat_capacity BEFORE UPDATE ON public.room_seats FOR EACH ROW WHEN (OLD.user_id IS NULL AND NEW.user_id IS NOT NULL) EXECUTE FUNCTION public.check_room_capacity();
 
+-- Force drop any corrupted versions of the function
+DROP FUNCTION IF EXISTS public.move_to_seat(UUID, INT, TEXT);
+DROP FUNCTION IF EXISTS public.move_to_seat(UUID, INT, TEXT, TEXT, TEXT);
+
 -- Atomic Seat Movement RPC (One single transaction for zero desync)
 CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT, p_user_name TEXT DEFAULT NULL, p_photo_url TEXT DEFAULT NULL)
 RETURNS BOOLEAN AS $$
@@ -77,7 +81,7 @@ BEGIN
     END IF;
 
     -- 2. Clear user from ANY other seat they currently occupy in this room
-    UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id AND seat_index != p_seat_index;
+    UPDATE public.room_seats SET user_id = NULL, user_name = NULL, photo_url = NULL WHERE room_id = p_room_id AND user_id = p_user_id AND seat_index != p_seat_index;
     -- 3. Update the target seat with the user
     UPDATE public.room_seats SET user_id = p_user_id, user_name = p_user_name, photo_url = p_photo_url WHERE room_id = p_room_id AND seat_index = p_seat_index;
     -- 4. Remove the user from the room_audience table
@@ -86,6 +90,9 @@ BEGIN
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permissions to the API
+GRANT EXECUTE ON FUNCTION public.move_to_seat(UUID, INT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
 -- Apply Public RLS (Allows all clients to read/insert freely for this VC mesh component)
 ALTER TABLE public.active_rooms ENABLE ROW LEVEL SECURITY;

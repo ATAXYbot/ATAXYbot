@@ -1132,19 +1132,20 @@
             const handleExitRoom = async () => {
                 if (!activeRoom) return;
                 const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`);
+                const rId = activeRoom.id;
+                setActiveRoom(null); // Optimistic UI unmount instantly
+
                 if (isHost) {
-                    // This will trigger the postgres_changes 'DELETE' listener for everyone
-                    await supabase.from('active_rooms').delete().eq('id', activeRoom.id);
+                    await supabase.from('active_rooms').delete().eq('id', rId);
                 } else {
                     if (mySeatIndex !== null) {
-                        const { data: updatedSeat } = await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', activeRoom.id).eq('seat_index', mySeatIndex).select().single();
-                        channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: updatedSeat } });
+                        channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: mySeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } } });
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', rId).eq('seat_index', mySeatIndex);
                     } else {
-                        await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
                         channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
+                        await supabase.from('room_audience').delete().eq('room_id', rId).eq('user_id', currentUserId);
                     }
                 }
-                setActiveRoom(null);
             };
 
             const takeSeat = async (idx) => {
@@ -1155,8 +1156,13 @@
                 setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
                 setIsLocalMuted(false);
 
+                // 2. Instant Broadcast (Zero lag for everyone else)
+                const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`);
+                channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
+                channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false } } });
+
                 try {
-                    // 2. Atomic Database Transaction via RPC
+                    // 3. Atomic Database Transaction via RPC
                     const { error } = await supabase.rpc('move_to_seat', { 
                         p_room_id: activeRoom.id, 
                         p_seat_index: idx, 
@@ -1165,35 +1171,52 @@
                         p_photo_url: currentUserPhoto
                     });
                     if (error) throw error;
-                    
-                    // 3. Instant Broadcast (Bypasses DB event delay)
-                    const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`);
-                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
-                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false } } });
                 } catch(e) { 
                     safeAlert("Failed to take seat: " + e.message); 
                     fetchRoomData(activeRoom.id); // Rollback to actual state
+                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } } });
                 }
             };
 
             const moveToAudience = async (targetId, idx, targetName, targetPhoto) => {
-                const { data: updatedSeat } = await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', idx).select().single();
+                const expectedSeat = { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false };
                 const newAudienceMember = { room_id: activeRoom.id, user_id: targetId, user_name: targetName || 'User', photo_url: targetPhoto || '' };
-                try { await supabase.from('room_audience').insert(newAudienceMember); } catch(e) {}
                 
+                // Optimistic UI for Host
+                setSeats(prev => { const n = [...prev]; n[idx] = expectedSeat; return n; });
+                setAudience(prev => { if (prev.some(u => u.user_id === targetId)) return prev; return [...prev, { ...newAudienceMember, joined_at: new Date().toISOString() }]; });
+
                 const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`);
-                channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: updatedSeat } });
+                channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: expectedSeat } });
                 channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_JOIN', data: { ...newAudienceMember, joined_at: new Date().toISOString() } } });
+
+                try { 
+                    await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', idx);
+                    await supabase.from('room_audience').insert(newAudienceMember); 
+                } catch(e) { fetchRoomData(activeRoom.id); }
             };
 
             const toggleSeatLock = async (index, currentLocked) => {
-                const { data: updatedSeat } = await supabase.from('room_seats').update({ is_locked: !currentLocked }).eq('room_id', activeRoom.id).eq('seat_index', index).select().single();
-                supabase.channel(`vc_room_channel_${activeRoom.id}`).send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: updatedSeat } });
+                const isLocked = !currentLocked;
+                const expectedSeat = seats[index] ? { ...seats[index], is_locked: isLocked } : { room_id: activeRoom.id, seat_index: index, user_id: null, is_locked: isLocked, is_muted_by_host: false };
+                
+                setSeats(prev => { const n = [...prev]; n[index] = expectedSeat; return n; });
+                supabase.channel(`vc_room_channel_${activeRoom.id}`).send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: expectedSeat } });
+                
+                try { await supabase.from('room_seats').update({ is_locked: isLocked }).eq('room_id', activeRoom.id).eq('seat_index', index); }
+                catch(e) { fetchRoomData(activeRoom.id); }
             };
 
             const toggleSeatMuteByHost = async (index, currentMuted) => {
-                const { data: updatedSeat } = await supabase.from('room_seats').update({ is_muted_by_host: !currentMuted }).eq('room_id', activeRoom.id).eq('seat_index', index).select().single();
-                supabase.channel(`vc_room_channel_${activeRoom.id}`).send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: updatedSeat } });
+                const isMuted = !currentMuted;
+                const expectedSeat = seats[index] ? { ...seats[index], is_muted_by_host: isMuted } : null;
+                if (!expectedSeat) return;
+
+                setSeats(prev => { const n = [...prev]; n[index] = expectedSeat; return n; });
+                supabase.channel(`vc_room_channel_${activeRoom.id}`).send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: expectedSeat } });
+                
+                try { await supabase.from('room_seats').update({ is_muted_by_host: isMuted }).eq('room_id', activeRoom.id).eq('seat_index', index); }
+                catch(e) { fetchRoomData(activeRoom.id); }
             };
 
             if (!activeRoom) {
