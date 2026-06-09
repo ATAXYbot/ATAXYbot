@@ -132,6 +132,7 @@ CREATE POLICY "Enable all actions for public" ON public.room_messages FOR ALL US
 -- Add new columns for Telegram names and profile photos safely
 ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_name TEXT DEFAULT 'Host';
 ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_photo TEXT;
+ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS password TEXT;
 
 ALTER TABLE public.room_seats ADD COLUMN IF NOT EXISTS user_name TEXT;
 ALTER TABLE public.room_seats ADD COLUMN IF NOT EXISTS photo_url TEXT;
