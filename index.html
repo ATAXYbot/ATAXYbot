@@ -2061,8 +2061,6 @@ INSTRUCTIONS:
                     agoraClient.on("user-left", async (remoteUser) => {
                         try {
                             const userIdStr = String(remoteUser.uid);
-                            // 🛡️ GHOST BUSTER: Add to recently changed list to prevent sync race condition
-                            markRecentlyChanged(userIdStr);
 
                             // Instantly remove from UI
                             setParticipants(prev => prev.filter(s => String(s.user_id) !== userIdStr));
@@ -2143,6 +2141,10 @@ INSTRUCTIONS:
                                     if (recentlyChangedRef.current.has(String(id))) {
                                         const localP = participantsRef.current.find(p => String(p.user_id) === String(id));
                                         if (localP) currentParticipants.push(localP);
+                                        else {
+                                            const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
+                                            if (seatedConnection || state[id][0]) currentParticipants.push(seatedConnection || state[id][0]);
+                                        }
                                         continue;
                                     }
 
@@ -2300,7 +2302,27 @@ INSTRUCTIONS:
                                 }
                             })
                             .on('broadcast', { event: 'change_seat' }, ({ payload }) => {
-                                setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: payload.seatNum, is_muted: payload.isMuted } : p));
+                                setParticipants(prev => {
+                                    if (prev.some(p => String(p.user_id) === String(payload.target_uid))) {
+                                        return prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: payload.seatNum, is_muted: payload.isMuted } : p);
+                                    } else {
+                                        return [...prev, {
+                                            user_id: payload.target_uid,
+                                            user_name: payload.userName || "Unknown",
+                                            photo_url: payload.photoUrl || null,
+                                            seat_number: payload.seatNum,
+                                            is_muted: payload.isMuted
+                                        }];
+                                    }
+                                });
+                            })
+                            .on('broadcast', { event: 'user_joined' }, ({ payload }) => {
+                                setParticipants(prev => {
+                                    if (prev.some(p => String(p.user_id) === String(payload.user_id))) {
+                                        return prev.map(p => String(p.user_id) === String(payload.user_id) ? payload : p);
+                                    }
+                                    return [...prev, payload];
+                                });
                             })
                             .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
@@ -2556,7 +2578,7 @@ INSTRUCTIONS:
                         } catch(e) {}
                         
                         // Instantly notify everyone in the room of the new seat without waiting for network sync
-                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: seatIdx, isMuted: currentMute });
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: seatIdx, isMuted: currentMute, userName: username, photoUrl: photo_url });
                         
                         const rId = roomId || roomRef.current?.id;
                         if (seatIdx === 0 && rId) {
@@ -3622,7 +3644,12 @@ INSTRUCTIONS:
           }, [isDarkMode]);
 
           const [isVerified, setIsVerified] = useState(() => safeGetStr('ataxy_verified', '') === 'true');
-          const [tgUser, setTgUser] = useState(window.Telegram?.WebApp?.initDataUnsafe?.user || { first_name: "Student", id: "1001" });
+          const [tgUser, setTgUser] = useState(() => {
+              const tg = window.Telegram?.WebApp?.initDataUnsafe?.user;
+              if (tg && tg.id) return tg;
+              const randomId = "100" + Math.floor(Math.random() * 1000);
+              return { first_name: "Student_" + randomId.substring(3), id: randomId, username: "student" };
+          });
           
           const voiceState = useGlobalVoice(tgUser);
           const [showSplash, setShowSplash] = useState(true);
