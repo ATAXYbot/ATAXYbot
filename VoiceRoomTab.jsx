@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useVoiceRoomAudio } from './useVoiceRoomAudio';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,12 +9,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export default function VoiceRoomTab({ tgUser }) {
     const currentUserId = String(tgUser?.id || Math.floor(Math.random() * 10000));
+    const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
+    const currentUserAvatar = tgUser?.photo_url || "";
 
     const [activeRoom, setActiveRoom] = useState(null);
     const [seats, setSeats] = useState([null, null, null, null]);
     const [audience, setAudience] = useState([]);
     const [joinRoomId, setJoinRoomId] = useState('');
     const [showJoinModal, setShowJoinModal] = useState(false);
+    
+    const [messages, setMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [entryNotification, setEntryNotification] = useState(null);
+    const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+    const chatEndRef = useRef(null);
     
     const [isLocalMuted, setIsLocalMuted] = useState(true);
 
@@ -24,6 +32,7 @@ export default function VoiceRoomTab({ tgUser }) {
         const fetchRoomData = async () => {
             const { data: seatData } = await supabase.from('room_seats').select('*').eq('room_id', activeRoom.id);
             const { data: audienceData } = await supabase.from('room_audience').select('*').eq('room_id', activeRoom.id);
+            const { data: messagesData } = await supabase.from('room_messages').select('*').eq('room_id', activeRoom.id).order('created_at', { ascending: true });
             
             const newSeats = [null, null, null, null];
             if (seatData) {
@@ -33,18 +42,30 @@ export default function VoiceRoomTab({ tgUser }) {
             }
             setSeats(newSeats);
             setAudience(audienceData || []);
+            setMessages(messagesData || []);
         };
 
         fetchRoomData();
 
         const channel = supabase.channel(`room_data_${activeRoom.id}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_seats', filter: `room_id=eq.${activeRoom.id}` }, fetchRoomData)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'room_audience', filter: `room_id=eq.${activeRoom.id}` }, fetchRoomData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'room_audience', filter: `room_id=eq.${activeRoom.id}` }, (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    setEntryNotification(payload.new.user_name || 'A user');
+                    setTimeout(() => setEntryNotification(null), 3000);
+                }
+                fetchRoomData();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_messages', filter: `room_id=eq.${activeRoom.id}` }, (payload) => {
+                setMessages(prev => [...prev, payload.new]);
+            })
             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_rooms', filter: `id=eq.${activeRoom.id}` }, () => setActiveRoom(null))
             .subscribe();
 
         return () => supabase.removeChannel(channel);
     }, [activeRoom]);
+
+    useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
     const mySeat = seats.find(s => s && s.user_id === currentUserId);
     const mySeatIndex = mySeat ? mySeat.seat_index : null;
@@ -89,7 +110,9 @@ export default function VoiceRoomTab({ tgUser }) {
 
         const { error } = await supabase.from('room_audience').insert({
             room_id: room.id,
-            user_id: currentUserId
+            user_id: currentUserId,
+            user_name: currentUserName,
+            photo_url: currentUserAvatar
         });
 
         if (error) {
@@ -158,6 +181,19 @@ export default function VoiceRoomTab({ tgUser }) {
         await supabase.from('room_seats').update({ is_muted_by_host: !currentMuted }).eq('room_id', activeRoom.id).eq('seat_index', index);
     };
 
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!chatInput.trim()) return;
+        await supabase.from('room_messages').insert({
+            room_id: activeRoom.id,
+            user_id: currentUserId,
+            user_name: currentUserName,
+            user_avatar: currentUserAvatar,
+            message: chatInput
+        });
+        setChatInput('');
+    };
+
     if (!activeRoom) {
         return (
             <div className="p-6 text-center space-y-4">
@@ -189,7 +225,12 @@ export default function VoiceRoomTab({ tgUser }) {
             <div className="flex justify-between items-center p-4 border-b border-gray-800">
                 <div>
                     <h2 className="font-bold text-lg">{activeRoom.room_name}</h2>
-                    <p className="text-xs text-gray-400">ID: {activeRoom.room_id_5_digit} • {totalParticipants} / 12</p>
+                <div className="text-xs text-gray-400 flex items-center gap-2 mt-1">
+                    <span>ID: {activeRoom.room_id_5_digit}</span> • 
+                    <button onClick={() => setShowParticipantsModal(true)} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded-md text-blue-400 font-semibold flex items-center gap-1.5 transition-colors">
+                        <i className="fa-solid fa-users"></i> {totalParticipants} / 12
+                    </button>
+                </div>
                 </div>
                 <div className="flex gap-2">
                     <button onClick={() => setShowJoinModal(true)} className="bg-gray-800 p-2 rounded-lg"><i className="fa-solid fa-search"></i></button>
@@ -219,18 +260,65 @@ export default function VoiceRoomTab({ tgUser }) {
                     );
                 })}
             </div>
-            <div className="flex-1 bg-gray-800 rounded-t-3xl p-6">
-                <h3 className="font-bold mb-4">Audience ({audience.length})</h3>
-                <div className="grid grid-cols-4 gap-4">
+            <div className="flex-1 bg-gray-800 rounded-t-3xl p-4 flex flex-col min-h-0">
+                <h3 className="font-bold mb-2 shrink-0">Audience ({audience.length})</h3>
+                <div className="flex gap-4 overflow-x-auto pb-2 shrink-0">
                     {audience.map(m => (
-                        <div key={m.user_id} className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => { if (isHost) alert(`Invitation sent to ${m.user_id}`); }}>
-                            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">{m.user_id.substring(0, 2)}</div>
-                            <span className="text-[10px] text-gray-400 truncate w-full text-center">User {m.user_id.substring(0, 4)}</span>
+                        <div key={m.user_id} className="flex flex-col items-center gap-1 cursor-pointer shrink-0 w-12" onClick={() => { if (isHost) alert(`Invitation sent to ${m.user_name || m.user_id}`); }}>
+                            {m.photo_url || m.user_avatar ? <img src={m.photo_url || m.user_avatar} className="w-12 h-12 rounded-full object-cover border border-gray-600" /> : <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-white border border-gray-600">{m.user_name ? m.user_name.substring(0, 2).toUpperCase() : m.user_id.substring(0, 2)}</div>}
+                            <span className="text-[10px] text-gray-400 truncate w-full text-center">{m.user_name || `User ${m.user_id.substring(0, 4)}`}</span>
                         </div>
                     ))}
                 </div>
+                
+                {/* Chat Messages */}
+                <div className="flex-1 overflow-y-auto mt-2 space-y-2 pb-2">
+                    {messages.map(m => (
+                        <div key={m.id} className="bg-gray-700 p-2.5 rounded-xl text-sm w-fit max-w-[80%] shadow-sm">
+                            <span className="font-bold text-blue-400 mr-2">{m.user_name}:</span>
+                            <span className="text-gray-100">{m.message}</span>
+                        </div>
+                    ))}
+                    <div ref={chatEndRef} />
+                </div>
+
+                {/* Chat Input */}
+                <form onSubmit={handleSendMessage} className="mt-2 flex gap-2 shrink-0 pb-20">
+                    <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder="Send a message..." className="flex-1 bg-gray-900 border border-gray-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+                    <button type="submit" className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 shrink-0 shadow-md"><i className="fa-solid fa-paper-plane text-xs"></i></button>
+                </form>
             </div>
             {mySeatIndex !== null && <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-4"><button onClick={() => setIsLocalMuted(!isLocalMuted)} className={`w-14 h-14 rounded-full flex items-center justify-center text-xl shadow-lg transition-colors ${isLocalMuted ? 'bg-red-500 text-white' : 'bg-white text-gray-900'}`}><i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i></button></div>}
+            
+            {/* VIP Entry Notification Overlay */}
+            {entryNotification && (
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-blue-600/90 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(37,99,235,0.6)] z-50 animate-bounce flex items-center gap-2">
+                    👋 {entryNotification} entered the room
+                </div>
+            )}
+
+            {/* Participants Modal Overlay */}
+            {showParticipantsModal && (
+                <div className="absolute inset-0 bg-black/80 flex justify-center items-end z-50" onClick={() => setShowParticipantsModal(false)}>
+                    <div className="bg-gray-900 w-full max-w-md rounded-t-3xl p-5 h-[70vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" onClick={e=>e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-3">
+                            <h3 className="font-bold text-lg text-white">Room Participants ({totalParticipants})</h3>
+                            <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white transition-colors"><i className="fa-solid fa-xmark text-xl"></i></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                            {[...seats.filter(s => s && s.user_id), ...audience].map((p, i) => (
+                                <div key={i} className="flex items-center gap-3 bg-gray-800 p-3 rounded-xl border border-gray-700">
+                                    {p.photo_url || p.user_avatar ? <img src={p.photo_url || p.user_avatar} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">{p.user_name ? p.user_name[0].toUpperCase() : 'U'}</div>}
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="font-bold text-sm text-white truncate">{p.user_name || `User ${p.user_id.substring(0,4)}`}</p>
+                                        <p className="text-xs text-gray-400 truncate">ID: {p.user_id}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

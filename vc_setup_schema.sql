@@ -27,6 +27,16 @@ CREATE TABLE IF NOT EXISTS public.room_audience (
     PRIMARY KEY (room_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.room_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    room_id UUID REFERENCES public.active_rooms(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    user_name TEXT,
+    user_avatar TEXT,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Prevent duplicate seating per user in the same room
 CREATE UNIQUE INDEX IF NOT EXISTS unique_user_per_room_seat 
 ON public.room_seats (room_id, user_id) 
@@ -98,11 +108,13 @@ GRANT EXECUTE ON FUNCTION public.move_to_seat(UUID, INT, TEXT, TEXT, TEXT) TO an
 ALTER TABLE public.active_rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.room_seats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.room_audience ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.room_messages ENABLE ROW LEVEL SECURITY;
 
 -- Grant API access to the tables
 GRANT ALL ON TABLE public.active_rooms TO anon, authenticated;
 GRANT ALL ON TABLE public.room_seats TO anon, authenticated;
 GRANT ALL ON TABLE public.room_audience TO anon, authenticated;
+GRANT ALL ON TABLE public.room_messages TO anon, authenticated;
 
 -- Create bulletproof policies allowing the app to do everything (Insert/Select/Update/Delete)
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.active_rooms;
@@ -113,6 +125,9 @@ CREATE POLICY "Enable all actions for public" ON public.room_seats FOR ALL USING
 
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.room_audience;
 CREATE POLICY "Enable all actions for public" ON public.room_audience FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable all actions for public" ON public.room_messages;
+CREATE POLICY "Enable all actions for public" ON public.room_messages FOR ALL USING (true) WITH CHECK (true);
 
 -- Add new columns for Telegram names and profile photos safely
 ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_name TEXT DEFAULT 'Host';
