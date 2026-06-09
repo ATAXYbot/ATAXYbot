@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS public.room_audience (
     PRIMARY KEY (room_id, user_id)
 );
 
+-- Prevent duplicate seating per user in the same room
+CREATE UNIQUE INDEX IF NOT EXISTS unique_user_per_room_seat 
+ON public.room_seats (room_id, user_id) 
+WHERE user_id IS NOT NULL;
+
 -- Capacity Constraint Function & Trigger (Limit exactly to 12 participants max like WePlay)
 CREATE OR REPLACE FUNCTION public.check_room_capacity()
 RETURNS TRIGGER AS $$
@@ -50,6 +55,37 @@ CREATE TRIGGER enforce_room_capacity BEFORE INSERT ON public.room_audience FOR E
 
 DROP TRIGGER IF EXISTS enforce_seat_capacity ON public.room_seats;
 CREATE TRIGGER enforce_seat_capacity BEFORE UPDATE ON public.room_seats FOR EACH ROW WHEN (OLD.user_id IS NULL AND NEW.user_id IS NOT NULL) EXECUTE FUNCTION public.check_room_capacity();
+
+-- Atomic Seat Movement RPC (One single transaction for zero desync)
+CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+    v_target_locked BOOLEAN;
+    v_target_occupant TEXT;
+BEGIN
+    -- 1. Check if the target seat is locked or occupied
+    SELECT is_locked, user_id INTO v_target_locked, v_target_occupant
+    FROM public.room_seats 
+    WHERE room_id = p_room_id AND seat_index = p_seat_index;
+
+    IF v_target_locked THEN
+        RAISE EXCEPTION 'Seat is locked by the host';
+    END IF;
+
+    IF v_target_occupant IS NOT NULL AND v_target_occupant != p_user_id THEN
+        RAISE EXCEPTION 'Seat is already occupied';
+    END IF;
+
+    -- 2. Clear user from ANY other seat they currently occupy in this room
+    UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id AND seat_index != p_seat_index;
+    -- 3. Update the target seat with the user
+    UPDATE public.room_seats SET user_id = p_user_id WHERE room_id = p_room_id AND seat_index = p_seat_index;
+    -- 4. Remove the user from the room_audience table
+    DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = p_user_id;
+
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Apply Public RLS (Allows all clients to read/insert freely for this VC mesh component)
 ALTER TABLE public.active_rooms ENABLE ROW LEVEL SECURITY;

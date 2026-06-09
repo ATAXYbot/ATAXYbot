@@ -19,17 +19,23 @@ export function useVoiceRoomAudio(supabase, roomId, currentSeatIndex, currentUse
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                     localStreamRef.current = stream;
-                    if (isMutedByHost || isLocalMuted) {
-                        stream.getAudioTracks()[0].enabled = false;
-                    }
+                    
+                    const isAudioEnabled = (!isLocalMuted && !isMutedByHost);
+                    stream.getAudioTracks().forEach(track => {
+                        track.enabled = isAudioEnabled;
+                    });
                 } catch (err) {
                     console.error('Failed to get local audio', err);
                 }
             } else {
+                // Automatically clear hardware & network resources if moved to audience
                 if (localStreamRef.current) {
                     localStreamRef.current.getTracks().forEach(t => t.stop());
                     localStreamRef.current = null;
                 }
+                Object.values(peersRef.current).forEach(p => p.close());
+                peersRef.current = {};
+                setRemoteStreams({});
             }
 
             channel.on('broadcast', { event: 'webrtc-signaling' }, async ({ payload }) => {
@@ -155,10 +161,10 @@ export function useVoiceRoomAudio(supabase, roomId, currentSeatIndex, currentUse
 
     useEffect(() => {
         if (localStreamRef.current) {
-            const audioTrack = localStreamRef.current.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !(isMutedByHost || isLocalMuted);
-            }
+            const isAudioEnabled = (!isLocalMuted && !isMutedByHost);
+            localStreamRef.current.getAudioTracks().forEach(track => {
+                track.enabled = isAudioEnabled;
+            });
         }
     }, [isMutedByHost, isLocalMuted]);
 

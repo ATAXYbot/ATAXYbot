@@ -40,6 +40,7 @@ export default function VoiceRoomTab({ tgUser }) {
         const channel = supabase.channel(`room_data_${activeRoom.id}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_seats', filter: `room_id=eq.${activeRoom.id}` }, fetchRoomData)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'room_audience', filter: `room_id=eq.${activeRoom.id}` }, fetchRoomData)
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_rooms', filter: `id=eq.${activeRoom.id}` }, () => setActiveRoom(null))
             .subscribe();
 
         return () => supabase.removeChannel(channel);
@@ -109,21 +110,34 @@ export default function VoiceRoomTab({ tgUser }) {
     const handleExitRoom = async () => {
         if (!activeRoom) return;
         if (mySeatIndex !== null) {
-            await supabase.from('room_seats').update({ user_id: null }).eq('room_id', activeRoom.id).eq('seat_index', mySeatIndex);
+            await supabase.from('room_seats').update({ user_id: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', mySeatIndex);
         } else {
             await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
         }
         if (isHost) {
-            await supabase.from('active_rooms').delete().eq('id', activeRoom.id);
+            const nextHostSeat = seats.find(s => s && s.user_id && s.user_id !== currentUserId);
+            if (nextHostSeat) {
+                await supabase.from('active_rooms').update({ host_id: nextHostSeat.user_id }).eq('id', activeRoom.id);
+            } else {
+                await supabase.from('active_rooms').delete().eq('id', activeRoom.id);
+            }
         }
         setActiveRoom(null);
     };
 
     const takeSeat = async (index) => {
-        if (mySeatIndex !== null) return;
-        await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
-        await supabase.from('room_seats').update({ user_id: currentUserId }).eq('room_id', activeRoom.id).eq('seat_index', index);
+        // Optimistic UI Update (Zero lag)
+        setSeats(prev => prev.map((s, i) => i === index ? { ...s, user_id: currentUserId } : (s?.user_id === currentUserId ? { ...s, user_id: null } : s)));
+        setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
         setIsLocalMuted(true);
+        
+        const { error } = await supabase.rpc('move_to_seat', { p_room_id: activeRoom.id, p_seat_index: index, p_user_id: currentUserId });
+        if (error) {
+            alert("Failed to take seat: " + error.message);
+            // Refresh to restore correct state
+            const { data: seatData } = await supabase.from('room_seats').select('*').eq('room_id', activeRoom.id);
+            if (seatData) setSeats([null, null, null, null].map((_, i) => seatData.find(s => s.seat_index === i) || null));
+        }
     };
 
     const moveToAudience = async (userIdToMove, seatIndex) => {
