@@ -907,6 +907,28 @@
                                     type: 'broadcast', event: 'webrtc_signal',
                                     payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) }
                                 });
+                            } else {
+                                channel.send({
+                                    type: 'broadcast', event: 'peer_hello',
+                                    payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeaker }
+                                });
+                            }
+                        }
+                    });
+
+                    channel.on('broadcast', { event: 'peer_hello' }, async ({ payload }) => {
+                        const { senderId, targetId, senderIsSpeaker } = payload;
+                        if (targetId !== currentUserId) return;
+
+                        if (amISpeaker || senderIsSpeaker) {
+                            if (currentUserId > senderId) {
+                                const peer = createPeer(senderId, senderIsSpeaker);
+                                const offer = await peer.createOffer();
+                                await peer.setLocalDescription(offer);
+                                channel.send({
+                                    type: 'broadcast', event: 'webrtc_signal',
+                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) }
+                                });
                             }
                         }
                     });
@@ -1028,6 +1050,12 @@
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
             const [roomToJoinWithPassword, setRoomToJoinWithPassword] = useState(null);
             const [joinPasswordInput, setJoinPasswordInput] = useState('');
+            const [showVCCreateModal, setShowVCCreateModal] = useState(false);
+            const [vcCreateName, setVcCreateName] = useState('');
+            const [vcCreateType, setVcCreateType] = useState('temporary');
+            const [vcCreatePass, setVcCreatePass] = useState('');
+            const [vcCreatePhoto, setVcCreatePhoto] = useState('');
+            const [vcCreatePassEnabled, setVcCreatePassEnabled] = useState(false);
             
             const chatEndRef = useRef(null);
 
@@ -1132,9 +1160,16 @@
                     .on('broadcast', { event: 'invite' }, ({ payload }) => {
                         if (payload.target === currentUserId) setPendingInvite(payload);
                     })
+                    .on('broadcast', { event: 'room_chat' }, ({ payload }) => {
+                        setMessages(prev => {
+                            if (prev.some(m => m.id === payload.id)) return prev;
+                            return [...prev, payload];
+                        });
+                    })
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_messages', filter: `room_id=eq.${activeRoom.id}` }, (payload) => {
                         setMessages(prev => {
-                            if (prev.some(m => m.id === payload.new.id)) return prev;
+                            // Don't duplicate if we already have it via broadcast
+                            if (prev.some(m => m.id === payload.new.id || (m.message === payload.new.message && m.user_id === payload.new.user_id && m.id.toString().startsWith('msg-')))) return prev;
                             return [...prev, payload.new];
                         });
                     })
@@ -1157,25 +1192,27 @@
                 return () => supabase.removeChannel(chan);
             }, [activeRoom]);
 
-            const handleCreateRoom = async () => {
+            const executeCreateRoom = async () => {
                 setIsCreating(true);
                 setRoomError('');
                 if (!supabase) {
-                    setRoomError("Supabase connection not initialized. Please check your internet or refresh.");
+                    setRoomError("Supabase connection not initialized.");
                     setIsCreating(false);
                     return;
                 }
                 try {
-                    const { data, error } = await supabase.from('active_rooms').insert({
-                        room_name: `${currentUserName}'s Room`,
+                    const insertData = {
+                        room_name: vcCreateName || `${currentUserName}'s Room`,
                         host_id: currentUserId,
                         host_name: currentUserName,
-                        host_photo: currentUserPhoto
-                    }).select().single();
+                        host_photo: (vcCreateType === 'advance' && vcCreatePhoto) ? vcCreatePhoto : currentUserPhoto,
+                        password: vcCreatePassEnabled && vcCreatePass ? vcCreatePass : null
+                    };
+                    const { data, error } = await supabase.from('active_rooms').insert(insertData).select().single();
 
                     if (error) {
-                        safeAlert("Database Error: " + error.message + "\n\n(Have you run the Supabase SQL setup script?)");
-                        setRoomError("Database Error: " + error.message + " (Have you run the SQL script?)");
+                        safeAlert("Database Error: " + error.message);
+                        setRoomError("Database Error: " + error.message);
                         setIsCreating(false);
                         return;
                     }
@@ -1186,12 +1223,14 @@
                             seat_index: i, 
                             user_id: i === 0 ? currentUserId : null,
                             user_name: i === 0 ? currentUserName : null,
-                            photo_url: i === 0 ? currentUserPhoto : null
+                            photo_url: i === 0 ? ((vcCreateType === 'advance' && vcCreatePhoto) ? vcCreatePhoto : currentUserPhoto) : null
                         }));
                         const { error: seatErr } = await supabase.from('room_seats').insert(initialSeats);
-                        if (seatErr) safeAlert("Seat Error: " + seatErr.message);
                         if (seatErr) setRoomError("Seat Error: " + seatErr.message);
-                        else setActiveRoom(data);
+                        else {
+                            setActiveRoom(data);
+                            setShowVCCreateModal(false);
+                        }
                     }
                 } catch (err) {
                     safeAlert("Connection failed: " + err.message);
@@ -1359,9 +1398,10 @@
 
             const handleSendMessage = async (text, imageUrl = null) => {
                 if (!text.trim() && !imageUrl) return;
-                const tempId = Date.now().toString();
+                // Generate a pseudo-UUID for optimistic UI & deduplication
+                const clientMsgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                 const newMsg = {
-                    id: tempId,
+                    id: clientMsgId,
                     room_id: activeRoom.id,
                     user_id: currentUserId,
                     user_name: currentUserName,
@@ -1369,7 +1409,17 @@
                     message: text || '📸 Sent an image',
                     image_url: imageUrl
                 };
+                
                 setMessages(prev => [...prev, newMsg]);
+                
+                if (activeChannelRef.current) {
+                    activeChannelRef.current.send({
+                        type: 'broadcast',
+                        event: 'room_chat',
+                        payload: newMsg
+                    });
+                }
+                
                 await supabase.from('room_messages').insert([{...newMsg, id: undefined}]);
             };
 
@@ -1387,7 +1437,7 @@
                         )}
 
                         <div className="w-full flex gap-3 mt-4">
-                            <button onClick={handleCreateRoom} disabled={isCreating} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] py-4 rounded-2xl font-black shadow-[0_0_20px_rgba(0,255,255,0.4)] hover:scale-105 transition-transform text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} disabled={isCreating} className="flex-1 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] py-4 rounded-2xl font-black shadow-[0_0_20px_rgba(0,255,255,0.4)] hover:scale-105 transition-transform text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                 {isCreating ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i></> : <><i className="fa-solid fa-plus mr-1"></i> New Room</>}
                             </button>
                             <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 text-[#00FFFF] py-4 rounded-2xl font-black hover:bg-[#00FFFF]/10 transition-colors text-sm">
@@ -1450,6 +1500,53 @@
                                                 setJoinPasswordInput('');
                                             } else { safeAlert("Incorrect password."); }
                                         }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showVCCreateModal && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
+                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Create Voice Lounge</h3>
+                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                    <input type="text" value={vcCreateName} onChange={e => setVcCreateName(e.target.value)} placeholder={`${currentUserName}'s Room`} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
+                                    <div className="flex gap-2 mb-4">
+                                        <button type="button" onClick={() => setVcCreateType('temporary')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${vcCreateType === 'temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Temporary</button>
+                                        <button type="button" onClick={() => setVcCreateType('advance')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${vcCreateType === 'advance' ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Advance</button>
+                                    </div>
+                                    {vcCreateType === 'advance' && (
+                                        <div className="mb-4">
+                                            <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Profile Picture (Advance Only)</label>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 overflow-hidden flex items-center justify-center shrink-0">
+                                                    {vcCreatePhoto ? <img src={vcCreatePhoto} className="w-full h-full object-cover" /> : <i className="fa-solid fa-image text-gray-500"></i>}
+                                                </div>
+                                                <input type="file" accept="image/*" onChange={(e) => {
+                                                    const f = e.target.files[0]; if (!f) return;
+                                                    const r = new FileReader(); r.onload = (ev) => {
+                                                        const img = new Image(); img.onload = () => {
+                                                            const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 400;
+                                                            if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
+                                                            c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+                                                            setVcCreatePhoto(c.toDataURL('image/jpeg', 0.8));
+                                                        }; img.src = ev.target.result;
+                                                    }; r.readAsDataURL(f);
+                                                }} className="text-[10px] flex-1 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#00FFFF]/20 file:text-[#00FFFF] hover:file:bg-[#00FFFF]/30 cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider">Enable Password</label>
+                                        <input type="checkbox" checked={vcCreatePassEnabled} onChange={e => setVcCreatePassEnabled(e.target.checked)} className="w-4 h-4 accent-[#00FFFF]" />
+                                    </div>
+                                    {vcCreatePassEnabled && (
+                                        <input type="text" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value)} placeholder="Enter password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    )}
+                                    <div className="flex gap-3 mt-6">
+                                        <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={executeCreateRoom} disabled={isCreating} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isCreating ? 'Creating...' : 'Create'}</button>
                                     </div>
                                 </div>
                             </div>
@@ -1707,6 +1804,62 @@
                                         setShowActionModal(null); 
                                     }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Stage</button>
                                     <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'invite_to_seat' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-t-3xl p-4 w-full max-w-md h-[60vh] flex flex-col border border-[#0AE0D0]/30 shadow-[0_-10px_40px_rgba(0,255,255,0.15)]" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Invite to Seat {showActionModal.seatNum}</h3>
+                                <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
+                                    {(() => {
+                                        const candidates = [
+                                            ...seats.filter(s => s && s.user_id && s.user_id !== currentUserId && s.user_id !== showActionModal.oldOccupant?.user_id).map(s => ({ ...s, isSeated: true })),
+                                            ...audience.map(a => ({ ...a, isSeated: false }))
+                                        ];
+                                        
+                                        if (candidates.length === 0) return <p className="text-gray-400 text-center py-10 italic">No eligible users to invite.</p>;
+                                        
+                                        return candidates.map((c, i) => (
+                                            <div key={i} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10 hover:border-[#0AE0D0]/40 transition-colors">
+                                                <div className="flex items-center gap-3 text-white font-bold text-sm">
+                                                    {c.photo_url || c.user_avatar ? (
+                                                        <img src={c.photo_url || c.user_avatar} className="w-10 h-10 rounded-full object-cover border border-[#00FFFF]/30" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 text-lg">{String(c.user_name || 'U').charAt(0).toUpperCase()}</div>
+                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className="truncate max-w-[150px]">{String(c.user_name || 'User')}</span>
+                                                        <span className="text-[10px] text-[#A4DFE6] font-normal">{c.isSeated ? `Currently on Seat ${c.seat_index}` : 'In Audience'}</span>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => { 
+                                                    if (showActionModal.oldOccupant) {
+                                                        moveToAudience(showActionModal.oldOccupant.user_id, showActionModal.seatNum, showActionModal.oldOccupant.user_name, showActionModal.oldOccupant.photo_url);
+                                                    }
+                                                    if (activeChannelRef.current) {
+                                                        activeChannelRef.current.send({ type: 'broadcast', event: 'invite', payload: { target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName } });
+                                                    }
+                                                    safeAlert('Invite sent!'); 
+                                                    setShowActionModal(null); 
+                                                }} className="bg-[#00FFFF] text-[#010B1C] px-4 py-1.5 rounded-lg text-xs font-black shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Invite</button>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'change_seat_self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-chair"></i></div>
+                                <h3 className="text-xl font-bold text-white mb-2">Change Seat?</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">Do you want to move to Seat {showActionModal.seatNum}?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowActionModal(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                    <button onClick={() => { takeSeat(showActionModal.seatNum); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Move</button>
                                 </div>
                             </div>
                         </div>
