@@ -1,48 +1,72 @@
 -- Enable UUID extension just in case
+-- ====================================================================================
+-- THE ULTIMATE WEPLAY REPLICA SUPABASE SQL SCRIPT
+-- Run this in your Supabase SQL Editor to instantly fix all VC room bugs!
+-- ====================================================================================
+
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Supabase SQL Schema & RLS for WebRTC VC Tab
-
+-- 1. Create Active Rooms Table
 CREATE TABLE IF NOT EXISTS public.active_rooms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id_5_digit INTEGER UNIQUE DEFAULT floor(random() * 90000 + 10000)::int,
     room_name TEXT NOT NULL,
     host_id TEXT NOT NULL,
+    host_name TEXT DEFAULT 'Host',
+    host_photo TEXT,
+    password TEXT,
+    chat_disabled BOOLEAN DEFAULT false,
+    require_mic_request BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 2. Create Seats Table (The Stage)
 CREATE TABLE IF NOT EXISTS public.room_seats (
     room_id UUID REFERENCES public.active_rooms(id) ON DELETE CASCADE,
     seat_index INTEGER CHECK (seat_index >= 0 AND seat_index <= 3),
     user_id TEXT,
+    user_name TEXT,
+    photo_url TEXT,
     is_locked BOOLEAN DEFAULT false,
     is_muted_by_host BOOLEAN DEFAULT false,
     PRIMARY KEY (room_id, seat_index)
 );
 
+-- 3. Create Audience Table
 CREATE TABLE IF NOT EXISTS public.room_audience (
     room_id UUID REFERENCES public.active_rooms(id) ON DELETE CASCADE,
     user_id TEXT NOT NULL,
+    user_name TEXT,
+    photo_url TEXT,
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (room_id, user_id)
 );
 
+-- 4. Create Messages Table (Live Chat)
 CREATE TABLE IF NOT EXISTS public.room_messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id UUID REFERENCES public.active_rooms(id) ON DELETE CASCADE,
     user_id TEXT NOT NULL,
     user_name TEXT,
     user_avatar TEXT,
     message TEXT NOT NULL,
+    image_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Prevent duplicate seating per user in the same room
-CREATE UNIQUE INDEX IF NOT EXISTS unique_user_per_room_seat 
+-- ====================================================================================
+-- BUG FIX 1: Prevent Duplicate Seating (User sitting on multiple seats at once)
+-- ====================================================================================
+DROP INDEX IF EXISTS unique_user_per_room_seat;
+CREATE UNIQUE INDEX unique_user_per_room_seat 
 ON public.room_seats (room_id, user_id) 
 WHERE user_id IS NOT NULL;
 
--- Capacity Constraint Function & Trigger (Limit exactly to 12 participants max like WePlay)
+-- ====================================================================================
+-- BUG FIX 2: Strict 12-User Capacity Constraint
+-- ====================================================================================
 CREATE OR REPLACE FUNCTION public.check_room_capacity()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -66,18 +90,16 @@ CREATE TRIGGER enforce_room_capacity BEFORE INSERT ON public.room_audience FOR E
 DROP TRIGGER IF EXISTS enforce_seat_capacity ON public.room_seats;
 CREATE TRIGGER enforce_seat_capacity BEFORE UPDATE ON public.room_seats FOR EACH ROW WHEN (OLD.user_id IS NULL AND NEW.user_id IS NOT NULL) EXECUTE FUNCTION public.check_room_capacity();
 
--- Force drop any corrupted versions of the function
-DROP FUNCTION IF EXISTS public.move_to_seat(UUID, INT, TEXT);
-DROP FUNCTION IF EXISTS public.move_to_seat(UUID, INT, TEXT, TEXT, TEXT);
-
--- Atomic Seat Movement RPC (One single transaction for zero desync)
+-- ====================================================================================
+-- BUG FIX 3: Atomic Seat Movement RPC (Fixes UI Desync and Ghost Seat Occupancy)
+-- ====================================================================================
 CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT, p_user_name TEXT DEFAULT NULL, p_photo_url TEXT DEFAULT NULL)
 RETURNS BOOLEAN AS $$
 DECLARE
     v_target_locked BOOLEAN;
     v_target_occupant TEXT;
 BEGIN
-    -- 1. Check if the target seat is locked or occupied
+    -- A. Check if the target seat is locked or already occupied by someone else
     SELECT is_locked, user_id INTO v_target_locked, v_target_occupant
     FROM public.room_seats 
     WHERE room_id = p_room_id AND seat_index = p_seat_index;
@@ -90,55 +112,49 @@ BEGIN
         RAISE EXCEPTION 'Seat is already occupied';
     END IF;
 
-    -- 2. Clear user from ANY other seat they currently occupy in this room
-    UPDATE public.room_seats SET user_id = NULL, user_name = NULL, photo_url = NULL WHERE room_id = p_room_id AND user_id = p_user_id AND seat_index != p_seat_index;
-    -- 3. Update the target seat with the user
-    UPDATE public.room_seats SET user_id = p_user_id, user_name = p_user_name, photo_url = p_photo_url WHERE room_id = p_room_id AND seat_index = p_seat_index;
-    -- 4. Remove the user from the room_audience table
-    DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = p_user_id;
+    -- B. Clear user from ANY other seat they currently occupy in this room (Instant Lift)
+    UPDATE public.room_seats 
+    SET user_id = NULL, user_name = NULL, photo_url = NULL 
+    WHERE room_id = p_room_id AND user_id = p_user_id AND seat_index != p_seat_index;
+    
+    -- C. Drop the user into the target seat
+    UPDATE public.room_seats 
+    SET user_id = p_user_id, user_name = p_user_name, photo_url = p_photo_url 
+    WHERE room_id = p_room_id AND seat_index = p_seat_index;
+    
+    -- D. Ensure they are removed from the audience
+    DELETE FROM public.room_audience 
+    WHERE room_id = p_room_id AND user_id = p_user_id;
 
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant execute permissions to the API
-GRANT EXECUTE ON FUNCTION public.move_to_seat(UUID, INT, TEXT, TEXT, TEXT) TO anon, authenticated;
-
--- Apply Public RLS (Allows all clients to read/insert freely for this VC mesh component)
+-- ====================================================================================
+-- SECURITY: Free Access for WebRTC Signaling (Row Level Security)
+-- ====================================================================================
 ALTER TABLE public.active_rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.room_seats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.room_audience ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.room_messages ENABLE ROW LEVEL SECURITY;
 
--- Grant API access to the tables
 GRANT ALL ON TABLE public.active_rooms TO anon, authenticated;
 GRANT ALL ON TABLE public.room_seats TO anon, authenticated;
 GRANT ALL ON TABLE public.room_audience TO anon, authenticated;
 GRANT ALL ON TABLE public.room_messages TO anon, authenticated;
 
--- Create bulletproof policies allowing the app to do everything (Insert/Select/Update/Delete)
+-- Bulletproof explicit permissive policies for API Roles
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.active_rooms;
-CREATE POLICY "Enable all actions for public" ON public.active_rooms FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Enable full access for active_rooms" ON public.active_rooms FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.room_seats;
-CREATE POLICY "Enable all actions for public" ON public.room_seats FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Enable full access for room_seats" ON public.room_seats FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.room_audience;
-CREATE POLICY "Enable all actions for public" ON public.room_audience FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Enable full access for room_audience" ON public.room_audience FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Enable all actions for public" ON public.room_messages;
-CREATE POLICY "Enable all actions for public" ON public.room_messages FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Enable full access for room_messages" ON public.room_messages FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
--- Add new columns for Telegram names and profile photos safely
-ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_name TEXT DEFAULT 'Host';
-ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS host_photo TEXT;
-ALTER TABLE public.active_rooms ADD COLUMN IF NOT EXISTS password TEXT;
-
-ALTER TABLE public.room_seats ADD COLUMN IF NOT EXISTS user_name TEXT;
-ALTER TABLE public.room_seats ADD COLUMN IF NOT EXISTS photo_url TEXT;
-
-ALTER TABLE public.room_audience ADD COLUMN IF NOT EXISTS user_name TEXT;
-ALTER TABLE public.room_audience ADD COLUMN IF NOT EXISTS photo_url TEXT;
-
--- THIS IS THE CRITICAL LINE THAT FIXES YOUR CACHE ERROR:
+-- Refresh the API Cache to instantly reflect these new functions and columns
 NOTIFY pgrst, 'reload schema';
