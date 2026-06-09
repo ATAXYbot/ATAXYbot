@@ -3863,25 +3863,6 @@ INSTRUCTIONS:
                                 <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.seatNum}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => {
-                                        if (activeRoom.require_mic_request) {
-                                            sendBroadcast('request_seat', { uid: String(tgUser.id), name: tgUser.first_name, seatNum: showActionModal.seatNum });
-                                            safeAlert("Requested to take seat. Waiting for host approval.");
-                                        } else {
-                                            takeSeat(showActionModal.seatNum);
-                                        }
-                                        setShowActionModal(null);
-                                    }} className="py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105">Take Mic Seat</button>
-                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showActionModal && showActionModal.type === 'empty_seat_audience' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.seatNum}</h3>
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={() => {
                                         takeSeat(showActionModal.seatNum);
                                         setShowActionModal(null);
                                     }} className="py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-transform hover:scale-105">Take Mic Seat</button>
