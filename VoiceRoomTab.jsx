@@ -110,7 +110,7 @@ export default function VoiceRoomTab({ tgUser }) {
     const handleExitRoom = async () => {
         if (!activeRoom) return;
         if (mySeatIndex !== null) {
-            await supabase.from('room_seats').update({ user_id: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', mySeatIndex);
+            await supabase.from('room_seats').update({ user_id: null }).eq('room_id', activeRoom.id).eq('seat_index', mySeatIndex);
         } else {
             await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', currentUserId);
         }
@@ -126,10 +126,11 @@ export default function VoiceRoomTab({ tgUser }) {
     };
 
     const takeSeat = async (index) => {
+        const existingSeat = seats[index] || {};
         // Optimistic UI Update (Zero lag)
-        setSeats(prev => prev.map((s, i) => i === index ? { ...s, user_id: currentUserId } : (s?.user_id === currentUserId ? { ...s, user_id: null } : s)));
+        setSeats(prev => prev.map((s, i) => i === index ? { ...s, user_id: currentUserId, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } : (s?.user_id === currentUserId ? { ...s, user_id: null } : s)));
         setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
-        setIsLocalMuted(true);
+        setIsLocalMuted(existingSeat.is_muted_by_host || false);
         
         const { error } = await supabase.rpc('move_to_seat', { 
             p_room_id: activeRoom.id, 
@@ -145,7 +146,7 @@ export default function VoiceRoomTab({ tgUser }) {
     };
 
     const moveToAudience = async (userIdToMove, seatIndex) => {
-        await supabase.from('room_seats').update({ user_id: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', seatIndex);
+        await supabase.from('room_seats').update({ user_id: null }).eq('room_id', activeRoom.id).eq('seat_index', seatIndex);
         try { await supabase.from('room_audience').insert({ room_id: activeRoom.id, user_id: userIdToMove }); } catch(e) {}
     };
 
@@ -195,7 +196,7 @@ export default function VoiceRoomTab({ tgUser }) {
                     <button onClick={handleExitRoom} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-lg font-bold text-sm">Exit</button>
                 </div>
             </div>
-            <div className="grid grid-cols-2 gap-6 p-8 justify-items-center">
+            <div className="grid grid-cols-2 gap-6 p-8 pb-32 justify-items-center">
                 {seats.map((seat, idx) => {
                     const isOccupied = seat && seat.user_id;
                     const isLocked = seat && seat.is_locked;
@@ -229,7 +230,7 @@ export default function VoiceRoomTab({ tgUser }) {
                     ))}
                 </div>
             </div>
-            {mySeatIndex !== null && <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4"><button onClick={() => setIsLocalMuted(!isLocalMuted)} className={`w-14 h-14 rounded-full flex items-center justify-center text-xl shadow-lg transition-colors ${isLocalMuted ? 'bg-red-500 text-white' : 'bg-white text-gray-900'}`}><i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i></button></div>}
+            {mySeatIndex !== null && <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-4"><button onClick={() => setIsLocalMuted(!isLocalMuted)} className={`w-14 h-14 rounded-full flex items-center justify-center text-xl shadow-lg transition-colors ${isLocalMuted ? 'bg-red-500 text-white' : 'bg-white text-gray-900'}`}><i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i></button></div>}
         </div>
     );
 }

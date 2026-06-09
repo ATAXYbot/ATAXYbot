@@ -1139,7 +1139,8 @@
                     await supabase.from('active_rooms').delete().eq('id', rId);
                 } else {
                     if (mySeatIndex !== null) {
-                        channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: mySeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } } });
+                        const existingSeat = seats[mySeatIndex] || {};
+                        channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: mySeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } } });
                         await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', rId).eq('seat_index', mySeatIndex);
                     } else {
                         channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
@@ -1150,16 +1151,17 @@
 
             const takeSeat = async (idx) => {
                 if (mySeatIndex !== null) return;
+                const existingSeat = seats[idx] || {};
                 
                 // 1. Optimistic UI Update (Zero lag for user)
-                setSeats(prev => prev.map((s, i) => i === idx ? { ...s, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto } : (s?.user_id === currentUserId ? { ...s, user_id: null, user_name: null, photo_url: null } : s)));
+                setSeats(prev => prev.map((s, i) => i === idx ? { ...s, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } : (s?.user_id === currentUserId ? { ...s, user_id: null, user_name: null, photo_url: null } : s)));
                 setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
-                setIsLocalMuted(false);
+                setIsLocalMuted(existingSeat.is_muted_by_host || false);
 
                 // 2. Instant Broadcast (Zero lag for everyone else)
                 const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`);
                 channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
-                channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false } } });
+                channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } } });
 
                 try {
                     // 3. Atomic Database Transaction via RPC
@@ -1174,12 +1176,13 @@
                 } catch(e) { 
                     safeAlert("Failed to take seat: " + e.message); 
                     fetchRoomData(activeRoom.id); // Rollback to actual state
-                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } } });
+                    channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } } });
                 }
             };
 
             const moveToAudience = async (targetId, idx, targetName, targetPhoto) => {
-                const expectedSeat = { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false };
+                const existingSeat = seats[idx] || {};
+                const expectedSeat = { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false };
                 const newAudienceMember = { room_id: activeRoom.id, user_id: targetId, user_name: targetName || 'User', photo_url: targetPhoto || '' };
                 
                 // Optimistic UI for Host
@@ -1191,7 +1194,7 @@
                 channel.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_JOIN', data: { ...newAudienceMember, joined_at: new Date().toISOString() } } });
 
                 try { 
-                    await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null, is_muted_by_host: false }).eq('room_id', activeRoom.id).eq('seat_index', idx);
+                    await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', activeRoom.id).eq('seat_index', idx);
                     await supabase.from('room_audience').insert(newAudienceMember); 
                 } catch(e) { fetchRoomData(activeRoom.id); }
             };
@@ -1308,7 +1311,7 @@
                     </div>
 
                     {/* Stage */}
-                    <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+                    <div className="flex-1 overflow-y-auto p-6 pb-28 flex flex-col">
                         <div className="grid grid-cols-2 gap-y-10 gap-x-8 justify-items-center mt-4">
                             {seats.map((seat, idx) => {
                                 const isOccupied = seat && seat.user_id;
@@ -1391,7 +1394,7 @@
 
                     {/* Bottom Local Controls */}
                     {mySeatIndex !== null && (
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
+                        <div className="absolute bottom-[90px] left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
                             <button onClick={() => setIsLocalMuted(!isLocalMuted)} className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-all active:scale-90 border-2 ${isLocalMuted ? 'bg-red-500 text-white border-red-400' : 'bg-[#00FFFF] text-[#010B1C] border-white'}`}>
                                 <i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
                             </button>
