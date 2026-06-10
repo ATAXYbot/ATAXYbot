@@ -873,17 +873,6 @@
             useEffect(() => {
                 if (!roomId || !supabase) return;
                 
-                const initAudio = async () => {
-                    if (amISpeakerRef.current && !localStreamRef.current) {
-                        try {
-                            localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                            localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
-                        } catch(e) {
-                            console.error("Mic error:", e);
-                        }
-                    }
-                };
-
                 const createPeer = (peerId, peerIsSpeaker) => {
                     if (peersRef.current[peerId]) return peersRef.current[peerId];
                     
@@ -949,7 +938,7 @@
                 };
                 document.addEventListener('visibilitychange', handleVisibilityChange);
 
-                initAudio().then(() => {
+                const initChannel = () => {
                     const channel = supabase.channel(`webrtc_${roomId}`);
                     channelRef.current = channel;
 
@@ -1032,8 +1021,9 @@
                                 payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
                             });
                         }
-                    });
-                });
+                    }); 
+                };
+                initChannel();
 
                 return () => {
                     document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -1055,55 +1045,61 @@
             useEffect(() => {
                 if (!roomId || !channelRef.current) return;
                 
-                const updateSpeakerStatus = async () => {
+                const manageStream = async () => {
                     if (amISpeaker) {
-                        if (!localStreamRef.current) {
+                        let stream = localStreamRef.current;
+                        if (!stream) {
                             try {
-                                localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                                localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
-                            } catch(e) { console.error("Mic error:", e); }
+                                stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                                localStreamRef.current = stream;
+                            } catch (e) {
+                                console.error("Mic error:", e);
+                                return; // Can't continue without a stream
+                            }
                         }
-                        
-                        if (localStreamRef.current) {
-                            Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
-                                const senders = peer.getSenders();
-                                let trackAdded = false;
-                                localStreamRef.current.getTracks().forEach(t => {
-                                    if (!senders.find(s => s.track === t)) { peer.addTrack(t, localStreamRef.current); trackAdded = true; }
-                                });
-                                
-                                if (trackAdded) {
-                                    try {
-                                        const offer = await peer.createOffer();
-                                        await peer.setLocalDescription(offer);
-                                        channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) } });
-                                    } catch(e) {}
+
+                        // Always apply the current mute state
+                        stream.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
+
+                        // Add track to peers and renegotiate if needed
+                        Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                            const senders = peer.getSenders();
+                            let trackAdded = false;
+                            stream.getTracks().forEach(t => {
+                                if (!senders.find(s => s.track === t)) {
+                                    peer.addTrack(t, stream);
+                                    trackAdded = true;
                                 }
                             });
-                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker } });
-                        }
+                            if (trackAdded) {
+                                // Renegotiate
+                                try {
+                                    const offer = await peer.createOffer();
+                                    await peer.setLocalDescription(offer);
+                                    channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: true, data: JSON.parse(JSON.stringify(offer)) } });
+                                } catch (e) {}
+                            }
+                        });
+                        // Announce speaker status
+                        channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: true } });
+
                     } else {
                         if (localStreamRef.current) {
-                            localStreamRef.current.getTracks().forEach(t => t.stop());
+                            const stream = localStreamRef.current;
+                            stream.getTracks().forEach(t => t.stop());
                             localStreamRef.current = null;
                             
                             Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
                                 const senders = peer.getSenders();
-                                senders.forEach(s => peer.removeTrack(s));
-                                try { const offer = await peer.createOffer(); await peer.setLocalDescription(offer); channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) } }); } catch(e) {}
+                                senders.forEach(s => { if (s.track) { peer.removeTrack(s); } });
+                                try { const offer = await peer.createOffer(); await peer.setLocalDescription(offer); channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: false, data: JSON.parse(JSON.stringify(offer)) } }); } catch(e) {}
                             });
-                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker } });
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: false } });
                         }
                     }
                 };
-                updateSpeakerStatus();
-            }, [amISpeaker]);
-
-            useEffect(() => {
-                if (localStreamRef.current) {
-                    localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
-                }
-            }, [isMutedByHost, isLocalMuted]);
+                manageStream();
+            }, [amISpeaker, isMutedByHost, isLocalMuted]);
 
             return { remoteStreams };
         };
