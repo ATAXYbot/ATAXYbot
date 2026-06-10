@@ -898,7 +898,8 @@
                     };
 
                     peer.ontrack = (e) => {
-                        setRemoteStreams(prev => ({ ...prev, [peerId]: e.streams[0] }));
+                        const stream = (e.streams && e.streams[0]) ? e.streams[0] : new MediaStream([e.track]);
+                        setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
                     };
 
                     return peer;
@@ -986,6 +987,9 @@
                         const { senderId, senderIsSpeaker } = payload;
                         if (senderId === currentUserId) return;
 
+                        // Prevent WebRTC glare if peer already exists
+                        if (peersRef.current[senderId]) return;
+
                         if (amISpeakerRef.current || senderIsSpeaker) {
                             if (currentUserId > senderId) {
                                 const peer = createPeer(senderId, senderIsSpeaker);
@@ -1007,6 +1011,9 @@
                     channel.on('broadcast', { event: 'peer_hello' }, async ({ payload }) => {
                         const { senderId, targetId, senderIsSpeaker } = payload;
                         if (targetId !== currentUserId) return;
+
+                        // Prevent WebRTC glare if peer already exists
+                        if (peersRef.current[senderId]) return;
 
                         if (amISpeakerRef.current || senderIsSpeaker) {
                             if (currentUserId > senderId) {
@@ -1287,8 +1294,17 @@
             useEffect(() => {
                 Object.entries(remoteStreams).forEach(([peerId, stream]) => {
                     const audioEl = document.getElementById(`audio-${peerId}`);
-                    if (audioEl && audioEl.srcObject !== stream) {
-                        audioEl.srcObject = stream;
+                    if (audioEl) {
+                        if (audioEl.srcObject !== stream) {
+                            audioEl.srcObject = stream;
+                        }
+                        // Ensure playback is started reliably, particularly for iOS/Safari
+                        try {
+                            const playPromise = audioEl.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => {});
+                            }
+                        } catch (e) {}
                     }
                 });
             }, [remoteStreams]);
