@@ -1042,53 +1042,47 @@
                 };
             }, [roomId]);
 
+            // Effect 1: Manages the stream's lifecycle (creation/destruction) based on speaker status.
             useEffect(() => {
                 if (!roomId || !channelRef.current) return;
                 
-                const manageStream = async () => {
+                const manageStreamLifecycle = async () => {
                     if (amISpeaker) {
-                        let stream = localStreamRef.current;
-                        if (!stream) {
+                        // If becoming a speaker and no stream exists, create one.
+                        if (!localStreamRef.current) {
                             try {
-                                stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                                 localStreamRef.current = stream;
-                            } catch (e) {
-                                console.error("Mic error:", e);
-                                return; // Can't continue without a stream
-                            }
+
+                                // Add the new track to all existing peer connections and renegotiate.
+                                Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                                    const senders = peer.getSenders();
+                                    let trackAdded = false;
+                                    stream.getTracks().forEach(t => {
+                                        if (!senders.find(s => s.track === t)) {
+                                            peer.addTrack(t, stream);
+                                            trackAdded = true;
+                                        }
+                                    });
+                                    if (trackAdded) {
+                                        try {
+                                            const offer = await peer.createOffer();
+                                            await peer.setLocalDescription(offer);
+                                            channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: true, data: JSON.parse(JSON.stringify(offer)) } });
+                                        } catch (e) {}
+                                    }
+                                });
+                                // Announce new speaker status to establish connections with audience.
+                                channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: true } });
+                            } catch (e) { console.error("Mic error:", e); }
                         }
-
-                        // Always apply the current mute state
-                        stream.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
-
-                        // Add track to peers and renegotiate if needed
-                        Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
-                            const senders = peer.getSenders();
-                            let trackAdded = false;
-                            stream.getTracks().forEach(t => {
-                                if (!senders.find(s => s.track === t)) {
-                                    peer.addTrack(t, stream);
-                                    trackAdded = true;
-                                }
-                            });
-                            if (trackAdded) {
-                                // Renegotiate
-                                try {
-                                    const offer = await peer.createOffer();
-                                    await peer.setLocalDescription(offer);
-                                    channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: true, data: JSON.parse(JSON.stringify(offer)) } });
-                                } catch (e) {}
-                            }
-                        });
-                        // Announce speaker status
-                        channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: true } });
-
                     } else {
+                        // If becoming an audience member, destroy the stream.
                         if (localStreamRef.current) {
-                            const stream = localStreamRef.current;
-                            stream.getTracks().forEach(t => t.stop());
+                            localStreamRef.current.getTracks().forEach(t => t.stop());
                             localStreamRef.current = null;
                             
+                            // Remove tracks from peers and renegotiate to stop sending audio.
                             Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
                                 const senders = peer.getSenders();
                                 senders.forEach(s => { if (s.track) { peer.removeTrack(s); } });
@@ -1098,8 +1092,15 @@
                         }
                     }
                 };
-                manageStream();
-            }, [amISpeaker, isMutedByHost, isLocalMuted]);
+                manageStreamLifecycle();
+            }, [amISpeaker]); // This effect ONLY runs when speaker status changes.
+
+            // Effect 2: Applies the correct mute state to an existing audio track.
+            useEffect(() => {
+                if (localStreamRef.current) {
+                    localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
+                }
+            }, [isMutedByHost, isLocalMuted, amISpeaker]); // Re-apply mute state when mute changes OR when becoming a speaker.
 
             return { remoteStreams };
         };
