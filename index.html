@@ -879,6 +879,7 @@
                     const peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
                     peersRef.current[peerId] = peer;
                     peer.queuedIceCandidates = [];
+                    peer.isSettingRemoteDesc = false;
 
                     if (amISpeakerRef.current && localStreamRef.current) {
                         localStreamRef.current.getTracks().forEach(t => {
@@ -950,7 +951,9 @@
 
                         if (type === 'offer') {
                             const peer = createPeer(senderId, senderIsSpeaker);
+                            peer.isSettingRemoteDesc = true;
                             await peer.setRemoteDescription(new RTCSessionDescription(data));
+                            peer.isSettingRemoteDesc = false;
                             const answer = await peer.createAnswer();
                             await peer.setLocalDescription(answer);
                             channel.send({
@@ -964,7 +967,9 @@
                         } else if (type === 'answer') {
                             const peer = peersRef.current[senderId];
                             if (peer) {
+                                peer.isSettingRemoteDesc = true;
                                 await peer.setRemoteDescription(new RTCSessionDescription(data));
+                                peer.isSettingRemoteDesc = false;
                                 if (peer.queuedIceCandidates) {
                                     peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch(e){} });
                                     peer.queuedIceCandidates = [];
@@ -974,7 +979,7 @@
                             let peer = peersRef.current[senderId];
                             if (!peer) { peer = createPeer(senderId, false); }
                             if (peer) {
-                                if (peer.remoteDescription && peer.remoteDescription.type) {
+                                if (peer.remoteDescription && peer.remoteDescription.type && !peer.isSettingRemoteDesc) {
                                     try { await peer.addIceCandidate(new RTCIceCandidate(data)); } catch(e) {}
                                 } else {
                                     peer.queuedIceCandidates.push(new RTCIceCandidate(data));
@@ -1095,7 +1100,7 @@
                                     });
                                     if (trackAdded) {
                                         try {
-                                            const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                            const offer = await peer.createOffer();
                                             await peer.setLocalDescription(offer);
                                             channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: true, data: JSON.parse(JSON.stringify(offer)) } });
                                         } catch (e) {}
