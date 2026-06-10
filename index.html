@@ -956,9 +956,9 @@
                                 setShowActionModal({ type: 'host_target', idx, seat });
                             }
                         }}>
-                            {/* Frequency based animated sparks/rings */}
-                            <div className={`absolute inset-0 rounded-full bg-[#00FFFF] transition-all duration-75 ease-out pointer-events-none ${speaking ? 'opacity-100' : 'opacity-0'}`} style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity * 0.4, filter: 'blur(10px)' }}></div>
-                            <div className={`absolute inset-0 rounded-full border-[3px] border-[#00FFFF] transition-all duration-75 ease-out pointer-events-none ${speaking ? 'opacity-100' : 'opacity-0'}`} style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity }}></div>
+                            {/* Solid frequency-based glowing aura */}
+                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity * 0.4, filter: 'blur(8px)', transition: 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 200ms ease-out' }}></div>
+                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${speaking ? baseScale + (intensity * 0.35) : baseScale})`, opacity: glowOpacity * 0.85, transition: 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 200ms ease-out' }}></div>
                             
                             <div className={`rounded-full border-4 flex items-center justify-center font-black shadow-inner transition-transform group-hover:scale-105 bg-gradient-to-br bg-cover bg-center relative z-10 ${isHostSeat ? 'w-20 h-20 text-2xl border-[#F9D33A] from-[#D4AF37] to-[#F9D33A] text-[#010B1C] shadow-[0_0_15px_rgba(249,211,58,0.5)]' : 'w-16 h-16 text-xl border-[#00FFFF] from-[#00A7A7] to-blue-600 text-white shadow-[0_0_15px_rgba(0,255,255,0.4)]'}`} style={{ ...(seat.photo_url ? { backgroundImage: `url(${seat.photo_url})` } : {}) }}>
                                 {!seat.photo_url && (seat.user_name ? seat.user_name.substring(0, 2).toUpperCase() : seat.user_id.substring(0, 2).toUpperCase())}
