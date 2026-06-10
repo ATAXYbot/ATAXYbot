@@ -941,7 +941,7 @@
             const intensity = Math.min(Math.max((volume - 5) / 95, 0), 1);
             
             const baseScale = 1;
-            const dynamicScale = speaking ? baseScale + (intensity * 0.2) : baseScale;
+            const dynamicScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
             const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
             
             return (
