@@ -1236,9 +1236,9 @@
 
             const fetchRoomData = async (roomId) => {
                 if (!roomId) return;
-                const { data: seatData } = await supabase.from('room_seats').select('*').eq('room_id', roomId);
-                const { data: audData } = await supabase.from('room_audience').select('*').eq('room_id', roomId);
-                const { data: msgsData } = await supabase.from('room_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true });
+                const { data, error } = await supabase.rpc('get_room_details', { p_room_id: roomId });
+                if (error || !data) { console.error("Fetch room details error:", error); return; }
+                const { seats: seatData, audience: audData, messages: msgsData } = data;
                 
                 const newSeats = [null, null, null, null];
                 if (seatData) {
@@ -1353,13 +1353,33 @@
 
             useEffect(() => {
                 if (activeRoom || !supabase) return;
-                const fetchRooms = async () => {
-                    const { data } = await supabase.from('active_rooms').select('*').order('created_at', { ascending: false });
+                const fetchInitialRooms = async () => {
+                    const { data } = await supabase.from('active_rooms').select('id, room_name, host_id, host_name, host_photo, password, created_at, room_id_5_digit').order('created_at', { ascending: false });
                     if (data) setAvailableVCRooms(data);
                 };
-                fetchRooms();
-                const chan = supabase.channel('vc_public_rooms')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'active_rooms' }, fetchRooms)
+                fetchInitialRooms();
+
+                const handleRoomUpdate = (payload) => {
+                    setAvailableVCRooms(prev => {
+                        let rooms = [...prev];
+                        if (payload.eventType === 'INSERT') {
+                            if (!rooms.some(r => r.id === payload.new.id)) {
+                                rooms = [payload.new, ...rooms];
+                            }
+                        } else if (payload.eventType === 'UPDATE') {
+                            const index = rooms.findIndex(r => r.id === payload.new.id);
+                            if (index > -1) {
+                                rooms[index] = { ...rooms[index], ...payload.new };
+                            }
+                        } else if (payload.eventType === 'DELETE') {
+                            rooms = rooms.filter(r => r.id !== payload.old.id);
+                        }
+                        return rooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    });
+                };
+
+                const chan = supabase.channel('vc_public_rooms_optimized')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'active_rooms' }, handleRoomUpdate)
                     .subscribe();
                 return () => supabase.removeChannel(chan);
             }, [activeRoom]);
@@ -1367,42 +1387,24 @@
             const executeCreateRoom = async () => {
                 setIsCreating(true);
                 setRoomError('');
-                if (!supabase) {
-                    setRoomError("Supabase connection not initialized.");
-                    setIsCreating(false);
-                    return;
-                }
                 try {
-                    const insertData = {
-                        room_name: vcCreateName || `${currentUserName}'s Room`,
-                        host_id: currentUserId,
-                        host_name: currentUserName,
-                        host_photo: (vcCreateType === 'advance' && vcCreatePhoto) ? vcCreatePhoto : currentUserPhoto,
-                        password: vcCreatePassEnabled && vcCreatePass ? vcCreatePass : null
-                    };
-                    const { data, error } = await supabase.from('active_rooms').insert(insertData).select().single();
+                    const { data, error } = await supabase.rpc('create_room_and_seats', {
+                        p_room_name: vcCreateName || `${currentUserName}'s Room`,
+                        p_host_id: currentUserId,
+                        p_host_name: currentUserName,
+                        p_host_photo: (vcCreateType === 'advance' && vcCreatePhoto) ? vcCreatePhoto : currentUserPhoto,
+                        p_password: vcCreatePassEnabled && vcCreatePass ? vcCreatePass : null
+                    });
 
                     if (error) {
                         safeAlert("Database Error: " + error.message);
                         setRoomError("Database Error: " + error.message);
-                        setIsCreating(false);
                         return;
                     }
 
                     if (data) {
-                        const initialSeats = [0, 1, 2, 3].map(i => ({
-                            room_id: data.id, 
-                            seat_index: i, 
-                            user_id: i === 0 ? currentUserId : null,
-                            user_name: i === 0 ? currentUserName : null,
-                            photo_url: i === 0 ? ((vcCreateType === 'advance' && vcCreatePhoto) ? vcCreatePhoto : currentUserPhoto) : null
-                        }));
-                        const { error: seatErr } = await supabase.from('room_seats').insert(initialSeats);
-                        if (seatErr) setRoomError("Seat Error: " + seatErr.message);
-                        else {
-                            setActiveRoom(data);
-                            setShowVCCreateModal(false);
-                        }
+                        setActiveRoom(data);
+                        setShowVCCreateModal(false);
                     }
                 } catch (err) {
                     safeAlert("Connection failed: " + err.message);
@@ -1430,29 +1432,25 @@
     };
 
             const joinRoom = async (room) => {
-                await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('user_id', currentUserId);
-                await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
+                const { error } = await supabase.rpc('join_room_audience', {
+                    p_room_id: room.id,
+                    p_user_id: currentUserId,
+                    p_user_name: currentUserName,
+                    p_photo_url: currentUserPhoto
+                });
 
-                const newAudienceMember = { 
-                    room_id: room.id, 
-                    user_id: currentUserId,
-                    user_name: currentUserName,
-                    photo_url: currentUserPhoto
-                };
-                const { error } = await supabase.from('room_audience').insert(newAudienceMember);
                 if (error) {
                     if (error.message?.includes('capacity') || error.details?.includes('capacity')) {
                         safeAlert("Room is Full! Please join another room or create your own.");
-                    } else if (error.code === '23505') {
-                        // Already in audience, just set active room
-                        setActiveRoom(room); setShowJoinModal(false);
                     } else { safeAlert("Error: " + error.message); }
                 } else {
                     // Broadcast the join event for instant UI update on other clients
                     supabase.channel(`vc_room_channel_${room.id}`).send({
                         type: 'broadcast',
                         event: 'state_change',
-                        payload: { type: 'AUDIENCE_JOIN', data: { ...newAudienceMember, joined_at: new Date().toISOString() } }
+                        payload: { type: 'AUDIENCE_JOIN', data: { 
+                            room_id: room.id, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, joined_at: new Date().toISOString() 
+                        } }
                     });
                     setActiveRoom(room); setShowJoinModal(false);
                 }

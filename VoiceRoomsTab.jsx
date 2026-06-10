@@ -1,6 +1,7 @@
 // LAYER 4: PREMIUM INTERFACE 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useVoiceRoom } from '../services/roomService';
+import { useAudioAnalyser } from './useAudioAnalyser';
 
 export const VoiceRoomsTab = ({ tgUser }) => {
     const { activeRoom, roomParticipants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, updateRoomSettings, tgId, joinRoom } = useVoiceRoom();
@@ -42,27 +43,48 @@ export const VoiceRoomsTab = ({ tgUser }) => {
         const isAdmin = isHost || myParticipant?.is_admin;
         const WEPLAY_SEATS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-        const renderSeat = (seatNum, occupant, label, isLarge=false) => {
+        const SeatNode = ({ seatNum, occupant, label, isLarge=false }) => {
             const isMe = occupant?.user_id === tgId;
-            const speaking = occupant && activeSpeakers[occupant.user_id];
+            const remoteUser = remoteUsers.find(r => r.uid === occupant?.user_id);
+            
+            // Securely derive MediaStream for the analyzer (memoized to prevent re-renders)
+            const mediaStream = useMemo(() => {
+                const track = remoteUser?.audioTrack?.getMediaStreamTrack?.();
+                if (track) return new MediaStream([track]);
+                return null;
+            }, [remoteUser]);
+
+            const volume = useAudioAnalyser(mediaStream);
+
+            // Flicker Logic: Fallback to existing activeSpeakers for local mic if remote track isn't captured yet
+            const isSpeaking = volume > 0 || (occupant && activeSpeakers[occupant.user_id]);
             const isLocked = lockedSeats[seatNum];
             const isSeatMuted = mutedSeats[seatNum];
             
             return (
                 <div onClick={() => setSelectedSeat({ seatNum, occupant })} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                     {occupant ? (
-                        <div className="relative">
-                            <div className={`rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 overflow-hidden ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.8)] scale-110 text-[#010B1C]' : 'border-transparent text-white'}`}>
+                        <div className="relative weplay-voice-ring w-full aspect-square flex items-center justify-center">
+                            {/* The Ring Design bound to audio intensity */}
+                            <div 
+                                className="absolute inset-0 rounded-full border-[3px] border-[#00FFFF] pointer-events-none transition-all duration-75 ease-out"
+                                style={{
+                                    transform: `scale(${volume > 0 ? 1.05 + (volume / 100) * 0.15 : 1})`,
+                                    opacity: volume > 0 ? 0.3 + (volume / 100) * 0.7 : 0,
+                                    boxShadow: volume > 0 ? `0 0 ${10 + (volume / 100) * 20}px rgba(0,255,255,${0.3 + (volume / 100) * 0.7})` : 'none'
+                                }}
+                            ></div>
+                            <div className={`relative z-10 rounded-full flex items-center justify-center font-bold border-2 transition-all bg-gradient-to-br from-[#00FFFF] to-blue-600 overflow-hidden ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${isSpeaking ? 'border-[#00FFFF] text-[#010B1C]' : 'border-transparent text-white'}`}>
                                 {occupant.photo_url ? <img src={occupant.photo_url} alt="DP" className="w-full h-full object-cover" /> : occupant.user_name.charAt(0)}
                             </div>
-                            {((isMe ? isMuted : remoteUsers.find(r=>r.uid===occupant.user_id) && !remoteUsers.find(r=>r.uid===occupant.user_id).hasAudio) || isSeatMuted) && (
-                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600 z-10">
+                            {((isMe ? isMuted : remoteUser && !remoteUser.hasAudio) || isSeatMuted) && (
+                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600 z-20">
                                     <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <div className="relative">
+                        <div className="relative w-full aspect-square flex items-center justify-center">
                             <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633] hover:bg-[#0AE0D0]/10'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'}`}>
                                 <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-microphone-lines text-[#0AE0D0]/40'}`}></i>
                             </div>
@@ -73,7 +95,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                             )}
                         </div>
                     )}
-                    <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1">{occupant ? (isMe ? "Me" : occupant.user_name) : (isLocked ? 'Locked' : label)}</span>
+                    <span className="text-[10px] text-center font-semibold text-[#E0F7FA] truncate w-full px-1 mt-1">{occupant ? (isMe ? "Me" : occupant.user_name) : (isLocked ? 'Locked' : label)}</span>
                 </div>
             );
         };
@@ -121,14 +143,14 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                     {WEPLAY_SEATS.slice(0, 2).map(seatNum => {
                         if (seatNum === 1 && !activeRoom.is_partner_seat_open) return null;
                         const occupant = roomParticipants.find(p => p.seat_number === seatNum);
-                        return <React.Fragment key={seatNum}>{renderSeat(seatNum, occupant, seatNum === 0 ? "Host" : "Partner", true)}</React.Fragment>;
+                        return <SeatNode key={seatNum} seatNum={seatNum} occupant={occupant} label={seatNum === 0 ? "Host" : "Partner"} isLarge={true} />;
                     })}
                     </div>
                     {/* Lower Deck (Seats 2-9) */}
                     <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
                     {WEPLAY_SEATS.slice(2).map(seatNum => {
                         const occupant = roomParticipants.find(p => p.seat_number === seatNum);
-                        return <React.Fragment key={seatNum}>{renderSeat(seatNum, occupant, `Seat ${seatNum}`)}</React.Fragment>;
+                        return <SeatNode key={seatNum} seatNum={seatNum} occupant={occupant} label={`Seat ${seatNum}`} />;
                     })}
                     </div>
                 </div>
@@ -239,23 +261,30 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     // --- 2. DISCOVERY DASHBOARD (Outside Room) ---
     const myAdvanceRoom = availableRooms.find(r => String(r.owner_id) === String(tgId) && (r.room_type === 'advance' || r.room_type === 'permanent'));
 
-    // Client-Side Active Room Sorting (Zero Server Cost)
+    // Client-Side Active Room Sorting & Local Garbage Collection (Zero Server Cost)
     const sortedActiveRooms = useMemo(() => {
-        return [...availableRooms].sort((a, b) => {
-            // RULE A: Calculate capacity dynamically in memory
-            const countA = (a.seats_occupied || 0) + (a.audience_count || a.room_participants?.[0]?.count || a.room_participants?.length || 0);
-            const countB = (b.seats_occupied || 0) + (b.audience_count || b.room_participants?.[0]?.count || b.room_participants?.length || 0);
-            
-            const isAFull = countA >= 12;
-            const isBFull = countB >= 12;
+        return availableRooms
+            // 3. Local Garbage Collection: instantly filter out dead/ghost temporary rooms
+            .filter(room => {
+                const totalParticipants = (room.seats_occupied || 0) + (room.audience_count || room.room_participants?.[0]?.count || room.room_participants?.length || 0);
+                if (room.room_type === 'temporary' && totalParticipants === 0) return false;
+                return true;
+            })
+            // 2. In-Memory Sorting Rules
+            .sort((a, b) => {
+                const countA = (a.seats_occupied || 0) + (a.audience_count || a.room_participants?.[0]?.count || a.room_participants?.length || 0);
+                const countB = (b.seats_occupied || 0) + (b.audience_count || b.room_participants?.[0]?.count || b.room_participants?.length || 0);
+                
+                const isAFull = countA >= 12;
+                const isBFull = countB >= 12;
 
-            // RULE C & D: Full rooms (12/12) instantly drop to the absolute bottom of the rendered list.
-            if (isAFull && !isBFull) return 1;
-            if (!isAFull && isBFull) return -1;
-            
-            // RULE B: Sort by highest participant count bubbling to the top
-            return countB - countA;
-        });
+                // RULE B & C: Full rooms (12/12) instantly drop to the absolute bottom of the array
+                if (isAFull && !isBFull) return 1;
+                if (!isAFull && isBFull) return -1;
+                
+                // RULE A: Sort by highest participant count bubbling to the top
+                return countB - countA;
+            });
     }, [availableRooms]);
 
     let displayRooms = [];
