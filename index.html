@@ -937,28 +937,15 @@
             const mediaStream = isMe ? localStream : (isOccupied ? remoteStream : null);
             const volume = useAudioAnalyser(mediaStream);
             
+            const speaking = volume > 5;
+            const intensity = Math.min(Math.max((volume - 5) / 95, 0), 1);
+            
             const baseScale = 1;
-            let dynamicScale = baseScale;
-            let ring1Scale = baseScale;
-            let ring2Scale = baseScale;
-            let glowOpacity = 0;
-            let transitionStyle = 'transform 1500ms ease-out, opacity 2000ms ease-out';
-
-            if (volume > 15) {
-                const dynamicIntensity = Math.min((volume - 15) / 85, 1);
-                dynamicScale = baseScale + 0.2 + (dynamicIntensity * 0.4);
-                ring1Scale = dynamicScale * 1.4;
-                ring2Scale = dynamicScale * 1.9;
-                glowOpacity = 0.5 + (dynamicIntensity * 0.5);
-                transitionStyle = 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 50ms ease-in';
-            } else if (volume > 2) {
-                const noiseIntensity = volume / 15;
-                dynamicScale = baseScale + (noiseIntensity * 0.02);
-                ring1Scale = dynamicScale * 1.02;
-                ring2Scale = dynamicScale * 1.04;
-                glowOpacity = noiseIntensity * 0.15;
-                transitionStyle = 'transform 100ms ease-out, opacity 150ms ease-out';
-            }
+            const dynamicScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
+            const ring1Scale = speaking ? dynamicScale * 1.3 : baseScale;
+            const ring2Scale = speaking ? dynamicScale * 1.7 : baseScale;
+            const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
+            const transitionStyle = speaking ? 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 50ms ease-in' : 'transform 1500ms ease-out, opacity 2000ms ease-out';
             return (
                 <div className="flex flex-col items-center gap-2 relative">
                     {isOccupied ? (
@@ -2186,6 +2173,10 @@
                                             if (activeChannelRef.current) {
                                                 activeChannelRef.current.send({ type: 'broadcast', event: 'invite', payload: { target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName } });
                                             }
+                                                    if (lockedSeats[showActionModal.seatNum]) {
+                                                        sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked: false });
+                                                        setLockedSeats(prev => ({...prev, [showActionModal.seatNum]: false}));
+                                                    }
                                             safeAlert(`Invitation sent to ${showActionModal.target.user_name}`);
                                         } else {
                                             safeAlert("No empty unlocked seats available!");
@@ -4141,20 +4132,10 @@ INSTRUCTIONS:
                 const isOfflineHost = occupant?.is_offline_host;
                 const isMe = String(occupant?.user_id) === currentUserId;
                 
-                // --- Dynamic Audio Spark Visualizer Logic ---
-                const speakerLevel = (occupant && activeSpeakers[occupant.user_id]) || 0;
-                const speaking = speakerLevel > 5;
-                // speakerLevel from Agora is 0 to 100. Normalize so 5-100 becomes ~0-1
-                const intensity = Math.min((speakerLevel - 5) / 95, 1);
-                
+                // --- Seat Render Styling ---
                 const isHostSeat = seatNum === 0;
-                const baseColor = isHostSeat ? '#F9D33A' : '#00FFFF';
-                const shadowColor = isHostSeat ? 'rgba(249,211,58,0.8)' : 'rgba(0,255,255,0.8)';
                 
                 const baseScale = isLarge ? 1.05 : 1;
-                const shockwaveScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
-                const shockwaveOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
-                const transitionStyle = speaking ? 'transform 75ms ease-out, opacity 75ms ease-out' : 'transform 800ms ease-out, opacity 800ms ease-out';
 
                 const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : (isOfflineHost ? activeRoom.room_dp_url : occupant?.photo_url);
                 
@@ -4174,9 +4155,6 @@ INSTRUCTIONS:
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                         {occupant ? (
                             <div className="relative group flex items-center justify-center">
-                                {/* Layer 3: The Glowing Pulse Shockwave */}
-                                <div className="absolute inset-0 rounded-full pointer-events-none" style={{ boxShadow: `0 0 25px 8px ${shadowColor}`, border: `2px solid ${baseColor}`, transform: `scale(${shockwaveScale})`, opacity: shockwaveOpacity, transition: transitionStyle, zIndex: 0 }}></div>
-
                                 {/* Layer 1 & 2: The Base Avatar and Static Highlight Ring */}
                                 {dpUrl ? (
                                     <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-2 relative z-10 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${isHostSeat ? 'border-[#F9D33A]' : 'border-[#00FFFF]'}`} />
@@ -4526,10 +4504,11 @@ INSTRUCTIONS:
                                 <p className="text-sm text-[#A4DFE6] mb-6">The host invited you to take Seat {pendingInvite.seatNum}. Do you accept?</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
-                                    <button onClick={() => { 
+                                    <button onClick={async () => { 
                                         if (lockedSeats[pendingInvite.seatNum]) {
                                             sendBroadcast('seat_lock', { seatNum: pendingInvite.seatNum, isLocked: false });
                                             setLockedSeats(prev => ({...prev, [pendingInvite.seatNum]: false}));
+                                            await supabase.from('room_seats').update({ is_locked: false }).eq('room_id', activeRoom.id).eq('seat_index', pendingInvite.seatNum);
                                         }
                                         takeSeat(pendingInvite.seatNum); 
                                         setPendingInvite(null); 
