@@ -878,6 +878,7 @@
                     
                     const peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
                     peersRef.current[peerId] = peer;
+                    peer.queuedIceCandidates = [];
 
                     if (amISpeakerRef.current && localStreamRef.current) {
                         localStreamRef.current.getTracks().forEach(t => {
@@ -916,7 +917,7 @@
                         Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
                             if (peer.connectionState === 'disconnected' || peer.connectionState === 'failed') {
                                 try {
-                                    const offer = await peer.createOffer({ iceRestart: true });
+                                    const offer = await peer.createOffer({ offerToReceiveAudio: true, iceRestart: true });
                                     await peer.setLocalDescription(offer);
                                     if (channelRef.current) {
                                         channelRef.current.send({
@@ -955,12 +956,29 @@
                                 type: 'broadcast', event: 'webrtc_signal',
                                 payload: { type: 'answer', senderId: currentUserId, targetId: senderId, data: JSON.parse(JSON.stringify(answer)) }
                             });
+                            if (peer.queuedIceCandidates) {
+                                peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch(e){} });
+                                peer.queuedIceCandidates = [];
+                            }
                         } else if (type === 'answer') {
                             const peer = peersRef.current[senderId];
-                            if (peer) await peer.setRemoteDescription(new RTCSessionDescription(data));
+                            if (peer) {
+                                await peer.setRemoteDescription(new RTCSessionDescription(data));
+                                if (peer.queuedIceCandidates) {
+                                    peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch(e){} });
+                                    peer.queuedIceCandidates = [];
+                                }
+                            }
                         } else if (type === 'ice') {
-                            const peer = peersRef.current[senderId];
-                            if (peer && peer.remoteDescription) await peer.addIceCandidate(new RTCIceCandidate(data));
+                            let peer = peersRef.current[senderId];
+                            if (!peer) { peer = createPeer(senderId, false); }
+                            if (peer) {
+                                if (peer.remoteDescription && peer.remoteDescription.type) {
+                                    try { await peer.addIceCandidate(new RTCIceCandidate(data)); } catch(e) {}
+                                } else {
+                                    peer.queuedIceCandidates.push(new RTCIceCandidate(data));
+                                }
+                            }
                         }
                     });
 
@@ -971,7 +989,7 @@
                         if (amISpeakerRef.current || senderIsSpeaker) {
                             if (currentUserId > senderId) {
                                 const peer = createPeer(senderId, senderIsSpeaker);
-                                const offer = await peer.createOffer();
+                                const offer = await peer.createOffer({ offerToReceiveAudio: true });
                                 await peer.setLocalDescription(offer);
                                 channel.send({
                                     type: 'broadcast', event: 'webrtc_signal',
@@ -993,7 +1011,7 @@
                         if (amISpeakerRef.current || senderIsSpeaker) {
                             if (currentUserId > senderId) {
                                 const peer = createPeer(senderId, senderIsSpeaker);
-                                const offer = await peer.createOffer();
+                                const offer = await peer.createOffer({ offerToReceiveAudio: true });
                                 await peer.setLocalDescription(offer);
                                 channel.send({
                                     type: 'broadcast', event: 'webrtc_signal',
@@ -1052,6 +1070,10 @@
                         if (!localStreamRef.current) {
                             try {
                                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                                
+                                // Instantly apply mute state so it respects host/local mute before broadcasting
+                                stream.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
+                                
                                 localStreamRef.current = stream;
 
                                 // Add the new track to all existing peer connections and renegotiate.
@@ -1066,7 +1088,7 @@
                                     });
                                     if (trackAdded) {
                                         try {
-                                            const offer = await peer.createOffer();
+                                            const offer = await peer.createOffer({ offerToReceiveAudio: true });
                                             await peer.setLocalDescription(offer);
                                             channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: true, data: JSON.parse(JSON.stringify(offer)) } });
                                         } catch (e) {}
@@ -1086,7 +1108,7 @@
                             Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
                                 const senders = peer.getSenders();
                                 senders.forEach(s => { if (s.track) { peer.removeTrack(s); } });
-                                try { const offer = await peer.createOffer(); await peer.setLocalDescription(offer); channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: false, data: JSON.parse(JSON.stringify(offer)) } }); } catch(e) {}
+                                try { const offer = await peer.createOffer({ offerToReceiveAudio: true }); await peer.setLocalDescription(offer); channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: false, data: JSON.parse(JSON.stringify(offer)) } }); } catch(e) {}
                             });
                             channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: false } });
                         }
