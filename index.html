@@ -6174,7 +6174,7 @@ INSTRUCTIONS:
 
           return (
             <VoiceRoomErrorBoundary>
-            <div className="min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden pt-[calc(60px_+_env(safe-area-inset-top,_0px))]">
+            <div className={`min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden ${!(activePracticeChapter && currentTab === 'questions') ? 'pt-[calc(60px_+_env(safe-area-inset-top,_0px))]' : ''}`}>
               
               {/* Addictive Animated Ambient Background for Blank Spaces */}
               <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gray-50 dark:bg-gray-950">
@@ -6186,15 +6186,15 @@ INSTRUCTIONS:
 
               {showSplash && <GlobalLoader text="Loading Experience..." fade={splashFading} />}
               
-              <TopNavBar />
+              {!(activePracticeChapter && currentTab === 'questions') && <TopNavBar />}
               
-              <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'}`}>
+              <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : ''}`}>
+                <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} />
                 {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                   <>
                     {currentTab === 'home' && renderHomeView()}
                     {currentTab === 'ai' && <AIMentorView />}
                         {currentTab === 'voice' && <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />}
-                    <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} />
                     {currentTab === 'questions' && renderQuestionsView()}
                     {currentTab === 'profile' && renderProfileView()}
                     
