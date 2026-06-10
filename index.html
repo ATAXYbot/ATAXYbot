@@ -1014,7 +1014,7 @@
             return { remoteStreams };
         };
 
-        const VCFloatingWidget = ({ activeRoom, isLocalMuted, onRestore, toggleMute }) => {
+        const VCFloatingWidget = ({ activeRoom, isLocalMuted, isSpeakerMuted, onRestore, toggleMute, toggleSpeaker, onExit }) => {
             const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
             const widgetRef = useRef(null);
 
@@ -1052,6 +1052,8 @@
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 pr-1" onClick={e => e.stopPropagation()}>
                         <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isLocalMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-[10px]`}></i></button>
+                    <button onClick={(e) => { e.stopPropagation(); toggleSpeaker(); }} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isSpeakerMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-[10px]`}></i></button>
+                    <button onClick={(e) => { e.stopPropagation(); onExit(); }} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white"><i className="fa-solid fa-power-off text-[10px]"></i></button>
                     </div>
                 </div>
             );
@@ -1092,6 +1094,7 @@
             const [vcCreatePass, setVcCreatePass] = useState('');
             const [vcCreatePhoto, setVcCreatePhoto] = useState('');
             const [vcCreatePassEnabled, setVcCreatePassEnabled] = useState(false);
+            const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
             
             const chatEndRef = useRef(null);
 
@@ -1100,6 +1103,22 @@
                 window.addEventListener('minimize_vc_room', handleGlobalMinimize);
                 return () => window.removeEventListener('minimize_vc_room', handleGlobalMinimize);
             }, []);
+
+        useEffect(() => {
+            const handleBeforeUnload = () => {
+                if (activeRoom && activeChannelRef.current) {
+                    if (!isHost) {
+                        if (mySeatIndex !== null) {
+                            activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: mySeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } } });
+                        } else {
+                            activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } } });
+                        }
+                    }
+                }
+            };
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+        }, [activeRoom, isHost, mySeatIndex]);
 
             const mySeat = seats.find(s => s && s.user_id === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
@@ -1135,7 +1154,16 @@
                     seatData.forEach(s => { if(s.seat_index >= 0 && s.seat_index <= 3) newSeats[s.seat_index] = s; });
                 }
                 setSeats(newSeats);
-                setAudience(audData || []);
+                
+                const uniqueAud = [];
+                const seen = new Set();
+                (audData || []).forEach(a => {
+                    if (!seen.has(String(a.user_id))) {
+                        seen.add(String(a.user_id));
+                        uniqueAud.push(a);
+                    }
+                });
+                setAudience(uniqueAud);
                 setMessages(msgsData || []);
             };
 
@@ -1168,15 +1196,21 @@
                                 }
                                 return newSeats;
                             });
+                            if (data && data.user_id) {
+                                setAudience(prev => prev.filter(u => String(u.user_id) !== String(data.user_id)));
+                            }
                         } else if (type === 'AUDIENCE_JOIN') {
                             setAudience(prev => {
-                                if (prev.some(u => u.user_id === data.user_id)) return prev;
+                                if (prev.some(u => String(u.user_id) === String(data.user_id))) return prev;
                                 return [...prev, data];
+                            });
+                            setSeats(prev => {
+                                return prev.map(s => (s && String(s.user_id) === String(data.user_id)) ? { ...s, user_id: null, user_name: null, photo_url: null } : s);
                             });
                             setEntryNotification(data.user_name || 'A user');
                             setTimeout(() => setEntryNotification(null), 3000);
                         } else if (type === 'AUDIENCE_LEAVE') {
-                            setAudience(prev => prev.filter(u => u.user_id !== data.user_id));
+                            setAudience(prev => prev.filter(u => String(u.user_id) !== String(data.user_id)));
                         }
                     })
                     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_rooms', filter: `id=eq.${activeRoom.id}` }, () => {
@@ -1305,6 +1339,9 @@
     };
 
             const joinRoom = async (room) => {
+                await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('user_id', currentUserId);
+                await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
+
                 const newAudienceMember = { 
                     room_id: room.id, 
                     user_id: currentUserId,
@@ -1625,7 +1662,7 @@
                     {/* Header */}
             <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(70px+env(safe-area-inset-top,0px))]">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
-                    <button onClick={() => { setIsMinimized(true); if(onNavigate) onNavigate('vc'); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
+                    <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
                                 <i className="fa-solid fa-arrow-left"></i>
                             </button>
                             <div className="flex flex-col overflow-hidden min-w-0">
@@ -2099,13 +2136,32 @@
                     {isVisible && activeRoom && isMinimized && renderDashboard()}
                     {activeRoom && isMinimized && (
                         <VCFloatingWidget 
-                            activeRoom={activeRoom} isLocalMuted={isLocalMuted || mySeatMuted} 
-                            onRestore={() => { if(onNavigate) onNavigate('vc'); setIsMinimized(false); }} 
+                            activeRoom={activeRoom} isLocalMuted={isLocalMuted || isMutedByHost} 
+                            isSpeakerMuted={isSpeakerMuted}
+                            onRestore={() => { setIsMinimized(false); }} 
                             toggleMute={() => { if(mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else safeAlert('Take a seat to use mic!'); }} 
+                            toggleSpeaker={() => setIsSpeakerMuted(!isSpeakerMuted)}
+                            onExit={() => setShowExitConfirmModal(true)}
                         />
                     )}
                     {activeRoom && !isMinimized && renderActiveRoom()}
                     
+                    {showExitConfirmModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[3000000] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowExitConfirmModal(false)}>
+                            <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm text-center border border-[#0AE0D0]/50 shadow-[0_0_40px_rgba(0,255,255,0.2)]" onClick={e=>e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 mx-auto flex items-center justify-center text-3xl mb-4 border border-red-500/50">
+                                    <i className="fa-solid fa-power-off"></i>
+                                </div>
+                                <h3 className="text-xl font-black text-white mb-2 tracking-wide">Exit Room?</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">Are you sure you want to leave the voice room?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowExitConfirmModal(false)} className="flex-1 py-3 bg-[#010B1C] border border-gray-700 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                    <button onClick={() => { setShowExitConfirmModal(false); handleExitRoom(); }} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(255,0,0,0.4)]">Exit Room</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {Object.keys(remoteStreams).map(peerId => (
                         <audio key={peerId} id={`audio-${peerId}`} autoPlay playsInline muted={isSpeakerMuted} className="hidden" />
                     ))}
@@ -4406,8 +4462,8 @@ INSTRUCTIONS:
             
             const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
             return (
-                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 border border-gray-200 dark:border-gray-700 shadow-inner">
-                    <i className="fa-regular fa-clock text-blue-500"></i> {formatTime(time)}
+                <div className="text-[13px] font-bold tracking-wider flex items-center gap-1.5">
+                    <i className="fa-regular fa-clock"></i> {formatTime(time)}
                 </div>
             );
         };
@@ -4465,7 +4521,6 @@ INSTRUCTIONS:
               else if (voiceState.activeRoom && !voiceState.isMinimized) { voiceState.setIsMinimized(true); }
           else if (vcRoomActive && !vcRoomMinimized) { 
               window.dispatchEvent(new Event('minimize_vc_room')); 
-              setCurrentTab('vc');
           }
               else if (activePracticeChapter) setActivePracticeChapter(null);
               else if (activePracticeSubject) setActivePracticeSubject(null);
