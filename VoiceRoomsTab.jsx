@@ -239,13 +239,28 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     // --- 2. DISCOVERY DASHBOARD (Outside Room) ---
     const myAdvanceRoom = availableRooms.find(r => String(r.owner_id) === String(tgId) && (r.room_type === 'advance' || r.room_type === 'permanent'));
 
-    let displayRooms = [];
-    if (dashboardFilter === 'active') {
-        displayRooms = [...availableRooms].sort((a, b) => {
-            const countA = a.room_participants?.[0]?.count || a.room_participants?.length || 0;
-            const countB = b.room_participants?.[0]?.count || b.room_participants?.length || 0;
+    // Client-Side Active Room Sorting (Zero Server Cost)
+    const sortedActiveRooms = useMemo(() => {
+        return [...availableRooms].sort((a, b) => {
+            // RULE A: Calculate capacity dynamically in memory
+            const countA = (a.seats_occupied || 0) + (a.audience_count || a.room_participants?.[0]?.count || a.room_participants?.length || 0);
+            const countB = (b.seats_occupied || 0) + (b.audience_count || b.room_participants?.[0]?.count || b.room_participants?.length || 0);
+            
+            const isAFull = countA >= 12;
+            const isBFull = countB >= 12;
+
+            // RULE C & D: Full rooms (12/12) instantly drop to the absolute bottom of the rendered list.
+            if (isAFull && !isBFull) return 1;
+            if (!isAFull && isBFull) return -1;
+            
+            // RULE B: Sort by highest participant count bubbling to the top
             return countB - countA;
         });
+    }, [availableRooms]);
+
+    let displayRooms = [];
+    if (dashboardFilter === 'active') {
+        displayRooms = sortedActiveRooms;
     } else {
         // Mock data for recent and joined views as requested
         displayRooms = [];
@@ -307,7 +322,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                 <div className="space-y-4 pb-20">
                     {displayRooms.length > 0 ? displayRooms.map(room => {
                         const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
-                        const listenerCount = room.room_participants?.[0]?.count || room.room_participants?.length || 0;
+                        const totalCapacity = (room.seats_occupied || 0) + (room.audience_count || room.room_participants?.[0]?.count || room.room_participants?.length || 0);
                         return (
                             <div key={room.id} onClick={() => joinRoom(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF] hover:shadow-[0_0_10px_rgba(0,255,255,0.3)]'}`}>
                                 {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
@@ -323,7 +338,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                                             </h3>
                                             <div className="flex text-sm text-[#A4DFE6] gap-3">
                                                 <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host: {room.host_user_id.substring(0,5)}</span>
-                                                <span><i className="fa-solid fa-headphones mr-1 text-[#00FFFF]"></i> {listenerCount} Listens</span>
+                                                <span><i className="fa-solid fa-users mr-1 text-[#00FFFF]"></i> {totalCapacity}/12</span>
                                             </div>
                                         </div>
                                     </div>

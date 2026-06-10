@@ -192,26 +192,33 @@
         // ==========================================
         // 🛡️ NATIVE TELEGRAM SAFE ALERTS & CONFIRMS
         // ==========================================
+        let globalDialogSetter = null;
+
         const safeAlert = (msg) => {
-            try {
-                if (window.Telegram?.WebApp?.showAlert) {
-                    window.Telegram.WebApp.showAlert(msg);
-                } else {
-                    alert(msg);
-                }
-            } catch (e) { alert(msg); }
+            if (globalDialogSetter) {
+                globalDialogSetter({ type: 'alert', message: msg, isOpen: true });
+            } else {
+                try {
+                    if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
+                    else alert(msg);
+                } catch (e) { alert(msg); }
+            }
         };
 
         const safeConfirm = (msg, callback) => {
-            try {
-                if (window.Telegram?.WebApp?.showConfirm) {
-                    window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
-                        if (confirmed) callback();
-                    });
-                } else {
-                    if (confirm(msg)) callback();
-                }
-            } catch (e) { if (confirm(msg)) callback(); }
+            if (globalDialogSetter) {
+                globalDialogSetter({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
+            } else {
+                try {
+                    if (window.Telegram?.WebApp?.showConfirm) {
+                        window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
+                            if (confirmed) callback();
+                        });
+                    } else {
+                        if (confirm(msg)) callback();
+                    }
+                } catch (e) { if (confirm(msg)) callback(); }
+            }
         };
 
         // ==========================================
@@ -477,6 +484,48 @@
         }
 
         // =========================================================================
+        // 💎 GLOBAL BEAUTIFUL DIALOG COMPONENT
+        // ==========================================
+        const GlobalDialog = () => {
+            const [dialogConfig, setDialogConfig] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
+
+            useEffect(() => {
+                globalDialogSetter = setDialogConfig;
+                return () => { globalDialogSetter = null; };
+            }, []);
+
+            if (!dialogConfig.isOpen) return null;
+
+            const handleClose = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
+            
+            const handleConfirm = () => {
+                if (dialogConfig.onConfirm) dialogConfig.onConfirm();
+                handleClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[9999999] flex items-center justify-center p-4 animate-in fade-in" onClick={handleClose}>
+                    <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm text-center border border-[#0AE0D0]/50 shadow-[0_0_40px_rgba(0,255,255,0.2)]" onClick={e=>e.stopPropagation()}>
+                        <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-3xl mb-4 border border-[#00FFFF]/50">
+                            <i className={`fa-solid ${dialogConfig.type === 'alert' ? 'fa-bell' : 'fa-circle-question'}`}></i>
+                        </div>
+                        <h3 className="text-xl font-black text-white mb-2 tracking-wide">{dialogConfig.type === 'alert' ? 'Notice' : 'Confirm'}</h3>
+                        <p className="text-sm text-[#A4DFE6] mb-6 whitespace-pre-wrap">{dialogConfig.message}</p>
+                        
+                        {dialogConfig.type === 'alert' ? (
+                            <button onClick={handleClose} className="w-full py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">OK</button>
+                        ) : (
+                            <div className="flex gap-3">
+                                <button onClick={handleClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/30 text-white rounded-xl font-bold hover:bg-white/5 transition-colors active:scale-95">Cancel</button>
+                                <button onClick={handleConfirm} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Confirm</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
         // ⬇️ ADD YOUR PRACTICE QUESTIONS HERE (ALIEN PLATFORM QBANK) ⬇️
         // =========================================================================
         const ALIEN_QBANK = [
@@ -817,27 +866,21 @@
             const localStreamRef = useRef(null);
             const channelRef = useRef(null);
             const amISpeaker = mySeatIndex !== null && mySeatIndex >= 0 && mySeatIndex <= 3;
+            const amISpeakerRef = useRef(amISpeaker);
+
+            useEffect(() => { amISpeakerRef.current = amISpeaker; }, [amISpeaker]);
 
             useEffect(() => {
                 if (!roomId || !supabase) return;
-
                 
                 const initAudio = async () => {
-                    if (amISpeaker && !localStreamRef.current) {
+                    if (amISpeakerRef.current && !localStreamRef.current) {
                         try {
                             localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                             localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
                         } catch(e) {
                             console.error("Mic error:", e);
                         }
-                    } else if (!amISpeaker) {
-                        if (localStreamRef.current) {
-                            localStreamRef.current.getTracks().forEach(t => t.stop());
-                            localStreamRef.current = null;
-                        }
-                        Object.values(peersRef.current).forEach(p => p.close());
-                        peersRef.current = {};
-                        setRemoteStreams({});
                     }
                 };
 
@@ -847,8 +890,12 @@
                     const peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
                     peersRef.current[peerId] = peer;
 
-                    if (amISpeaker && localStreamRef.current) {
-                        localStreamRef.current.getTracks().forEach(t => peer.addTrack(t, localStreamRef.current));
+                    if (amISpeakerRef.current && localStreamRef.current) {
+                        localStreamRef.current.getTracks().forEach(t => {
+                            if (!peer.getSenders().find(s => s.track === t)) {
+                                peer.addTrack(t, localStreamRef.current);
+                            }
+                        });
                     }
 
                     peer.onicecandidate = (e) => {
@@ -885,7 +932,7 @@
                                     if (channelRef.current) {
                                         channelRef.current.send({
                                             type: 'broadcast', event: 'webrtc_signal',
-                                            payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) }
+                                            payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
                                         });
                                     }
                                 } catch(e) {}
@@ -896,7 +943,7 @@
                         if (onRecover) onRecover();
 
                         if (channelRef.current) {
-                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker } });
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current } });
                         }
                     }
                 };
@@ -932,19 +979,19 @@
                         const { senderId, senderIsSpeaker } = payload;
                         if (senderId === currentUserId) return;
 
-                        if (amISpeaker || senderIsSpeaker) {
+                        if (amISpeakerRef.current || senderIsSpeaker) {
                             if (currentUserId > senderId) {
                                 const peer = createPeer(senderId, senderIsSpeaker);
                                 const offer = await peer.createOffer();
                                 await peer.setLocalDescription(offer);
                                 channel.send({
                                     type: 'broadcast', event: 'webrtc_signal',
-                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) }
+                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
                                 });
                             } else {
                                 channel.send({
                                     type: 'broadcast', event: 'peer_hello',
-                                    payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeaker }
+                                    payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current }
                                 });
                             }
                         }
@@ -954,14 +1001,14 @@
                         const { senderId, targetId, senderIsSpeaker } = payload;
                         if (targetId !== currentUserId) return;
 
-                        if (amISpeaker || senderIsSpeaker) {
+                        if (amISpeakerRef.current || senderIsSpeaker) {
                             if (currentUserId > senderId) {
                                 const peer = createPeer(senderId, senderIsSpeaker);
                                 const offer = await peer.createOffer();
                                 await peer.setLocalDescription(offer);
                                 channel.send({
                                     type: 'broadcast', event: 'webrtc_signal',
-                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) }
+                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
                                 });
                             }
                         }
@@ -982,7 +1029,7 @@
                         if (status === 'SUBSCRIBED') {
                             channel.send({
                                 type: 'broadcast', event: 'peer_join',
-                                payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker }
+                                payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
                             });
                         }
                     });
@@ -1003,7 +1050,54 @@
                     peersRef.current = {};
                     setRemoteStreams({});
                 };
-            }, [roomId, amISpeaker]);
+            }, [roomId]);
+
+            useEffect(() => {
+                if (!roomId || !channelRef.current) return;
+                
+                const updateSpeakerStatus = async () => {
+                    if (amISpeaker) {
+                        if (!localStreamRef.current) {
+                            try {
+                                localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                                localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
+                            } catch(e) { console.error("Mic error:", e); }
+                        }
+                        
+                        if (localStreamRef.current) {
+                            Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                                const senders = peer.getSenders();
+                                let trackAdded = false;
+                                localStreamRef.current.getTracks().forEach(t => {
+                                    if (!senders.find(s => s.track === t)) { peer.addTrack(t, localStreamRef.current); trackAdded = true; }
+                                });
+                                
+                                if (trackAdded) {
+                                    try {
+                                        const offer = await peer.createOffer();
+                                        await peer.setLocalDescription(offer);
+                                        channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) } });
+                                    } catch(e) {}
+                                }
+                            });
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker } });
+                        }
+                    } else {
+                        if (localStreamRef.current) {
+                            localStreamRef.current.getTracks().forEach(t => t.stop());
+                            localStreamRef.current = null;
+                            
+                            Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                                const senders = peer.getSenders();
+                                senders.forEach(s => peer.removeTrack(s));
+                                try { const offer = await peer.createOffer(); await peer.setLocalDescription(offer); channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeaker, data: JSON.parse(JSON.stringify(offer)) } }); } catch(e) {}
+                            });
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeaker } });
+                        }
+                    }
+                };
+                updateSpeakerStatus();
+            }, [amISpeaker]);
 
             useEffect(() => {
                 if (localStreamRef.current) {
@@ -1398,7 +1492,11 @@
                         await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', rId).eq('seat_index', 0);
                         await supabase.rpc('move_to_seat', { p_room_id: rId, p_seat_index: 0, p_user_id: nextHostSeat.user_id, p_user_name: nextHostSeat.user_name, p_photo_url: nextHostSeat.photo_url });
                         
-                        if (chan) chan.send({ type: 'broadcast', event: 'host_transfer', payload: { new_host_id: nextHostSeat.user_id, new_host_name: nextHostSeat.user_name } });
+                        if (chan) {
+                            chan.send({ type: 'broadcast', event: 'host_transfer', payload: { new_host_id: nextHostSeat.user_id, new_host_name: nextHostSeat.user_name } });
+                            chan.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: 0, user_id: nextHostSeat.user_id, user_name: nextHostSeat.user_name, photo_url: nextHostSeat.photo_url, is_locked: false, is_muted_by_host: false } } });
+                            chan.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: nextHostSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: nextHostSeat.is_locked, is_muted_by_host: nextHostSeat.is_muted_by_host } } });
+                        }
                     } else {
                         await supabase.from('active_rooms').delete().eq('id', rId);
                     }
@@ -5832,7 +5930,7 @@ INSTRUCTIONS:
 
               const handleGenerateDPP = (chapterName) => {
                   try { if(window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); } catch(e){}
-                  alert(`Generating Custom DPP for: ${chapterName}...\n\nThis feature will compile your weakest topics into a tailored test.`);
+                  safeAlert(`Generating Custom DPP for: ${chapterName}...\n\nThis feature will compile your weakest topics into a tailored test.`);
               };
 
               // 5. Active Chapters for Table
@@ -6300,6 +6398,7 @@ INSTRUCTIONS:
                   </div>
               )}
 
+              <GlobalDialog />
             </div>
             </VoiceRoomErrorBoundary>
           );
