@@ -4136,14 +4136,14 @@ INSTRUCTIONS:
                 
                 const baseScale = isLarge ? 1.05 : 1.1;
                 
-                // Make rings expand significantly more for visibility
-                const dynamicScale = speaking ? baseScale + (intensity * 0.4) : baseScale; 
-                const ring1Scale = speaking ? dynamicScale * 1.3 : baseScale;
-                const ring2Scale = speaking ? dynamicScale * 1.7 : baseScale;
+                // WePlay Style Ring Variables
+                const blurScale = speaking ? baseScale + (intensity * 0.3) : baseScale;
+                const solidRingScale = speaking ? baseScale + (intensity * 0.25) : baseScale;
+                const outerRippleScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
                 
                 const glowOpacity = speaking ? 0.4 + (intensity * 0.6) : 0;
                 // Instant ON (reacts to voice), Slow OFF (2 seconds lingering memory effect)
-                const transitionStyle = speaking ? 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 50ms ease-in' : 'transform 1500ms ease-out, opacity 2000ms ease-out';
+                const transitionStyle = speaking ? 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 50ms ease-in' : 'transform 1200ms ease-out, opacity 1500ms ease-out';
 
                 const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : (isOfflineHost ? activeRoom.room_dp_url : occupant?.photo_url);
                 
@@ -4163,10 +4163,10 @@ INSTRUCTIONS:
                     <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                         {occupant ? (
                             <div className="relative group flex items-center justify-center">
-                                {/* Solid flowing voice glow with lingering memory fade */}
-                                <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity * 0.5, filter: 'blur(12px)', transition: transitionStyle }}></div>
-                                <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${ring1Scale})`, opacity: glowOpacity * 0.6, filter: 'blur(6px)', transition: transitionStyle }}></div>
-                                <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${ring2Scale})`, opacity: glowOpacity * 0.25, filter: 'blur(10px)', transition: transitionStyle }}></div>
+                                {/* WePlay Style Flashing Rings with Memory Fade */}
+                                <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${blurScale})`, opacity: glowOpacity * 0.4, filter: 'blur(10px)', transition: transitionStyle }}></div>
+                                <div className="absolute inset-0 rounded-full border-[3px] border-[#00FFFF] pointer-events-none shadow-[0_0_15px_rgba(0,255,255,0.6)]" style={{ transform: `scale(${solidRingScale})`, opacity: glowOpacity, transition: transitionStyle }}></div>
+                                <div className="absolute inset-0 rounded-full border-[1.5px] border-[#00FFFF] pointer-events-none" style={{ transform: `scale(${outerRippleScale})`, opacity: glowOpacity * 0.4, filter: 'blur(1px)', transition: transitionStyle }}></div>
 
                                 {dpUrl ? (
                                     <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-[3px] transition-all duration-200 ease-out relative z-10 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${speaking ? 'border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]' : 'border-[#0AE0D0]/50 group-hover:border-[#0AE0D0]'}`} style={speaking ? { transform: `scale(${baseScale})` } : {}} />
