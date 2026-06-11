@@ -1549,12 +1549,6 @@
                         }
                         fetchRoomData(eventData.room_id);
                         setActiveRoom(prev => prev ? { ...prev, host_id: eventData.new_host_id, host_name: eventData.new_host_name } : prev);
-                    } else if (event === 'room_closed') {
-                        safeAlert("Room closed by host.");
-                        setActiveRoom(null);
-                        setIsMinimized(false);
-                    } else if (event === 'room_updated') {
-                        setActiveRoom(prev => prev ? { ...prev, ...eventData } : prev);
                     }
                 }
             };
@@ -1718,29 +1712,40 @@
             useEffect(() => {
                 if (!activeRoom) return;
                 fetchRoomData(activeRoom.id);
-            }, [activeRoom]);
 
-            const [isRefreshingLobby, setIsRefreshingLobby] = useState(false);
-            const fetchInitialRooms = async () => {
-                if (!supabase) return;
-                const { data } = await supabase.from('active_rooms')
-                    .select('id, room_name, host_id, host_name, host_photo, password, created_at, room_id_5_digit, room_seats(user_id), room_audience(user_id)')
-                    .order('created_at', { ascending: false });
-                if (data) {
-                    const enhancedData = data.map(room => ({
-                        ...room, total_capacity: (room.room_seats || []).filter(s => s.user_id !== null).length + (room.room_audience || []).length
-                    }));
-                    setAvailableVCRooms(enhancedData);
-                }
-            };
+                const channel = supabase.channel(`vc_room_channel_${activeRoom.id}`)
+                    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_rooms', filter: `id=eq.${activeRoom.id}` }, () => {
+                        safeAlert("Room closed by host.");
+                        setActiveRoom(null);
+                    })
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'active_rooms', filter: `id=eq.${activeRoom.id}` }, (payload) => {
+                        setActiveRoom(payload.new);
+                    })
+                    .subscribe();
+
+                activeChannelRef.current = channel;
+                return () => { supabase.removeChannel(channel); activeChannelRef.current = null; };
+            }, [activeRoom]);
 
             useEffect(() => {
                 if (activeRoom || !supabase) return;
+                const fetchInitialRooms = async () => {
+                    const { data } = await supabase.from('active_rooms')
+                        .select('id, room_name, host_id, host_name, host_photo, password, created_at, room_id_5_digit, room_seats(user_id), room_audience(user_id)')
+                        .order('created_at', { ascending: false });
+                    if (data) {
+                        const enhancedData = data.map(room => ({
+                            ...room, total_capacity: (room.room_seats || []).filter(s => s.user_id !== null).length + (room.room_audience || []).length
+                        }));
+                        setAvailableVCRooms(enhancedData);
+                    }
+                };
                 fetchInitialRooms();
 
+                // Replaced expensive WebSockets with Free Standard HTTP Polling (Updates every 10 seconds)
                 const pollInterval = setInterval(() => {
                     fetchInitialRooms();
-                }, 3000); // Fast 3-second HTTP Polling avoids ISP WebSocket blocks completely
+                }, 10000);
                 
                 return () => clearInterval(pollInterval);
             }, [activeRoom]);
@@ -1799,6 +1804,14 @@
                         safeAlert("Room is Full! Please join another room or create your own.");
                     } else { safeAlert("Error: " + error.message); }
                 } else {
+                    // Broadcast the join event for instant UI update on other clients
+                    supabase.channel(`vc_room_channel_${room.id}`).send({
+                        type: 'broadcast',
+                        event: 'state_change',
+                        payload: { type: 'AUDIENCE_JOIN', data: { 
+                            room_id: room.id, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, joined_at: new Date().toISOString() 
+                        } }
+                    });
                     setActiveRoom(room); setShowJoinModal(false);
                 }
             };
@@ -1855,7 +1868,6 @@
                             broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: nextHost.user_id } });
                         } else {
                             await supabase.from('active_rooms').delete().eq('id', rId);
-                            broadcastToPeers('room_closed', { room_id: rId });
                         }
                     }
                 } else {
@@ -2042,12 +2054,7 @@
                         </div>
 
                         <div className="w-full mt-6 bg-[#021633]/50 rounded-3xl border border-[#0AE0D0]/20 p-4 flex-1 overflow-y-auto no-scrollbar">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-black text-[#A4DFE6] text-sm uppercase tracking-widest flex items-center gap-2"><i className="fa-solid fa-satellite-dish text-[#00FFFF]"></i> Active Rooms</h3>
-                                <button onClick={async () => { setIsRefreshingLobby(true); await fetchInitialRooms(); setTimeout(() => setIsRefreshingLobby(false), 500); }} className="text-[#00FFFF] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 px-2 py-1.5 rounded transition-colors text-xs font-bold flex items-center gap-1 active:scale-95 border border-[#00FFFF]/20 shadow-sm">
-                                    <i className={`fa-solid fa-arrows-rotate ${isRefreshingLobby ? 'animate-spin' : ''}`}></i> Refresh
-                                </button>
-                            </div>
+                            <h3 className="font-black text-[#A4DFE6] mb-4 text-sm uppercase tracking-widest flex items-center gap-2"><i className="fa-solid fa-satellite-dish text-[#00FFFF]"></i> Active Rooms</h3>
                             <div className="space-y-3">
                                 {sortedActiveRooms.length === 0 ? (
                                     <p className="text-center text-gray-500 text-xs italic py-6">No active rooms found. Be the first to create one!</p>
@@ -2581,7 +2588,6 @@
                                         const photo = photoInput.dataset.b64 || activeRoom.host_photo || '';
                                         
                                         await supabase.from('active_rooms').update({ room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }).eq('id', activeRoom.id);
-                                        broadcastToPeers('room_updated', { room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo });
                                         
                                         if (photo !== activeRoom.host_photo) {
                                             await supabase.from('room_seats').update({ photo_url: photo }).eq('room_id', activeRoom.id).eq('user_id', currentUserId);
