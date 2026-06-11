@@ -483,6 +483,51 @@
             }
         }
 
+        // ==========================================
+        // 🖼️ NATIVE PINCH-TO-ZOOM IMAGE VIEWER
+        // ==========================================
+        const FullScreenImageViewer = ({ src, onClose }) => {
+            const imgRef = useRef(null);
+            const [scale, setScale] = useState(1);
+            const [pos, setPos] = useState({ x: 0, y: 0 });
+            const initialDist = useRef(null);
+            const lastPos = useRef({ x: 0, y: 0 });
+
+            const handleTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    initialDist.current = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                } else if (e.touches.length === 1) {
+                    lastPos.current = { x: e.touches[0].clientX - pos.x, y: e.touches[0].clientY - pos.y };
+                }
+            };
+            const handleTouchMove = (e) => {
+                if (e.touches.length === 2 && initialDist.current) {
+                    const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    const newScale = Math.max(1, Math.min(scale * (currentDist / initialDist.current), 5));
+                    setScale(newScale);
+                    initialDist.current = currentDist;
+                } else if (e.touches.length === 1 && scale > 1) {
+                    setPos({ x: e.touches[0].clientX - lastPos.current.x, y: e.touches[0].clientY - lastPos.current.y });
+                }
+            };
+            const handleTouchEnd = (e) => {
+                if (e.touches.length < 2) initialDist.current = null;
+                if (e.touches.length === 0 && scale <= 1) setPos({ x: 0, y: 0 });
+            };
+            const handleDoubleClick = () => { if (scale > 1) { setScale(1); setPos({x:0, y:0}); } else setScale(2.5); };
+
+            return (
+                <div className="fixed inset-0 bg-black z-[5000000] flex flex-col animate-in fade-in touch-none">
+                    <div className="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20 bg-gradient-to-b from-black/70 to-transparent pt-[calc(16px+env(safe-area-inset-top,0px))]">
+                        <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform backdrop-blur-md"><i className="fa-solid fa-arrow-left text-xl"></i></button>
+                    </div>
+                    <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={onClose}>
+                        <img ref={imgRef} src={src} alt="Fullscreen" className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out" style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0) scale(${scale})` }} onClick={e => { e.stopPropagation(); handleDoubleClick(); }} />
+                    </div>
+                </div>
+            );
+        };
+
         // =========================================================================
         // 💎 GLOBAL BEAUTIFUL DIALOG COMPONENT
         // ==========================================
@@ -868,6 +913,7 @@
             const audioContextRef = useRef(null);
             const analyserRef = useRef(null);
             const sourceRef = useRef(null);
+            const smoothedVolumeRef = useRef(0);
 
             useEffect(() => {
                 if (!mediaStream) {
@@ -884,7 +930,7 @@
                         audioContextRef.current.resume();
                     }
                     analyserRef.current = audioContextRef.current.createAnalyser();
-                    analyserRef.current.fftSize = 32;
+                    analyserRef.current.fftSize = 64;
 
                     sourceRef.current = audioContextRef.current.createMediaStreamSource(mediaStream);
                     sourceRef.current.connect(analyserRef.current);
@@ -899,8 +945,25 @@
                                 sum += dataArray[i];
                             }
                             const average = sum / dataArray.length;
-                            const scale = Math.min(100, Math.max(0, Math.round((average / 255) * 100)));
-                            setVolume(prev => Math.abs(prev - scale) > 3 ? scale : prev);
+                            
+                            let targetScale = 0;
+                            if (average > 8) {
+                                // Speaking loudness dictates shockwave radius
+                                targetScale = Math.min(100, (average / 150) * 100);
+                            } else if (average > 1) {
+                                // Micro fan/air noise creates very small radius
+                                targetScale = 2; 
+                            }
+                            
+                            // Apply slow motion smoothing
+                            if (targetScale > smoothedVolumeRef.current) {
+                                // Fast attack: current sound shows up immediately
+                                smoothedVolumeRef.current += (targetScale - smoothedVolumeRef.current) * 0.3;
+                            } else {
+                                // Slow decay: old sound slowly fades away in slow motion
+                                smoothedVolumeRef.current += (targetScale - smoothedVolumeRef.current) * 0.015;
+                            }
+                            setVolume(Math.round(smoothedVolumeRef.current * 10) / 10);
                         }
                         requestRef.current = requestAnimationFrame(updateVolume);
                     };
@@ -937,15 +1000,15 @@
             const mediaStream = isMe ? localStream : (isOccupied ? remoteStream : null);
             const volume = useAudioAnalyser(mediaStream);
             
-            const speaking = volume > 5;
-            const intensity = Math.min(Math.max((volume - 5) / 95, 0), 1);
+            const isSpeaking = volume > 0.1; // Ensure fading rings remain visible until fully decayed
+            const intensity = Math.min(Math.max(volume / 100, 0), 1);
             
             const baseScale = 1;
-            const dynamicScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
-            const ring1Scale = speaking ? dynamicScale * 1.3 : baseScale;
-            const ring2Scale = speaking ? dynamicScale * 1.7 : baseScale;
-            const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
-            const transitionStyle = speaking ? 'transform 50ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 50ms ease-in' : 'transform 1500ms ease-out, opacity 2000ms ease-out';
+            const dynamicScale = isSpeaking ? baseScale + (intensity * 0.25) : baseScale;
+            const ring1Scale = isSpeaking ? baseScale + (intensity * 0.5) : baseScale;
+            const ring2Scale = isSpeaking ? baseScale + (intensity * 0.75) : baseScale;
+            const glowOpacity = isSpeaking ? 0.15 + (intensity * 0.6) : 0;
+            const transitionStyle = 'transform 100ms linear, opacity 100ms linear';
             return (
                 <div className="flex flex-col items-center gap-2 relative">
                     {isOccupied ? (
@@ -2168,7 +2231,7 @@
                                 <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal.target.user_name}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => { 
-                                        const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
+                                        const emptySeatIdx = [1,2,3,4,5,6,7,8,9].find(i => !participants.some(p => p.seat_number === i) && !lockedSeats[i]);
                                         if(emptySeatIdx !== -1) {
                                             if (activeChannelRef.current) {
                                                 activeChannelRef.current.send({ type: 'broadcast', event: 'invite', payload: { target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName } });
@@ -2196,7 +2259,7 @@
                                 <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
                                     {(() => {
                                         const candidates = [
-                                            ...seats.filter(s => s && s.user_id && s.user_id !== currentUserId && s.user_id !== showActionModal.oldOccupant?.user_id).map(s => ({ ...s, isSeated: true })),
+                                            ...participants.filter(s => s.seat_number !== null && s.seat_number !== undefined && String(s.user_id) !== currentUserId && String(s.user_id) !== String(showActionModal.oldOccupant?.user_id)).map(s => ({ ...s, isSeated: true })),
                                             ...audience.map(a => ({ ...a, isSeated: false }))
                                         ];
                                         
@@ -2240,7 +2303,7 @@
                                 <p className="text-sm text-[#A4DFE6] mb-6">Do you want to move to Seat {showActionModal.seatNum}?</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setShowActionModal(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
-                                    <button onClick={() => { takeSeat(showActionModal.seatNum); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Move</button>
+                                    <button onClick={() => { takeSeat(showActionModal.seatNum, activeRoom.id, null, true); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Move</button>
                                 </div>
                             </div>
                         </div>
@@ -2395,12 +2458,7 @@
                     )}
                     
                     {/* Full Screen Image Overlay */}
-                    {fullScreenImage && (
-                        <div className="fixed inset-0 bg-black/95 z-[5000] flex items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={() => setFullScreenImage(null)}>
-                            <img src={fullScreenImage} alt="Fullscreen" className="max-w-full max-h-full object-contain" />
-                            <button className="absolute top-4 right-4 text-white text-3xl font-bold p-2"><i className="fa-solid fa-xmark"></i></button>
-                        </div>
-                    )}
+                    {fullScreenImage && <FullScreenImageViewer src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
                 </div>
             );
 
@@ -4074,6 +4132,7 @@ INSTRUCTIONS:
             const [showRequestsModal, setShowRequestsModal] = useState(false);
             const [chatInput, setChatInput] = useState('');
             const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [pendingImage, setPendingImage] = useState(null);
 
             const currentUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
             const isHost = String(activeRoom.host_user_id) === currentUserId;
@@ -4297,6 +4356,15 @@ INSTRUCTIONS:
                     </div>
 
                     <div className="fixed bottom-0 w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-2 items-center z-20 pb-[env(safe-area-inset-bottom,_12px)]">
+                        {pendingImage && (
+                            <div className="absolute bottom-[110%] left-4 mb-2 p-2 bg-[#021633]/90 backdrop-blur-md border border-[#00FFFF]/40 rounded-xl shadow-[0_0_20px_rgba(0,255,255,0.2)] z-[200]">
+                                <div className="relative">
+                                    <img src={pendingImage} alt="Preview" className="h-28 w-auto rounded-lg object-contain" />
+                                    <button onClick={() => setPendingImage(null)} className="absolute -top-3 -right-3 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-sm shadow-lg hover:scale-110 transition-transform"><i className="fa-solid fa-times"></i></button>
+                                </div>
+                            </div>
+                        )}
+                        
                         {/* LEFT: Speaker & Mic Options */}
                         <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
                             <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
@@ -4508,9 +4576,9 @@ INSTRUCTIONS:
                                         if (lockedSeats[pendingInvite.seatNum]) {
                                             sendBroadcast('seat_lock', { seatNum: pendingInvite.seatNum, isLocked: false });
                                             setLockedSeats(prev => ({...prev, [pendingInvite.seatNum]: false}));
-                                            await supabase.from('room_seats').update({ is_locked: false }).eq('room_id', activeRoom.id).eq('seat_index', pendingInvite.seatNum);
+                                            supabase.from('room_seats').update({ is_locked: false }).eq('room_id', activeRoom.id).eq('seat_index', pendingInvite.seatNum); // no await
                                         }
-                                        takeSeat(pendingInvite.seatNum); 
+                                        takeSeat(pendingInvite.seatNum, activeRoom.id, null, true); 
                                         setPendingInvite(null); 
                                     }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
                                 </div>
