@@ -1,12 +1,24 @@
-// LAYER 4: PREMIUM INTERFACE 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useVoiceRoom } from '../services/roomService';
 import { useAudioAnalyser } from './useAudioAnalyser';
+import { ProfileCardModal } from './ProfileCardModal';
+import { PersonalChatSystem } from './PersonalChatSystem';
+import { RoomChatContainer } from './RoomChatContainer';
 
 export const VoiceRoomsTab = ({ tgUser }) => {
-    const { activeRoom, roomParticipants, remoteUsers, isMuted, activeSpeakers, chatMessages, leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized, availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, updateRoomSettings, tgId, joinRoom } = useVoiceRoom();
-    const [chatInput, setChatInput] = useState('');
-    const [selectedSeat, setSelectedSeat] = useState(null);
+    const {
+        activeRoom, roomParticipants, remoteUsers, isMuted, activeSpeakers, chatMessages,
+        leaveRoom, toggleMute, sendChat, hostAction, isMinimized, setIsMinimized,
+        availableRooms, takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom,
+        updateRoomSettings, tgId, joinRoom, fetchAvailableRooms,
+        sendFriendRequest, acceptFriendRequest, sendPrivateDM, dataConnectionsRef
+    } = useVoiceRoom();
+
+    const [vcSubTab, setVcSubTab] = useState('rooms'); // 'rooms' | 'chats'
+    const [profileOverlayTarget, setProfileOverlayTarget] = useState(null);
+    const [localRefresh, setLocalRefresh] = useState(0);
+    const [localChatMessages, setLocalChatMessages] = useState([]);
+
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRoomName, setNewRoomName] = useState('');
     const [createRoomType, setCreateRoomType] = useState('temporary');
@@ -17,7 +29,6 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     const [editAnnouncement, setEditAnnouncement] = useState('');
     const [editDpUrl, setEditDpUrl] = useState('');
 
-    // Strict WePlay-style Graceful Teardown on unmount
     const activeRoomRef = useRef(activeRoom);
     const leaveRoomRef = useRef(leaveRoom);
     useEffect(() => {
@@ -26,15 +37,40 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     }, [activeRoom, leaveRoom]);
 
     useEffect(() => {
-        const handleUnload = () => {
-            if (activeRoomRef.current) leaveRoomRef.current();
-        };
+        const handleUnload = () => { if (activeRoomRef.current) leaveRoomRef.current(); };
         window.addEventListener('beforeunload', handleUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleUnload);
-            if (activeRoomRef.current) leaveRoomRef.current();
-        };
+        return () => { window.removeEventListener('beforeunload', handleUnload); if (activeRoomRef.current) leaveRoomRef.current(); };
     }, []);
+
+    // Feature 2: In-Memory Sorting Rules & Main-Seat Terminate Rule Hide
+    const sortedActiveRooms = useMemo(() => {
+        return availableRooms
+            .filter(room => {
+                const participantsList = room.room_participants || [];
+                const totalParticipants = (room.seats_occupied || 0) + (room.audience_count || participantsList.length || 0);
+                
+                // Active Audience Retention & Terminate Condition
+                if (totalParticipants === 0 && room.room_type === 'temporary') return false;
+                
+                // Main-Seat Terminate Rule Hide Condition
+                const hostEmpty = !participantsList.some(p => p.seat_number === 0 && p.user_id !== null);
+                if (hostEmpty && room.room_type === 'temporary') return false;
+
+                return true;
+            })
+            .sort((a, b) => {
+                const countA = (a.seats_occupied || 0) + (a.audience_count || a.room_participants?.length || 0);
+                const countB = (b.seats_occupied || 0) + (b.audience_count || b.room_participants?.length || 0);
+                
+                const isAFull = countA >= 12;
+                const isBFull = countB >= 12;
+
+                if (isAFull && !isBFull) return 1;
+                if (!isAFull && isBFull) return -1;
+                
+                return countB - countA;
+            });
+    }, [availableRooms, localRefresh]);
 
     // --- 1. ACTIVE ROOM LAYOUT (Inside Room) ---
     if (activeRoom && !isMinimized) {
@@ -47,7 +83,6 @@ export const VoiceRoomsTab = ({ tgUser }) => {
             const isMe = occupant?.user_id === tgId;
             const remoteUser = remoteUsers.find(r => r.uid === occupant?.user_id);
             
-            // Securely derive MediaStream for the analyzer (memoized to prevent re-renders)
             const mediaStream = useMemo(() => {
                 const track = remoteUser?.audioTrack?.getMediaStreamTrack?.();
                 if (track) return new MediaStream([track]);
@@ -55,17 +90,21 @@ export const VoiceRoomsTab = ({ tgUser }) => {
             }, [remoteUser]);
 
             const volume = useAudioAnalyser(mediaStream);
-
-            // Flicker Logic: Fallback to existing activeSpeakers for local mic if remote track isn't captured yet
             const isSpeaking = volume > 0 || (occupant && activeSpeakers[occupant.user_id]);
             const isLocked = lockedSeats[seatNum];
             const isSeatMuted = mutedSeats[seatNum];
             
             return (
-                <div onClick={() => setSelectedSeat({ seatNum, occupant })} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
+                <div onClick={() => {
+                    if (occupant) { setProfileOverlayTarget(occupant); }
+                    else {
+                        if (isHost && seatNum !== 0) {
+                            // Host empty seat logic (like unlocking) handled in profile overlay if we want, but WePlay shows direct options for empty seat
+                        } else if (!isLocked) takeSeat(seatNum);
+                    }
+                }} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
                     {occupant ? (
                         <div className="relative weplay-voice-ring w-full aspect-square flex items-center justify-center">
-                            {/* The Ring Design bound to audio intensity */}
                             <div 
                                 className="absolute inset-0 rounded-full border-[3px] border-[#00FFFF] pointer-events-none transition-all duration-75 ease-out"
                                 style={{
@@ -102,7 +141,6 @@ export const VoiceRoomsTab = ({ tgUser }) => {
 
         return (
             <div className="flex-1 flex flex-col relative z-10 bg-[#010B1C] min-h-screen">
-                {/* Header */}
                 <div className="px-4 py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsMinimized(true)} className="text-[#00FFFF] text-xl px-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -128,7 +166,6 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                     <button onClick={leaveRoom} className="bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors">Leave</button>
                 </div>
 
-                {/* Permanent Settings: Announcement Render */}
                 {activeRoom.announcement && (
                     <div className="mx-6 mt-4 p-3 bg-[#021633]/80 rounded-xl border border-[#0AE0D0]/20 text-xs text-[#A4DFE6] shadow-lg backdrop-blur">
                         <i className="fa-solid fa-bullhorn text-[#00FFFF] mr-2 animate-pulse"></i>
@@ -136,9 +173,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                     </div>
                 )}
                 
-                {/* Spatial Seating Canvas */}
                 <div className="p-6 pb-2">
-                    {/* Upper Deck (Host & Partner) */}
                     <div className="flex justify-center gap-8 mb-8">
                     {WEPLAY_SEATS.slice(0, 2).map(seatNum => {
                         if (seatNum === 1 && !activeRoom.is_partner_seat_open) return null;
@@ -146,7 +181,6 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                         return <SeatNode key={seatNum} seatNum={seatNum} occupant={occupant} label={seatNum === 0 ? "Host" : "Partner"} isLarge={true} />;
                     })}
                     </div>
-                    {/* Lower Deck (Seats 2-9) */}
                     <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
                     {WEPLAY_SEATS.slice(2).map(seatNum => {
                         const occupant = roomParticipants.find(p => p.seat_number === seatNum);
@@ -155,82 +189,13 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                     </div>
                 </div>
 
-                {/* Ephemeral Live Chat Panel */}
-                <div className="flex-1 bg-gradient-to-t from-[#021633] to-transparent p-4 flex flex-col justify-end overflow-hidden">
-                    <div className="max-h-[180px] overflow-y-auto no-scrollbar space-y-2 mb-4">
-                        {chatMessages.map((msg, idx) => (
-                            <div key={idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%]">
-                                <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
-                                <span className="text-white">{msg.text}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <RoomChatContainer tgId={tgId} tgName={tgUser?.first_name} dataConnectionsRef={dataConnectionsRef} chatMessages={localChatMessages.length ? localChatMessages : chatMessages} setChatMessages={setLocalChatMessages} activeRoom={activeRoom} isHost={isHost} toggleMute={toggleMute} isMuted={isMuted} setProfileOverlayTarget={setProfileOverlayTarget} />
 
-                {/* Action Bar */}
-                <div className="w-full bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex gap-2 items-center z-20 pb-[env(safe-area-inset-bottom,_12px)]">
-                    <input 
-                        value={chatInput} onChange={e=>setChatInput(e.target.value)} 
-                        placeholder="Say hi..." 
-                        className="flex-1 bg-[#021633] border border-[#0AE0D0]/30 rounded-full px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#00FFFF]"
-                        onKeyDown={(e) => { if(e.key==='Enter') { sendChat(chatInput); setChatInput(''); } }}
-                    />
-                    <button onClick={toggleMute} className={`w-11 h-11 rounded-full flex items-center justify-center text-lg transition-all shadow-lg border-2 shrink-0 ${isMuted ? 'bg-[#021633] text-gray-400 border-gray-600' : 'bg-[#00FFFF] text-[#010B1C] border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.6)]'}`}>
-                        <i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
-                    </button>
-                </div>
-
-                {/* Seat Context Modal */}
-                {selectedSeat && (
-                    <div className="absolute inset-0 z-50 bg-black/60 flex flex-col justify-end" onClick={() => setSelectedSeat(null)}>
-                        <div className="bg-[#021633] rounded-t-3xl p-6 border-t border-[#0AE0D0]/30 shadow-[0_-10px_30px_rgba(0,255,255,0.1)]" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-xl font-bold text-white mb-4">Seat {selectedSeat.seatNum}</h3>
-                            <div className="flex flex-col gap-3">
-                                {selectedSeat.occupant ? (
-                                    selectedSeat.occupant.user_id === tgId ? (
-                                        <button onClick={() => { leaveSeat(); setSelectedSeat(null); }} className="p-3 bg-red-500/20 text-red-400 rounded-xl font-bold border border-red-500/30">Move to Audience</button>
-                                    ) : isAdmin ? (
-                                        <>
-                                            <button onClick={() => { hostAction('force_mute', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">Mute User's Mic</button>
-                                            <button onClick={() => { hostAction('seat_mute', null, { seatNumber: selectedSeat.seatNum, isMuted: !mutedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className={`p-3 rounded-xl font-bold border ${mutedSeats[selectedSeat.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/30'}`}>
-                                                {mutedSeats[selectedSeat.seatNum] ? "Unmute Seat" : "Mute Seat"}
-                                            </button>
-                                            <button onClick={() => { hostAction('kick', selectedSeat.occupant.user_id); setSelectedSeat(null); }} className="p-3 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-xl font-bold border border-red-500/30">Kick from Room</button>
-                                            {isHost && (
-                                                <button onClick={() => { hostAction('assign_mod', selectedSeat.occupant.user_id, { isAdmin: !selectedSeat.occupant.is_admin }); setSelectedSeat(null); }} className="p-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-xl font-bold border border-blue-500/30">
-                                                    {selectedSeat.occupant.is_admin ? "Remove Admin" : "Assign Admin/Mod"}
-                                                </button>
-                                            )}
-                                        </>
-                                    ) : null
-                                ) : (
-                                    <>
-                                        <button onClick={() => { 
-                                            if (lockedSeats[selectedSeat.seatNum] && !isAdmin) {
-                                                alert("This seat is locked by the admin.");
-                                                return;
-                                            }
-                                            takeSeat(selectedSeat.seatNum); 
-                                            setSelectedSeat(null); 
-                                        }} className="p-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold shadow-[0_0_15px_rgba(0,255,255,0.4)]">Take Mic Seat</button>
-                                        
-                                        {isAdmin && (
-                                            <>
-                                                <button onClick={() => { hostAction('seat_mute', null, { seatNumber: selectedSeat.seatNum, isMuted: !mutedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className={`p-3 rounded-xl font-bold border ${mutedSeats[selectedSeat.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/30'}`}>
-                                                    {mutedSeats[selectedSeat.seatNum] ? "Unmute Seat" : "Mute Seat"}
-                                                </button>
-                                                <button onClick={() => { hostAction('seat_lock', null, { seatNumber: selectedSeat.seatNum, isLocked: !lockedSeats[selectedSeat.seatNum] }); setSelectedSeat(null); }} className="p-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold border border-white/10">{lockedSeats[selectedSeat.seatNum] ? "Unlock Seat" : "Lock Seat"}</button>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                                <button onClick={() => setSelectedSeat(null)} className="p-3 bg-transparent text-gray-400 rounded-xl font-bold mt-2">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
+                {/* Profile Card Overlay replacing old Context Modal */}
+                {profileOverlayTarget && (
+                    <ProfileCardModal targetUser={profileOverlayTarget} tgId={tgId} activeRoom={activeRoom} onClose={() => setProfileOverlayTarget(null)} sendFriendRequest={sendFriendRequest} setIsMinimized={setIsMinimized} setVcSubTab={setVcSubTab} leaveSeat={leaveSeat} toggleMute={toggleMute} isMuted={isMuted} hostAction={hostAction} mutedSeats={mutedSeats} />
                 )}
 
-                {/* Permanent Settings Modal */}
                 {showSettingsModal && (
                     <div className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
                         <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
@@ -261,132 +226,106 @@ export const VoiceRoomsTab = ({ tgUser }) => {
     // --- 2. DISCOVERY DASHBOARD (Outside Room) ---
     const myAdvanceRoom = availableRooms.find(r => String(r.owner_id) === String(tgId) && (r.room_type === 'advance' || r.room_type === 'permanent'));
 
-    // Client-Side Active Room Sorting & Local Garbage Collection (Zero Server Cost)
-    const sortedActiveRooms = useMemo(() => {
-        return availableRooms
-            // 3. Local Garbage Collection: instantly filter out dead/ghost temporary rooms
-            .filter(room => {
-                const totalParticipants = (room.seats_occupied || 0) + (room.audience_count || room.room_participants?.[0]?.count || room.room_participants?.length || 0);
-                if (room.room_type === 'temporary' && totalParticipants === 0) return false;
-                return true;
-            })
-            // 2. In-Memory Sorting Rules
-            .sort((a, b) => {
-                const countA = (a.seats_occupied || 0) + (a.audience_count || a.room_participants?.[0]?.count || a.room_participants?.length || 0);
-                const countB = (b.seats_occupied || 0) + (b.audience_count || b.room_participants?.[0]?.count || b.room_participants?.length || 0);
-                
-                const isAFull = countA >= 12;
-                const isBFull = countB >= 12;
-
-                // RULE B & C: Full rooms (12/12) instantly drop to the absolute bottom of the array
-                if (isAFull && !isBFull) return 1;
-                if (!isAFull && isBFull) return -1;
-                
-                // RULE A: Sort by highest participant count bubbling to the top
-                return countB - countA;
-            });
-    }, [availableRooms]);
-
-    let displayRooms = [];
-    if (dashboardFilter === 'active') {
-        displayRooms = sortedActiveRooms;
-    } else {
-        // Mock data for recent and joined views as requested
-        displayRooms = [];
-    }
-
     return (
         <div className="pb-[80px] flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white relative">
-            <div className="p-4 flex-1 overflow-y-auto">
-                <h2 className="text-2xl font-black mb-4 text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
-                
-                {/* 1. Top Section: Pinned Advance Room */}
-                <div className="mb-6">
-                    {myAdvanceRoom ? (
-                        <div onClick={() => joinRoom(myAdvanceRoom)} className="bg-gradient-to-br from-[#1a1c02] to-[#010B1C] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                            <span className="absolute top-0 right-0 bg-gradient-to-r from-[#D4AF37] to-[#F9D33A] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">My Advance Room</span>
-                            <div className="relative z-10 flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(212,175,55,0.5)]">
-                                        {myAdvanceRoom.channel_name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
-                                            {myAdvanceRoom.channel_name} 
-                                            {myAdvanceRoom.password && <i className="fa-solid fa-lock text-[#F9D33A] text-xs"></i>}
-                                        </h3>
-                                        <div className="flex text-sm text-[#F9D33A] gap-3">
-                                            <span><i className="fa-solid fa-crown mr-1"></i> Host: You</span>
-                                            <span><i className="fa-solid fa-headphones mr-1"></i> {myAdvanceRoom.room_participants?.[0]?.count || myAdvanceRoom.room_participants?.length || 0} Listens</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:text-[#010B1C] transition-colors">
-                                    <i className="fa-solid fa-arrow-right"></i>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <button onClick={() => { setCreateRoomType('advance'); setShowCreateModal(true); }} className="w-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F9D33A]/10 hover:from-[#D4AF37]/30 hover:to-[#F9D33A]/20 border border-[#D4AF37]/50 border-dashed py-4 rounded-2xl font-bold transition-all text-sm uppercase tracking-wider text-[#F9D33A] flex flex-col items-center justify-center gap-2">
-                            <i className="fa-solid fa-crown text-2xl drop-shadow-[0_0_8px_rgba(249,211,58,0.5)]"></i>
-                            Create Premium Advance Room
-                        </button>
-                    )}
+            {/* Sub-tabs Header */}
+            <div className="p-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#021633]">
+                <div className="flex gap-4">
+                    <button onClick={() => setVcSubTab('rooms')} className={`text-lg font-black transition-all ${vcSubTab === 'rooms' ? 'text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]' : 'text-gray-500'}`}>Rooms</button>
+                    <button onClick={() => setVcSubTab('chats')} className={`text-lg font-black transition-all ${vcSubTab === 'chats' ? 'text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]' : 'text-gray-500'}`}>Chats</button>
                 </div>
-
-                {/* 2. Middle Section: Navigation Buttons */}
-                <div className="flex gap-2 mb-6 bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20">
-                    <button onClick={() => setDashboardFilter('active')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'active' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
-                        Active
+                {vcSubTab === 'rooms' && (
+                    <button onClick={() => { setLocalRefresh(r => r + 1); fetchAvailableRooms(); }} className="text-[#00FFFF] text-xl px-2 hover:bg-[#00FFFF]/10 rounded-lg transition-colors">
+                        <i className="fa-solid fa-arrows-rotate"></i>
                     </button>
-                    <button onClick={() => setDashboardFilter('recent')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'recent' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
-                        Recent
-                    </button>
-                    <button onClick={() => setDashboardFilter('joined')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'joined' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
-                        Joined
-                    </button>
-                </div>
-                
-                {/* 3. Bottom Section: Dynamic List */}
-                <div className="space-y-4 pb-20">
-                    {displayRooms.length > 0 ? displayRooms.map(room => {
-                        const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
-                        const totalCapacity = (room.seats_occupied || 0) + (room.audience_count || room.room_participants?.[0]?.count || room.room_participants?.length || 0);
-                        return (
-                            <div key={room.id} onClick={() => joinRoom(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF] hover:shadow-[0_0_10px_rgba(0,255,255,0.3)]'}`}>
-                                {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
+                )}
+            </div>
+            
+            {vcSubTab === 'rooms' ? (
+                <div className="p-4 flex-1 overflow-y-auto">
+                    <div className="mb-6">
+                        {myAdvanceRoom ? (
+                            <div onClick={() => joinRoom(myAdvanceRoom)} className="bg-gradient-to-br from-[#1a1c02] to-[#010B1C] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                                <span className="absolute top-0 right-0 bg-gradient-to-r from-[#D4AF37] to-[#F9D33A] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">My Advance Room</span>
                                 <div className="relative z-10 flex justify-between items-center">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(0,255,255,0.5)]">
-                                            {room.channel_name.charAt(0).toUpperCase()}
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(212,175,55,0.5)]">
+                                            {myAdvanceRoom.channel_name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
-                                                {room.channel_name} 
-                                                {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                {myAdvanceRoom.channel_name} 
+                                                {myAdvanceRoom.password && <i className="fa-solid fa-lock text-[#F9D33A] text-xs"></i>}
                                             </h3>
-                                            <div className="flex text-sm text-[#A4DFE6] gap-3">
-                                                <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host: {room.host_user_id.substring(0,5)}</span>
-                                                <span><i className="fa-solid fa-users mr-1 text-[#00FFFF]"></i> {totalCapacity}/12</span>
+                                            <div className="flex text-sm text-[#F9D33A] gap-3">
+                                                <span><i className="fa-solid fa-crown mr-1"></i> Host: You</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:text-[#010B1C] transition-colors">
                                         <i className="fa-solid fa-arrow-right"></i>
                                     </div>
                                 </div>
                             </div>
-                        )
-                    }) : (
-                        <div className="text-center py-10 text-gray-500">
-                            <i className="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
-                            <p>No rooms found for this filter.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+                        ) : (
+                            <button onClick={() => { setCreateRoomType('advance'); setShowCreateModal(true); }} className="w-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F9D33A]/10 hover:from-[#D4AF37]/30 hover:to-[#F9D33A]/20 border border-[#D4AF37]/50 border-dashed py-4 rounded-2xl font-bold transition-all text-sm uppercase tracking-wider text-[#F9D33A] flex flex-col items-center justify-center gap-2">
+                                <i className="fa-solid fa-crown text-2xl drop-shadow-[0_0_8px_rgba(249,211,58,0.5)]"></i>
+                                Create Premium Advance Room
+                            </button>
+                        )}
+                    </div>
 
-            {/* Room Creation Modal */}
+                    <div className="flex gap-2 mb-6 bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20">
+                        <button onClick={() => setDashboardFilter('active')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'active' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
+                            Active
+                        </button>
+                        <button onClick={() => setDashboardFilter('recent')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'recent' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>
+                            Recent
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-4 pb-20">
+                        {sortedActiveRooms.length > 0 ? sortedActiveRooms.map(room => {
+                            const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
+                            const totalCapacity = (room.seats_occupied || 0) + (room.audience_count || room.room_participants?.length || 0);
+                            // Capacity Badge Feature 2
+                            return (
+                                <div key={room.id} onClick={() => joinRoom(room)} className={`bg-[#021633] rounded-2xl p-4 cursor-pointer relative overflow-hidden group transition-all ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF] hover:shadow-[0_0_10px_rgba(0,255,255,0.3)]'}`}>
+                                    {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
+                                    <div className="relative z-10 flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(0,255,255,0.5)]">
+                                                {room.channel_name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                    {room.channel_name} 
+                                                    {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                </h3>
+                                                <div className="flex text-sm text-[#A4DFE6] gap-3">
+                                                    <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host: {String(room.host_user_id).substring(0,5)}</span>
+                                                    <span><i className="fa-solid fa-users mr-1 text-[#00FFFF]"></i> {totalCapacity}/12</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
+                                            <i className="fa-solid fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }) : (
+                            <div className="text-center py-10 text-gray-500">
+                                <i className="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
+                                <p>No rooms found for this filter.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <PersonalChatSystem tgId={tgId} sendPrivateDM={sendPrivateDM} acceptFriendRequest={acceptFriendRequest} dataConnectionsRef={dataConnectionsRef} />
+            )}
+
             {showCreateModal && (
                 <div className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
                     <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
@@ -407,7 +346,6 @@ export const VoiceRoomsTab = ({ tgUser }) => {
                 </div>
             )}
 
-            {/* FLOATING MINI-PLAYER */}
             {activeRoom && isMinimized && (
                 <div className="absolute bottom-[20px] left-4 right-4 bg-[#010B1C] border border-[#00FFFF]/50 rounded-2xl p-3 shadow-[0_10px_30px_rgba(0,0,0,0.8),_0_0_15px_rgba(0,255,255,0.2)] flex items-center gap-3 z-40 cursor-pointer hover:border-[#00FFFF] transition-colors group" onClick={() => setIsMinimized(false)}>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center relative shadow-[0_0_10px_rgba(0,255,255,0.5)]">

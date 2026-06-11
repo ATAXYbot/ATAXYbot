@@ -1,9 +1,8 @@
-// LAYER 3: FRONTEND STATE ENGINE & STRING SIGN-IN
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useRef } from 'react';
 
 const SUPABASE_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_' + 'BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
-const AGORA_APP_ID = "1711d81c" + "41114b1bb4f102b27147821c";
+const AGORA_APP_ID = "1711d81c41114b1bb4f102b27147821c";
 
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const VoiceRoomContext = createContext(null);
@@ -16,54 +15,187 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     const [isMuted, setIsMuted] = useState(true);
     const [remoteUsers, setRemoteUsers] = useState([]);
     const [activeSpeakers, setActiveSpeakers] = useState({});
-    const [realtimeChannel, setRealtimeChannel] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
 
-    // NEW: WePlay features
     const [isMinimized, setIsMinimized] = useState(false);
     const [availableRooms, setAvailableRooms] = useState([]);
     const [lockedSeats, setLockedSeats] = useState({});
     const [mutedSeats, setMutedSeats] = useState({});
 
-    // Telegram Profile Extraction
+    const [peer, setPeer] = useState(null);
+
     const tgUserExt = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser || {};
     const tgId = String(tgUserExt.id || "1001");
     const tgName = tgUserExt.first_name || tgUserExt.username || "Anonymous";
     const tgPhoto = tgUserExt.photo_url || null;
 
+    const activeRoomRef = useRef(null);
+    useEffect(() => { activeRoomRef.current = activeRoom; }, [activeRoom]);
+    const participantsRef = useRef([]);
+    useEffect(() => { participantsRef.current = participants; }, [participants]);
+
+    // ===============================================
+    // FEATURE: DECENTRALIZED P2P WEBRTC DATA CHANNELS
+    // ===============================================
+    useEffect(() => {
+        const initPeer = () => {
+            const newPeer = new window.Peer(String(tgId), { debug: 1 });
+            newPeer.on('connection', (conn) => {
+                conn.on('data', (data) => handlePeerData(data));
+            });
+            setPeer(newPeer);
+        };
+        if (!window.Peer) {
+            const script = document.createElement('script');
+            script.src = "https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js";
+            document.head.appendChild(script);
+            script.onload = initPeer;
+        } else {
+            initPeer();
+        }
+        return () => peer && peer.destroy();
+    }, [tgId]);
+
+    const handlePeerData = (data) => {
+        if (!data || !data.type) return;
+
+        if (data.type === 'FRIEND_REQUEST') {
+            window.Telegram.WebApp.CloudStorage.getItem('ataxy_pending_friends', (err, val) => {
+                const pending = val ? JSON.parse(val) : [];
+                if (!pending.includes(data.senderId)) {
+                    pending.push(data.senderId);
+                    window.Telegram.WebApp.CloudStorage.setItem('ataxy_pending_friends', JSON.stringify(pending));
+                    window.dispatchEvent(new Event('dm_updated'));
+                }
+            });
+        } else if (data.type === 'FRIEND_ACCEPT') {
+            window.Telegram.WebApp.CloudStorage.getItem('ataxy_friends', (err, val) => {
+                const friends = val ? JSON.parse(val) : [];
+                if (!friends.includes(data.senderId)) {
+                    friends.push(data.senderId);
+                    window.Telegram.WebApp.CloudStorage.setItem('ataxy_friends', JSON.stringify(friends));
+                    window.dispatchEvent(new Event('dm_updated'));
+                }
+            });
+        } else if (data.type === 'PRIVATE_DM') {
+            window.Telegram.WebApp.CloudStorage.getItem('ataxy_friends', (err, fVal) => {
+                const friends = fVal ? JSON.parse(fVal) : [];
+                const isFriend = friends.includes(data.senderId);
+                
+                window.Telegram.WebApp.CloudStorage.getItem('dms_' + data.senderId, (err, dVal) => {
+                    const history = dVal ? JSON.parse(dVal) : [];
+                    
+                    // Feature 4: The 2-Message Privacy Guard
+                    if (!isFriend && history.filter(m => m.sender === data.senderId).length >= 2) {
+                        console.log("Blocked by 2-Message Guard");
+                        return; 
+                    }
+                    
+                    history.push({ sender: data.senderId, text: data.text, time: Date.now() });
+                    window.Telegram.WebApp.CloudStorage.setItem('dms_' + data.senderId, JSON.stringify(history));
+                    window.dispatchEvent(new Event('dm_updated'));
+                });
+            });
+        } else if (data.type === 'room_broadcast') {
+            const { event, payload } = data;
+            if (event === 'text_chat') setChatMessages(prev => [...prev, payload]);
+            else if (event === 'kick' && payload.targetUserId === tgId) leaveRoom();
+            else if (event === 'force_mute' && payload.targetUserId === tgId) {
+                setLocalAudioTrack(t => { t?.setMuted(true); return t; });
+                setIsMuted(true);
+            }
+            else if (event === 'seat_lock') setLockedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isLocked }));
+            else if (event === 'seat_mute') setMutedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isMuted }));
+            else if (event === 'HOST_CHANGED') setActiveRoom(prev => prev ? { ...prev, host_user_id: payload.newHostId } : null);
+            else if (event === 'ROOM_UPDATED') setActiveRoom(prev => prev ? { ...prev, ...payload } : null);
+            else if (event === 'refresh_participants') {
+                if (activeRoomRef.current) fetchParticipants(activeRoomRef.current.id);
+            }
+        }
+    };
+
+    const broadcastToRoom = (event, payload) => {
+        participantsRef.current.forEach(p => {
+            if (p.user_id !== tgId && peer) {
+                const conn = peer.connect(String(p.user_id));
+                conn.on('open', () => {
+                    conn.send({ type: 'room_broadcast', event, payload, senderId: tgId });
+                    setTimeout(() => conn.close(), 1000);
+                });
+            }
+        });
+    };
+
+    const sendFriendRequest = (targetId) => {
+        if (peer) {
+            const conn = peer.connect(String(targetId));
+            conn.on('open', () => {
+                conn.send({ type: 'FRIEND_REQUEST', senderId: tgId });
+                setTimeout(() => conn.close(), 1000);
+            });
+        }
+    };
+
+    const acceptFriendRequest = (targetId) => {
+        window.Telegram.WebApp.CloudStorage.getItem('ataxy_friends', (err, val) => {
+            const friends = val ? JSON.parse(val) : [];
+            if (!friends.includes(targetId)) {
+                friends.push(targetId);
+                window.Telegram.WebApp.CloudStorage.setItem('ataxy_friends', JSON.stringify(friends));
+            }
+        });
+        window.Telegram.WebApp.CloudStorage.getItem('ataxy_pending_friends', (err, val) => {
+            let pending = val ? JSON.parse(val) : [];
+            pending = pending.filter(id => id !== targetId);
+            window.Telegram.WebApp.CloudStorage.setItem('ataxy_pending_friends', JSON.stringify(pending));
+        });
+        window.dispatchEvent(new Event('dm_updated'));
+        
+        if (peer) {
+            const conn = peer.connect(String(targetId));
+            conn.on('open', () => {
+                conn.send({ type: 'FRIEND_ACCEPT', senderId: tgId });
+                setTimeout(() => conn.close(), 1000);
+            });
+        }
+    };
+
+    const sendPrivateDM = (targetId, text) => {
+        if (peer) {
+            const conn = peer.connect(String(targetId));
+            conn.on('open', () => {
+                conn.send({ type: 'PRIVATE_DM', senderId: tgId, text });
+                setTimeout(() => conn.close(), 1000);
+            });
+            
+            window.Telegram.WebApp.CloudStorage.getItem('dms_' + targetId, (err, val) => {
+                const history = val ? JSON.parse(val) : [];
+                history.push({ sender: tgId, text, time: Date.now() });
+                window.Telegram.WebApp.CloudStorage.setItem('dms_' + targetId, JSON.stringify(history));
+                window.dispatchEvent(new Event('dm_updated'));
+            });
+        }
+    };
+
+    // HTTP Discovery Feed Fetcher
+    const fetchAvailableRooms = async () => {
+        const { data, error } = await supabase.from('rooms').select('*, room_participants(count, seat_number, user_id)').eq('is_live', true);
+        if (data && !error) setAvailableRooms(data);
+    };
+
     useEffect(() => {
         if (!supabase) return;
         fetchAvailableRooms();
-        const channel = supabase.channel('public:rooms')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {
-                fetchAvailableRooms();
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, () => {
-                fetchAvailableRooms();
-            })
-            .subscribe();
-        return () => { supabase.removeChannel(channel); };
+        const interval = setInterval(fetchAvailableRooms, 15000); // Polling for Discovery Feed 
+        return () => clearInterval(interval);
     }, []);
-
-    const fetchAvailableRooms = async () => {
-        const { data, error } = await supabase.from('rooms').select('*, room_participants(count)').eq('is_live', true);
-        if (data && !error) setAvailableRooms(data);
-    };
 
     const createRoom = async (roomName, roomType = 'temporary') => {
         if (!supabase) return;
         try {
-            // 1. THE ONE-ROOM ENFORCEMENT CHECK
             if (roomType === 'advance') {
-                const { data: existing } = await supabase.from('rooms')
-                    .select('id')
-                    .eq('host_user_id', String(tgId))
-                    .eq('room_type', 'advance');
-                
-                if (existing && existing.length > 0) {
-                    alert("You can only own one permanent Advance Room.");
-                    return;
-                }
+                const { data: existing } = await supabase.from('rooms').select('id').eq('host_user_id', String(tgId)).eq('room_type', 'advance');
+                if (existing && existing.length > 0) { alert("You can only own one permanent Advance Room."); return; }
             }
 
             const { data, error } = await supabase.from('rooms').insert({
@@ -71,31 +203,16 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             }).select().single();
             if (error) throw error;
             if (data) joinRoom(data);
-        } catch (e) {
-            alert("Failed to create room: " + e.message);
-        }
+        } catch (e) { alert("Failed to create room: " + e.message); }
     };
 
     const joinRoom = async (roomData, password = null) => {
         try {
-            // 1. Fetch Token
             const bodyStr = JSON.stringify({ channelName: roomData.channel_name, uid: tgId, password });
-            const headers = { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            };
+            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
 
-            const res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', {
-                method: 'POST',
-                headers: headers,
-                body: bodyStr
-            });
-            
-            if (!res.ok) {
-                let errData;
-                try { errData = await res.json(); } catch (e) { throw new Error(`Token fetch failed with status ${res.status}`); }
-                throw new Error(errData?.error || `Token fetch failed with status ${res.status}`);
-            }
+            const res = await fetch('https://kwzpnupjtvfrevpwfaao.supabase.co/functions/v1/agora-token', { method: 'POST', headers, body: bodyStr });
+            if (!res.ok) throw new Error(`Token fetch failed with status ${res.status}`);
 
             const data = await res.json();
             if (data.error) throw new Error(data.error);
@@ -103,7 +220,6 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
             const token = data.token;
             if (!token) throw new Error("Received an empty token from the server.");
 
-            // 2. Initialize Agora
             const agoraClient = window.AgoraRTC.createClient({ mode: "live", codec: "vp8" });
             setClient(agoraClient);
             
@@ -125,58 +241,20 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
                 });
             });
 
-            // CRITICAL: Join using String User Account
             await agoraClient.setClientRole("audience");
             await agoraClient.join(AGORA_APP_ID, String(roomData.channel_name), token, tgId);
             
-            // 3. Setup Supabase Realtime Ephemeral Channel
-            await supabase.from('room_participants').upsert({
-                room_id: roomData.id, user_id: tgId, user_name: tgName, photo_url: tgPhoto, seat_number: null
-            });
-
-            const channel = supabase.channel(`room:${roomData.id}`)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants', filter: `room_id=eq.${roomData.id}` }, () => {
-                    fetchParticipants(roomData.id);
-                })
-                .on('broadcast', { event: 'kick' }, (payload) => {
-                    if (payload.targetUserId === tgId) leaveRoom();
-                })
-                .on('broadcast', { event: 'force_mute' }, (payload) => {
-                    if (payload.targetUserId === tgId) {
-                        setLocalAudioTrack(t => { t?.setMuted(true); return t; });
-                        setIsMuted(true);
-                    }
-                })
-                .on('broadcast', { event: 'seat_lock' }, (payload) => {
-                    setLockedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isLocked }));
-                })
-                .on('broadcast', { event: 'seat_mute' }, (payload) => {
-                    setMutedSeats(prev => ({ ...prev, [payload.seatNumber]: payload.isMuted }));
-                })
-                .on('broadcast', { event: 'text_chat' }, (payload) => {
-                    setChatMessages(prev => [...prev, payload]);
-                })
-                .on('broadcast', { event: 'HOST_CHANGED' }, (payload) => {
-                    setActiveRoom(prev => prev ? { ...prev, host_user_id: payload.newHostId } : null);
-                })
-                .on('broadcast', { event: 'ROOM_UPDATED' }, (payload) => {
-                    setActiveRoom(prev => prev ? { ...prev, ...payload } : null);
-                })
-                .subscribe();
+            // HTTP Setup for Participant Tracking
+            await supabase.from('room_participants').upsert({ room_id: roomData.id, user_id: tgId, user_name: tgName, photo_url: tgPhoto, seat_number: null });
             
-            setRealtimeChannel(channel);
             fetchParticipants(roomData.id);
+            broadcastToRoom('refresh_participants', {});
+            
             setActiveRoom(roomData);
             setChatMessages([]);
             setIsMinimized(false);
             
-            // Pre-load DB locked seats state into UI dictionary
-            setLockedSeats(
-                (roomData.locked_seats || []).reduce((acc, seatNum) => {
-                    acc[seatNum] = true;
-                    return acc;
-                }, {})
-            );
+            setLockedSeats((roomData.locked_seats || []).reduce((acc, seatNum) => { acc[seatNum] = true; return acc; }, {}));
             setMutedSeats({});
             return true;
         } catch (e) {
@@ -195,58 +273,32 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         if (client) await client.leave();
         if (activeRoom) {
             try {
-                // 1. Remove the user from the room_participants table
-                await supabase.from('room_participants')
-                    .delete()
-                    .match({ room_id: activeRoom.id, user_id: String(tgId) });
+                await supabase.from('room_participants').delete().match({ room_id: activeRoom.id, user_id: String(tgId) });
 
-                // 2. Query remaining participants to check for termination or host transfer
-                const { data: remaining, error: queryError } = await supabase
-                    .from('room_participants')
-                    .select('*')
-                    .eq('room_id', activeRoom.id)
-                    .order('created_at', { ascending: true }); // Oldest remaining user first
+                const { data: remaining } = await supabase.from('room_participants').select('*').eq('room_id', activeRoom.id).order('created_at', { ascending: true });
 
-                if (!queryError && remaining) {
+                if (remaining) {
                     const count = remaining.length;
-
-                    // 3. AUTOMATIC TERMINATION CONSTRAINTS
+                    
+                    // Feature 2: Strict Terminate Rule on 0 participants
                     if (count === 0 && activeRoom.room_type === 'temporary') {
-                        await supabase.from('rooms')
-                            .update({ is_live: false })
-                            .eq('id', activeRoom.id);
+                        await supabase.from('rooms').delete().eq('id', activeRoom.id);
                     } 
-                    // 4. AUTOMATIC HOST TRANSFER CONSTRAINTS
                     else if (count > 0 && String(activeRoom.host_user_id) === String(tgId)) {
                         const nextHost = remaining[0];
+                        await supabase.from('rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', activeRoom.id);
+                        await supabase.from('room_participants').update({ seat_number: 0 }).eq('room_id', activeRoom.id).eq('user_id', String(nextHost.user_id));
                         
-                        await supabase.from('rooms')
-                            .update({ host_user_id: String(nextHost.user_id) })
-                            .eq('id', activeRoom.id);
-                        
-                        await supabase.from('room_participants')
-                            .update({ seat_number: 0 })
-                            .eq('room_id', activeRoom.id)
-                            .eq('user_id', String(nextHost.user_id));
-                        
-                        realtimeChannel?.send({
-                            type: 'broadcast',
-                            event: 'HOST_CHANGED',
-                            payload: { newHostId: String(nextHost.user_id), roomId: activeRoom.id }
-                        });
+                        broadcastToRoom('HOST_CHANGED', { newHostId: String(nextHost.user_id), roomId: activeRoom.id });
                     }
                 }
-            } catch (error) {
-                console.error("Error during graceful room exit flow:", error);
-            }
-
-            if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+                broadcastToRoom('refresh_participants', {});
+            } catch (error) { console.error("Error during graceful room exit flow:", error); }
         }
         setActiveRoom(null);
         setLocalAudioTrack(null);
         setClient(null);
         setRemoteUsers([]);
-        setRealtimeChannel(null);
         setChatMessages([]);
         setIsMinimized(false);
         setMutedSeats({});
@@ -254,38 +306,29 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
 
     const toggleMute = async () => {
         if (!client) return;
-
         const myParticipant = participants.find(p => p.user_id === tgId);
         if (myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined) {
-            if (mutedSeats[myParticipant.seat_number]) {
-                alert("This seat is currently muted by the host. You cannot unmute.");
-                return;
-            }
+            if (mutedSeats[myParticipant.seat_number]) { alert("This seat is currently muted by the host. You cannot unmute."); return; }
         }
 
         try {
             if (!localAudioTrack) {
-                // If no track exists, upgrade to host, create mic track, and publish
                 await client.setClientRole("host");
                 const track = await window.AgoraRTC.createMicrophoneAudioTrack();
                 await client.publish(track);
                 setLocalAudioTrack(track);
                 setIsMuted(false);
             } else {
-                // Toggle existing track
                 await localAudioTrack.setMuted(!isMuted);
                 setIsMuted(!isMuted);
             }
-        } catch (err) {
-            console.error("Failed to toggle mute/publish:", err);
-            alert("Microphone access denied or error occurred.");
-        }
+        } catch (err) { alert("Microphone access denied or error occurred."); }
     };
 
     const sendChat = (text) => {
         const payload = { userId: tgId, userName: tgName, text, time: new Date().toISOString() };
-        realtimeChannel?.send({ type: 'broadcast', event: 'text_chat', payload });
-        setChatMessages(prev => [...prev, payload]); // Optimistic update
+        broadcastToRoom('text_chat', payload);
+        setChatMessages(prev => [...prev, payload]);
     };
 
     const updateRoomSettings = async (updates) => {
@@ -293,30 +336,21 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         try {
             await supabase.from('rooms').update(updates).eq('id', activeRoom.id);
             setActiveRoom(prev => ({ ...prev, ...updates }));
-            
-            realtimeChannel?.send({ type: 'broadcast', event: 'ROOM_UPDATED', payload: updates });
-        } catch(e) {
-            console.error("Failed to update settings", e);
-        }
+            broadcastToRoom('ROOM_UPDATED', updates);
+        } catch(e) {}
     };
 
     const hostAction = (action, targetUserId, extraPayload = {}) => {
-        realtimeChannel?.send({ type: 'broadcast', event: action, payload: { targetUserId: targetUserId ? String(targetUserId) : null, ...extraPayload } });
+        broadcastToRoom(action, { targetUserId: targetUserId ? String(targetUserId) : null, ...extraPayload });
 
         if (activeRoom && activeRoom.room_type === 'advance') {
             if (action === 'assign_mod' && targetUserId) {
-                supabase.from('room_participants')
-                    .update({ is_admin: extraPayload.isAdmin })
-                    .match({ room_id: activeRoom.id, user_id: String(targetUserId) })
-                    .then(); // Fire and forget
+                supabase.from('room_participants').update({ is_admin: extraPayload.isAdmin }).match({ room_id: activeRoom.id, user_id: String(targetUserId) }).then();
             }
             if (action === 'seat_lock') {
                 let currentLocked = activeRoom.locked_seats || [];
-                if (extraPayload.isLocked && !currentLocked.includes(extraPayload.seatNumber)) {
-                    currentLocked.push(extraPayload.seatNumber);
-                } else if (!extraPayload.isLocked) {
-                    currentLocked = currentLocked.filter(s => s !== extraPayload.seatNumber);
-                }
+                if (extraPayload.isLocked && !currentLocked.includes(extraPayload.seatNumber)) { currentLocked.push(extraPayload.seatNumber); } 
+                else if (!extraPayload.isLocked) { currentLocked = currentLocked.filter(s => s !== extraPayload.seatNumber); }
                 supabase.from('rooms').update({ locked_seats: currentLocked }).eq('id', activeRoom.id).then();
                 setActiveRoom(prev => ({ ...prev, locked_seats: currentLocked }));
             }
@@ -326,20 +360,22 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
     const takeSeat = async (seatNumber) => {
         if (!activeRoom) return;
         if (mutedSeats[seatNumber]) {
-            if (localAudioTrack) {
-                await localAudioTrack.setMuted(true);
-            }
+            if (localAudioTrack) await localAudioTrack.setMuted(true);
             setIsMuted(true);
         }
         await supabase.from('room_participants').update({ seat_number: seatNumber }).match({ room_id: activeRoom.id, user_id: tgId });
+        broadcastToRoom('refresh_participants', {});
+        fetchParticipants(activeRoom.id);
     };
 
     const leaveSeat = async () => {
         if (!activeRoom) return;
         await supabase.from('room_participants').update({ seat_number: null }).match({ room_id: activeRoom.id, user_id: tgId });
+        broadcastToRoom('refresh_participants', {});
+        fetchParticipants(activeRoom.id);
     };
 
-    // 1. LOCAL MICROPHONE LAW (Enforce seat-based muting on the local user)
+    // Volume Gatekeepers
     useEffect(() => {
         const enforceLocalMute = async () => {
             const myParticipant = participants.find(p => p.user_id === tgId);
@@ -354,7 +390,6 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         enforceLocalMute();
     }, [mutedSeats, participants, localAudioTrack, isMuted, tgId]);
 
-    // 2. REMOTE STREAM GATEKEEPER (Fail-safe audio leak prevention via volume)
     useEffect(() => {
         if (!client) return;
         client.remoteUsers.forEach(rUser => {
@@ -374,8 +409,9 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
         <VoiceRoomContext.Provider value={{ 
             client, activeRoom, participants, remoteUsers, isMuted, activeSpeakers, chatMessages, 
             joinRoom, leaveRoom, toggleMute, sendChat, hostAction,
-            isMinimized, setIsMinimized, availableRooms,
-            takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, updateRoomSettings, tgId 
+            isMinimized, setIsMinimized, availableRooms, fetchAvailableRooms,
+            takeSeat, leaveSeat, lockedSeats, mutedSeats, createRoom, updateRoomSettings, tgId,
+            sendFriendRequest, acceptFriendRequest, sendPrivateDM 
         }}>
             {children}
         </VoiceRoomContext.Provider>
