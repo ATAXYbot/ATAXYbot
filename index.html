@@ -974,6 +974,11 @@
                                     <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
                                 </div>
                             ) : null)}
+                            {isLocked && (
+                                <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
+                                    <i className="fa-solid fa-lock text-[8px] text-white"></i>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className={`rounded-full border-[3px] border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${isHostSeat ? 'w-[72px] h-[72px] text-2xl' : 'w-16 h-16 text-xl'} ${isLocked ? 'border-red-500/50 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633]/50 hover:bg-[#0AE0D0]/20'}`} onClick={(e) => {
@@ -1723,7 +1728,7 @@
                 }
             };
 
-            const takeSeat = async (idx, roomId = activeRoom?.id) => {
+            const takeSeat = async (idx, roomId = activeRoom?.id, bypassLock = false) => {
                 const existingSeat = seats[idx] || {};
                 const oldSeatIndex = mySeatIndex;
                 
@@ -1755,9 +1760,24 @@
                         p_seat_index: idx, 
                         p_user_id: currentUserId,
                         p_user_name: currentUserName,
-                        p_photo_url: currentUserPhoto
+                        p_photo_url: currentUserPhoto,
+                        p_force: bypassLock
                     });
-                    if (error) throw error;
+                    if (error) {
+                        if (error.message.includes('function') || error.code === 'PGRST202') {
+                            if (bypassLock) {
+                                await supabase.from('room_seats').update({ is_locked: false }).eq('room_id', roomId).eq('seat_index', idx);
+                                const { error: err2 } = await supabase.rpc('move_to_seat', { p_room_id: roomId, p_seat_index: idx, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                                await supabase.from('room_seats').update({ is_locked: true }).eq('room_id', roomId).eq('seat_index', idx);
+                                if (err2) throw err2;
+                            } else {
+                                const { error: err3 } = await supabase.rpc('move_to_seat', { p_room_id: roomId, p_seat_index: idx, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                                if (err3) throw err3;
+                            }
+                        } else {
+                            throw error;
+                        }
+                    }
                 } catch(e) { 
                     safeAlert("Failed to take seat: " + e.message); 
                     fetchRoomData(activeRoom.id); // Rollback to actual state
@@ -2272,13 +2292,7 @@
                                     <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
                                     <button onClick={() => { 
                                         const sIdx = pendingInvite.seatIndex;
-                                        if (seats[sIdx]?.is_locked) {
-                                            const unlockedSeat = { ...seats[sIdx], is_locked: false };
-                                            setSeats(prev => { const n = [...prev]; n[sIdx] = unlockedSeat; return n; });
-                                            if (activeChannelRef.current) activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: unlockedSeat } });
-                                            supabase.from('room_seats').update({ is_locked: false }).eq('room_id', activeRoom.id).eq('seat_index', sIdx).then();
-                                        }
-                                        takeSeat(sIdx);
+                                        takeSeat(sIdx, activeRoom.id, true);
                                         setPendingInvite(null); 
                                     }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
                                 </div>
@@ -4219,6 +4233,11 @@ INSTRUCTIONS:
                                         <i className="fa-solid fa-microphone-slash text-[10px] text-gray-400"></i>
                                     </div>
                                 ) : null)}
+                                {isLocked && (
+                                    <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
+                                        <i className="fa-solid fa-lock text-[8px] text-white"></i>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="relative group">
@@ -4546,13 +4565,8 @@ INSTRUCTIONS:
                                 <p className="text-sm text-[#A4DFE6] mb-6">The host invited you to take Seat {pendingInvite.seatNum}. Do you accept?</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
-                                    <button onClick={async () => { 
-                                        if (lockedSeats[pendingInvite.seatNum]) {
-                                            sendBroadcast('seat_lock', { seatNum: pendingInvite.seatNum, isLocked: false });
-                                            setLockedSeats(prev => ({...prev, [pendingInvite.seatNum]: false}));
-                                            await supabase.from('room_seats').update({ is_locked: false }).eq('room_id', activeRoom.id).eq('seat_index', pendingInvite.seatNum);
-                                        }
-                                        takeSeat(pendingInvite.seatNum); 
+                                    <button onClick={() => { 
+                                        takeSeat(pendingInvite.seatNum, activeRoom.id, null, true); 
                                         setPendingInvite(null); 
                                     }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
                                 </div>

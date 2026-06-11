@@ -93,7 +93,7 @@ CREATE TRIGGER enforce_seat_capacity BEFORE UPDATE ON public.room_seats FOR EACH
 -- ====================================================================================
 -- BUG FIX 3: Atomic Seat Movement RPC (Fixes UI Desync and Ghost Seat Occupancy)
 -- ====================================================================================
-CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT, p_user_name TEXT DEFAULT NULL, p_photo_url TEXT DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.move_to_seat(p_room_id UUID, p_seat_index INT, p_user_id TEXT, p_user_name TEXT DEFAULT NULL, p_photo_url TEXT DEFAULT NULL, p_force BOOLEAN DEFAULT false)
 RETURNS BOOLEAN AS $$
 DECLARE
     v_target_locked BOOLEAN;
@@ -104,7 +104,7 @@ BEGIN
     FROM public.room_seats 
     WHERE room_id = p_room_id AND seat_index = p_seat_index;
 
-    IF v_target_locked THEN
+    IF v_target_locked AND NOT p_force THEN
         RAISE EXCEPTION 'Seat is locked by the host';
     END IF;
 
