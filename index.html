@@ -1690,7 +1690,26 @@
                             chan.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: nextHostSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: nextHostSeat.is_locked, is_muted_by_host: nextHostSeat.is_muted_by_host } } });
                         }
                     } else {
-                        await supabase.from('active_rooms').delete().eq('id', rId);
+                        if (audience.length > 0) {
+                            const nextHost = audience[0];
+                            await supabase.from('active_rooms').update({ 
+                                host_id: nextHost.user_id,
+                                host_name: nextHost.user_name,
+                                host_photo: nextHost.photo_url 
+                            }).eq('id', rId);
+                            
+                            await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', rId).eq('seat_index', 0);
+                            await supabase.from('room_audience').delete().eq('room_id', rId).eq('user_id', nextHost.user_id);
+                            await supabase.rpc('move_to_seat', { p_room_id: rId, p_seat_index: 0, p_user_id: nextHost.user_id, p_user_name: nextHost.user_name, p_photo_url: nextHost.photo_url });
+                            
+                            if (chan) {
+                                chan.send({ type: 'broadcast', event: 'host_transfer', payload: { new_host_id: nextHost.user_id, new_host_name: nextHost.user_name } });
+                                chan.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: 0, user_id: nextHost.user_id, user_name: nextHost.user_name, photo_url: nextHost.photo_url, is_locked: false, is_muted_by_host: false } } });
+                                chan.send({ type: 'broadcast', event: 'state_change', payload: { type: 'AUDIENCE_LEAVE', data: { user_id: nextHost.user_id } } });
+                            }
+                        } else {
+                            await supabase.from('active_rooms').delete().eq('id', rId);
+                        }
                     }
                 } else {
                     if (mySeatIndex !== null) {
@@ -2251,7 +2270,17 @@
                                 <p className="text-sm text-[#A4DFE6] mb-6">{pendingInvite.hostName} invited you to take Seat {pendingInvite.seatIndex}.</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
-                                    <button onClick={() => { takeSeat(pendingInvite.seatIndex); setPendingInvite(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
+                                    <button onClick={() => { 
+                                        const sIdx = pendingInvite.seatIndex;
+                                        if (seats[sIdx]?.is_locked) {
+                                            const unlockedSeat = { ...seats[sIdx], is_locked: false };
+                                            setSeats(prev => { const n = [...prev]; n[sIdx] = unlockedSeat; return n; });
+                                            if (activeChannelRef.current) activeChannelRef.current.send({ type: 'broadcast', event: 'state_change', payload: { type: 'SEAT_UPDATE', data: unlockedSeat } });
+                                            supabase.from('room_seats').update({ is_locked: false }).eq('room_id', activeRoom.id).eq('seat_index', sIdx).then();
+                                        }
+                                        takeSeat(sIdx);
+                                        setPendingInvite(null); 
+                                    }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
                                 </div>
                             </div>
                         </div>
@@ -3696,16 +3725,31 @@ INSTRUCTIONS:
                     
                     // Server background tasks (Ownership transfer)
                     if (r && String(r.host_user_id) === userIdString) {
+                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                        const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
+                        
+                        let nextHost = null;
+                        if (remainingMics.length > 0) {
+                            nextHost = remainingMics[0];
+                        } else if (audienceMembers.length > 0) {
+                            nextHost = audienceMembers[0];
+                        }
+
                         if (r.room_type === 'temporary') {
-                            const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
-                            if (remainingMics.length > 0) {
-                                const nextHost = remainingMics[0];
+                            if (nextHost) {
                                 try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
                                 setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
                                 sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                                 sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                             } else {
                                 try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch(e) {}
+                            }
+                        } else {
+                            if (nextHost) {
+                                try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
+                                sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                             }
                         }
                     }
