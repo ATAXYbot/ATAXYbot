@@ -862,10 +862,11 @@
         // ==========================================
         
         // 1. STANDALONE AUDIO FREQUENCY FLICKER HOOK (Zero Supabase DB Cost)
+        let globalAudioContext = null;
+
         const useAudioAnalyser = (mediaStream) => {
             const [volume, setVolume] = useState(0);
             const requestRef = useRef(null);
-            const audioContextRef = useRef(null);
             const analyserRef = useRef(null);
             const sourceRef = useRef(null);
 
@@ -877,16 +878,16 @@
 
                 try {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (!audioContextRef.current) {
-                        audioContextRef.current = new AudioContext();
+                    if (!globalAudioContext) {
+                        globalAudioContext = new AudioContext();
                     }
-                    if (audioContextRef.current.state === 'suspended') {
-                        audioContextRef.current.resume();
+                    if (globalAudioContext.state === 'suspended') {
+                        globalAudioContext.resume();
                     }
-                    analyserRef.current = audioContextRef.current.createAnalyser();
+                    analyserRef.current = globalAudioContext.createAnalyser();
                     analyserRef.current.fftSize = 32;
 
-                    sourceRef.current = audioContextRef.current.createMediaStreamSource(mediaStream);
+                    sourceRef.current = globalAudioContext.createMediaStreamSource(mediaStream);
                     sourceRef.current.connect(analyserRef.current);
 
                     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -914,10 +915,7 @@
                 return () => {
                     if (requestRef.current) cancelAnimationFrame(requestRef.current);
                     if (sourceRef.current) sourceRef.current.disconnect();
-                    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                        audioContextRef.current.close().catch(()=>{});
-                        audioContextRef.current = null;
-                    }
+                    // We do NOT close the globalAudioContext here. Closing it can cause hardware mic volume ducking/muting on some browsers when unmounting the analyzer (e.g. minimizing the room).
                 };
             }, [mediaStream]);
 
