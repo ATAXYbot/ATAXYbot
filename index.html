@@ -1740,7 +1740,7 @@
 
                 const pollInterval = setInterval(() => {
                     fetchInitialRooms();
-                }, 15000); // 15-second polling protects Cloudflare Free Tier (100k req/day) limits
+                }, 3000); // Fast 3-second HTTP Polling avoids ISP WebSocket blocks completely
                 
                 return () => clearInterval(pollInterval);
             }, [activeRoom]);
