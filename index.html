@@ -1740,7 +1740,7 @@
 
                 const pollInterval = setInterval(() => {
                     fetchInitialRooms();
-                }, 30000); // Bumped to 30-second polling to save limits
+                }, 15000); // 15-second polling protects Cloudflare Free Tier (100k req/day) limits
                 
                 return () => clearInterval(pollInterval);
             }, [activeRoom]);
@@ -2913,17 +2913,7 @@ INSTRUCTIONS:
         const SUPABASE_PROXY_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co'; // Connect directly to fix WebSockets
         const SUPABASE_ANON_KEY = 'sb_publishable_' + 'BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
         const AGORA_APP_ID = "1711d81c" + "41114b1bb4f102b27147821c";
-
-        // ISP Block Bypass: Route all Supabase REST API requests through the free Cloudflare Proxy
-        const ispBypassFetch = (url, options) => {
-            const bypassedUrl = typeof url === 'string' 
-                ? url.replace('https://kwzpnupjtvfrevpwfaao.supabase.co', 'https://supabase-proxy.thevoicesession.workers.dev') 
-                : url;
-            return fetch(bypassedUrl, options);
-        };
-
         const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY, {
-            global: { fetch: ispBypassFetch },
             realtime: {
                 worker: true,
                 heartbeatCallback: (status) => {
