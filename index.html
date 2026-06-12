@@ -1492,6 +1492,14 @@
             const [seats, setSeats] = useState([null, null, null, null]);
             const [audience, setAudience] = useState([]);
             
+            const activeRoomRef = useRef(null);
+            useEffect(() => { activeRoomRef.current = activeRoom; }, [activeRoom]);
+            const seatsRef = useRef([]);
+            useEffect(() => { seatsRef.current = seats; }, [seats]);
+            const audienceRef = useRef([]);
+            useEffect(() => { audienceRef.current = audience; }, [audience]);
+            const recentlyDroppedRef = useRef(new Set());
+            
             const [joinRoomId, setJoinRoomId] = useState('');
             const [showJoinModal, setShowJoinModal] = useState(false);
             const [isLocalMuted, setIsLocalMuted] = useState(true);
@@ -1927,13 +1935,6 @@
             const handleExitRoom = async () => {
                 if (!activeRoom) return;
                 const rId = activeRoom.id;
-                
-                // Disconnect PeerJS Data Channels for this room to prevent spying/ghost connections
-                dataConnectionsRef.current.forEach(c => { try { c.close(); } catch(e){} });
-                dataConnectionsRef.current = [];
-                
-                setActiveRoom(null); // Optimistic UI unmount instantly
-                setIsMinimized(false);
 
                 if (isHost) {
                     const nextHostSeat = seats.find((s, i) => i > 0 && s && s.user_id);
@@ -1981,6 +1982,15 @@
                         await supabase.from('room_audience').delete().eq('room_id', rId).eq('user_id', currentUserId);
                     }
                 }
+
+                // Disconnect PeerJS Data Channels for this room to prevent spying/ghost connections
+                setTimeout(() => {
+                    dataConnectionsRef.current.forEach(c => { try { c.close(); } catch(e){} });
+                    dataConnectionsRef.current = [];
+                }, 500);
+                
+                setActiveRoom(null); // Optimistic UI unmount instantly
+                setIsMinimized(false);
             };
 
             const takeSeat = async (idx, roomId = activeRoom?.id, bypassLock = false) => {
