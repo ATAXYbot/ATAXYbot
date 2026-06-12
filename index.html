@@ -1114,12 +1114,53 @@
             );
         };
 
-        const useWePlayWebRTC = (supabase, roomId, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, onRecover) => {
+        const useWePlayWebRTC = (supabase, roomId, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, onRecover, onPeerDisconnect) => {
             const [remoteStreams, setRemoteStreams] = useState({});
             const peersRef = useRef({});
             const localStreamRef = useRef(null);
             const [localStream, setLocalStream] = useState(null);
-            const channelRef = useRef(null);
+            const channelRef = useRef(null);-- Creates the emergency cleanup function that the Telegram App triggers when a user closes the window
+            CREATE OR REPLACE FUNCTION public.emergency_leave_vc_room(p_room_id UUID, p_user_id TEXT, p_is_host BOOLEAN)
+            RETURNS VOID AS $$
+            DECLARE
+                v_next_host TEXT;
+            BEGIN
+                IF p_is_host THEN
+                    -- Find next host in seats (Seat 1, 2, or 3)
+                    SELECT user_id INTO v_next_host FROM public.room_seats 
+                    WHERE room_id = p_room_id AND seat_index > 0 AND user_id IS NOT NULL 
+                    ORDER BY seat_index ASC LIMIT 1;
+            
+                    IF v_next_host IS NULL THEN
+                        -- No one in seats, find oldest audience member
+                        SELECT user_id INTO v_next_host FROM public.room_audience 
+                        WHERE room_id = p_room_id 
+                        ORDER BY joined_at ASC LIMIT 1;
+                    END IF;
+            
+                    IF v_next_host IS NOT NULL THEN
+                        -- Transfer Host Role
+                        UPDATE public.active_rooms SET host_id = v_next_host WHERE id = p_room_id;
+                        
+                        -- Move new host to Seat 0
+                        UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND seat_index = 0;
+                        DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = v_next_host;
+                        UPDATE public.room_seats SET user_id = v_next_host WHERE room_id = p_room_id AND seat_index = 0;
+                        
+                        -- Remove the crashed original host's seat
+                        UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id;
+                    ELSE
+                        -- The crashed host was the ONLY person in the room. Delete the ghost room!
+                        DELETE FROM public.active_rooms WHERE id = p_room_id;
+                    END IF;
+                ELSE
+                    -- Normal user crashed. Just remove them from seats and audience.
+                    UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id;
+                    DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = p_user_id;
+                END IF;
+            END;
+            $$ LANGUAGE plpgsql SECURITY DEFINER;
+            
             const amISpeaker = mySeatIndex !== null && mySeatIndex >= 0 && mySeatIndex <= 3;
             const amISpeakerRef = useRef(amISpeaker);
 
@@ -1153,6 +1194,12 @@
                             }
                         });
                     }
+
+                    peer.oniceconnectionstatechange = () => {
+                        if (peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'closed') {
+                            if (onPeerDisconnect) onPeerDisconnect(peerId);
+                        }
+                    };
 
                     peer.onicecandidate = (e) => {
                         if (e.candidate && channelRef.current) {
@@ -1208,7 +1255,10 @@
 
                 const initChannel = () => {
                 const topic = `ataxy/vc/webrtc/${roomId}`;
-                const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+                const lwtTopic = `ataxy/vc/webrtc/${roomId}/lwt`;
+                const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+                    will: { topic: lwtTopic, payload: JSON.stringify({ senderId: currentUserId }), qos: 0, retain: false }
+                });
                 
                 channelRef.current = {
                     send: async (msg) => {
@@ -1221,6 +1271,7 @@
 
                 client.on('connect', () => {
                     client.subscribe(topic);
+                    client.subscribe(lwtTopic);
                     channelRef.current.send({
                         type: 'broadcast', event: 'peer_join',
                         payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
@@ -1228,6 +1279,15 @@
                 });
 
                 client.on('message', async (t, message) => {
+                    if (t === lwtTopic) {
+                        try {
+                            const payload = JSON.parse(message.toString());
+                            if (payload.senderId && payload.senderId !== currentUserId) {
+                                if (onPeerDisconnect) onPeerDisconnect(payload.senderId);
+                            }
+                        } catch(e) {}
+                        return;
+                    }
                     if (t !== topic) return;
                     try {
                         const { event, payload } = JSON.parse(message.toString());
@@ -1589,6 +1649,48 @@
                 });
             };
 
+            const handlePeerDisconnect = async (droppedUserId) => {
+                if (recentlyDroppedRef.current.has(droppedUserId)) return;
+                recentlyDroppedRef.current.add(droppedUserId);
+                setTimeout(() => recentlyDroppedRef.current.delete(droppedUserId), 5000);
+
+                const room = activeRoomRef.current;
+                const currentSeats = seatsRef.current;
+                const currentAudience = audienceRef.current;
+                const iAmHost = (room && String(room.host_id) === currentUserId);
+                
+                if (!room) return;
+
+                if (iAmHost) {
+                    const droppedSeat = currentSeats.find(s => s && String(s.user_id) === droppedUserId);
+                    if (droppedSeat) {
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', droppedSeat.seat_index);
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: room.id, seat_index: droppedSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: droppedSeat.is_locked, is_muted_by_host: droppedSeat.is_muted_by_host } });
+                    } else {
+                        await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', droppedUserId);
+                        broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: droppedUserId } });
+                    }
+                } 
+                else if (String(room.host_id) === droppedUserId) {
+                    const nextHostSeat = currentSeats.find((s, i) => i > 0 && s && s.user_id);
+                    if (nextHostSeat && String(nextHostSeat.user_id) === currentUserId) {
+                        await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
+                        await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                        broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                    } else if (!nextHostSeat && currentAudience.length > 0 && String(currentAudience[0].user_id) === currentUserId) {
+                        await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
+                        await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
+                        await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                        broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                    }
+                }
+                
+                setSeats(prev => prev.map(s => s && String(s.user_id) === droppedUserId ? { ...s, user_id: null, user_name: null, photo_url: null } : s));
+                setAudience(prev => prev.filter(u => String(u.user_id) !== droppedUserId));
+            };
+
             useEffect(() => {
                 if (!currentUserId || currentUserId === "1001") return;
 
@@ -1610,6 +1712,11 @@
                         conn.on('data', handlePeerData);
                         conn.on('close', () => {
                             dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== conn.peer);
+                            handlePeerDisconnect(conn.peer.replace('ataxy-vc-', ''));
+                        });
+                        conn.on('error', () => {
+                            dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== conn.peer);
+                            handlePeerDisconnect(conn.peer.replace('ataxy-vc-', ''));
                         });
                     });
                 };
@@ -1638,7 +1745,7 @@
                 [...seats.filter(s => s && s.user_id), ...audience].forEach(p => {
                     const targetPeerId = `ataxy-vc-${p.user_id}`;
                     if (p.user_id !== currentUserId && !currentPeerIds.includes(targetPeerId)) {
-                        const conn = peerRef.current.connect(targetPeerId);
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
                         conn.on('open', () => {
                             dataConnectionsRef.current.push(conn);
                             const mySeat = seats.find(s => s && s.user_id === currentUserId);
@@ -1649,6 +1756,11 @@
                         conn.on('data', handlePeerData);
                         conn.on('close', () => {
                             dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== targetPeerId);
+                            handlePeerDisconnect(p.user_id);
+                        });
+                        conn.on('error', () => {
+                            dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== targetPeerId);
+                            handlePeerDisconnect(p.user_id);
                         });
                     }
                 });
@@ -1662,10 +1774,21 @@
 
         useEffect(() => {
             const handleBeforeUnload = () => {
-                if (activeRoom && activeChannelRef.current) {
-                    if (!isHost) {
-                        if (mySeatIndex !== null) {
-                            broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: activeRoom.id, seat_index: mySeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } });
+                if (activeRoomRef.current) {
+                    const rId = activeRoomRef.current.id;
+                    const iAmHostNow = String(activeRoomRef.current.host_id) === currentUserId;
+                    
+                    try {
+                        const payload = JSON.stringify({ p_room_id: rId, p_user_id: currentUserId, p_is_host: iAmHostNow });
+                        const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+                        const url = `${SUPABASE_PROXY_URL}/rest/v1/rpc/emergency_leave_vc_room`;
+                        fetch(url, { method: 'POST', headers, body: payload, keepalive: true }).catch(() => {});
+                    } catch(e) {}
+
+                    if (!iAmHostNow) {
+                        const myIndex = seatsRef.current?.findIndex(s => s && String(s.user_id) === currentUserId);
+                        if (myIndex !== -1 && myIndex !== undefined) {
+                            broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: myIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } });
                         } else {
                             broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } });
                         }
@@ -1725,7 +1848,7 @@
 
             const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, () => {
                 if (activeRoom) fetchRoomData(activeRoom.id);
-            });
+            }, handlePeerDisconnect);
 
             useEffect(() => {
                 Object.entries(remoteStreams).forEach(([peerId, stream]) => {
