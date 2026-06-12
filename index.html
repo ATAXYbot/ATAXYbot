@@ -1206,7 +1206,7 @@
                         if (onRecover) onRecover();
 
                         if (channelRef.current) {
-                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current, userName: currentUserName, photoUrl: currentUserPhoto } });
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current } });
                         }
                     }
                 };
@@ -1233,7 +1233,7 @@
                     client.subscribe(lwtTopic);
                     channelRef.current.send({
                         type: 'broadcast', event: 'peer_join',
-                        payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current, userName: currentUserName, photoUrl: currentUserPhoto }
+                        payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
                     });
                 });
 
@@ -1292,13 +1292,8 @@
                                 }
                             }
                         } else if (event === 'peer_join') {
-                            const { senderId, senderIsSpeaker, userName, photoUrl } = payload;
+                            const { senderId, senderIsSpeaker } = payload;
                             if (senderId === currentUserId) return;
-                            
-                            if (onPeerJoin && userName) {
-                                onPeerJoin({ userId: senderId, userName, photoUrl });
-                            }
-                            
                             if (peersRef.current[senderId]) return;
                             if (amISpeakerRef.current || senderIsSpeaker) {
                                 if (currentUserId > senderId) {
@@ -1513,7 +1508,6 @@
             const [isMinimized, setIsMinimized] = useState(false);
             const [showRoomMenu, setShowRoomMenu] = useState(false);
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
-            const entryTimerRef = useRef(null);
             
             // 1. Establish the Data Mesh Connections
             const dataConnectionsRef = useRef([]);
@@ -1574,8 +1568,7 @@
                                 return prev.map(s => (s && String(s.user_id) === String(stateData.user_id)) ? { ...s, user_id: null, user_name: null, photo_url: null } : s);
                             });
                             setEntryNotification(stateData.user_name || 'A user');
-                            if (entryTimerRef.current) clearTimeout(entryTimerRef.current);
-                            entryTimerRef.current = setTimeout(() => setEntryNotification(null), 3000);
+                            setTimeout(() => setEntryNotification(null), 3000);
                         } else if (stateType === 'AUDIENCE_LEAVE') {
                             setAudience(prev => prev.filter(u => String(u.user_id) !== String(stateData.user_id)));
                         }
@@ -1812,20 +1805,9 @@
                 setMessages(msgsData || []);
             };
 
-            const handlePeerJoin = (user) => {
-                setEntryNotification(user.userName);
-                if (entryTimerRef.current) clearTimeout(entryTimerRef.current);
-                entryTimerRef.current = setTimeout(() => setEntryNotification(null), 3000);
-                
-                setAudience(prev => {
-                    if (prev.some(u => String(u.user_id) === String(user.userId))) return prev;
-                    return [...prev, { user_id: user.userId, user_name: user.userName, photo_url: user.photoUrl, joined_at: new Date().toISOString() }];
-                });
-            };
-
-            const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, currentUserName, currentUserPhoto, mySeatIndex, isMutedByHost, isLocalMuted, () => {
+            const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, () => {
                 if (activeRoom) fetchRoomData(activeRoom.id);
-            }, handlePeerDisconnect, handlePeerJoin);
+            }, handlePeerDisconnect);
 
             useEffect(() => {
                 Object.entries(remoteStreams).forEach(([peerId, stream]) => {
