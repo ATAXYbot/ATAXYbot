@@ -1935,6 +1935,13 @@
             const handleExitRoom = async () => {
                 if (!activeRoom) return;
                 const rId = activeRoom.id;
+                
+                // Disconnect PeerJS Data Channels for this room to prevent spying/ghost connections
+                dataConnectionsRef.current.forEach(c => { try { c.close(); } catch(e){} });
+                dataConnectionsRef.current = [];
+                
+                setActiveRoom(null); // Optimistic UI unmount instantly
+                setIsMinimized(false);
 
                 if (isHost) {
                     const nextHostSeat = seats.find((s, i) => i > 0 && s && s.user_id);
