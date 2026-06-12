@@ -3337,13 +3337,15 @@ INSTRUCTIONS:
                             const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                             const userIdString = String(tgData?.id || "1001");
                             const roomId = roomRef.current.id;
-                            navigator.sendBeacon(`https://supabase-proxy.thevoicesession.workers.dev/rest/v1/room_participants?user_id=eq.${userIdString}&room_id=eq.${roomId}`, null);
+                        const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+                        fetch(`${SUPABASE_PROXY_URL}/rest/v1/room_participants?user_id=eq.${userIdString}&room_id=eq.${roomId}`, { method: 'DELETE', headers, keepalive: true }).catch(() => {});
                         } catch(e) {}
                         leaveRoom(clientRef.current, roomRef.current.id, true);
                     }
                 };
                 window.addEventListener("beforeunload", handleBeforeUnload);
-                return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.addEventListener("pagehide", handleBeforeUnload);
+            return () => { window.removeEventListener("beforeunload", handleBeforeUnload); window.removeEventListener("pagehide", handleBeforeUnload); };
             }, []);
 
             const triggerSFX = (type) => {
@@ -3625,6 +3627,12 @@ INSTRUCTIONS:
                                     leaveRoom(agoraClient, roomData.id);
                                 } else {
                                     setActiveRoom(payload.new);
+                                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                    const userIdString = String(tgData?.id || "1001");
+                                    if (payload.new.host_user_id === userIdString && String(roomRef.current?.host_user_id) !== userIdString) {
+                                        takeSeat(0, roomData.id, null, true);
+                                        safeAlert("The previous host disconnected. You have been promoted to Host!");
+                                    }
                                 }
                             })
                             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, () => {
@@ -3861,20 +3869,12 @@ INSTRUCTIONS:
                                 const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
                                 if (remainingMics.length > 0) {
                                     const nextHost = remainingMics[0];
-                                    supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
-                                    setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
                                     sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                                     sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                                 } else {
                                     const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
                                     if (audienceMembers.length > 0) {
-                                        const nextHost = audienceMembers[0];
-                                        supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', roomId).then();
-                                        setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
-                                        sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
-                                        sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
-                                    } else {
-                                        supabase.from('voice_rooms').delete().eq('id', roomId).then();
+                                        sendBroadcast('host_transfer_instant', { host_uid: 'no_host' });
                                     }
                                 }
                             } else if (r.room_type === 'advance' || r.room_type === 'permanent') {
@@ -4059,18 +4059,20 @@ INSTRUCTIONS:
                         let nextHost = null;
                         if (remainingMics.length > 0) {
                             nextHost = remainingMics[0];
-                        } else if (audienceMembers.length > 0) {
-                            nextHost = audienceMembers[0];
+                        } else {
+                            nextHost = { user_id: 'no_host' };
                         }
 
                         if (r.room_type === 'temporary') {
-                            if (nextHost) {
+                            if (nextHost.user_id !== 'no_host') {
                                 try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch(e) {}
                                 setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
                                 sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
                                 sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
                             } else {
-                                try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch(e) {}
+                                try { supabase.from('voice_rooms').update({ host_user_id: 'no_host' }).eq('id', r.id).then(); } catch(e) {}
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: 'no_host' } : prev);
+                                sendBroadcast('host_transfer_instant', { host_uid: 'no_host' });
                             }
                         } else {
                             if (nextHost) {
@@ -4475,12 +4477,20 @@ INSTRUCTIONS:
                             safeAlert("This seat is locked by the host.");
                             return;
                         }
+                        if (activeRoom.host_user_id === 'no_host') {
+                            safeAlert("There is no active host in this room. You cannot switch seats.");
+                            return;
+                        }
                         safeConfirm(`Are you sure you want to change to Seat ${seatNum}?`, () => {
                             takeSeat(seatNum);
                         });
                     } else {
                         if (lockedSeats[seatNum]) {
                             safeAlert("This seat is locked by the host.");
+                            return;
+                        }
+                        if (activeRoom.host_user_id === 'no_host') {
+                            safeAlert("There is no active host in this room. You cannot take a seat.");
                             return;
                         }
                         if (activeRoom.require_mic_request) {
