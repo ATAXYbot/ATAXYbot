@@ -48,6 +48,7 @@
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.2.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
     <!-- KaTeX for Math & Chemical Formulas -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -1203,116 +1204,118 @@
                 document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 const initChannel = () => {
-                    const channel = supabase.channel(`webrtc_${roomId}`);
-                    channelRef.current = channel;
+                const topic = `ataxy/vc/webrtc/${roomId}`;
+                const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+                
+                channelRef.current = {
+                    send: async (msg) => {
+                        if (client.connected) {
+                            client.publish(topic, JSON.stringify(msg));
+                        }
+                    },
+                    close: () => client.end()
+                };
 
-                    channel.on('broadcast', { event: 'webrtc_signal' }, async ({ payload }) => {
-                        if (payload.targetId !== currentUserId) return;
-                        const { type, senderId, data, senderIsSpeaker } = payload;
+                client.on('connect', () => {
+                    client.subscribe(topic);
+                    channelRef.current.send({
+                        type: 'broadcast', event: 'peer_join',
+                        payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
+                    });
+                });
 
-                        if (type === 'offer') {
-                            const peer = createPeer(senderId, senderIsSpeaker);
-                            peer.isSettingRemoteDesc = true;
-                            await peer.setRemoteDescription(new RTCSessionDescription(data));
-                            peer.isSettingRemoteDesc = false;
-                            const answer = await peer.createAnswer();
-                            await peer.setLocalDescription(answer);
-                            channel.send({
-                                type: 'broadcast', event: 'webrtc_signal',
-                                payload: { type: 'answer', senderId: currentUserId, targetId: senderId, data: JSON.parse(JSON.stringify(answer)) }
-                            });
-                            if (peer.queuedIceCandidates) {
-                                peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch(e){} });
-                                peer.queuedIceCandidates = [];
-                            }
-                        } else if (type === 'answer') {
-                            const peer = peersRef.current[senderId];
-                            if (peer) {
+                client.on('message', async (t, message) => {
+                    if (t !== topic) return;
+                    try {
+                        const { event, payload } = JSON.parse(message.toString());
+
+                        if (event === 'webrtc_signal') {
+                            if (payload.targetId !== currentUserId) return;
+                            const { type, senderId, data, senderIsSpeaker } = payload;
+                            if (type === 'offer') {
+                                const peer = createPeer(senderId, senderIsSpeaker);
                                 peer.isSettingRemoteDesc = true;
                                 await peer.setRemoteDescription(new RTCSessionDescription(data));
                                 peer.isSettingRemoteDesc = false;
+                                const answer = await peer.createAnswer();
+                                await peer.setLocalDescription(answer);
+                                channelRef.current.send({
+                                    type: 'broadcast', event: 'webrtc_signal',
+                                    payload: { type: 'answer', senderId: currentUserId, targetId: senderId, data: JSON.parse(JSON.stringify(answer)) }
+                                });
                                 if (peer.queuedIceCandidates) {
                                     peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch(e){} });
                                     peer.queuedIceCandidates = [];
                                 }
-                            }
-                        } else if (type === 'ice') {
-                            let peer = peersRef.current[senderId];
-                            if (!peer) { peer = createPeer(senderId, false); }
-                            if (peer) {
-                                if (peer.remoteDescription && peer.remoteDescription.type && !peer.isSettingRemoteDesc) {
-                                    try { await peer.addIceCandidate(new RTCIceCandidate(data)); } catch(e) {}
-                                } else {
-                                    peer.queuedIceCandidates.push(new RTCIceCandidate(data));
+                            } else if (type === 'answer') {
+                                const peer = peersRef.current[senderId];
+                                if (peer) {
+                                    peer.isSettingRemoteDesc = true;
+                                    await peer.setRemoteDescription(new RTCSessionDescription(data));
+                                    peer.isSettingRemoteDesc = false;
+                                    if (peer.queuedIceCandidates) {
+                                        peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch(e){} });
+                                        peer.queuedIceCandidates = [];
+                                    }
+                                }
+                            } else if (type === 'ice') {
+                                let peer = peersRef.current[senderId];
+                                if (!peer) { peer = createPeer(senderId, false); }
+                                if (peer) {
+                                    if (peer.remoteDescription && peer.remoteDescription.type && !peer.isSettingRemoteDesc) {
+                                        try { await peer.addIceCandidate(new RTCIceCandidate(data)); } catch(e) {}
+                                    } else {
+                                        peer.queuedIceCandidates.push(new RTCIceCandidate(data));
+                                    }
                                 }
                             }
-                        }
-                    });
-
-                    channel.on('broadcast', { event: 'peer_join' }, async ({ payload }) => {
-                        const { senderId, senderIsSpeaker } = payload;
-                        if (senderId === currentUserId) return;
-
-                        // Prevent WebRTC glare if peer already exists
-                        if (peersRef.current[senderId]) return;
-
-                        if (amISpeakerRef.current || senderIsSpeaker) {
-                            if (currentUserId > senderId) {
-                                const peer = createPeer(senderId, senderIsSpeaker);
-                                const offer = await peer.createOffer({ offerToReceiveAudio: true });
-                                await peer.setLocalDescription(offer);
-                                channel.send({
-                                    type: 'broadcast', event: 'webrtc_signal',
-                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
-                                });
-                            } else {
-                                channel.send({
-                                    type: 'broadcast', event: 'peer_hello',
-                                    payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current }
+                        } else if (event === 'peer_join') {
+                            const { senderId, senderIsSpeaker } = payload;
+                            if (senderId === currentUserId) return;
+                            if (peersRef.current[senderId]) return;
+                            if (amISpeakerRef.current || senderIsSpeaker) {
+                                if (currentUserId > senderId) {
+                                    const peer = createPeer(senderId, senderIsSpeaker);
+                                    const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                    await peer.setLocalDescription(offer);
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'webrtc_signal',
+                                        payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                    });
+                                } else {
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'peer_hello',
+                                        payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current }
+                                    });
+                                }
+                            }
+                        } else if (event === 'peer_hello') {
+                            const { senderId, targetId, senderIsSpeaker } = payload;
+                            if (targetId !== currentUserId) return;
+                            if (peersRef.current[senderId]) return;
+                            if (amISpeakerRef.current || senderIsSpeaker) {
+                                if (currentUserId > senderId) {
+                                    const peer = createPeer(senderId, senderIsSpeaker);
+                                    const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                    await peer.setLocalDescription(offer);
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'webrtc_signal',
+                                        payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                    });
+                                }
+                            }
+                        } else if (event === 'peer_leave') {
+                            const { senderId } = payload;
+                            if (peersRef.current[senderId]) {
+                                peersRef.current[senderId].close();
+                                delete peersRef.current[senderId];
+                                setRemoteStreams(prev => {
+                                    const ns = {...prev}; delete ns[senderId]; return ns;
                                 });
                             }
                         }
-                    });
-
-                    channel.on('broadcast', { event: 'peer_hello' }, async ({ payload }) => {
-                        const { senderId, targetId, senderIsSpeaker } = payload;
-                        if (targetId !== currentUserId) return;
-
-                        // Prevent WebRTC glare if peer already exists
-                        if (peersRef.current[senderId]) return;
-
-                        if (amISpeakerRef.current || senderIsSpeaker) {
-                            if (currentUserId > senderId) {
-                                const peer = createPeer(senderId, senderIsSpeaker);
-                                const offer = await peer.createOffer({ offerToReceiveAudio: true });
-                                await peer.setLocalDescription(offer);
-                                channel.send({
-                                    type: 'broadcast', event: 'webrtc_signal',
-                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
-                                });
-                            }
-                        }
-                    });
-
-                    channel.on('broadcast', { event: 'peer_leave' }, ({ payload }) => {
-                        const { senderId } = payload;
-                        if (peersRef.current[senderId]) {
-                            peersRef.current[senderId].close();
-                            delete peersRef.current[senderId];
-                            setRemoteStreams(prev => {
-                                const ns = {...prev}; delete ns[senderId]; return ns;
-                            });
-                        }
-                    });
-
-                    channel.subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            channel.send({
-                                type: 'broadcast', event: 'peer_join',
-                                payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
-                            });
-                        }
-                    }); 
+                    } catch(e) {}
+                });
                 };
                 initChannel();
 
@@ -1321,7 +1324,8 @@
                     if (channelRef.current) {
                         channelRef.current.send({
                             type: 'broadcast', event: 'peer_leave', payload: { senderId: currentUserId }
-                        }).then(() => supabase.removeChannel(channelRef.current));
+                    });
+                    setTimeout(() => { if (channelRef.current) channelRef.current.close(); }, 500);
                     }
                     if (localStreamRef.current) {
                         localStreamRef.current.getTracks().forEach(t => t.stop());
