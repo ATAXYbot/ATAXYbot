@@ -1119,48 +1119,7 @@
             const peersRef = useRef({});
             const localStreamRef = useRef(null);
             const [localStream, setLocalStream] = useState(null);
-            const channelRef = useRef(null);-- Creates the emergency cleanup function that the Telegram App triggers when a user closes the window
-            CREATE OR REPLACE FUNCTION public.emergency_leave_vc_room(p_room_id UUID, p_user_id TEXT, p_is_host BOOLEAN)
-            RETURNS VOID AS $$
-            DECLARE
-                v_next_host TEXT;
-            BEGIN
-                IF p_is_host THEN
-                    -- Find next host in seats (Seat 1, 2, or 3)
-                    SELECT user_id INTO v_next_host FROM public.room_seats 
-                    WHERE room_id = p_room_id AND seat_index > 0 AND user_id IS NOT NULL 
-                    ORDER BY seat_index ASC LIMIT 1;
-            
-                    IF v_next_host IS NULL THEN
-                        -- No one in seats, find oldest audience member
-                        SELECT user_id INTO v_next_host FROM public.room_audience 
-                        WHERE room_id = p_room_id 
-                        ORDER BY joined_at ASC LIMIT 1;
-                    END IF;
-            
-                    IF v_next_host IS NOT NULL THEN
-                        -- Transfer Host Role
-                        UPDATE public.active_rooms SET host_id = v_next_host WHERE id = p_room_id;
-                        
-                        -- Move new host to Seat 0
-                        UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND seat_index = 0;
-                        DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = v_next_host;
-                        UPDATE public.room_seats SET user_id = v_next_host WHERE room_id = p_room_id AND seat_index = 0;
-                        
-                        -- Remove the crashed original host's seat
-                        UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id;
-                    ELSE
-                        -- The crashed host was the ONLY person in the room. Delete the ghost room!
-                        DELETE FROM public.active_rooms WHERE id = p_room_id;
-                    END IF;
-                ELSE
-                    -- Normal user crashed. Just remove them from seats and audience.
-                    UPDATE public.room_seats SET user_id = NULL WHERE room_id = p_room_id AND user_id = p_user_id;
-                    DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = p_user_id;
-                END IF;
-            END;
-            $$ LANGUAGE plpgsql SECURITY DEFINER;
-            
+            const channelRef = useRef(null);
             const amISpeaker = mySeatIndex !== null && mySeatIndex >= 0 && mySeatIndex <= 3;
             const amISpeakerRef = useRef(amISpeaker);
 
