@@ -1659,16 +1659,8 @@
                     } else if (!nextHostSeat) {
                         const remainingAudience = currentAudience.filter(a => String(a.user_id) !== droppedUserId);
                         if (remainingAudience.length > 0 && String(remainingAudience[0].user_id) === currentUserId) {
-                            await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
-                            await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
-                            await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
-                            await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
-                            broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
-                            const seat0Update = { room_id: room.id, seat_index: 0, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false };
-                            broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: seat0Update });
-                            broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: room.id, user_id: currentUserId } });
-                            setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : s));
-                            setAudience(prev => prev.filter(a => String(a.user_id) !== currentUserId));
+                            await supabase.from('active_rooms').delete().eq('id', room.id);
+                            broadcastToPeers('room_closed', { room_id: room.id });
                         }
                     }
                 }
@@ -1789,7 +1781,7 @@
             const mySeat = seats.find(s => s && s.user_id === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
             const isMutedByHost = mySeat ? mySeat.is_muted_by_host : false;
-            const isHost = activeRoom && activeRoom.host_id === currentUserId;
+            const isHost = activeRoom && String(activeRoom.host_id) === String(currentUserId);
             const totalParticipants = seats.filter(s => s && s.user_id).length + audience.length;
 
             useEffect(() => {
@@ -1811,6 +1803,29 @@
 
             const fetchRoomData = async (roomId) => {
                 if (!roomId) return;
+
+                // Sync room settings & host transfer reliably for mobile networks
+                const { data: roomSettings } = await supabase.from('active_rooms').select('*').eq('id', roomId).single();
+                if (!roomSettings) {
+                    setActiveRoom(null);
+                    setIsMinimized(false);
+                    dataConnectionsRef.current.forEach(c => { try { c.close(); } catch(e){} });
+                    dataConnectionsRef.current = [];
+                    safeAlert("The room has been closed.");
+                    return;
+                }
+                
+                setActiveRoom(prev => {
+                    if (!prev) return roomSettings;
+                    if (String(prev.host_id) !== String(roomSettings.host_id) || prev.chat_disabled !== roomSettings.chat_disabled || prev.password !== roomSettings.password || prev.room_name !== roomSettings.room_name || prev.host_photo !== roomSettings.host_photo) {
+                        if (String(roomSettings.host_id) === String(currentUserId) && String(prev.host_id) !== String(currentUserId)) {
+                            safeAlert("You have been promoted to Host!");
+                        }
+                        return { ...prev, ...roomSettings };
+                    }
+                    return prev;
+                });
+
                 const { data, error } = await supabase.rpc('get_room_details', { p_room_id: roomId });
                 if (error || !data) { console.error("Fetch room details error:", error); return; }
                 const { seats: seatData, audience: audData, messages: msgsData } = data;
@@ -1823,12 +1838,20 @@
                 
                 const uniqueAud = [];
                 const seen = new Set();
+                let newlyJoined = null;
                 (audData || []).forEach(a => {
                     if (!seen.has(String(a.user_id))) {
                         seen.add(String(a.user_id));
                         uniqueAud.push(a);
+                        if (!audienceRef.current.some(existing => String(existing.user_id) === String(a.user_id)) && String(a.user_id) !== String(currentUserId)) {
+                            newlyJoined = a.user_name || 'A user';
+                        }
                     }
                 });
+                if (newlyJoined) {
+                    setEntryNotification(newlyJoined);
+                    setTimeout(() => setEntryNotification(null), 3000);
+                }
                 setAudience(uniqueAud);
                 setMessages(msgsData || []);
             };
@@ -1857,9 +1880,15 @@
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
             useEffect(() => {
-                if (!activeRoom) return;
-                fetchRoomData(activeRoom.id);
-            }, [activeRoom]);
+                if (!activeRoom?.id) return;
+                const currentRoomId = activeRoom.id;
+                fetchRoomData(currentRoomId);
+                
+                const interval = setInterval(() => {
+                    fetchRoomData(currentRoomId);
+                }, 3000);
+                return () => clearInterval(interval);
+            }, [activeRoom?.id]);
 
             const [isRefreshingLobby, setIsRefreshingLobby] = useState(false);
             const fetchInitialRooms = async () => {
