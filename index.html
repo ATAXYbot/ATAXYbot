@@ -1295,36 +1295,32 @@
                             const { senderId, senderIsSpeaker } = payload;
                             if (senderId === currentUserId) return;
                             if (peersRef.current[senderId]) return;
-                            if (amISpeakerRef.current || senderIsSpeaker) {
-                                if (currentUserId > senderId) {
-                                    const peer = createPeer(senderId, senderIsSpeaker);
-                                    const offer = await peer.createOffer({ offerToReceiveAudio: true });
-                                    await peer.setLocalDescription(offer);
-                                    channelRef.current.send({
-                                        type: 'broadcast', event: 'webrtc_signal',
-                                        payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
-                                    });
-                                } else {
-                                    channelRef.current.send({
-                                        type: 'broadcast', event: 'peer_hello',
-                                        payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current }
-                                    });
-                                }
+                            if (currentUserId > senderId) {
+                                const peer = createPeer(senderId, senderIsSpeaker);
+                                const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                await peer.setLocalDescription(offer);
+                                channelRef.current.send({
+                                    type: 'broadcast', event: 'webrtc_signal',
+                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                });
+                            } else {
+                                channelRef.current.send({
+                                    type: 'broadcast', event: 'peer_hello',
+                                    payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current }
+                                });
                             }
                         } else if (event === 'peer_hello') {
                             const { senderId, targetId, senderIsSpeaker } = payload;
                             if (targetId !== currentUserId) return;
                             if (peersRef.current[senderId]) return;
-                            if (amISpeakerRef.current || senderIsSpeaker) {
-                                if (currentUserId > senderId) {
-                                    const peer = createPeer(senderId, senderIsSpeaker);
-                                    const offer = await peer.createOffer({ offerToReceiveAudio: true });
-                                    await peer.setLocalDescription(offer);
-                                    channelRef.current.send({
-                                        type: 'broadcast', event: 'webrtc_signal',
-                                        payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
-                                    });
-                                }
+                            if (currentUserId > senderId) {
+                                const peer = createPeer(senderId, senderIsSpeaker);
+                                const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                await peer.setLocalDescription(offer);
+                                channelRef.current.send({
+                                    type: 'broadcast', event: 'webrtc_signal',
+                                    payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                });
                             }
                         } else if (event === 'peer_leave') {
                             const { senderId } = payload;
@@ -1631,7 +1627,7 @@
                 if (!room) return;
 
                 if (iAmHost) {
-                    const droppedSeat = currentSeats.find(s => s && String(s.user_id) === droppedUserId);
+                    const droppedSeat = currentSeats.find(s => s && String(s.user_id) === String(droppedUserId));
                     if (droppedSeat) {
                         await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', droppedSeat.seat_index);
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: room.id, seat_index: droppedSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: droppedSeat.is_locked, is_muted_by_host: droppedSeat.is_muted_by_host } });
@@ -1641,18 +1637,21 @@
                     }
                 } 
                 else if (String(room.host_id) === droppedUserId) {
-                    const nextHostSeat = currentSeats.find((s, i) => i > 0 && s && s.user_id);
+                    const nextHostSeat = currentSeats.find((s, i) => i > 0 && s && s.user_id && String(s.user_id) !== droppedUserId);
                     if (nextHostSeat && String(nextHostSeat.user_id) === currentUserId) {
                         await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
                         await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
                         await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
                         broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
-                    } else if (!nextHostSeat && currentAudience.length > 0 && String(currentAudience[0].user_id) === currentUserId) {
-                        await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
-                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
-                        await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
-                        await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
-                        broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                    } else if (!nextHostSeat) {
+                        const remainingAudience = currentAudience.filter(a => String(a.user_id) !== droppedUserId);
+                        if (remainingAudience.length > 0 && String(remainingAudience[0].user_id) === currentUserId) {
+                            await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
+                            await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
+                            await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
+                            await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                            broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                        }
                     }
                 }
                 
@@ -1914,6 +1913,8 @@
                 if (error) {
                     if (error.message?.includes('capacity') || error.details?.includes('capacity')) {
                         safeAlert("Room is Full! Please join another room or create your own.");
+                    } else if (error.code === '23505' || error.message?.includes('duplicate')) {
+                        setActiveRoom(room); setShowJoinModal(false);
                     } else { safeAlert("Error: " + error.message); }
                 } else {
                     setActiveRoom(room); setShowJoinModal(false);
@@ -1936,15 +1937,8 @@
                 if (!activeRoom) return;
                 const rId = activeRoom.id;
                 
-                // Disconnect PeerJS Data Channels for this room to prevent spying/ghost connections
-                dataConnectionsRef.current.forEach(c => { try { c.close(); } catch(e){} });
-                dataConnectionsRef.current = [];
-                
-                setActiveRoom(null); // Optimistic UI unmount instantly
-                setIsMinimized(false);
-
                 if (isHost) {
-                    const nextHostSeat = seats.find((s, i) => i > 0 && s && s.user_id);
+                    const nextHostSeat = seats.find((s, i) => i > 0 && s && s.user_id && String(s.user_id) !== currentUserId);
                     if (nextHostSeat) {
                         await supabase.from('active_rooms').update({ 
                             host_id: nextHostSeat.user_id,
@@ -1959,8 +1953,9 @@
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: 0, user_id: nextHostSeat.user_id, user_name: nextHostSeat.user_name, photo_url: nextHostSeat.photo_url, is_locked: false, is_muted_by_host: false } });
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: nextHostSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: nextHostSeat.is_locked, is_muted_by_host: nextHostSeat.is_muted_by_host } });
                     } else {
-                        if (audience.length > 0) {
-                            const nextHost = audience[0];
+                        const remainingAudience = audience.filter(a => String(a.user_id) !== currentUserId);
+                        if (remainingAudience.length > 0) {
+                            const nextHost = remainingAudience[0];
                             await supabase.from('active_rooms').update({ 
                                 host_id: nextHost.user_id,
                                 host_name: nextHost.user_name,
