@@ -1146,6 +1146,15 @@
                     peer.queuedIceCandidates = [];
                     peer.isSettingRemoteDesc = false;
 
+                    // 🛡️ CRITICAL FIX: Ensure audio m-line exists even if localStream is not ready or user is audience
+                    try {
+                        if (!amISpeakerRef.current) {
+                            peer.addTransceiver('audio', { direction: 'recvonly' });
+                        } else if (!localStreamRef.current) {
+                            peer.addTransceiver('audio', { direction: 'sendrecv' });
+                        }
+                    } catch(e) {}
+
                     if (amISpeakerRef.current && localStreamRef.current) {
                         localStreamRef.current.getTracks().forEach(t => {
                             if (!peer.getSenders().find(s => s.track === t)) {
@@ -1372,8 +1381,7 @@
                                     audio: { 
                                         echoCancellation: true, 
                                         noiseSuppression: true, 
-                                        autoGainControl: true,
-                                        latency: 0 
+                                        autoGainControl: true
                                     }, 
                                     video: false 
                                 });
