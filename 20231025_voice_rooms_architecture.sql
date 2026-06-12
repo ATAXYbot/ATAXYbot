@@ -59,6 +59,12 @@ BEGIN
             UPDATE voice_rooms SET host_user_id = v_next_host.user_id WHERE id = OLD.room_id;
             UPDATE room_participants SET seat_number = 0 WHERE id = v_next_host.id;
         ELSE
+            -- No one on mic -> No one is host
+            IF v_room.room_type = 'temporary' THEN
+                DELETE FROM voice_rooms WHERE id = OLD.room_id;
+            ELSE
+                UPDATE voice_rooms SET is_live = false, host_user_id = v_room.owner_id WHERE id = OLD.room_id;
+            END IF;
                 -- No one on mic -> No one is host, but audience can stay
                 UPDATE voice_rooms SET host_user_id = 'no_host' WHERE id = OLD.room_id;
         END IF;
