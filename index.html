@@ -1509,6 +1509,16 @@
             const [showRoomMenu, setShowRoomMenu] = useState(false);
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
             
+            const activeRoomRef = useRef(activeRoom);
+            const seatsRef = useRef(seats);
+            const audienceRef = useRef(audience);
+            const recentlyDroppedRef = useRef(new Set());
+            const entryTimerRef = useRef(null);
+            
+            useEffect(() => { activeRoomRef.current = activeRoom; }, [activeRoom]);
+            useEffect(() => { seatsRef.current = seats; }, [seats]);
+            useEffect(() => { audienceRef.current = audience; }, [audience]);
+
             // 1. Establish the Data Mesh Connections
             const dataConnectionsRef = useRef([]);
             const peerRef = useRef(null);
@@ -1572,7 +1582,8 @@
                                 return prev.map(s => (s && String(s.user_id) === String(stateData.user_id)) ? { ...s, user_id: null, user_name: null, photo_url: null } : s);
                             });
                             setEntryNotification(stateData.user_name || 'A user');
-                            setTimeout(() => setEntryNotification(null), 3000);
+                        if (entryTimerRef.current) clearTimeout(entryTimerRef.current);
+                        entryTimerRef.current = setTimeout(() => setEntryNotification(null), 3000);
                         } else if (stateType === 'AUDIENCE_LEAVE') {
                             setAudience(prev => prev.filter(u => String(u.user_id) !== String(stateData.user_id)));
                         }
@@ -1811,9 +1822,20 @@
                 setMessages(msgsData || []);
             };
 
-            const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, () => {
+            const handlePeerJoin = (user) => {
+                setEntryNotification(user.userName);
+                if (entryTimerRef.current) clearTimeout(entryTimerRef.current);
+                entryTimerRef.current = setTimeout(() => setEntryNotification(null), 3000);
+                
+                setAudience(prev => {
+                    if (prev.some(u => String(u.user_id) === String(user.userId))) return prev;
+                    return [...prev, { user_id: user.userId, user_name: user.userName, photo_url: user.photoUrl, joined_at: new Date().toISOString() }];
+                });
+            };
+
+            const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, currentUserName, currentUserPhoto, mySeatIndex, isMutedByHost, isLocalMuted, () => {
                 if (activeRoom) fetchRoomData(activeRoom.id);
-            }, handlePeerDisconnect);
+            }, handlePeerDisconnect, handlePeerJoin);
 
             useEffect(() => {
                 Object.entries(remoteStreams).forEach(([peerId, stream]) => {
