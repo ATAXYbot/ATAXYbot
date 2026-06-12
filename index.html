@@ -1340,10 +1340,11 @@
                 return () => {
                     document.removeEventListener('visibilitychange', handleVisibilityChange);
                     if (channelRef.current) {
-                        channelRef.current.send({
+                        const oldChannel = channelRef.current;
+                        oldChannel.send({
                             type: 'broadcast', event: 'peer_leave', payload: { senderId: currentUserId }
                     });
-                    setTimeout(() => { if (channelRef.current) channelRef.current.close(); }, 500);
+                        setTimeout(() => { oldChannel.close(); }, 500);
                     }
                     if (localStreamRef.current) {
                         localStreamRef.current.getTracks().forEach(t => t.stop());
@@ -1537,6 +1538,7 @@
             // ==========================================
             const handlePeerData = (data) => {
                 if (data.type === 'CHAT') {
+                    if (activeRoomRef.current && data.room_id && data.room_id !== activeRoomRef.current.id) return;
                     setMessages(prev => {
                         if (prev.some(m => m.id === data.id)) return prev;
                         return [...prev, {
@@ -1550,6 +1552,12 @@
                     });
                 } else if (data.type === 'ROOM_EVENT') {
                     const { event, payload: eventData } = data;
+                    
+                    // Cross-room isolation:
+                    let incomingRoomId = eventData.room_id;
+                    if (event === 'state_change' && eventData.data) incomingRoomId = eventData.data.room_id;
+                    if (incomingRoomId && activeRoomRef.current && incomingRoomId !== activeRoomRef.current.id) return;
+
                     if (event === 'state_change') {
                         const { type: stateType, data: stateData } = eventData;
                         if (stateType === 'SEAT_UPDATE') {
@@ -1633,7 +1641,7 @@
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: room.id, seat_index: droppedSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: droppedSeat.is_locked, is_muted_by_host: droppedSeat.is_muted_by_host } });
                     } else {
                         await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', droppedUserId);
-                        broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: droppedUserId } });
+                        broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: room.id, user_id: droppedUserId } });
                     }
                 } 
                 else if (String(room.host_id) === droppedUserId) {
@@ -1758,7 +1766,7 @@
                         if (myIndex !== -1 && myIndex !== undefined) {
                             broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: myIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } });
                         } else {
-                            broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } });
+                            broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: rId, user_id: currentUserId } });
                         }
                     }
                 }
@@ -1896,13 +1904,18 @@
         } else {
             await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', targetUserId);
         }
-                broadcastToPeers('kick', { target_uid: targetUserId });
+                broadcastToPeers('kick', { room_id: activeRoom.id, target_uid: targetUserId });
         setShowParticipantsModal(false);
         setShowActionModal(null);
         safeAlert("User kicked from the room.");
     };
 
             const joinRoom = async (room) => {
+                // Clear old connections to ensure absolute room isolation
+                const oldConns = [...dataConnectionsRef.current];
+                dataConnectionsRef.current = [];
+                oldConns.forEach(c => { try { c.close(); } catch(e){} });
+
                 const { error } = await supabase.rpc('join_room_audience', {
                     p_room_id: room.id,
                     p_user_id: currentUserId,
@@ -1968,7 +1981,7 @@
                             
                             broadcastToPeers('host_transfer', { new_host_id: nextHost.user_id, new_host_name: nextHost.user_name, room_id: rId });
                             broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: 0, user_id: nextHost.user_id, user_name: nextHost.user_name, photo_url: nextHost.photo_url, is_locked: false, is_muted_by_host: false } });
-                            broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: nextHost.user_id } });
+                            broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: rId, user_id: nextHost.user_id } });
                         } else {
                             await supabase.from('active_rooms').delete().eq('id', rId);
                             broadcastToPeers('room_closed', { room_id: rId });
@@ -2014,7 +2027,7 @@
                 if (oldSeatIndex !== null) {
                     broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: roomId, seat_index: oldSeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: seats[oldSeatIndex]?.is_locked || false, is_muted_by_host: seats[oldSeatIndex]?.is_muted_by_host || false } });
                 } else {
-                    broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } });
+                    broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: roomId, user_id: currentUserId } });
                 }
                 broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: roomId, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } });
 
@@ -2134,6 +2147,7 @@
                         connection.send({
                             type: 'CHAT',
                             id: clientMsgId,
+                            room_id: activeRoom?.id,
                             text: newMsg.message,
                             senderId: currentUserId,
                             senderName: currentUserName,
@@ -2498,7 +2512,7 @@
                                     <button onClick={() => { 
                                         const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
                                         if(emptySeatIdx !== -1) {
-                                            broadcastToPeers('invite', { target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName });
+                                            broadcastToPeers('invite', { room_id: activeRoom.id, target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName });
                                                     if (lockedSeats[showActionModal.seatNum]) {
                                                         sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked: false });
                                                         setLockedSeats(prev => ({...prev, [showActionModal.seatNum]: false}));
@@ -2545,7 +2559,7 @@
                                                     if (showActionModal.oldOccupant) {
                                                         moveToAudience(showActionModal.oldOccupant.user_id, showActionModal.seatNum, showActionModal.oldOccupant.user_name, showActionModal.oldOccupant.photo_url);
                                                     }
-                                                    broadcastToPeers('invite', { target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName });
+                                                    broadcastToPeers('invite', { room_id: activeRoom.id, target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName });
                                                     safeAlert('Invite sent!'); 
                                                     setShowActionModal(null); 
                                                 }} className="bg-[#00FFFF] text-[#010B1C] px-4 py-1.5 rounded-lg text-xs font-black shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Invite</button>
@@ -2706,7 +2720,7 @@
                                         const photo = photoInput.dataset.b64 || activeRoom.host_photo || '';
                                         
                                         await supabase.from('active_rooms').update({ room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }).eq('id', activeRoom.id);
-                                        broadcastToPeers('room_updated', { room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo });
+                                        broadcastToPeers('room_updated', { room_id: activeRoom.id, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo });
                                         
                                         if (photo !== activeRoom.host_photo) {
                                             await supabase.from('room_seats').update({ photo_url: photo }).eq('room_id', activeRoom.id).eq('user_id', currentUserId);
