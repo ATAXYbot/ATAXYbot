@@ -285,11 +285,15 @@ export const VoiceRoomProvider = ({ children, tgUser }) => {
                         await supabase.from('rooms').delete().eq('id', activeRoom.id);
                     } 
                     else if (count > 0 && String(activeRoom.host_user_id) === String(tgId)) {
-                        const nextHost = remaining[0];
-                        await supabase.from('rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', activeRoom.id);
-                        await supabase.from('room_participants').update({ seat_number: 0 }).eq('room_id', activeRoom.id).eq('user_id', String(nextHost.user_id));
-                        
-                        broadcastToRoom('HOST_CHANGED', { newHostId: String(nextHost.user_id), roomId: activeRoom.id });
+                        const remainingMics = remaining.filter(p => p.seat_number !== null && Number(p.seat_number) > 0).sort((a,b) => Number(a.seat_number) - Number(b.seat_number));
+                        if (remainingMics.length > 0) {
+                            const nextHost = remainingMics[0];
+                            await supabase.from('rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', activeRoom.id);
+                            await supabase.from('room_participants').update({ seat_number: 0 }).eq('room_id', activeRoom.id).eq('user_id', String(nextHost.user_id));
+                            broadcastToRoom('HOST_CHANGED', { newHostId: String(nextHost.user_id), roomId: activeRoom.id });
+                        } else if (activeRoom.room_type === 'temporary') {
+                            await supabase.from('rooms').delete().eq('id', activeRoom.id);
+                        }
                     }
                 }
                 broadcastToRoom('refresh_participants', {});
