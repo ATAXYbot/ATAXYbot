@@ -1137,7 +1137,10 @@
                             { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
                             { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
                             { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-                        ] 
+                        ],
+                        bundlePolicy: 'max-bundle',
+                        rtcpMuxPolicy: 'require',
+                        iceCandidatePoolSize: 10
                     });
                     peersRef.current[peerId] = peer;
                     peer.queuedIceCandidates = [];
@@ -1346,7 +1349,15 @@
                         // If becoming a speaker and no stream exists, create one.
                         if (!localStreamRef.current) {
                             try {
-                                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                                const stream = await navigator.mediaDevices.getUserMedia({ 
+                                    audio: { 
+                                        echoCancellation: true, 
+                                        noiseSuppression: true, 
+                                        autoGainControl: true,
+                                        latency: 0 
+                                    }, 
+                                    video: false 
+                                });
                                 
                                 // Instantly apply mute state so it respects host/local mute before broadcasting
                                 stream.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
