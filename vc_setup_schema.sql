@@ -131,6 +131,45 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ====================================================================================
+-- BUG FIX 4: Emergency Leave RPC for Swiping Away / Disconnects
+-- ====================================================================================
+CREATE OR REPLACE FUNCTION public.emergency_leave_vc_room(p_room_id UUID, p_user_id TEXT, p_is_host BOOLEAN)
+RETURNS VOID AS $$
+DECLARE
+    v_next_host RECORD;
+    v_remaining_count INT;
+BEGIN
+    UPDATE public.room_seats SET user_id = NULL, user_name = NULL, photo_url = NULL WHERE room_id = p_room_id AND user_id = p_user_id;
+    DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = p_user_id;
+
+    SELECT (
+        (SELECT COUNT(*) FROM public.room_seats WHERE room_id = p_room_id AND user_id IS NOT NULL) +
+        (SELECT COUNT(*) FROM public.room_audience WHERE room_id = p_room_id)
+    ) INTO v_remaining_count;
+
+    IF v_remaining_count = 0 THEN
+        DELETE FROM public.active_rooms WHERE id = p_room_id;
+    ELSIF p_is_host THEN
+        SELECT * INTO v_next_host FROM public.room_seats WHERE room_id = p_room_id AND user_id IS NOT NULL AND seat_index > 0 ORDER BY seat_index ASC LIMIT 1;
+        IF FOUND THEN
+            UPDATE public.active_rooms SET host_id = v_next_host.user_id, host_name = v_next_host.user_name, host_photo = v_next_host.photo_url WHERE id = p_room_id;
+            UPDATE public.room_seats SET user_id = NULL, user_name = NULL, photo_url = NULL WHERE room_id = p_room_id AND seat_index = v_next_host.seat_index;
+            UPDATE public.room_seats SET user_id = v_next_host.user_id, user_name = v_next_host.user_name, photo_url = v_next_host.photo_url WHERE room_id = p_room_id AND seat_index = 0;
+        ELSE
+            SELECT * INTO v_next_host FROM public.room_audience WHERE room_id = p_room_id ORDER BY joined_at ASC LIMIT 1;
+            IF FOUND THEN
+                UPDATE public.active_rooms SET host_id = v_next_host.user_id, host_name = v_next_host.user_name, host_photo = v_next_host.photo_url WHERE id = p_room_id;
+                DELETE FROM public.room_audience WHERE room_id = p_room_id AND user_id = v_next_host.user_id;
+                UPDATE public.room_seats SET user_id = v_next_host.user_id, user_name = v_next_host.user_name, photo_url = v_next_host.photo_url WHERE room_id = p_room_id AND seat_index = 0;
+            ELSE
+                DELETE FROM public.active_rooms WHERE id = p_room_id;
+            END IF;
+        END IF;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ====================================================================================
 -- SECURITY: Free Access for WebRTC Signaling (Row Level Security)
 -- ====================================================================================
 ALTER TABLE public.active_rooms ENABLE ROW LEVEL SECURITY;

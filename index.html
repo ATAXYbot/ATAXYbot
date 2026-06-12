@@ -1600,7 +1600,6 @@
                         } else {
                             safeAlert(`${eventData.new_host_name} is the new host.`);
                         }
-                        fetchRoomData(eventData.room_id);
                         setActiveRoom(prev => prev ? { ...prev, host_id: eventData.new_host_id, host_name: eventData.new_host_name } : prev);
                     } else if (event === 'room_closed') {
                         safeAlert("Room closed by host.");
