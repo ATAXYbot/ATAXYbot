@@ -1595,7 +1595,7 @@
                     } else if (event === 'invite') {
                         if (eventData.target === currentUserId) setPendingInvite(eventData);
                     } else if (event === 'host_transfer') {
-                        if (eventData.new_host_id === currentUserId) {
+                        if (String(eventData.new_host_id) === currentUserId) {
                             safeAlert("The host left. You have been promoted to Host and moved to the Host Seat!");
                         } else {
                             safeAlert(`${eventData.new_host_name} is the new host.`);
@@ -1656,6 +1656,7 @@
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: seat0Update });
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: oldSeatUpdate });
                         setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : (i === nextHostSeat.seat_index ? oldSeatUpdate : s)));
+                        setActiveRoom(prev => prev ? { ...prev, host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto } : prev);
                     } else if (!nextHostSeat) {
                         const remainingAudience = currentAudience.filter(a => String(a.user_id) !== droppedUserId);
                         if (remainingAudience.length > 0 && String(remainingAudience[0].user_id) === currentUserId) {
@@ -1669,6 +1670,7 @@
                             broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: room.id, user_id: currentUserId } });
                             setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : s));
                             setAudience(prev => prev.filter(a => String(a.user_id) !== currentUserId));
+                            setActiveRoom(prev => prev ? { ...prev, host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto } : prev);
                         }
                     }
                 }
@@ -1786,10 +1788,10 @@
             return () => { window.removeEventListener('beforeunload', handleBeforeUnload); window.removeEventListener('pagehide', handleBeforeUnload); };
         }, [currentUserId]);
 
-            const mySeat = seats.find(s => s && s.user_id === currentUserId);
+            const mySeat = seats.find(s => s && String(s.user_id) === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
             const isMutedByHost = mySeat ? mySeat.is_muted_by_host : false;
-            const isHost = activeRoom && activeRoom.host_id === currentUserId;
+            const isHost = activeRoom && String(activeRoom.host_id) === currentUserId;
             const totalParticipants = seats.filter(s => s && s.user_id).length + audience.length;
 
             useEffect(() => {
