@@ -1600,6 +1600,7 @@
                         } else {
                             safeAlert(`${eventData.new_host_name} is the new host.`);
                         }
+                        fetchRoomData(eventData.room_id);
                         setActiveRoom(prev => prev ? { ...prev, host_id: eventData.new_host_id, host_name: eventData.new_host_name } : prev);
                     } else if (event === 'room_closed') {
                         safeAlert("Room closed by host.");
@@ -1655,7 +1656,6 @@
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: seat0Update });
                         broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: oldSeatUpdate });
                         setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : (i === nextHostSeat.seat_index ? oldSeatUpdate : s)));
-                        setActiveRoom(prev => prev ? { ...prev, host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto } : prev);
                     } else if (!nextHostSeat) {
                         const remainingAudience = currentAudience.filter(a => String(a.user_id) !== droppedUserId);
                         if (remainingAudience.length > 0 && String(remainingAudience[0].user_id) === currentUserId) {
@@ -1669,7 +1669,6 @@
                             broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: room.id, user_id: currentUserId } });
                             setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : s));
                             setAudience(prev => prev.filter(a => String(a.user_id) !== currentUserId));
-                            setActiveRoom(prev => prev ? { ...prev, host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto } : prev);
                         }
                     }
                 }
@@ -1790,7 +1789,7 @@
             const mySeat = seats.find(s => s && s.user_id === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
             const isMutedByHost = mySeat ? mySeat.is_muted_by_host : false;
-            const isHost = activeRoom && String(activeRoom.host_id) === currentUserId;
+            const isHost = activeRoom && activeRoom.host_id === currentUserId;
             const totalParticipants = seats.filter(s => s && s.user_id).length + audience.length;
 
             useEffect(() => {
@@ -1872,14 +1871,6 @@
                     const enhancedData = data.map(room => ({
                         ...room, total_capacity: (room.room_seats || []).filter(s => s.user_id !== null).length + (room.room_audience || []).length
                     }));
-                    
-                    // Cleanup ghost rooms globally from database when anyone loads the lobby
-                    const emptyRooms = enhancedData.filter(room => room.total_capacity === 0 && String(room.host_id) !== currentUserId);
-                    if (emptyRooms.length > 0) {
-                        const emptyRoomIds = emptyRooms.map(r => r.id);
-                        supabase.from('active_rooms').delete().in('id', emptyRoomIds).then();
-                    }
-
                     const activeOnlyData = enhancedData.filter(room => room.total_capacity > 0 || String(room.host_id) === currentUserId);
                     setAvailableVCRooms(activeOnlyData);
                 }
@@ -2016,12 +2007,6 @@
                     } else {
                         broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } });
                         await supabase.from('room_audience').delete().eq('room_id', rId).eq('user_id', currentUserId);
-                    }
-                    
-                    // Safety cleanup: If a non-host leaves and they were somehow the absolute last person
-                    const remainingTotal = currentSeats.filter(s => s && s.user_id && String(s.user_id) !== currentUserId).length + currentAudience.filter(a => String(a.user_id) !== currentUserId).length;
-                    if (remainingTotal === 0) {
-                        await supabase.from('active_rooms').delete().eq('id', rId);
                     }
                 }
 
