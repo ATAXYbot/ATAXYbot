@@ -1651,6 +1651,11 @@
                         await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
                         await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
                         broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                        const seat0Update = { room_id: room.id, seat_index: 0, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false };
+                        const oldSeatUpdate = { room_id: room.id, seat_index: nextHostSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: nextHostSeat.is_locked, is_muted_by_host: nextHostSeat.is_muted_by_host };
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: seat0Update });
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: oldSeatUpdate });
+                        setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : (i === nextHostSeat.seat_index ? oldSeatUpdate : s)));
                     } else if (!nextHostSeat) {
                         const remainingAudience = currentAudience.filter(a => String(a.user_id) !== droppedUserId);
                         if (remainingAudience.length > 0 && String(remainingAudience[0].user_id) === currentUserId) {
@@ -1659,6 +1664,11 @@
                             await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', currentUserId);
                             await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
                             broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                            const seat0Update = { room_id: room.id, seat_index: 0, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false };
+                            broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: seat0Update });
+                            broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: room.id, user_id: currentUserId } });
+                            setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : s));
+                            setAudience(prev => prev.filter(a => String(a.user_id) !== currentUserId));
                         }
                     }
                 }
@@ -1772,8 +1782,9 @@
                 }
             };
             window.addEventListener('beforeunload', handleBeforeUnload);
-            return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-        }, [activeRoom, isHost, mySeatIndex]);
+            window.addEventListener('pagehide', handleBeforeUnload);
+            return () => { window.removeEventListener('beforeunload', handleBeforeUnload); window.removeEventListener('pagehide', handleBeforeUnload); };
+        }, [currentUserId]);
 
             const mySeat = seats.find(s => s && s.user_id === currentUserId);
             const mySeatIndex = mySeat ? mySeat.seat_index : null;
@@ -1860,7 +1871,8 @@
                     const enhancedData = data.map(room => ({
                         ...room, total_capacity: (room.room_seats || []).filter(s => s.user_id !== null).length + (room.room_audience || []).length
                     }));
-                    setAvailableVCRooms(enhancedData);
+                    const activeOnlyData = enhancedData.filter(room => room.total_capacity > 0 || String(room.host_id) === currentUserId);
+                    setAvailableVCRooms(activeOnlyData);
                 }
             };
 
