@@ -1882,6 +1882,10 @@
             }, [activeRoom]);
 
             const executeCreateRoom = async () => {
+                if (activeRoomRef.current) {
+                    await handleExitRoom();
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
                 setIsCreating(true);
                 setRoomError('');
                 try {
@@ -1923,6 +1927,16 @@
     };
 
             const joinRoom = async (room) => {
+                if (activeRoomRef.current) {
+                    if (activeRoomRef.current.id === room.id) {
+                        setIsMinimized(false);
+                        setShowJoinModal(false);
+                        return;
+                    }
+                    await handleExitRoom();
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
                 // Clear old connections to ensure absolute room isolation
                 const oldConns = [...dataConnectionsRef.current];
                 dataConnectionsRef.current = [];
