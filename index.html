@@ -1853,7 +1853,14 @@
                     setTimeout(() => setEntryNotification(null), 3000);
                 }
                 setAudience(uniqueAud);
-                setMessages(msgsData || []);
+                
+                // Merge DB messages with local ephemeral WebRTC messages
+                if (msgsData && msgsData.length > 0) {
+                    setMessages(prev => {
+                        const newMsgs = msgsData.filter(dbMsg => !prev.some(m => m.id === dbMsg.id));
+                        return [...prev, ...newMsgs];
+                    });
+                }
             };
 
             const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, () => {
@@ -1935,6 +1942,7 @@
                     if (data) {
                         setActiveRoom(data);
                         setShowVCCreateModal(false);
+                        setMessages([]);
                     }
                 } catch (err) {
                     safeAlert("Connection failed: " + err.message);
@@ -1983,9 +1991,11 @@
                         safeAlert("Room is Full! Please join another room or create your own.");
                     } else if (error.code === '23505' || error.message?.includes('duplicate')) {
                         setActiveRoom(room); setShowJoinModal(false);
+                        setMessages([]);
                     } else { safeAlert("Error: " + error.message); }
                 } else {
                     setActiveRoom(room); setShowJoinModal(false);
+                    setMessages([]);
                 }
             };
 
@@ -2043,6 +2053,7 @@
                 
                 setActiveRoom(null); // Optimistic UI unmount instantly
                 setIsMinimized(false);
+                setMessages([]); // Clear chat messages for the next room
             };
 
             const takeSeat = async (idx, roomId = activeRoom?.id, bypassLock = false) => {
