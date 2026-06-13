@@ -1889,12 +1889,11 @@
             useEffect(() => {
                 if (!activeRoom?.id) return;
                 const currentRoomId = activeRoom.id;
-                fetchRoomData(currentRoomId);
                 
-                const interval = setInterval(() => {
-                    fetchRoomData(currentRoomId);
-                }, 3000);
-                return () => clearInterval(interval);
+                // Zero-Request Flow: Fetch only once upon joining.
+                // All live room updates (chat, seat hops, mutes) are instantly handled 
+                // by the P2P Mesh Network (PeerJS + MQTT) at 0 request cost!
+                fetchRoomData(currentRoomId);
             }, [activeRoom?.id]);
 
             const [isRefreshingLobby, setIsRefreshingLobby] = useState(false);
