@@ -1176,7 +1176,6 @@
                             <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
                                 {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                             </div>
-                            <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
                             <div className="flex-1 min-w-0 flex flex-col">
                                 <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline leading-tight" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
                                 <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5" onClick={() => { navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }}>ID: {activeChatUser.id}</p>
@@ -2098,12 +2097,14 @@
                         
                         setDms(currDms => {
                             const history = currDms[senderId] || [];
+                            if (data.id && history.some(m => m.id === data.id)) return currDms;
+                            
                             const theirSentCount = history.filter(m => String(m.sender) === String(senderId)).length;
                             if (!isFriend && theirSentCount >= 3) {
                                 return currDms; // Discard 4th message if not friends
                             }
                             const newMsg = { 
-                                sender: senderId, text: data.text, time: Date.now(),
+                                id: data.id, sender: senderId, text: data.text, time: Date.now(),
                                 senderName, senderPhoto
                             };
                             const updatedHistory = [...history, newMsg];
@@ -2310,8 +2311,9 @@
                     return;
                 }
                 
+                const msgId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
                 const newMsg = { 
-                    sender: currentUserId, text: text, time: Date.now(), 
+                    id: msgId, sender: currentUserId, text: text, time: Date.now(), 
                     targetName: activeChatUser?.name || `User ${targetId}`, 
                     targetPhoto: activeChatUser?.photo || '' 
                 };
@@ -2320,7 +2322,7 @@
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
                 setCloudData('dms_' + targetId, updatedHistory);
                 
-                const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
                 sendDirectMessage(targetId, payload);
             };
 
