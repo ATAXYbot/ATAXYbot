@@ -1146,6 +1146,7 @@
         const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus }) => {
             const [dmInput, setDmInput] = useState('');
             const chatEndRef = useRef(null);
+            const [showRequestsInbox, setShowRequestsInbox] = useState(false);
 
             useEffect(() => {
                 chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1180,6 +1181,14 @@
                                 <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline leading-tight" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
                                 <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5" onClick={() => { navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }}>ID: {activeChatUser.id}</p>
                             </div>
+                            <button onClick={() => setShowRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95 shrink-0 ml-auto bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full">
+                                <i className="fa-solid fa-bell text-sm"></i>
+                                {pendingRequests.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                        {pendingRequests.length}
+                                    </span>
+                                )}
+                            </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
                             {chatHistory.length === 0 && (
@@ -1218,36 +1227,56 @@
                                 <i className="fa-solid fa-paper-plane"></i>
                             </button>
                         </div>
+                        {showRequestsInbox && (
+                            <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
+                                <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                    <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                        <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                        <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                        {pendingRequests.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                                <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
+                                                <p className="text-sm font-bold">No pending requests</p>
+                                            </div>
+                                        ) : (
+                                            pendingRequests.map(req => (
+                                                <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
+                                                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
+                                                        {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                        <div className="flex flex-col">
+                                                            <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0,8)}`}</span>
+                                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                        <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             }
 
             return (
                 <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
-                    {pendingRequests.length > 0 && (
-                        <div className="mb-6 p-4 bg-[#021633] border border-yellow-500/40 rounded-2xl shadow-[0_0_15px_rgba(234,179,8,0.15)]">
-                            <h4 className="text-yellow-400 font-bold mb-3 flex items-center gap-2 text-sm"><i className="fa-solid fa-bell animate-bounce"></i> Friend Requests</h4>
-                            {pendingRequests.map(req => (
-                                <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 mb-2 shadow-sm">
-                                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo })}>
-                                        {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
-                                        <div className="flex flex-col">
-                                            <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0,8)}`}</span>
-                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
-                                            <span className="text-[10px] text-gray-400">Wants to chat</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
-                                        <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
+                        <button onClick={() => setShowRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
+                            <i className="fa-solid fa-bell text-sm"></i>
+                            {pendingRequests.length > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                    {pendingRequests.length}
+                                </span>
+                            )}
+                        </button>
                     </div>
                     
                     {Object.keys(dms).length === 0 && <p className="text-gray-500 text-center py-6 italic text-sm border border-gray-800 rounded-2xl border-dashed">No conversations yet.</p>}
@@ -1268,6 +1297,41 @@
                             </div>
                         );
                     })}
+
+                    {showRequestsInbox && (
+                        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
+                            <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                    <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                    {pendingRequests.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                            <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
+                                            <p className="text-sm font-bold">No pending requests</p>
+                                        </div>
+                                    ) : (
+                                        pendingRequests.map(req => (
+                                            <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
+                                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
+                                                    {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0,8)}`}</span>
+                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -1818,6 +1882,7 @@
             const [isMinimized, setIsMinimized] = useState(false);
             const [showRoomMenu, setShowRoomMenu] = useState(false);
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
+            const [showRoomRequestsInbox, setShowRoomRequestsInbox] = useState(false);
 
             // Universal Features State
             const [currentView, setCurrentView] = useState('rooms');
@@ -1868,7 +1933,8 @@
                 if (!currentUserId || currentUserId === "1001") return;
 
                 const inboxTopic = `ataxy/vc/users/${currentUserId}/inbox`;
-                const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+                const clientIdForMqtt = `ataxy_vc_${currentUserId}`;
+                const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId: clientIdForMqtt, clean: false, keepalive: 60, reconnectPeriod: 1000 });
                 inboxClientRef.current = client;
 
                 client.on('connect', () => { client.subscribe(inboxTopic, { qos: 1 }); });
@@ -1895,29 +1961,56 @@
                 return false;
             };
 
-        const sendDirectMessage = (targetId, payload) => {
-            sendToUserInbox(targetId, payload);
-            try {
-                const targetPeerId = `ataxy-vc-${targetId}`;
-                let sent = false;
-                if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
-                    dataConnectionsRef.current.forEach(c => {
-                        if (c && c.open && c.peer === targetPeerId) { c.send(payload); sent = true; }
-                    });
-                }
-                if (!sent && peerRef.current && !peerRef.current.destroyed) {
-                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
-                    if (conn) {
-                        conn.on('open', () => { conn.send(payload); setTimeout(() => conn.close(), 1500); });
+            const sendDirectMessage = (targetId, payload) => {
+                sendToUserInbox(targetId, payload);
+                try {
+                    const targetPeerId = `ataxy-vc-${targetId}`;
+                    let sent = false;
+                    if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                        dataConnectionsRef.current.forEach(c => {
+                            if (c && c.open && c.peer === targetPeerId) { c.send(payload); sent = true; }
+                        });
                     }
-                }
-            } catch(e) {}
-        };
+                    if (!sent && peerRef.current && !peerRef.current.destroyed) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        if (conn) {
+                            conn.on('open', () => { conn.send(payload); setTimeout(() => conn.close(), 1500); });
+                        }
+                    }
+                } catch(e) {}
+            };
 
             const processIncomingDataRef = useRef(null);
 
             useEffect(() => {
                 const loadStorageData = async () => {
+                    // WIPE FRIEND STATE FOR TESTING (One-Time Reset)
+                    if (!localStorage.getItem('ataxy_friends_reset_v4')) {
+                        try {
+                            localStorage.removeItem('ataxy_friends');
+                            localStorage.removeItem('ataxy_pending_friends');
+                            localStorage.removeItem('ataxy_sent_requests');
+                            const keysToRemove = [];
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const k = localStorage.key(i);
+                                if (k && k.startsWith('dms_')) keysToRemove.push(k);
+                            }
+                            keysToRemove.forEach(k => localStorage.removeItem(k));
+                            
+                            if (window.Telegram?.WebApp?.CloudStorage) {
+                                window.Telegram.WebApp.CloudStorage.removeItem('ataxy_friends');
+                                window.Telegram.WebApp.CloudStorage.removeItem('ataxy_pending_friends');
+                                window.Telegram.WebApp.CloudStorage.removeItem('ataxy_sent_requests');
+                                window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
+                                    if (keys) {
+                                        const dmKeys = keys.filter(k => k.startsWith('dms_'));
+                                        if (dmKeys.length > 0) window.Telegram.WebApp.CloudStorage.removeItems(dmKeys);
+                                    }
+                                });
+                            }
+                        } catch(e) {}
+                        localStorage.setItem('ataxy_friends_reset_v4', 'true');
+                    }
                     const f = await getCloudData('ataxy_friends') || [];
                     const p = await getCloudData('ataxy_pending_friends') || [];
                     const sr = await getCloudData('ataxy_sent_requests') || [];
@@ -2046,8 +2139,12 @@
 
             const sendFriendRequest = (targetUser) => {
                 try {
+                    if (String(targetUser.user_id) === String(currentUserId)) {
+                        safeAlert("You cannot send a friend request to yourself.");
+                        return;
+                    }
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                    sendDirectMessage(targetUser.user_id, payload);
+                    sendToUserInbox(targetUser.user_id, payload);
 
                     setSentRequests(prev => {
                         const prevArray = Array.isArray(prev) ? prev : [];
@@ -2081,7 +2178,7 @@
                     });
                     
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                    sendDirectMessage(senderId, payload);
+                    sendToUserInbox(senderId, payload);
                     safeAlert(`You are now friends with ${senderPayload.name}`);
                 } catch (e) {
                     console.error("acceptFriendRequest Error: ", e);
@@ -2097,21 +2194,20 @@
                 });
                 
                 const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
-                sendDirectMessage(senderId, payload);
+                sendToUserInbox(senderId, payload);
             };
 
             const syncFriendStatus = (targetId) => {
                 const payload = { type: 'ROOM_EVENT', event: 'SYNC_FRIEND_REQUEST', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                sendDirectMessage(targetId, payload);
+                sendToUserInbox(targetId, payload);
             };
 
             const sendPrivateDM = (targetId, text) => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
-
-                const theirSentCount = history.filter(m => String(m.sender) === String(senderId)).length;
-                            if (!isFriend && theirSentCount >= 3) {
-                                
+                const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
+                
+                if (!isFriend && mySentCount >= 3) {
                     safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
                     return;
                 }
@@ -2127,7 +2223,7 @@
                 setCloudData('dms_' + targetId, updatedHistory);
                 
                 const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
-                sendDirectMessage(targetId, payload);
+                sendToUserInbox(targetId, payload);
             };
 
             const handlePeerDisconnect = async (droppedUserId) => {
@@ -2899,6 +2995,14 @@
                             </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
+                                <i className="fa-solid fa-bell text-sm"></i>
+                                {pendingRequests.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                        {pendingRequests.length}
+                                    </span>
+                                )}
+                            </button>
                             <button onClick={() => setShowParticipantsModal(true)} className="text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 px-2 py-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold">
                                 <i className="fa-solid fa-users"></i> {totalParticipants}/12
                             </button>
@@ -3316,6 +3420,40 @@
                                         setActiveRoom(prev => ({...prev, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo}));
                                         setShowRoomSettingsModal(false); safeAlert("Room settings updated successfully!");
                                     }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showRoomRequestsInbox && (
+                        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRoomRequestsInbox(false)}>
+                            <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                    <button onClick={() => setShowRoomRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                    {pendingRequests.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                            <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
+                                            <p className="text-sm font-bold">No pending requests</p>
+                                        </div>
+                                    ) : (
+                                        pendingRequests.map(req => (
+                                            <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
+                                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRoomRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
+                                                    {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0,8)}`}</span>
+                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>
