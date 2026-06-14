@@ -2061,6 +2061,30 @@
                             image_url: data.imageUrl
                         }];
                     });
+                } else if (data.type === 'PRIVATE_MESSAGE') {
+                    const senderId = String(data.senderId);
+                    const senderName = data.senderName || `User ${senderId.substring(0,8)}`;
+                    const senderPhoto = data.senderPhoto || '';
+
+                    setFriends(currFriends => {
+                        const isFriend = Array.isArray(currFriends) && currFriends.some(f => String(f.id || f) === senderId);
+                        
+                        setDms(currDms => {
+                            const history = currDms[senderId] || [];
+                            const theirSentCount = history.filter(m => String(m.sender) === String(senderId)).length;
+                            if (!isFriend && theirSentCount >= 3) {
+                                return currDms; // Discard 4th message if not friends
+                            }
+                            const newMsg = { 
+                                sender: senderId, text: data.text, time: Date.now(),
+                                senderName, senderPhoto
+                            };
+                            const updatedHistory = [...history, newMsg];
+                            setCloudData('dms_' + senderId, updatedHistory);
+                            return { ...currDms, [senderId]: updatedHistory };
+                        });
+                        return currFriends;
+                    });
                 } else if (data.type === 'ROOM_EVENT') {
                     const { event, payload: eventData } = data;
                     
@@ -2122,6 +2146,53 @@
                     } else if (event === 'room_updated') {
                         setActiveRoom(prev => prev ? { ...prev, ...eventData } : prev);
                     }
+                    else if (event === 'FRIEND_REQUEST_SEND') {
+                        setPendingRequests(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            if (prevArray.some(p => String(p.id) === String(eventData.id))) return prevArray;
+                            const updated = [...prevArray, { id: eventData.id, name: eventData.name || `User ${String(eventData.id).substring(0,8)}`, photo: eventData.photo || '' }];
+                            setCloudData('ataxy_pending_friends', updated);
+                            return updated;
+                        });
+                    } else if (event === 'FRIEND_REQUEST_ACCEPTED') {
+                        setFriends(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            if (prevArray.some(f => String(f.id || f) === String(eventData.id))) return prevArray;
+                            const updated = [...prevArray, { id: eventData.id, name: eventData.name || `User ${eventData.id}`, photo: eventData.photo }];
+                            setCloudData('ataxy_friends', updated);
+                            return updated;
+                        });
+                        setSentRequests(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            const updated = prevArray.filter(id => String(id) !== String(eventData.id));
+                            setCloudData('ataxy_sent_requests', updated);
+                            return updated;
+                        });
+                    } else if (event === 'FRIEND_REQUEST_REJECTED') {
+                        setSentRequests(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            const updated = prevArray.filter(id => String(id) !== String(eventData.id));
+                            setCloudData('ataxy_sent_requests', updated);
+                            return updated;
+                        });
+                    } else if (event === 'SYNC_FRIEND_REQUEST') {
+                        const senderId = String(eventData.id);
+                        const isFriend = Array.isArray(friendsRef.current) && friendsRef.current.some(f => String(f.id || f) === senderId);
+                        
+                        if (isFriend) {
+                            const responsePayload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                            sendDirectMessage(senderId, responsePayload);
+                        } else {
+                            const isPending = Array.isArray(pendingRequestsRef.current) && pendingRequestsRef.current.some(p => String(p.id) === senderId);
+                            if (!isPending) {
+                                setPendingRequests(currPending => {
+                                    const updated = [...(Array.isArray(currPending)?currPending:[]), { id: senderId, name: eventData.name || `User ${senderId.substring(0,8)}`, photo: eventData.photo || '' }];
+                                    setCloudData('ataxy_pending_friends', updated);
+                                    return updated;
+                                });
+                            }
+                        }
+                    }
                 }
             };
 
@@ -2144,7 +2215,7 @@
                         return;
                     }
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                    sendToUserInbox(targetUser.user_id, payload);
+                    sendDirectMessage(targetUser.user_id, payload);
 
                     setSentRequests(prev => {
                         const prevArray = Array.isArray(prev) ? prev : [];
@@ -2178,7 +2249,7 @@
                     });
                     
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                    sendToUserInbox(senderId, payload);
+                    sendDirectMessage(senderId, payload);
                     safeAlert(`You are now friends with ${senderPayload.name}`);
                 } catch (e) {
                     console.error("acceptFriendRequest Error: ", e);
@@ -2194,12 +2265,12 @@
                 });
                 
                 const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
-                sendToUserInbox(senderId, payload);
+                sendDirectMessage(senderId, payload);
             };
 
             const syncFriendStatus = (targetId) => {
                 const payload = { type: 'ROOM_EVENT', event: 'SYNC_FRIEND_REQUEST', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                sendToUserInbox(targetId, payload);
+                sendDirectMessage(targetId, payload);
             };
 
             const sendPrivateDM = (targetId, text) => {
@@ -2223,7 +2294,7 @@
                 setCloudData('dms_' + targetId, updatedHistory);
                 
                 const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
-                sendToUserInbox(targetId, payload);
+                sendDirectMessage(targetId, payload);
             };
 
             const handlePeerDisconnect = async (droppedUserId) => {
