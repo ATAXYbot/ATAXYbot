@@ -1895,6 +1895,25 @@
                 return false;
             };
 
+        const sendDirectMessage = (targetId, payload) => {
+            sendToUserInbox(targetId, payload);
+            try {
+                const targetPeerId = `ataxy-vc-${targetId}`;
+                let sent = false;
+                if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                    dataConnectionsRef.current.forEach(c => {
+                        if (c && c.open && c.peer === targetPeerId) { c.send(payload); sent = true; }
+                    });
+                }
+                if (!sent && peerRef.current && !peerRef.current.destroyed) {
+                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                    if (conn) {
+                        conn.on('open', () => { conn.send(payload); setTimeout(() => conn.close(), 1500); });
+                    }
+                }
+            } catch(e) {}
+        };
+
             const processIncomingDataRef = useRef(null);
 
             useEffect(() => {
@@ -2028,7 +2047,7 @@
             const sendFriendRequest = (targetUser) => {
                 try {
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                    sendToUserInbox(targetUser.user_id, payload);
+                    sendDirectMessage(targetUser.user_id, payload);
 
                     setSentRequests(prev => {
                         const prevArray = Array.isArray(prev) ? prev : [];
@@ -2062,7 +2081,7 @@
                     });
                     
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                    sendToUserInbox(senderId, payload);
+                    sendDirectMessage(senderId, payload);
                     safeAlert(`You are now friends with ${senderPayload.name}`);
                 } catch (e) {
                     console.error("acceptFriendRequest Error: ", e);
@@ -2078,20 +2097,21 @@
                 });
                 
                 const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
-                sendToUserInbox(senderId, payload);
+                sendDirectMessage(senderId, payload);
             };
 
             const syncFriendStatus = (targetId) => {
                 const payload = { type: 'ROOM_EVENT', event: 'SYNC_FRIEND_REQUEST', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                sendToUserInbox(targetId, payload);
+                sendDirectMessage(targetId, payload);
             };
 
             const sendPrivateDM = (targetId, text) => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
-                const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
-                
-                if (!isFriend && mySentCount >= 3) {
+
+                const theirSentCount = history.filter(m => String(m.sender) === String(senderId)).length;
+                            if (!isFriend && theirSentCount >= 3) {
+                                
                     safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
                     return;
                 }
@@ -2107,7 +2127,7 @@
                 setCloudData('dms_' + targetId, updatedHistory);
                 
                 const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
-                sendToUserInbox(targetId, payload);
+                sendDirectMessage(targetId, payload);
             };
 
             const handlePeerDisconnect = async (droppedUserId) => {
