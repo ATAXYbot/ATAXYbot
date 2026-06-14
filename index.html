@@ -193,17 +193,35 @@
 
         const setCloudData = (key, val) => {
             const strVal = JSON.stringify(val);
-            if (window.Telegram?.WebApp?.CloudStorage) {
-                window.Telegram.WebApp.CloudStorage.setItem(key, strVal);
-            } else {
-                localStorage.setItem(key, strVal);
+            try {
+                if (window.Telegram?.WebApp?.CloudStorage && window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                    window.Telegram.WebApp.CloudStorage.setItem(key, strVal, (err) => {
+                        if (err) { try { localStorage.setItem(key, strVal); } catch(e){} }
+                    });
+                } else {
+                    localStorage.setItem(key, strVal);
+                }
+            } catch (e) {
+                try { localStorage.setItem(key, strVal); } catch(err) {}
             }
         };
 
         const getCloudData = (key) => new Promise(resolve => {
-            if (window.Telegram?.WebApp?.CloudStorage) {
-                window.Telegram.WebApp.CloudStorage.getItem(key, (err, val) => resolve(val ? JSON.parse(val) : null));
-            } else {
+            try {
+                if (window.Telegram?.WebApp?.CloudStorage && window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                    window.Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
+                        if (err || !val) {
+                            const localVal = localStorage.getItem(key);
+                            resolve(localVal ? JSON.parse(localVal) : null);
+                        } else {
+                            resolve(val ? JSON.parse(val) : null);
+                        }
+                    });
+                } else {
+                    const val = localStorage.getItem(key);
+                    resolve(val ? JSON.parse(val) : null);
+                }
+            } catch (e) {
                 const val = localStorage.getItem(key);
                 resolve(val ? JSON.parse(val) : null);
             }
@@ -998,7 +1016,7 @@
 
                 const isMe = String(safeId) === String(props.currentUserId);
                 const isFriend = Array.isArray(props.friends) ? props.friends.includes(String(safeId)) : false;
-                const isPending = Array.isArray(props.pendingRequests) ? props.pendingRequests.some(p => p && String(p.id) === String(safeId)) : false;
+                const isPending = Array.isArray(props.sentRequests) ? props.sentRequests.includes(String(safeId)) : false;
                 const seatNum = user.seat_index ?? user.seat_number;
 
                 const handleAddFriend = () => {
@@ -1125,7 +1143,7 @@
         // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick }) => {
             const [dmInput, setDmInput] = useState('');
             const chatEndRef = useRef(null);
 
@@ -1136,7 +1154,7 @@
             if (activeChatUser) {
                 const targetId = activeChatUser.id;
                 const chatHistory = dms[targetId] || [];
-                const isFriend = friends.includes(String(targetId));
+                const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 
                 const mySentCount = chatHistory.filter(m => String(m.sender) === String(currentUserId)).length;
                 const canSend = isFriend || mySentCount < 3;
@@ -1145,10 +1163,10 @@
                     <div className="flex flex-col h-full bg-[#010B1C]">
                         <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-4">
                             <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
-                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
                                 {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                             </div>
-                            <h3 className="font-bold text-[#00FFFF] text-lg truncate">{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
+                            <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
                             {chatHistory.length === 0 && (
@@ -1193,6 +1211,27 @@
 
             return (
                 <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
+                    {pendingRequests.length > 0 && (
+                        <div className="mb-6 p-4 bg-[#021633] border border-yellow-500/40 rounded-2xl shadow-[0_0_15px_rgba(234,179,8,0.15)]">
+                            <h4 className="text-yellow-400 font-bold mb-3 flex items-center gap-2 text-sm"><i className="fa-solid fa-bell animate-bounce"></i> Friend Requests</h4>
+                            {pendingRequests.map(req => (
+                                <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 mb-2 shadow-sm">
+                                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo })}>
+                                        {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                        <div className="flex flex-col">
+                                            <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0,8)}`}</span>
+                                            <span className="text-[10px] text-gray-400">Wants to chat</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                        <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
                     </div>
@@ -1799,6 +1838,7 @@
             // Friend System & DMs State
             const [friends, setFriends] = useState([]);
             const [pendingRequests, setPendingRequests] = useState([]);
+            const [sentRequests, setSentRequests] = useState([]);
             const [dms, setDms] = useState({});
             const [activeChatUser, setActiveChatUser] = useState(null);
 
@@ -1806,8 +1846,10 @@
                 const loadStorageData = async () => {
                     const f = await getCloudData('ataxy_friends') || [];
                     const p = await getCloudData('ataxy_pending_friends') || [];
+                    const sr = await getCloudData('ataxy_sent_requests') || [];
                     setFriends(f);
                     setPendingRequests(p);
+                    setSentRequests(sr);
 
                     if (window.Telegram?.WebApp?.CloudStorage) {
                         window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
@@ -1925,67 +1967,108 @@
             };
 
             const sendFriendRequest = (targetUser) => {
-                const targetPeerId = `ataxy-vc-${targetUser.user_id}`;
-                const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
-                
-                let sent = false;
-                dataConnectionsRef.current.forEach(conn => {
-                    if (conn && conn.open && conn.peer === targetPeerId) {
-                        conn.send(payload); sent = true;
+                try {
+                    const targetPeerId = `ataxy-vc-${targetUser.user_id}`;
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    
+                    let sent = false;
+                    if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                        dataConnectionsRef.current.forEach(conn => {
+                            if (conn && conn.open && conn.peer === targetPeerId) {
+                                conn.send(payload); sent = true;
+                            }
+                        });
                     }
-                });
-                if (!sent && peerRef.current) {
-                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
-                    conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                    if (!sent && peerRef.current) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        if (conn) {
+                            conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                        }
+                    }
+                    setSentRequests(prev => {
+                        const prevArray = Array.isArray(prev) ? prev : [];
+                        if (prevArray.some(id => String(id) === String(targetUser.user_id))) return prevArray;
+                        const updated = [...prevArray, String(targetUser.user_id)];
+                        setCloudData('ataxy_sent_requests', updated);
+                        return updated;
+                    });
+                    safeAlert(`Friend request sent to ${targetUser.user_name || targetUser.user_id}`);
+                } catch (e) {
+                    console.error("sendFriendRequest Error: ", e);
+                    safeAlert("Failed to send friend request. Please try again.");
                 }
-                setPendingRequests(prev => {
-                    const updated = [...prev, { id: targetUser.user_id, name: targetUser.user_name || 'User', photo: targetUser.photo_url || '' }];
-                    setCloudData('ataxy_pending_friends', updated);
-                    return updated;
-                });
-                safeAlert(`Friend request sent to ${targetUser.user_name || targetUser.user_id}`);
             };
 
             const acceptFriendRequest = (senderPayload) => {
-                const senderId = String(senderPayload.id);
-                setFriends(prev => {
-                    if (prev.includes(senderId)) return prev;
-                    const updated = [...prev, senderId];
-                    setCloudData('ataxy_friends', updated);
-                    return updated;
-                });
-                setPendingRequests(prev => {
-                    const updated = prev.filter(p => String(p.id) !== senderId);
-                    setCloudData('ataxy_pending_friends', updated);
-                    return updated;
-                });
-                
-                const targetPeerId = `ataxy-vc-${senderId}`;
-                const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId } };
-                
-                let sent = false;
-                dataConnectionsRef.current.forEach(conn => {
-                    if (conn && conn.open && conn.peer === targetPeerId) {
-                        conn.send(payload); sent = true;
+                try {
+                    const senderId = String(senderPayload.id);
+                    setFriends(prev => {
+                        const prevArray = Array.isArray(prev) ? prev : [];
+                        if (prevArray.some(f => String(f.id || f) === senderId)) return prevArray;
+                        const updated = [...prevArray, { id: senderId, name: senderPayload.name || `User ${senderId}`, photo: senderPayload.photo }];
+                        setCloudData('ataxy_friends', updated);
+                        return updated;
+                    });
+                    setPendingRequests(prev => {
+                        const prevArray = Array.isArray(prev) ? prev : [];
+                        const updated = prevArray.filter(p => String(p.id) !== senderId);
+                        setCloudData('ataxy_pending_friends', updated);
+                        return updated;
+                    });
+                    
+                    const targetPeerId = `ataxy-vc-${senderId}`;
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    
+                    let sent = false;
+                    if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                        dataConnectionsRef.current.forEach(conn => {
+                            if (conn && conn.open && conn.peer === targetPeerId) {
+                                conn.send(payload); sent = true;
+                            }
+                        });
                     }
-                });
-                if (!sent && peerRef.current) {
-                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
-                    conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                    if (!sent && peerRef.current) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        if (conn) {
+                            conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                        }
+                    }
+                    safeAlert(`You are now friends with ${senderPayload.name}`);
+                } catch (e) {
+                    console.error("acceptFriendRequest Error: ", e);
                 }
-                safeAlert(`You are now friends with ${senderPayload.name}`);
             };
 
             const rejectFriendRequest = (senderId) => {
                 setPendingRequests(prev => {
-                    const updated = prev.filter(p => String(p.id) !== String(senderId));
+                    const prevArray = Array.isArray(prev) ? prev : [];
+                    const updated = prevArray.filter(p => String(p.id) !== String(senderId));
                     setCloudData('ataxy_pending_friends', updated);
                     return updated;
                 });
+                
+                try {
+                    const targetPeerId = `ataxy-vc-${senderId}`;
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
+                    let sent = false;
+                    if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                        dataConnectionsRef.current.forEach(conn => {
+                            if (conn && conn.open && conn.peer === targetPeerId) {
+                                conn.send(payload); sent = true;
+                            }
+                        });
+                    }
+                    if (!sent && peerRef.current) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        if (conn) {
+                            conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoomRef.current) conn.close(); }, 1000); });
+                        }
+                    }
+                } catch(e) {}
             };
 
             const sendPrivateDM = (targetId, text) => {
-                const isFriend = friends.includes(String(targetId));
+                const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
                 const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
                 
@@ -1994,24 +2077,32 @@
                     return;
                 }
                 
-                const newMsg = { sender: currentUserId, text: text, time: Date.now() };
+                const newMsg = { 
+                    sender: currentUserId, text: text, time: Date.now(), 
+                    targetName: activeChatUser?.name || `User ${targetId}`, 
+                    targetPhoto: activeChatUser?.photo || '' 
+                };
                 const updatedHistory = [...history, newMsg];
                 
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
                 setCloudData('dms_' + targetId, updatedHistory);
                 
                 const targetPeerId = `ataxy-vc-${targetId}`;
-                const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, text: text };
+                const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
                 
                 let sent = false;
-                dataConnectionsRef.current.forEach(conn => {
-                    if (conn && conn.open && conn.peer === targetPeerId) {
-                        conn.send(payload); sent = true;
-                    }
-                });
+                if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                    dataConnectionsRef.current.forEach(conn => {
+                        if (conn && conn.open && conn.peer === targetPeerId) {
+                            conn.send(payload); sent = true;
+                        }
+                    });
+                }
                 if (!sent && peerRef.current) {
                     const conn = peerRef.current.connect(targetPeerId, { reliable: true });
-                    conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                    if (conn) {
+                        conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                    }
                 }
             };
 
@@ -2610,7 +2701,7 @@
                                 </button>
                             </div>
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} />
                             </div>
                         </div>
                     );
@@ -3259,12 +3350,13 @@
                             isHost={isHost}
                             friends={friends}
                             pendingRequests={pendingRequests}
+                            sentRequests={sentRequests}
                             sendFriendRequest={sendFriendRequest}
                             setVcSubTab={setCurrentView}
                             setActiveChatUser={setActiveChatUser}
                             setIsMinimized={setIsMinimized}
-                            leaveSeat={stepDown}
-                            toggleMute={toggleMute}
+                            leaveSeat={() => { if (mySeatIndex !== null) moveToAudience(currentUserId, mySeatIndex, currentUserName, currentUserPhoto); }}
+                            toggleMute={() => setIsLocalMuted(!isLocalMuted)}
                             isLocalMuted={isLocalMuted}
                             handleKick={handleKick}
                             toggleSeatMuteByHost={toggleSeatMuteByHost}
