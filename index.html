@@ -1176,6 +1176,10 @@
                                 {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                             </div>
                             <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
+                            <div className="flex-1 min-w-0 flex flex-col">
+                                <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline leading-tight" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
+                                <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5" onClick={() => { navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }}>ID: {activeChatUser.id}</p>
+                            </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
                             {chatHistory.length === 0 && (
@@ -1229,6 +1233,8 @@
                                         {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
                                         <div className="flex flex-col">
                                             <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0,8)}`}</span>
+                                            <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id)}`}</span>
+                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
                                             <span className="text-[10px] text-gray-400">Wants to chat</span>
                                         </div>
                                     </div>
