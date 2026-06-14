@@ -1143,13 +1143,22 @@
         // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus }) => {
             const [dmInput, setDmInput] = useState('');
             const chatEndRef = useRef(null);
 
             useEffect(() => {
                 chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, [dms, activeChatUser]);
+
+            useEffect(() => {
+                if (activeChatUser && syncFriendStatus) {
+                    const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(activeChatUser.id)) : false;
+                    if (!isFriend) {
+                        syncFriendStatus(activeChatUser.id);
+                    }
+                }
+            }, [activeChatUser, friends]);
 
             if (activeChatUser) {
                 const targetId = activeChatUser.id;
@@ -1842,6 +1851,12 @@
             const [dms, setDms] = useState({});
             const [activeChatUser, setActiveChatUser] = useState(null);
 
+            const friendsRef = useRef([]);
+            useEffect(() => { friendsRef.current = friends; }, [friends]);
+
+            const pendingRequestsRef = useRef([]);
+            useEffect(() => { pendingRequestsRef.current = pendingRequests; }, [pendingRequests]);
+
             useEffect(() => {
                 const loadStorageData = async () => {
                     const f = await getCloudData('ataxy_friends') || [];
@@ -2056,6 +2071,25 @@
                             if (conn && conn.open && conn.peer === targetPeerId) {
                                 conn.send(payload); sent = true;
                             }
+                        });
+                    }
+                    if (!sent && peerRef.current) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        if (conn) {
+                            conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoomRef.current) conn.close(); }, 1000); });
+                        }
+                    }
+                } catch(e) {}
+            };
+
+            const syncFriendStatus = (targetId) => {
+                try {
+                    const targetPeerId = `ataxy-vc-${targetId}`;
+                    const payload = { type: 'ROOM_EVENT', event: 'SYNC_FRIEND_REQUEST', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    let sent = false;
+                    if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                        dataConnectionsRef.current.forEach(conn => {
+                            if (conn && conn.open && conn.peer === targetPeerId) { conn.send(payload); sent = true; }
                         });
                     }
                     if (!sent && peerRef.current) {
@@ -2701,7 +2735,7 @@
                                 </button>
                             </div>
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} />
                             </div>
                         </div>
                     );
