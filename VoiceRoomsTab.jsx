@@ -193,7 +193,7 @@ export const VoiceRoomsTab = ({ tgUser }) => {
 
                 {/* Profile Card Overlay replacing old Context Modal */}
                 {profileOverlayTarget && (
-                    <ProfileCardModal targetUser={profileOverlayTarget} tgId={tgId} activeRoom={activeRoom} onClose={() => setProfileOverlayTarget(null)} sendFriendRequest={sendFriendRequest} setIsMinimized={setIsMinimized} setVcSubTab={setVcSubTab} leaveSeat={leaveSeat} toggleMute={toggleMute} isMuted={isMuted} hostAction={hostAction} mutedSeats={mutedSeats} />
+                    <ProfileCardModal user={profileOverlayTarget} tgId={tgId} activeRoom={activeRoom} onClose={() => setProfileOverlayTarget(null)} sendFriendRequest={sendFriendRequest} setIsMinimized={setIsMinimized} setVcSubTab={setVcSubTab} leaveSeat={leaveSeat} toggleMute={toggleMute} isMuted={isMuted} hostAction={hostAction} mutedSeats={mutedSeats} />
                 )}
 
                 {showSettingsModal && (

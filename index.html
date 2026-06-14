@@ -191,6 +191,24 @@
         const safeSetItem = (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} };
         const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
 
+        const setCloudData = (key, val) => {
+            const strVal = JSON.stringify(val);
+            if (window.Telegram?.WebApp?.CloudStorage) {
+                window.Telegram.WebApp.CloudStorage.setItem(key, strVal);
+            } else {
+                localStorage.setItem(key, strVal);
+            }
+        };
+
+        const getCloudData = (key) => new Promise(resolve => {
+            if (window.Telegram?.WebApp?.CloudStorage) {
+                window.Telegram.WebApp.CloudStorage.getItem(key, (err, val) => resolve(val ? JSON.parse(val) : null));
+            } else {
+                const val = localStorage.getItem(key);
+                resolve(val ? JSON.parse(val) : null);
+            }
+        });
+
         // ==========================================
         // 🛡️ NATIVE TELEGRAM SAFE ALERTS & CONFIRMS
         // ==========================================
@@ -966,6 +984,241 @@
         // 🎙️ WEPLAY NATIVE WEBRTC MESH VOICE ROOMS (VC TAB)
         // ==========================================
         
+        // ==========================================
+        // UNIVERSAL AVATAR PROFILE CARD
+        // ==========================================
+        const ProfileCardModal = (props) => {
+            try {
+                const user = props.user || props.targetUser || {};
+                if (Object.keys(user).length === 0) return null;
+
+                const safeId = user.user_id || user.userId || user.id || "No ID";
+                const safeName = user.user_name || user.userName || user.name || "Unknown User";
+                const safePhoto = user.photo_url || user.user_avatar || user.dp || null;
+
+                const isMe = String(safeId) === String(props.currentUserId);
+                const isFriend = Array.isArray(props.friends) ? props.friends.includes(String(safeId)) : false;
+                const isPending = Array.isArray(props.pendingRequests) ? props.pendingRequests.some(p => p && String(p.id) === String(safeId)) : false;
+                const seatNum = user.seat_index ?? user.seat_number;
+
+                const handleAddFriend = () => {
+                    if (safeId !== "No ID" && props.sendFriendRequest) props.sendFriendRequest({ user_id: safeId, user_name: safeName, photo_url: safePhoto });
+                    if (props.onClose) props.onClose();
+                };
+
+                const handleChat = () => {
+                    if (props.onClose) props.onClose();
+                    if (props.setIsMinimized) props.setIsMinimized(true);
+                    if (props.setVcSubTab) props.setVcSubTab('chats');
+                    if (safeId !== "No ID" && props.setActiveChatUser) props.setActiveChatUser({ id: safeId, name: safeName, photo: safePhoto });
+                };
+
+                return (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4 animate-in fade-in" onClick={props.onClose}>
+                        <div className="bg-[#182533] w-full max-w-sm rounded-2xl border border-[#243647] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            {/* Banner / Header */}
+                            <div className="h-24 bg-gradient-to-r from-[#2b5278] to-[#3a6d9c] relative">
+                                <button 
+                                    onClick={props.onClose}
+                                    className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        
+                            {/* Profile Info */}
+                            <div className="px-6 pb-6 relative">
+                                {/* Avatar Container */}
+                                <div className="absolute -top-12 left-6">
+                                    {safePhoto ? (
+                                        <img 
+                                            src={safePhoto} 
+                                            alt={safeName}
+                                            className="w-24 h-24 rounded-full border-4 border-[#182533] object-cover bg-[#0e1621]"
+                                            onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
+                                        />
+                                    ) : (
+                                        <div className="w-24 h-24 rounded-full border-4 border-[#182533] bg-gradient-to-br from-[#2b5278] to-[#3a6d9c] flex items-center justify-center font-black text-white text-4xl shadow-lg">
+                                            {String(safeName).charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Meta Space to clear absolute avatar */}
+                                <div className="h-14"></div>
+
+                                {/* Name & ID */}
+                                <h3 className="text-xl font-bold text-white truncate">{safeName}</h3>
+                                <div className="flex items-center gap-1.5 mt-1 text-sm text-[#708499]">
+                                    <span>ID: {String(safeId).substring(0,8)}</span>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(safeId);
+                                            safeAlert('ID Copied!');
+                                            if (window.Telegram?.WebApp?.HapticFeedback) {
+                                                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                                            }
+                                        }}
+                                        className="p-1 hover:bg-[#243647] rounded text-[#4face8] transition-colors text-xs"
+                                        title="Copy ID"
+                                    >
+                                        📋
+                                    </button>
+                                </div>
+
+                                {/* Contextual Action Row */}
+                                <div className="mt-6 flex flex-col gap-3">
+                                    {!isMe && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {!isFriend ? (
+                                                <button onClick={handleAddFriend} disabled={isPending} className={`py-2.5 rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2 ${isPending ? 'bg-[#243647] text-[#708499]' : 'bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white'}`}>
+                                                    <i className={`fa-solid ${isPending ? 'fa-clock' : 'fa-user-plus'}`}></i> {isPending ? 'Pending' : 'Add Friend'}
+                                                </button>
+                                            ) : (
+                                                <button onClick={handleChat} className="py-2.5 bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2">
+                                                    <i className="fa-solid fa-message"></i> Chat
+                                                </button>
+                                            )}
+                                            <button onClick={handleChat} className="py-2.5 bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2">
+                                                <i className="fa-solid fa-paper-plane"></i> Message
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Seat Management (For Me) */}
+                                    {isMe && seatNum != null && props.activeRoom && (
+                                        <div className="grid grid-cols-2 gap-3 mt-2 border-t border-[#243647] pt-4">
+                                            <button onClick={() => { if (props.leaveSeat) props.leaveSeat(); if (props.onClose) props.onClose(); }} className="py-2.5 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold rounded-xl transition-colors text-sm">Leave Seat</button>
+                                            <button onClick={() => { if (props.toggleMute) props.toggleMute(); if (props.onClose) props.onClose(); }} className={`py-2.5 font-bold rounded-xl border transition-colors text-sm ${props.isLocalMuted ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500 hover:text-white' : 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500 hover:text-white'}`}>
+                                                {props.isLocalMuted ? 'Unmute Mic' : 'Mute Mic'}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Host Actions */}
+                                    {props.isHost && !isMe && props.activeRoom && (
+                                        <div className="grid grid-cols-2 gap-3 mt-2 border-t border-[#243647] pt-4">
+                                            {seatNum != null && (
+                                                <>
+                                                    <button onClick={() => { if (props.toggleSeatMuteByHost) props.toggleSeatMuteByHost(seatNum, user?.is_muted_by_host); if (props.onClose) props.onClose(); }} className={`py-2.5 font-bold rounded-xl border transition-colors text-sm ${user?.is_muted_by_host ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500 hover:text-white' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500 hover:text-white'}`}>
+                                                        {user?.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                                                    </button>
+                                                    <button onClick={() => { if (props.moveToAudience) props.moveToAudience(safeId, seatNum, safeName, safePhoto); if (props.onClose) props.onClose(); }} className="py-2.5 bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white font-bold rounded-xl transition-colors text-sm">Move to Audience</button>
+                                                </>
+                                            )}
+                                            <button onClick={() => { if (props.handleKick) props.handleKick(safeId, seatNum); if (props.onClose) props.onClose(); }} className="py-2.5 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold rounded-xl transition-colors text-sm col-span-2">
+                                                Kick from Room
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            } catch (err) {
+                console.error("ProfileCardModal Error: ", err);
+                return null;
+            }
+        };
+
+        // ==========================================
+        // PERSONAL CHATS FEED INBOX
+        // ==========================================
+        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM }) => {
+            const [dmInput, setDmInput] = useState('');
+            const chatEndRef = useRef(null);
+
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [dms, activeChatUser]);
+
+            if (activeChatUser) {
+                const targetId = activeChatUser.id;
+                const chatHistory = dms[targetId] || [];
+                const isFriend = friends.includes(String(targetId));
+                
+                const mySentCount = chatHistory.filter(m => String(m.sender) === String(currentUserId)).length;
+                const canSend = isFriend || mySentCount < 3;
+
+                return (
+                    <div className="flex flex-col h-full bg-[#010B1C]">
+                        <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-4">
+                            <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
+                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0">
+                                {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <h3 className="font-bold text-[#00FFFF] text-lg truncate">{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
+                            {chatHistory.length === 0 && (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                                    <i className="fa-solid fa-message text-4xl mb-3 opacity-50"></i>
+                                    <p className="text-sm font-bold">Say hi to {activeChatUser?.name || "your friend"}!</p>
+                                    {!isFriend && <p className="text-xs mt-1">You can send up to 3 messages until they accept your request.</p>}
+                                </div>
+                            )}
+                            {chatHistory.map((m, idx) => {
+                                const isMe = String(m.sender) === String(currentUserId);
+                                return (
+                                    <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
+                                        <div className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm shadow-sm ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none'}`}>
+                                            {m.text}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div ref={chatEndRef} />
+                        </div>
+                        <div className="p-3 bg-[#021633] border-t border-[#0AE0D0]/30 flex gap-2 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shrink-0">
+                            <input 
+                                value={dmInput} 
+                                onChange={(e) => setDmInput(e.target.value)} 
+                                onKeyDown={(e) => { if (e.key === 'Enter' && dmInput.trim() && canSend) { sendPrivateDM(targetId, dmInput.trim()); setDmInput(''); } }} 
+                                placeholder={isFriend ? "Type a message..." : (canSend ? `Type a message... (${3 - mySentCount} left)` : "Waiting for friend request approval")} 
+                                disabled={!canSend}
+                                className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors disabled:opacity-50" 
+                            />
+                            <button 
+                                onClick={() => { if(dmInput.trim() && canSend) { sendPrivateDM(targetId, dmInput.trim()); setDmInput(''); } }} 
+                                disabled={!canSend || !dmInput.trim()}
+                                className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
+                            >
+                                <i className="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
+                    </div>
+                    
+                    {Object.keys(dms).length === 0 && <p className="text-gray-500 text-center py-6 italic text-sm border border-gray-800 rounded-2xl border-dashed">No conversations yet.</p>}
+                    {Object.entries(dms).sort(([,a], [,b]) => (b[b.length-1]?.time || 0) - (a[a.length-1]?.time || 0)).map(([uid, msgs]) => {
+                        const lastMsg = msgs[msgs.length-1];
+                        return (
+                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: `User ${String(uid).substring(0,6)}`, photo: null })} className="bg-[#021633] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors mb-3 shadow-sm group">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white flex items-center justify-center font-black text-xl border border-[#00FFFF]/40 group-hover:scale-105 transition-transform shrink-0">
+                                    {String(uid).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <h4 className="font-bold text-white truncate pr-2">User {String(uid).substring(0,6)}</h4>
+                                        {lastMsg && <span className="text-[9px] text-gray-500 shrink-0">{new Date(lastMsg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                                    </div>
+                                    <p className="text-xs text-[#A4DFE6] truncate opacity-80">{lastMsg?.text || 'No messages'}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
         // 1. STANDALONE AUDIO FREQUENCY FLICKER HOOK (Zero Supabase DB Cost)
         let globalAudioContext = null;
 
@@ -1030,7 +1283,7 @@
         // ==========================================
         // 2. VC SEAT NODE COMPONENT
         // ==========================================
-        const VCSeatNode = ({ seat, idx, currentUserId, isHost, setShowActionModal, takeSeat, mySeatIndex, remoteStream, localStream, isLocalMuted }) => {
+        const VCSeatNode = ({ seat, idx, currentUserId, isHost, setShowActionModal, takeSeat, mySeatIndex, remoteStream, localStream, isLocalMuted, handleAvatarClick }) => {
             const isOccupied = seat && seat.user_id;
             const isLocked = seat && seat.is_locked;
             const isHostSeat = idx === 0;
@@ -1052,13 +1305,12 @@
             return (
                 <div className="flex flex-col items-center gap-2 relative">
                     {isOccupied ? (
-                        <div className="relative cursor-pointer group weplay-voice-ring flex items-center justify-center" onClick={(e) => {
-                            e.stopPropagation();
-                            if (seat.user_id === currentUserId) {
-                                if (isHost && idx === 0) safeAlert("As the host, your seat is permanently fixed.");
-                                else setShowActionModal({ type: 'self', idx });
-                            } else if (isHost) {
-                                setShowActionModal({ type: 'host_target', idx, seat });
+                        <div className="relative cursor-pointer group weplay-voice-ring flex items-center justify-center" onClick={() => {
+                            if (seat && (seat.user_id || seat.userId || seat.id)) {
+                                handleAvatarClick(seat);
+                            } else {
+                                // Fallback if occupant object lacks user_id for some reason
+                                if (isHost && idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat: null });
                             }
                         }}>
                             {/* Solid flowing voice glow with lingering memory fade */}
@@ -1513,7 +1765,18 @@
             const [isMinimized, setIsMinimized] = useState(false);
             const [showRoomMenu, setShowRoomMenu] = useState(false);
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
-            
+
+            // Universal Features State
+            const [currentView, setCurrentView] = useState('rooms');
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+
+            const handleAvatarClick = (userObj) => {
+                try {
+                    if (!userObj || typeof userObj !== 'object') return;
+                    setSelectedProfileUser(userObj);
+                } catch (e) { console.error("handleAvatarClick error:", e); }
+            };
+
             // 1. Establish the Data Mesh Connections
             const dataConnectionsRef = useRef([]);
             const peerRef = useRef(null);
@@ -1532,6 +1795,45 @@
             const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
             
             const chatEndRef = useRef(null);
+
+            // Friend System & DMs State
+            const [friends, setFriends] = useState([]);
+            const [pendingRequests, setPendingRequests] = useState([]);
+            const [dms, setDms] = useState({});
+            const [activeChatUser, setActiveChatUser] = useState(null);
+
+            useEffect(() => {
+                const loadStorageData = async () => {
+                    const f = await getCloudData('ataxy_friends') || [];
+                    const p = await getCloudData('ataxy_pending_friends') || [];
+                    setFriends(f);
+                    setPendingRequests(p);
+
+                    if (window.Telegram?.WebApp?.CloudStorage) {
+                        window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
+                            if (keys) {
+                                const dmKeys = keys.filter(k => k.startsWith('dms_'));
+                                window.Telegram.WebApp.CloudStorage.getItems(dmKeys, (err, vals) => {
+                                    const loadedDms = {};
+                                    dmKeys.forEach(k => { try { loadedDms[k.replace('dms_', '')] = JSON.parse(vals[k]); } catch(e){} });
+                                    setDms(loadedDms);
+                                });
+                            }
+                        });
+                    } else {
+                        // LocalStorage fallback already handled via getCloudData partially, but for iteration:
+                        const loadedDms = {};
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const k = localStorage.key(i);
+                            if (k && k.startsWith('dms_')) {
+                                try { loadedDms[k.replace('dms_', '')] = JSON.parse(localStorage.getItem(k)); } catch(e){}
+                            }
+                        }
+                        setDms(loadedDms);
+                    }
+                };
+                loadStorageData();
+            }, []);
 
             // ==========================================
             // 🌐 WEBRTC DATA CHANNELS (PEERJS) FOR FREE CHAT
@@ -1620,6 +1922,97 @@
                         connection.send({ type: 'ROOM_EVENT', event, payload });
                     }
                 });
+            };
+
+            const sendFriendRequest = (targetUser) => {
+                const targetPeerId = `ataxy-vc-${targetUser.user_id}`;
+                const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                
+                let sent = false;
+                dataConnectionsRef.current.forEach(conn => {
+                    if (conn && conn.open && conn.peer === targetPeerId) {
+                        conn.send(payload); sent = true;
+                    }
+                });
+                if (!sent && peerRef.current) {
+                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                    conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                }
+                setPendingRequests(prev => {
+                    const updated = [...prev, { id: targetUser.user_id, name: targetUser.user_name || 'User', photo: targetUser.photo_url || '' }];
+                    setCloudData('ataxy_pending_friends', updated);
+                    return updated;
+                });
+                safeAlert(`Friend request sent to ${targetUser.user_name || targetUser.user_id}`);
+            };
+
+            const acceptFriendRequest = (senderPayload) => {
+                const senderId = String(senderPayload.id);
+                setFriends(prev => {
+                    if (prev.includes(senderId)) return prev;
+                    const updated = [...prev, senderId];
+                    setCloudData('ataxy_friends', updated);
+                    return updated;
+                });
+                setPendingRequests(prev => {
+                    const updated = prev.filter(p => String(p.id) !== senderId);
+                    setCloudData('ataxy_pending_friends', updated);
+                    return updated;
+                });
+                
+                const targetPeerId = `ataxy-vc-${senderId}`;
+                const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId } };
+                
+                let sent = false;
+                dataConnectionsRef.current.forEach(conn => {
+                    if (conn && conn.open && conn.peer === targetPeerId) {
+                        conn.send(payload); sent = true;
+                    }
+                });
+                if (!sent && peerRef.current) {
+                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                    conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                }
+                safeAlert(`You are now friends with ${senderPayload.name}`);
+            };
+
+            const rejectFriendRequest = (senderId) => {
+                setPendingRequests(prev => {
+                    const updated = prev.filter(p => String(p.id) !== String(senderId));
+                    setCloudData('ataxy_pending_friends', updated);
+                    return updated;
+                });
+            };
+
+            const sendPrivateDM = (targetId, text) => {
+                const isFriend = friends.includes(String(targetId));
+                const history = dms[targetId] || [];
+                const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
+                
+                if (!isFriend && mySentCount >= 3) {
+                    safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
+                    return;
+                }
+                
+                const newMsg = { sender: currentUserId, text: text, time: Date.now() };
+                const updatedHistory = [...history, newMsg];
+                
+                setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
+                setCloudData('dms_' + targetId, updatedHistory);
+                
+                const targetPeerId = `ataxy-vc-${targetId}`;
+                const payload = { type: 'PRIVATE_MESSAGE', senderId: currentUserId, text: text };
+                
+                let sent = false;
+                dataConnectionsRef.current.forEach(conn => {
+                    if (conn && conn.open && conn.peer === targetPeerId) {
+                        conn.send(payload); sent = true;
+                    }
+                });
+                if (!sent && peerRef.current) {
+                    const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                    conn.on('open', () => { conn.send(payload); setTimeout(() => { if (!activeRoom) conn.close(); }, 1000); });
+                }
             };
 
             const handlePeerDisconnect = async (droppedUserId) => {
@@ -2205,14 +2598,40 @@
                 });
             };
 
-            const renderDashboard = () => (
-                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white p-6 justify-center items-center space-y-6">
+            const renderDashboard = () => {
+                if (currentView === 'chats') {
+                    return (
+                        <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white">
+                            <div className="flex bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-md relative z-30 pt-[calc(16px+env(safe-area-inset-top,0px))]">
+                                <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all ${currentView === 'rooms' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
+                                <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>
+                                    Chats 
+                                    {pendingRequests.length > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>}
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-hidden relative">
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} />
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))] bg-[#010B1C] text-white space-y-6">
+                        <div className="flex bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-md relative z-30 pt-[calc(16px+env(safe-area-inset-top,0px))]">
+                            <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all ${currentView === 'rooms' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
+                            <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>
+                                Chats 
+                                {pendingRequests.length > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>}
+                            </button>
+                        </div>
+                        <div className="p-6 pt-0 flex-1 overflow-y-auto no-scrollbar flex flex-col items-center">
                         <AtaxyLogo className="w-20 h-20 rounded-full shadow-[0_0_30px_rgba(0,255,255,0.4)]" />
-                        <h2 className="text-3xl font-black text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">VC Rooms</h2>
+                        <h2 className="text-3xl font-black text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] mt-4">VC Rooms</h2>
                         <p className="text-gray-400 text-center">Join study sessions with crystal clear WePlay-style voice mesh.</p>
                         
                         {roomError && (
-                            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-xl w-full text-sm text-center animate-in fade-in">
+                            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-xl w-full text-sm text-center animate-in fade-in mt-4">
                                 <i className="fa-solid fa-triangle-exclamation mr-2"></i>
                                 {roomError}
                             </div>
@@ -2342,7 +2761,9 @@
                             </div>
                         )}
                     </div>
-            );
+                </div>
+                );
+            };
 
             const renderActiveRoom = () => (
                 <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={() => setShowRoomMenu(false)}>
@@ -2408,6 +2829,7 @@
                                     remoteStream={seat?.user_id ? remoteStreams[seat.user_id] : null}
                                     localStream={localStream}
                                     isLocalMuted={isLocalMuted}
+                                    handleAvatarClick={handleAvatarClick}
                                 />
                             ))}
                         </div>
@@ -2426,7 +2848,7 @@
                                     {audience.map(m => (
                                         <div key={m.user_id} className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0 w-12" onClick={(e) => {
                                             e.stopPropagation();
-                                            if (isHost) setShowActionModal({ type: 'invite', target: m });
+                                            handleAvatarClick(m);
                                         }}>
                                             <div className="w-8 h-8 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 flex items-center justify-center text-sm font-black text-[#00FFFF] shadow-inner group-hover:border-[#00FFFF] transition-colors bg-cover bg-center" style={m.photo_url ? { backgroundImage: `url(${m.photo_url})` } : {}}>
                                                 {!m.photo_url && (m.user_name ? m.user_name.substring(0, 2).toUpperCase() : String(m.user_id).substring(0, 2).toUpperCase())}
@@ -2444,7 +2866,7 @@
                             <div className="flex flex-col gap-2 mt-auto pb-2">
                                 {messages.map(m => (
                                     <div key={m.id} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-1.5 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2 shadow-sm">
-                                        <span className="font-bold text-[#A4DFE6] mr-2">{m.user_name}:</span>
+                                        <span className="font-bold text-[#A4DFE6] mr-2 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.userId || "unknown", user_name: m?.user_name || m?.userName || "User", photo_url: m?.image_url || m?.userAvatar }); }}>{m?.user_name || m?.userName || "User"}:</span>
                                         <span className="text-white">{m.message}</span>
                                         {m.image_url && (
                                             <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px] cursor-pointer" onClick={() => setFullScreenImage(m.image_url)}>
@@ -2521,7 +2943,7 @@
                     {showActionModal && showActionModal.type === 'host_target' && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.seat.user_name}</h3>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal?.occupant?.user_name || showActionModal?.occupant?.name || "User"}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
                                         {showActionModal.seat.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
@@ -2554,7 +2976,7 @@
                     {showActionModal && showActionModal.type === 'invite' && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal.target.user_name}</h3>
+                                <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal?.target?.user_name || showActionModal?.target?.name || "User"}</h3>
                                 <div className="flex flex-col gap-3">
                                     <button onClick={() => { 
                                         const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
@@ -2683,12 +3105,12 @@
                                                     <img src={p.photo_url || p.user_avatar} className={`w-12 h-12 rounded-full object-cover border-2 shrink-0 ${isHostUser ? 'border-[#F9D33A]' : 'border-[#00FFFF]/50'}`} />
                                                 ) : (
                                                     <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black shrink-0 text-xl border-2 ${isHostUser ? 'bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] text-[#010B1C] border-[#F9D33A]' : 'bg-[#00FFFF]/10 text-[#00FFFF] border-[#00FFFF]/30'}`}>
-                                                        {p.user_name ? p.user_name[0].toUpperCase() : 'U'}
+                                                        {String(p?.user_name || p?.userName || p?.name || 'U').charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                             <div className="flex-1 overflow-hidden">
                                     <div className="flex items-center justify-between mb-1">
-                                        <p className="font-bold text-sm text-white truncate max-w-[140px]">{p.user_name || `User ${String(p.user_id).substring(0,4)}`}</p>
+                                        <p className="font-bold text-sm text-white truncate max-w-[140px]">{p?.user_name || p?.userName || p?.name || `User ${String(p?.user_id).substring(0,4)}`}</p>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${statusColor} uppercase tracking-wider shrink-0`}>{statusLabel}</span>
                                             {isHost && p.user_id !== currentUserId && (
@@ -2827,6 +3249,28 @@
                     {Object.keys(remoteStreams).map(peerId => (
                         <audio key={peerId} id={`audio-${peerId}`} autoPlay playsInline muted={isSpeakerMuted} className="hidden" />
                     ))}
+
+                    {selectedProfileUser && typeof selectedProfileUser === 'object' && (
+                        <ProfileCardModal 
+                            user={selectedProfileUser} 
+                            onClose={() => setSelectedProfileUser(null)}
+                            currentUserId={currentUserId}
+                            activeRoom={activeRoom}
+                            isHost={isHost}
+                            friends={friends}
+                            pendingRequests={pendingRequests}
+                            sendFriendRequest={sendFriendRequest}
+                            setVcSubTab={setCurrentView}
+                            setActiveChatUser={setActiveChatUser}
+                            setIsMinimized={setIsMinimized}
+                            leaveSeat={stepDown}
+                            toggleMute={toggleMute}
+                            isLocalMuted={isLocalMuted}
+                            handleKick={handleKick}
+                            toggleSeatMuteByHost={toggleSeatMuteByHost}
+                            moveToAudience={moveToAudience}
+                        />
+                    )}
                 </>
             );
         };
@@ -2961,6 +3405,28 @@ INSTRUCTIONS:
                             </div>
                         </div>
                     )}
+
+                    {selectedProfileUser && typeof selectedProfileUser === 'object' && (
+                        <ProfileCardModal 
+                            user={selectedProfileUser} 
+                            onClose={() => setSelectedProfileUser(null)}
+                            currentUserId={currentUserId}
+                            activeRoom={activeRoom}
+                            isHost={isHost}
+                            friends={[]}
+                            pendingRequests={[]}
+                            sendFriendRequest={() => safeAlert("Friend requests coming soon!")}
+                            setVcSubTab={() => {}}
+                            setActiveChatUser={() => {}}
+                            setIsMinimized={() => {}}
+                            leaveSeat={stepDown}
+                            toggleMute={toggleMute}
+                            isLocalMuted={isMuted}
+                            handleKick={(uid, seatNum) => sendHostAction('kick', uid)}
+                            toggleSeatMuteByHost={(seatNum, isMutedByHost) => { sendBroadcast('seat_mute', { seatNum, isMuted: !isMutedByHost }); setMutedSeats(prev => ({...prev, [seatNum]: !isMutedByHost})); }}
+                            moveToAudience={(uid, seatNum, name, photo) => sendHostAction('lift_user', uid)}
+                        />
+                    )}
                 </>
             );
         };
@@ -3076,12 +3542,12 @@ INSTRUCTIONS:
                     {showProfile && (
                         <div className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowProfile(null)}>
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl border border-gray-200 dark:border-gray-800" onClick={e=>e.stopPropagation()}>
-                                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-black mb-4 uppercase shadow-inner">{showProfile.name[0]}</div>
+                                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-black mb-4 uppercase shadow-inner">{String(showProfile?.name || showProfile?.user_name || 'U').charAt(0)}</div>
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-1">
-                                    {showProfile.name} {showProfile.admin && <i className="fa-solid fa-circle-check text-blue-500 text-sm"></i>}
+                                    {showProfile?.name || showProfile?.user_name || 'User'} {showProfile?.admin && <i className="fa-solid fa-circle-check text-blue-500 text-sm"></i>}
                                 </h3>
-                                <p className="text-blue-500 font-bold text-sm mt-1">@{showProfile.username}</p>
-                                <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 bg-gray-100 dark:bg-gray-800 py-1 px-3 rounded-lg inline-block">UID: {showProfile.tgId}</p>
+                                <p className="text-blue-500 font-bold text-sm mt-1">@{showProfile?.username || showProfile?.user_name || 'user'}</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 bg-gray-100 dark:bg-gray-800 py-1 px-3 rounded-lg inline-block">UID: {showProfile?.tgId || 'N/A'}</p>
                                 <button onClick={() => setShowProfile(null)} className="mt-6 w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold rounded-xl transition-colors">Close</button>
                             </div>
                         </div>
@@ -4489,17 +4955,15 @@ INSTRUCTIONS:
             const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
             const effectiveMutedUI = isMuted || mySeatMuted;
 
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+            const handleAvatarClick = (userObj) => {
+                if (!userObj || typeof userObj !== 'object') return;
+                setSelectedProfileUser(userObj);
+            };
+
             const handleSeatClick = (seatNum, occupant) => {
                 if (occupant) {
-                    if (String(occupant.user_id) === currentUserId) {
-                        if (isHost && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent')) {
-                            safeAlert("As the host of an Advance Room, your seat is permanently yours.");
-                        } else {
-                            setShowActionModal({ type: 'self' });
-                        }
-                    } else if (isHost) {
-                        setShowActionModal({ type: 'host_target', occupant, seatNum });
-                    }
+                    handleAvatarClick(occupant);
                 } else {
                     if (isHost) {
                         if (seatNum !== 0) { 
@@ -4683,7 +5147,7 @@ INSTRUCTIONS:
                                     }
                                     return (
                                         <div key={msg.id || idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2">
-                                            <span className="font-bold text-[#A4DFE6] mr-2">{msg.userName}:</span>
+                                            <span className="font-bold text-[#A4DFE6] mr-2 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: msg?.user_id || msg?.userId || "unknown", user_name: msg?.user_name || msg?.userName || "User", photo_url: msg?.image_url || msg?.userAvatar }); }}>{msg?.user_name || msg?.userName || "User"}:</span>
                                             <span className="text-white">{msg.text}</span>
                                             {msg.imageUrl && (
                                                 <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px] cursor-pointer" onClick={() => setFullScreenImage(msg.imageUrl)}>
@@ -4700,7 +5164,7 @@ INSTRUCTIONS:
                                 {audience.map(p => {
                                     const uName = p.user_name || "Unknown";
                                     return (
-                                    <div key={p.user_id || Math.random()} className="flex flex-col items-center gap-1 shrink-0 w-12" title={uName}>
+                                <div key={p.user_id || Math.random()} className="flex flex-col items-center gap-1 shrink-0 w-12 cursor-pointer" title={uName} onClick={(e) => { e.stopPropagation(); handleAvatarClick(p); }}>
                                         {p.photo_url ? (
                                             <img src={p.photo_url} alt={uName} className="w-8 h-8 rounded-full object-cover border border-[#0AE0D0]/30" />
                                         ) : (
@@ -4819,7 +5283,7 @@ INSTRUCTIONS:
                     {showActionModal && showActionModal.type === 'host_target' && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
                             <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant.user_name}</h3>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant?.user_name || showActionModal.occupant?.name || "User"}</h3>
                                 <div className="flex flex-col gap-3">
                                     {showActionModal.occupant.is_muted ? (
                                         <button onClick={() => { sendHostAction('unmute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white rounded-xl font-bold transition-colors border border-green-500/50">Unmute Microphone</button>
@@ -4936,7 +5400,7 @@ INSTRUCTIONS:
                                     <i className="fa-solid fa-microphone"></i>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">Host Invitation</h3>
-                                <p className="text-sm text-[#A4DFE6] mb-6">The host invited you to take Seat {pendingInvite.seatNum}. Do you accept?</p>
+                                <p className="text-sm text-[#A4DFE6] mb-6">{pendingInvite?.hostName || pendingInvite?.host_name || "The host"} invited you to take Seat {pendingInvite?.seatNum ?? pendingInvite?.seatIndex ?? "a seat"}. Do you accept?</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
                                     <button onClick={() => { 
@@ -4957,9 +5421,9 @@ INSTRUCTIONS:
                                     {micRequests.map(req => (
                                         <div key={req.uid} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
                                             <div className="flex items-center gap-2 text-white font-bold text-sm">
-                                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">{req.name[0]}</div>
+                                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">{String(req?.name || req?.user_name || 'U').charAt(0).toUpperCase()}</div>
                                                 <div>
-                                                    <p>{req.name}</p>
+                                                    <p>{req?.name || req?.user_name || "Unknown User"}</p>
                                                     <p className="text-[10px] text-gray-400 font-normal">Requests Seat {req.seatNum}</p>
                                                 </div>
                                             </div>
@@ -4984,9 +5448,9 @@ INSTRUCTIONS:
                                     {participants.map(p => (
                                         <div key={p.id} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
                                             <div className="flex items-center gap-3">
-                                                {p.photo_url ? <img src={p.photo_url} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-[#00FFFF] text-[#010B1C] font-bold flex items-center justify-center">{p.user_name[0]}</div>}
+                                                {p.photo_url ? <img src={p.photo_url} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-[#00FFFF] text-[#010B1C] font-bold flex items-center justify-center">{String(p?.user_name || p?.name || 'U').charAt(0).toUpperCase()}</div>}
                                                 <div>
-                                                    <p className="text-white font-bold text-sm">{p.user_name} {p.user_id === activeRoom.host_user_id && <i className="fa-solid fa-crown text-yellow-400 text-xs ml-1"></i>}</p>
+                                                    <p className="text-white font-bold text-sm">{p?.user_name || p?.name || "User"} {p.user_id === activeRoom.host_user_id && <i className="fa-solid fa-crown text-yellow-400 text-xs ml-1"></i>}</p>
                                                     <p className="text-[#A4DFE6] text-[10px]">{p.seat_number !== null ? `Seat ${p.seat_number}` : 'Audience'} • ID: {p.user_id}</p>
                                                 </div>
                                             </div>
