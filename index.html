@@ -6289,6 +6289,20 @@ INSTRUCTIONS:
           const [returnPath, setReturnPath] = useState(null);
           const [vcRoomActive, setVcRoomActive] = useState(false);
           const [vcRoomMinimized, setVcRoomMinimized] = useState(false);
+          const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+          useEffect(() => {
+              const handleOffline = () => setIsOffline(true);
+              const handleOnline = () => {
+                  setIsOffline(false);
+                  if (typeof supabase !== 'undefined' && supabase && supabase.realtime) {
+                      try { supabase.realtime.connect(); } catch(e) {}
+                  }
+              };
+              window.addEventListener('offline', handleOffline);
+              window.addEventListener('online', handleOnline);
+              return () => { window.removeEventListener('offline', handleOffline); window.removeEventListener('online', handleOnline); };
+          }, []);
 
           useEffect(() => {
               const fadeTimer = setTimeout(() => setSplashFading(true), 1500);
@@ -8097,6 +8111,20 @@ INSTRUCTIONS:
               )}
 
               <GlobalDialog />
+              
+              {isOffline && (
+                  <div className="fixed inset-0 z-[4000000] bg-[#010B1C]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white animate-in fade-in">
+                      <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+                          <div className="absolute inset-0 border-4 border-[#0AE0D0] border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-2 border-4 border-[#F9D33A] border-b-transparent rounded-full animate-[spin_1.5s_linear_infinite_reverse]"></div>
+                          <i className="fa-solid fa-wifi text-4xl text-red-500 absolute animate-ping opacity-20"></i>
+                          <i className="fa-solid fa-graduation-cap text-3xl text-[#00FFFF] animate-pulse relative z-10"></i>
+                      </div>
+                      <h3 className="text-xl font-black mb-2 text-[#00FFFF] uppercase tracking-widest drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">Connection Lost</h3>
+                      <p className="text-[#A4DFE6] text-sm font-bold animate-pulse">Waiting for internet to reconnect...</p>
+                  </div>
+              )}
+
             </div>
             </VoiceRoomErrorBoundary>
           );
