@@ -1143,8 +1143,11 @@
         // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead }) => {
             const [dmInput, setDmInput] = useState('');
+            const [pendingImage, setPendingImage] = useState(null);
+            const [replyingTo, setReplyingTo] = useState(null);
+            const [fullScreenImage, setFullScreenImage] = useState(null);
             const chatEndRef = useRef(null);
             const [showRequestsInbox, setShowRequestsInbox] = useState(false);
 
@@ -1159,7 +1162,17 @@
                         syncFriendStatus(activeChatUser.id);
                     }
                 }
-            }, [activeChatUser, friends]);
+                if (activeChatUser && markChatAsRead) {
+                    markChatAsRead(activeChatUser.id);
+                }
+            }, [activeChatUser, friends, dms]);
+
+            const unreadCounts = useMemo(() => {
+                return Object.keys(dms).reduce((acc, uid) => {
+                    acc[uid] = dms[uid].filter(m => String(m.sender) !== String(currentUserId) && m.status !== 'read').length;
+                    return acc;
+                }, {});
+            }, [dms, currentUserId]);
 
             if (activeChatUser) {
                 const targetId = activeChatUser.id;
@@ -1171,6 +1184,7 @@
 
                 return (
                     <div className="flex flex-col h-full bg-[#010B1C]">
+                        <style>{`div.fixed.bottom-0.w-full.max-w-md.glass-panel { display: none !important; }`}</style>
                         <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-4">
                             <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
                             <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
@@ -1200,27 +1214,95 @@
                             {chatHistory.map((m, idx) => {
                                 const isMe = String(m.sender) === String(currentUserId);
                                 return (
-                                    <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
-                                        <div className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm shadow-sm ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none'}`}>
-                                            {m.text}
+                                    <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 group mb-1`}>
+                                        <div className={`flex items-end gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                            <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm relative ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none'}`}>
+                                                {m.replyTo && (
+                                                    <div className={`mb-2 p-2 rounded-lg text-xs border-l-2 opacity-80 ${isMe ? 'bg-[#00d8d8] border-[#010B1C] text-[#010B1C]' : 'bg-[#010B1C] border-[#00FFFF] text-[#A4DFE6]'}`} onClick={() => {}}>
+                                                        <p className="font-bold truncate">{m.replyTo.senderName || 'User'}</p>
+                                                        <p className="truncate">{m.replyTo.text || (m.replyTo.imageUrl ? '📷 Photo' : '')}</p>
+                                                    </div>
+                                                )}
+                                                {m.imageUrl && (
+                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/20 cursor-pointer" onClick={() => setFullScreenImage(m.imageUrl)}>
+                                                        <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
+                                                    </div>
+                                                )}
+                                                <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                                                <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
+                                                    {new Date(m.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    {isMe && (
+                                                        <span>
+                                                            {m.status === 'read' ? <i className="fa-solid fa-check-double text-blue-600"></i> :
+                                                             m.status === 'delivered' ? <i className="fa-solid fa-check-double text-gray-500"></i> :
+                                                             <i className="fa-solid fa-check text-gray-500"></i>}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setReplyingTo(m)} className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 mb-1">
+                                                <i className="fa-solid fa-reply text-xs"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 );
                             })}
                             <div ref={chatEndRef} />
                         </div>
-                        <div className="p-3 bg-[#021633] border-t border-[#0AE0D0]/30 flex gap-2 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shrink-0">
+                        {replyingTo && (
+                            <div className="mx-4 mt-2 bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-2 border-[#00FFFF] pl-2">
+                                    <p className="text-xs font-bold text-[#00FFFF] truncate">{replyingTo.senderName || (String(replyingTo.sender) === String(currentUserId) ? 'You' : 'User')}</p>
+                                    <p className="text-[10px] text-[#A4DFE6] truncate">{replyingTo.text || (replyingTo.imageUrl ? '📷 Photo' : '')}</p>
+                                </div>
+                                <button onClick={() => setReplyingTo(null)} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                            </div>
+                        )}
+                        {pendingImage && (
+                            <div className="mx-4 mt-2 w-fit bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="w-16 h-16 rounded-lg bg-black/50 overflow-hidden border border-[#00FFFF]/30 relative">
+                                    <img src={pendingImage} className="w-full h-full object-cover" />
+                                    <button onClick={() => setPendingImage(null)} className="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 rounded-bl-lg flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="p-3 bg-[#021633] border-t border-[#0AE0D0]/30 flex gap-2 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shrink-0 items-center">
+                            <button onClick={() => document.getElementById('dm-image-upload').click()} disabled={!canSend} className="w-10 h-10 shrink-0 bg-[#0AE0D0]/10 text-[#00FFFF] rounded-full flex items-center justify-center hover:bg-[#0AE0D0]/30 transition-colors disabled:opacity-50">
+                                <i className="fa-solid fa-image"></i>
+                            </button>
+                            <input type="file" id="dm-image-upload" accept="image/*" className="hidden" onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const canvas = document.createElement('canvas');
+                                        let width = img.width, height = img.height;
+                                        const maxDim = 800; 
+                                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; } 
+                                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                                        canvas.width = width; canvas.height = height;
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(img, 0, 0, width, height);
+                                        setPendingImage(canvas.toDataURL('image/jpeg', 0.5));
+                                    };
+                                    img.src = ev.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                                e.target.value = ''; 
+                            }} />
                             <input 
                                 value={dmInput} 
                                 onChange={(e) => setDmInput(e.target.value)} 
-                                onKeyDown={(e) => { if (e.key === 'Enter' && dmInput.trim() && canSend) { sendPrivateDM(targetId, dmInput.trim()); setDmInput(''); } }} 
+                                onKeyDown={(e) => { if (e.key === 'Enter' && (dmInput.trim() || pendingImage) && canSend) { sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo); setDmInput(''); setPendingImage(null); setReplyingTo(null); } }} 
                                 placeholder={isFriend ? "Type a message..." : (canSend ? `Type a message... (${3 - mySentCount} left)` : "Waiting for friend request approval")} 
                                 disabled={!canSend}
                                 className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors disabled:opacity-50" 
                             />
                             <button 
-                                onClick={() => { if(dmInput.trim() && canSend) { sendPrivateDM(targetId, dmInput.trim()); setDmInput(''); } }} 
-                                disabled={!canSend || !dmInput.trim()}
+                                onClick={() => { if((dmInput.trim() || pendingImage) && canSend) { sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo); setDmInput(''); setPendingImage(null); setReplyingTo(null); } }} 
+                                disabled={!canSend || (!dmInput.trim() && !pendingImage)}
                                 className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
                             >
                                 <i className="fa-solid fa-paper-plane"></i>
@@ -1260,6 +1342,7 @@
                                 </div>
                             </div>
                         )}
+                        {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
                     </div>
                 );
             }
@@ -1306,19 +1389,40 @@
                             finalName = (metaName && !metaName.startsWith('User ')) ? metaName : `User ${String(uid)}`;
                         }
                         const finalPhoto = targetUserMeta.photo || metaPhoto || null;
+                        const unreadCount = unreadCounts[uid] || 0;
 
                         return (
-                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#021633] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors mb-3 shadow-sm group">
+                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#021633] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors mb-3 shadow-sm group relative">
                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white flex items-center justify-center font-black text-xl border border-[#00FFFF]/40 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
                                     {finalPhoto ? <img src={finalPhoto} className="w-full h-full object-cover" /> : String(finalName).charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className="font-bold text-white truncate pr-2">{finalName}</h4>
-                                        {lastMsg && <span className="text-[9px] text-gray-500 shrink-0">{new Date(lastMsg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                                        <h4 className={`font-bold truncate pr-2 ${unreadCount > 0 ? 'text-[#00FFFF]' : 'text-white'}`}>{finalName}</h4>
+                                        {lastMsg && <span className={`text-[9px] shrink-0 ${unreadCount > 0 ? 'text-[#00FFFF] font-bold' : 'text-gray-500'}`}>{new Date(lastMsg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                                     </div>
                                     <p className="text-[10px] text-[#00FFFF] mb-1 font-mono">ID: {String(uid)}</p>
-                                    <p className="text-xs text-[#A4DFE6] truncate opacity-80">{lastMsg?.text || 'No messages'}</p>
+                                    <div className="flex justify-between items-center">
+                                        <p className={`text-xs truncate opacity-80 ${unreadCount > 0 ? 'text-white font-bold' : 'text-[#A4DFE6]'}`}>
+                                            {lastMsg ? (
+                                                <>
+                                                    {String(lastMsg.sender) === String(currentUserId) && (
+                                                        <span className="mr-1 opacity-70">
+                                                            {lastMsg.status === 'read' ? <i className="fa-solid fa-check-double text-blue-500"></i> :
+                                                             lastMsg.status === 'delivered' ? <i className="fa-solid fa-check-double"></i> :
+                                                             <i className="fa-solid fa-check"></i>}
+                                                        </span>
+                                                    )}
+                                                    {lastMsg.text || (lastMsg.imageUrl ? '📷 Photo' : '')}
+                                                </>
+                                            ) : 'No messages'}
+                                        </p>
+                                        {unreadCount > 0 && (
+                                            <span className="bg-[#00FFFF] text-[#010B1C] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.6)] animate-pulse">
+                                                {unreadCount}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -1946,6 +2050,9 @@
             const [sentRequests, setSentRequests] = useState([]);
             const [dms, setDms] = useState({});
             const [activeChatUser, setActiveChatUser] = useState(null);
+            
+            const activeChatUserRef = useRef(null);
+            useEffect(() => { activeChatUserRef.current = activeChatUser; }, [activeChatUser]);
 
             const friendsRef = useRef([]);
             useEffect(() => { friendsRef.current = friends; }, [friends]);
@@ -2112,6 +2219,33 @@
                             return { ...currDms, [senderId]: updatedHistory };
                         });
                         return currFriends;
+                    });
+                    
+                    if (activeChatUserRef.current && activeChatUserRef.current.id === senderId) {
+                        sendDirectMessage(senderId, { type: 'MESSAGE_STATUS', status: 'read', targetId: currentUserId, msgId: data.id });
+                    } else {
+                        sendDirectMessage(senderId, { type: 'MESSAGE_STATUS', status: 'delivered', targetId: currentUserId, msgId: data.id });
+                    }
+                    
+                } else if (data.type === 'MESSAGE_STATUS') {
+                    const chatUserId = String(data.targetId);
+                    setDms(currDms => {
+                        const history = currDms[chatUserId] || [];
+                        let changed = false;
+                        const updated = history.map(m => {
+                            if (String(m.sender) === String(currentUserId) && m.status !== 'read') {
+                                if (data.status === 'read' || (data.status === 'delivered' && m.status !== 'delivered')) {
+                                    changed = true;
+                                    return { ...m, status: data.status };
+                                }
+                            }
+                            return m;
+                        });
+                        if (changed) {
+                            setCloudData('dms_' + chatUserId, updated);
+                            return { ...currDms, [chatUserId]: updated };
+                        }
+                        return currDms;
                     });
                 } else if (data.type === 'ROOM_EVENT') {
                     const { event, payload: eventData } = data;
@@ -2301,7 +2435,7 @@
                 sendDirectMessage(targetId, payload);
             };
 
-            const sendPrivateDM = (targetId, text) => {
+            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null) => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
                 const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
@@ -2313,17 +2447,38 @@
                 
                 const msgId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
                 const newMsg = { 
-                    id: msgId, sender: currentUserId, text: text, time: Date.now(), 
-                    targetName: activeChatUser?.name || `User ${targetId}`, 
-                    targetPhoto: activeChatUser?.photo || '' 
+                    id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, time: Date.now(), 
+                    targetName: activeChatUserRef.current?.name || `User ${targetId}`, 
+                    targetPhoto: activeChatUserRef.current?.photo || '',
+                    status: 'sent'
                 };
                 const updatedHistory = [...history, newMsg];
                 
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
                 setCloudData('dms_' + targetId, updatedHistory);
                 
-                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text };
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo };
                 sendDirectMessage(targetId, payload);
+            };
+
+            const markChatAsRead = (targetId) => {
+                setDms(curr => {
+                    const history = curr[targetId] || [];
+                    let changed = false;
+                    const updated = history.map(m => {
+                        if (String(m.sender) !== String(currentUserId) && m.status !== 'read') {
+                            changed = true;
+                            return { ...m, status: 'read' };
+                        }
+                        return m;
+                    });
+                    if (changed) {
+                        setCloudData('dms_' + targetId, updated);
+                        sendDirectMessage(targetId, { type: 'MESSAGE_STATUS', status: 'read', targetId: currentUserId });
+                        return { ...curr, [targetId]: updated };
+                    }
+                    return curr;
+                });
             };
 
             const handlePeerDisconnect = async (droppedUserId) => {
@@ -2921,7 +3076,7 @@
                                 </button>
                             </div>
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} />
                             </div>
                         </div>
                     );
