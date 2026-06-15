@@ -3457,8 +3457,8 @@
                                         <span className="font-bold text-[#A4DFE6] mr-2 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.userId || "unknown", user_name: m?.user_name || m?.userName || "User", photo_url: m?.image_url || m?.userAvatar }); }}>{m?.user_name || m?.userName || "User"}:</span>
                                         <span className="text-white">{m.message}</span>
                                         {m.image_url && (
-                                            <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px] cursor-pointer" onClick={() => setFullScreenImage(m.image_url)}>
-                                                <img src={m.image_url} alt="attached" className="w-full h-auto object-cover" />
+                                            <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(m.image_url)}>
+                                                <img src={m.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
                                             </div>
                                         )}
                                     </div>
@@ -5277,7 +5277,7 @@ INSTRUCTIONS:
             };
 
             const sendChat = (text, imageUrl = null) => {
-                const payload = { id: Date.now() + Math.random().toString(), userId: String(tgUser.id), userName: tgUser.first_name, text, imageUrl, time: new Date().toISOString() };
+                const payload = { id: Date.now() + Math.random().toString(), userId: String(tgUser.id), userName: tgUser.first_name, userAvatar: tgUser.photo_url, text, imageUrl, time: new Date().toISOString() };
                 realtimeChannel?.send({ type: 'broadcast', event: 'text_chat', payload });
                 setChatMessages(prev => [...prev, payload]); // Optimistic update
             };
@@ -5768,15 +5768,28 @@ INSTRUCTIONS:
                                             </div>
                                         );
                                     }
+                                    
+                                    const senderName = msg?.user_name || msg?.userName || "User";
+                                    const senderPhoto = msg?.user_avatar || msg?.userAvatar || msg?.photo_url || msg?.photoUrl || null;
+                                    const senderId = msg?.user_id || msg?.userId || "unknown";
+
                                     return (
-                                        <div key={msg.id || idx} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2">
-                                            <span className="font-bold text-[#A4DFE6] mr-2 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: msg?.user_id || msg?.userId || "unknown", user_name: msg?.user_name || msg?.userName || "User", photo_url: msg?.image_url || msg?.userAvatar }); }}>{msg?.user_name || msg?.userName || "User"}:</span>
-                                            <span className="text-white">{msg.text}</span>
-                                            {msg.imageUrl && (
-                                                <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[200px] cursor-pointer" onClick={() => setFullScreenImage(msg.imageUrl)}>
-                                                    <img src={msg.imageUrl} alt="attached" className="w-full h-auto object-cover" />
-                                                </div>
-                                            )}
+                                        <div key={msg.id || idx} className="flex items-end gap-2 max-w-[85%] animate-in fade-in slide-in-from-bottom-2">
+                                            <div 
+                                                className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer shadow-sm"
+                                                onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: senderId, user_name: senderName, photo_url: senderPhoto }); }}
+                                            >
+                                                {senderPhoto ? <img src={senderPhoto} className="w-full h-full object-cover" /> : senderName.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit shadow-sm">
+                                                <span className="font-bold text-[#A4DFE6] cursor-pointer hover:underline text-[10px] block mb-0.5 leading-none" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: senderId, user_name: senderName, photo_url: senderPhoto }); }}>{senderName}</span>
+                                                <span className="text-white break-words whitespace-pre-wrap leading-tight">{msg.text || msg.message}</span>
+                                                {(msg.imageUrl || msg.image_url) && (
+                                                    <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(msg.imageUrl || msg.image_url)}>
+                                                        <img src={msg.imageUrl || msg.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
