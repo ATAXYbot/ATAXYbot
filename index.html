@@ -2281,8 +2281,13 @@
                                 return currDms; // Discard 4th message if not friends
                             }
                             const newMsg = { 
-                                id: data.id, sender: senderId, text: data.text, time: Date.now(),
-                                senderName, senderPhoto
+                                id: data.id, 
+                                sender: senderId, 
+                                text: data.text, 
+                                imageUrl: data.imageUrl, 
+                                replyTo: data.replyTo, 
+                                time: Date.now(),
+                                senderName, senderPhoto, status: 'received'
                             };
                             const updatedHistory = [...history, newMsg];
                             setCloudData('dms_' + senderId, updatedHistory);
