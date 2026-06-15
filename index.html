@@ -1143,35 +1143,17 @@
         // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead }) => {
             const [dmInput, setDmInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
             const [replyingTo, setReplyingTo] = useState(null);
             const [fullScreenImage, setFullScreenImage] = useState(null);
+            const chatEndRef = useRef(null);
             const [showRequestsInbox, setShowRequestsInbox] = useState(false);
             const [showSearch, setShowSearch] = useState(false);
             const [searchInput, setSearchInput] = useState('');
             const [searchResult, setSearchResult] = useState(null);
             const [isSearching, setIsSearching] = useState(false);
-            const chatContainerRef = useRef(null);
-            const [showScrollDown, setShowScrollDown] = useState(false);
-            const initialScrollDoneRef = useRef(false);
-
-            const scrollToBottom = (behavior = 'smooth') => {
-                if (chatContainerRef.current) {
-                    chatContainerRef.current.scrollTo({
-                        top: chatContainerRef.current.scrollHeight,
-                        behavior: behavior
-                    });
-                }
-            };
-
-            const handleScroll = (e) => {
-                const { scrollTop, scrollHeight, clientHeight } = e.target;
-                // Show button if we are scrolled up more than 100px from the bottom
-                const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-                setShowScrollDown(!isNearBottom);
-            };
 
             const handleSearch = async () => {
                 const trimmedId = searchInput.trim();
@@ -1227,41 +1209,10 @@
             };
 
             useEffect(() => {
-                if (activeChatUser) {
-                    initialScrollDoneRef.current = false;
-                    const history = dms[activeChatUser.id] || [];
-                    const firstUnread = history.find(m => String(m.sender) !== String(currentUserId) && m.status !== 'read');
-                    
-                    setTimeout(() => {
-                        if (firstUnread) {
-                            const el = document.getElementById('msg-' + firstUnread.id);
-                            if (el && chatContainerRef.current) {
-                                chatContainerRef.current.scrollTo({ top: el.offsetTop - 60, behavior: 'auto' });
-                            } else {
-                                scrollToBottom('auto');
-                            }
-                        } else {
-                            scrollToBottom('auto');
-                        }
-                        initialScrollDoneRef.current = true;
-                    }, 50);
-                }
-            }, [activeChatUser]);
+                chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [dms, activeChatUser]);
 
             useEffect(() => {
-                if (activeChatUser && initialScrollDoneRef.current) {
-                    const history = dms[activeChatUser.id] || [];
-                    const lastMsg = history[history.length - 1];
-                    if (lastMsg && String(lastMsg.sender) === String(currentUserId)) {
-                        scrollToBottom('smooth');
-                    } else if (chatContainerRef.current) {
-                        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-                        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-                        if (isNearBottom) {
-                            scrollToBottom('smooth');
-                        }
-                    }
-                }
                 if (activeChatUser && syncFriendStatus) {
                     const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(activeChatUser.id)) : false;
                     if (!isFriend) {
@@ -1289,7 +1240,7 @@
                 const canSend = isFriend || mySentCount < 3;
 
                 return (
-                    <div className="flex flex-col h-full bg-[#010B1C] relative">
+                    <div className="flex flex-col h-full bg-[#010B1C]">
                         <style>{`div.fixed.bottom-0.w-full.max-w-md.glass-panel { display: none !important; }`}</style>
                         <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-4">
                             <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
@@ -1309,7 +1260,7 @@
                                 )}
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4" ref={chatContainerRef} onScroll={handleScroll}>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
                             {chatHistory.length === 0 && (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                                     <i className="fa-solid fa-message text-4xl mb-3 opacity-50"></i>
@@ -1320,9 +1271,19 @@
                             {chatHistory.map((m, idx) => {
                                 const isMe = String(m.sender) === String(currentUserId);
                                 return (
-                                    <div key={idx} id={`msg-${m.id}`} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 group mb-1`}>
+                                    <div key={idx} id={`msg-${m.id}`} className={`flex items-end gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 group mb-1`}>
+                                        {!isMe && (
+                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
+                                                {activeChatUser.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : (activeChatUser.name || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
                                         <div className={`flex items-end gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                             <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm relative ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none'}`}>
+                                                {m.isAutoMsg && (
+                                                    <div className={`text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-1 ${isMe ? 'text-[#010B1C]/60' : 'text-[#00FFFF]/80'}`}>
+                                                        <i className="fa-solid fa-robot"></i> Auto Message
+                                                    </div>
+                                                )}
                                                 {m.replyTo && (
                                                     <div className={`mb-2 p-2 rounded-lg text-xs border-l-2 opacity-80 ${isMe ? 'bg-[#00d8d8] border-[#010B1C] text-[#010B1C]' : 'bg-[#010B1C] border-[#00FFFF] text-[#A4DFE6]'}`} onClick={() => {}}>
                                                         <p className="font-bold truncate">{m.replyTo.senderName || 'User'}</p>
@@ -1334,7 +1295,7 @@
                                                         <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
                                                     </div>
                                                 )}
-                                                <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                                                <p className={`whitespace-pre-wrap break-words ${m.isAutoMsg ? 'italic font-medium' : ''}`}>{m.text}</p>
                                                 <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
                                                     {new Date(m.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                     {isMe && (
@@ -1350,9 +1311,15 @@
                                                 <i className="fa-solid fa-reply text-xs"></i>
                                             </button>
                                         </div>
+                                        {isMe && (
+                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto })}>
+                                                {currentUserPhoto ? <img src={currentUserPhoto} className="w-full h-full object-cover" /> : (currentUserName || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
+                            <div ref={chatEndRef} />
                         </div>
                         {replyingTo && (
                             <div className="mx-4 mt-2 bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
@@ -1413,11 +1380,6 @@
                                 <i className="fa-solid fa-paper-plane"></i>
                             </button>
                         </div>
-                        {showScrollDown && (
-                            <button onClick={() => scrollToBottom('smooth')} className="absolute bottom-[80px] right-4 w-10 h-10 bg-[#021633] border border-[#00FFFF]/50 text-[#00FFFF] rounded-full shadow-[0_0_15px_rgba(0,255,255,0.3)] flex items-center justify-center z-[100] hover:bg-[#00FFFF]/10 active:scale-95 transition-all">
-                                <i className="fa-solid fa-chevron-down"></i>
-                            </button>
-                        )}
                         {showRequestsInbox && (
                             <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
                                 <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e=>e.stopPropagation()}>
@@ -2583,12 +2545,12 @@
                 sendDirectMessage(targetId, payload);
             };
 
-            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null, isAutoMsg = false) => {
+            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null) => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
                 const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
                 
-                if (!isFriend && mySentCount >= 3 && !isAutoMsg) {
+                if (!isFriend && mySentCount >= 3) {
                     safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
                     return;
                 }
@@ -2598,15 +2560,14 @@
                     id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, time: Date.now(), 
                     targetName: activeChatUserRef.current?.name || `User ${targetId}`, 
                     targetPhoto: activeChatUserRef.current?.photo || '',
-                    status: 'sent',
-                    isAutoMsg
+                    status: 'sent'
                 };
                 const updatedHistory = [...history, newMsg];
                 
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
                 setCloudData('dms_' + targetId, updatedHistory);
                 
-                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo, isAutoMsg };
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo };
                 sendDirectMessage(targetId, payload);
             };
 
@@ -3225,7 +3186,7 @@
                                 </button>
                             </div>
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} />
                             </div>
                         </div>
                     );
@@ -8127,4 +8088,4 @@ INSTRUCTIONS:
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-</body>aaaaaa
+</body>
