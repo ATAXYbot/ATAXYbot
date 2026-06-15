@@ -1760,7 +1760,7 @@
 
                     peer.oniceconnectionstatechange = () => {
                         if (peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'closed') {
-                            if (onPeerDisconnect) onPeerDisconnect(peerId);
+                            // Do NOT trigger logical disconnect on P2P network fluctuations.
                         }
                     };
 
@@ -1846,6 +1846,13 @@
                         try {
                             const payload = JSON.parse(message.toString());
                             if (payload.senderId && payload.senderId !== currentUserId) {
+                                if (peersRef.current[payload.senderId]) {
+                                    peersRef.current[payload.senderId].close();
+                                    delete peersRef.current[payload.senderId];
+                                    setRemoteStreams(prev => {
+                                        const ns = {...prev}; delete ns[payload.senderId]; return ns;
+                                    });
+                                }
                                 if (onPeerDisconnect) onPeerDisconnect(payload.senderId);
                             }
                         } catch(e) {}
@@ -1935,6 +1942,7 @@
                                     const ns = {...prev}; delete ns[senderId]; return ns;
                                 });
                             }
+                            if (onPeerDisconnect) onPeerDisconnect(senderId);
                         }
                     } catch(e) {}
                 });
@@ -2659,11 +2667,9 @@
                         conn.on('data', handlePeerData);
                         conn.on('close', () => {
                             dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== conn.peer);
-                            handlePeerDisconnect(conn.peer.replace('ataxy-vc-', ''));
                         });
                         conn.on('error', () => {
                             dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== conn.peer);
-                            handlePeerDisconnect(conn.peer.replace('ataxy-vc-', ''));
                         });
                     });
                 };
@@ -2703,11 +2709,9 @@
                         conn.on('data', handlePeerData);
                         conn.on('close', () => {
                             dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== targetPeerId);
-                            handlePeerDisconnect(p.user_id);
                         });
                         conn.on('error', () => {
                             dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== targetPeerId);
-                            handlePeerDisconnect(p.user_id);
                         });
                     }
                 });
