@@ -1153,8 +1153,9 @@
             const [showSearch, setShowSearch] = useState(false);
             const [searchInput, setSearchInput] = useState('');
             const [searchResult, setSearchResult] = useState(null);
+            const [isSearching, setIsSearching] = useState(false);
 
-            const handleSearch = () => {
+            const handleSearch = async () => {
                 const trimmedId = searchInput.trim();
                 if (!trimmedId || !/^\d+$/.test(trimmedId)) {
                     safeAlert("Please enter a valid numeric ID.");
@@ -1165,6 +1166,7 @@
                     return;
                 }
 
+                setIsSearching(true);
                 let foundUser = null;
                 const friend = friends.find(f => String(f.id) === trimmedId);
                 if (friend) {
@@ -1182,12 +1184,28 @@
                     const msgWithSenderMeta = msgsRev.find(m => m.senderName && !m.senderName.startsWith('User '));
                     const metaName = msgWithSenderMeta?.senderName || msgWithTargetMeta?.targetName;
                     const metaPhoto = msgWithSenderMeta?.senderPhoto || msgWithTargetMeta?.targetPhoto;
-                    foundUser = { id: trimmedId, name: metaName || `User ${trimmedId}`, photo: metaPhoto || null };
+                    if (metaName && !metaName.startsWith('User ')) {
+                        foundUser = { id: trimmedId, name: metaName, photo: metaPhoto || null };
+                    }
+                }
+                
+                if (!foundUser) {
+                    try {
+                        const res = await fetch(`${BACKEND_URL}/api/neet/users`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            const serverUser = data.users?.find(u => String(u.telegram_user_id) === String(trimmedId));
+                            if (serverUser) {
+                                foundUser = { id: trimmedId, name: serverUser.first_name || serverUser.username || `User ${trimmedId}`, photo: serverUser.profile_photo_url || null };
+                            }
+                        }
+                    } catch (e) { console.warn("Failed to fetch user from server", e); }
                 }
                 if (!foundUser) {
                     foundUser = { id: trimmedId, name: `User ${trimmedId}`, photo: null };
                 }
                 setSearchResult(foundUser);
+                setIsSearching(false);
             };
 
             useEffect(() => {
@@ -1411,7 +1429,9 @@
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4"><i className="fa-solid fa-search text-[#00FFFF]"></i> Find User by ID</h3>
                                 <div className="flex gap-2">
                                     <input value={searchInput} onChange={e => setSearchInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Enter user ID..." className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors" />
-                                    <button onClick={handleSearch} className="px-4 py-2 rounded-xl bg-[#00FFFF] text-[#010B1C] font-bold shadow-md hover:bg-[#00d8d8] transition-colors">Search</button>
+                                    <button onClick={handleSearch} disabled={isSearching} className="px-4 py-2 rounded-xl bg-[#00FFFF] text-[#010B1C] font-bold shadow-md hover:bg-[#00d8d8] transition-colors disabled:opacity-50 min-w-[80px]">
+                                        {isSearching ? <i className="fa-solid fa-spinner fa-spin"></i> : "Search"}
+                                    </button>
                                 </div>
                                 {searchResult && (
                                     <div className="mt-4 border-t border-[#0AE0D0]/20 pt-4">
@@ -2510,12 +2530,12 @@
                 sendDirectMessage(targetId, payload);
             };
 
-            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null) => {
+            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null, isAutoMsg = false) => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
                 const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
                 
-                if (!isFriend && mySentCount >= 3) {
+                if (!isFriend && mySentCount >= 3 && !isAutoMsg) {
                     safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
                     return;
                 }
@@ -2525,14 +2545,15 @@
                     id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, time: Date.now(), 
                     targetName: activeChatUserRef.current?.name || `User ${targetId}`, 
                     targetPhoto: activeChatUserRef.current?.photo || '',
-                    status: 'sent'
+                    status: 'sent',
+                    isAutoMsg
                 };
                 const updatedHistory = [...history, newMsg];
                 
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
                 setCloudData('dms_' + targetId, updatedHistory);
                 
-                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo };
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo, isAutoMsg };
                 sendDirectMessage(targetId, payload);
             };
 
@@ -8053,4 +8074,4 @@ INSTRUCTIONS:
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-</body>
+</body>aaaaaa
