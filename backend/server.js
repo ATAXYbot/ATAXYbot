@@ -848,7 +848,7 @@ app.listen(PORT, () => {
 // ============================================================
 // TELEGRAM BOT WEBAPP INTEGRATION
 // ============================================================
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7977433269:AAFCtV_YvR8zcg5tiAr433tNE-4bSCgjkZ0';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_NEW_BOT_TOKEN_HERE';
 // Automatically try to configure the Bot's Menu button to launch your App
 const setupTelegramBotMenu = async () => {
   if (!TELEGRAM_BOT_TOKEN) return;
