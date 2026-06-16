@@ -4415,8 +4415,8 @@ INSTRUCTIONS:
             };
 
             return (
-                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100vh_-_60px_-_env(safe-area-inset-top,_0px))]">
-                    <div className="fixed top-[calc(60px_+_env(safe-area-inset-top,_0px))] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                <div className="pb-[80px] animate-in fade-in flex flex-col h-[calc(100dvh_-_60px_-_max(env(safe-area-inset-top),_24px))]">
+                    <div className="fixed top-[calc(60px_+_max(env(safe-area-inset-top),_24px))] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
                             <div>
@@ -4444,7 +4444,19 @@ INSTRUCTIONS:
                     </div>
 
                     <form onSubmit={sendMsg} className="fixed bottom-[65px] w-full max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
-                        <input value={msg} onChange={e => setMsg(e.target.value)} type="text" placeholder="Type a message..." className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-0 focus:outline-none text-gray-900 dark:text-white" />
+                        <input 
+                            value={msg} 
+                            onChange={e => setMsg(e.target.value)} 
+                            onFocus={() => {
+                                setTimeout(() => {
+                                    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                    if (window.Telegram?.WebApp?.expand) window.Telegram.WebApp.expand();
+                                }, 300);
+                            }}
+                            type="text" 
+                            placeholder="Type a message..." 
+                            className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-0 focus:outline-none text-gray-900 dark:text-white" 
+                        />
                         <button type="submit" className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md"><i className="fa-solid fa-paper-plane text-sm"></i></button>
                     </form>
 
