@@ -13,6 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta name="theme-color" content="#00A7A7" id="theme-color-meta">
 
     <link rel="icon" href="data:,">
     
@@ -873,7 +874,7 @@
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md glass-panel border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_env(safe-area-inset-top,_0px))] pt-[env(safe-area-inset-top,_0px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md glass-panel border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_max(env(safe-area-inset-top),_24px))] pt-[max(env(safe-area-inset-top),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
                         <AtaxyLogo className="w-9 h-9 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
                         <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
@@ -6567,7 +6568,7 @@ INSTRUCTIONS:
         // ==========================================
         const GlobalStatusBar = ({ isVoiceRoom }) => {
             return (
-                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md h-[env(safe-area-inset-top,24px)] z-[9999999] ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-gray-50 dark:bg-gray-950'}`}></div>
+                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md h-[max(env(safe-area-inset-top),_24px)] z-[9999999] transition-colors duration-300 ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-[#00A7A7] dark:bg-[#021633] shadow-md'}`}></div>
             );
         };
 
@@ -6577,14 +6578,17 @@ INSTRUCTIONS:
         function App() {
           const [isDarkMode, setIsDarkMode] = useState(() => safeGetStr('ataxy_theme', 'dark') === 'dark');
           useEffect(() => {
+            const themeMeta = document.getElementById('theme-color-meta');
             if (isDarkMode) { 
                 document.documentElement.classList.add('dark'); 
                 safeSetItem('ataxy_theme', 'dark'); 
-                try { if(window.Telegram?.WebApp) window.Telegram.WebApp.setHeaderColor('#010B1C'); } catch(e){}
+                try { if(window.Telegram?.WebApp) { window.Telegram.WebApp.setHeaderColor('#021633'); window.Telegram.WebApp.setBackgroundColor('#010B1C'); } } catch(e){}
+                if (themeMeta) themeMeta.setAttribute('content', '#021633');
             } else { 
                 document.documentElement.classList.remove('dark'); 
                 safeSetItem('ataxy_theme', 'light'); 
-                try { if(window.Telegram?.WebApp) window.Telegram.WebApp.setHeaderColor('#FBFBFB'); } catch(e){}
+                try { if(window.Telegram?.WebApp) { window.Telegram.WebApp.setHeaderColor('#00A7A7'); window.Telegram.WebApp.setBackgroundColor('#FBFBFB'); } } catch(e){}
+                if (themeMeta) themeMeta.setAttribute('content', '#00A7A7');
             }
           }, [isDarkMode]);
 
@@ -8353,7 +8357,7 @@ INSTRUCTIONS:
 
           return (
             <VoiceRoomErrorBoundary>
-            <div className={`min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden ${!(activePracticeChapter && currentTab === 'questions') ? 'pt-[calc(60px_+_env(safe-area-inset-top,_24px))]' : 'pt-[env(safe-area-inset-top,_24px)]'}`}>
+            <div className={`min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden ${!(activePracticeChapter && currentTab === 'questions') ? 'pt-[calc(60px_+_max(env(safe-area-inset-top),_24px))]' : 'pt-[max(env(safe-area-inset-top),_24px)]'}`}>
               
               {/* Addictive Animated Ambient Background for Blank Spaces */}
               <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gray-50 dark:bg-gray-950">
