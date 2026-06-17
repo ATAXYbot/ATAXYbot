@@ -182,7 +182,14 @@
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 scroll-smooth">
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
+        <script>
+            // Override Babel's default settings to strictly use the classic React runtime
+            // This prevents the "jsx-runtime" and "importSource" compilation crashes
+            Babel.registerPreset('react-classic', {
+                presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]]
+            });
+        </script>
+        <script type="text/babel" data-presets="react-classic" data-type="module">
         const { useState, useRef, useEffect, useMemo } = React;
 
         const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
@@ -739,6 +746,43 @@
                     safeText = String(text);
                 }
             }
+
+            // Universal Features State
+            const [currentView, setCurrentView] = useState('rooms');
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+
+            // Sub tab state to align with VoiceRoomsTab logic
+            const [vcSubTab, setVcSubTab] = useState('rooms');
+            const [roomToJoinWithPassword, setRoomToJoinWithPassword] = useState(null);
+            const [joinPasswordInput, setJoinPasswordInput] = useState('');
+            const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [showVCCreateModal, setShowVCCreateModal] = useState(false);
+            const [vcCreateName, setVcCreateName] = useState('');
+            const [vcCreateType, setVcCreateType] = useState('temporary');
+            const [vcCreatePass, setVcCreatePass] = useState('');
+            const [vcCreatePhoto, setVcCreatePhoto] = useState('');
+            const [vcCreatePassEnabled, setVcCreatePassEnabled] = useState(false);
+            const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+            
+            const chatEndRef = useRef(null);
+
+            // Friend System & DMs State
+            const [friends, setFriends] = useState([]);
+            const [pendingRequests, setPendingRequests] = useState([]);
+            const [sentRequests, setSentRequests] = useState([]);
+            const [dms, setDms] = useState({});
+            const [activeChatUser, setActiveChatUser] = useState(null);
+            
+            const activeChatUserRef = useRef(null);
+            useEffect(() => { activeChatUserRef.current = activeChatUser; }, [activeChatUser]);
+
+            const friendsRef = useRef([]);
+            useEffect(() => { friendsRef.current = friends; }, [friends]);
+
+            const pendingRequestsRef = useRef([]);
+            useEffect(() => { pendingRequestsRef.current = pendingRequests; }, [pendingRequests]);
+
+            const inboxClientRef = useRef(null);
 
             useEffect(() => {
                 let timeoutId;
@@ -2350,33 +2394,9 @@
             const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
             const [showRoomRequestsInbox, setShowRoomRequestsInbox] = useState(false);
 
-            useEffect(() => {
-                const handleBackEvent = (e) => {
-                    if (selectedProfileUser) { e.preventDefault(); setSelectedProfileUser(null); }
-                    else if (showVCCreateModal) { e.preventDefault(); setShowVCCreateModal(false); }
-                    else if (showJoinModal) { e.preventDefault(); setShowJoinModal(false); }
-                    else if (roomToJoinWithPassword) { e.preventDefault(); setRoomToJoinWithPassword(null); }
-                    else if (showRoomRequestsInbox) { e.preventDefault(); setShowRoomRequestsInbox(false); }
-                    else if (showRoomSettingsModal) { e.preventDefault(); setShowRoomSettingsModal(false); }
-                };
-                window.addEventListener('ataxy_back_requested', handleBackEvent);
-                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
-            }, [selectedProfileUser, showVCCreateModal, showJoinModal, roomToJoinWithPassword, showRoomRequestsInbox, showRoomSettingsModal]);
-
             // Universal Features State
             const [currentView, setCurrentView] = useState('rooms');
             const [selectedProfileUser, setSelectedProfileUser] = useState(null);
-
-            const handleAvatarClick = (userObj) => {
-                try {
-                    if (!userObj || typeof userObj !== 'object') return;
-                    setSelectedProfileUser(userObj);
-                } catch (e) { console.error("handleAvatarClick error:", e); }
-            };
-
-            // 1. Establish the Data Mesh Connections
-            const dataConnectionsRef = useRef([]);
-            const peerRef = useRef(null);
 
             // Sub tab state to align with VoiceRoomsTab logic
             const [vcSubTab, setVcSubTab] = useState('rooms');
@@ -2410,6 +2430,31 @@
             useEffect(() => { pendingRequestsRef.current = pendingRequests; }, [pendingRequests]);
 
             const inboxClientRef = useRef(null);
+
+            useEffect(() => {
+                const handleBackEvent = (e) => {
+                    if (selectedProfileUser) { e.preventDefault(); setSelectedProfileUser(null); }
+                    else if (showVCCreateModal) { e.preventDefault(); setShowVCCreateModal(false); }
+                    else if (showJoinModal) { e.preventDefault(); setShowJoinModal(false); }
+                    else if (roomToJoinWithPassword) { e.preventDefault(); setRoomToJoinWithPassword(null); }
+                    else if (showRoomRequestsInbox) { e.preventDefault(); setShowRoomRequestsInbox(false); }
+                    else if (showRoomSettingsModal) { e.preventDefault(); setShowRoomSettingsModal(false); }
+                };
+                window.addEventListener('ataxy_back_requested', handleBackEvent);
+                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
+            }, [selectedProfileUser, showVCCreateModal, showJoinModal, roomToJoinWithPassword, showRoomRequestsInbox, showRoomSettingsModal]);
+
+
+            const handleAvatarClick = (userObj) => {
+                try {
+                    if (!userObj || typeof userObj !== 'object') return;
+                    setSelectedProfileUser(userObj);
+                } catch (e) { console.error("handleAvatarClick error:", e); }
+            };
+
+            // 1. Establish the Data Mesh Connections
+            const dataConnectionsRef = useRef([]);
+            const peerRef = useRef(null);
 
             useEffect(() => {
                 if (!currentUserId || currentUserId === "1001") return;
@@ -4682,6 +4727,20 @@ INSTRUCTIONS:
             const speakerMutedRef = useRef(false);
             useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
 
+            const [availableRooms, setAvailableRooms] = useState([]);
+            const [chatMessages, setChatMessages] = useState([]);
+            const [micRequests, setMicRequests] = useState([]);
+            const [pendingInvite, setPendingInvite] = useState(null);
+
+            // --- WEPLAY-STYLE FEATURES (EMOJIS, SFX) ---
+            const [lockedSeats, setLockedSeats] = useState({});
+            const [mutedSeats, setMutedSeats] = useState({});
+            const mutedSeatsRef = useRef({});
+            useEffect(() => { mutedSeatsRef.current = mutedSeats; }, [mutedSeats]);
+            
+            const [isMinimized, setIsMinimized] = useState(false);
+            const [currentMusic, setCurrentMusic] = useState(null);
+
             // 🛡️ STRICT CONNECTION DEBOUNCE LOCK
             const [isProcessingState, setIsProcessingState] = useState(false);
             const isProcessingRef = useRef(false);
@@ -4763,21 +4822,6 @@ INSTRUCTIONS:
                     }
                 });
             }, [participants, isSpeakerMuted, mutedSeats]);
-
-            const [availableRooms, setAvailableRooms] = useState([]);
-            const [chatMessages, setChatMessages] = useState([]);
-            const [micRequests, setMicRequests] = useState([]);
-            const [pendingInvite, setPendingInvite] = useState(null);
-
-            // --- WEPLAY-STYLE FEATURES (EMOJIS, SFX) ---
-            const [lockedSeats, setLockedSeats] = useState({});
-            const [mutedSeats, setMutedSeats] = useState({});
-            const mutedSeatsRef = useRef({});
-            useEffect(() => { mutedSeatsRef.current = mutedSeats; }, [mutedSeats]);
-            
-            const [isMinimized, setIsMinimized] = useState(false);
-
-            const [currentMusic, setCurrentMusic] = useState(null);
 
             // --- ORPHANED ROOM CLEANUP ---
             useEffect(() => {
