@@ -2,5 +2,9 @@
   "name": "ataxybot",
   "version": "1.0.0",
   "description": "ATAXY Learning Telegram Mini App",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@babel/core": "^8.0.1",
+    "@babel/preset-react": "^8.0.1"
+  }
 }
