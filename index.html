@@ -1142,7 +1142,7 @@
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_max(env(safe-area-inset-top),_24px))] pt-[max(env(safe-area-inset-top),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-b border-ataxy-border z-[40] px-4 h-[calc(60px_+_max(env(safe-area-inset-top),_24px))] pt-[max(env(safe-area-inset-top),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
                         <AtaxyLogo className="w-9 h-9 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
                         <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
@@ -8514,6 +8514,7 @@ const renderHomeView = () => {
                                 else if (historyViewType === 'attempted' && isAns) include = true;
                                 else if (historyViewType === 'correct' && isCorrect) include = true;
                                 else if (historyViewType === 'incorrect' && isAns && !isCorrect) include = true;
+                                else if (historyViewType === 'notes' && questionNotes[q.id]) include = true;
 
                                 if (include) {
                                     allItems.push({
@@ -8567,11 +8568,15 @@ const renderHomeView = () => {
                     incorrect: {
                         title: 'Mistakes to Review', icon: 'fa-times-circle', emptyMsg: 'Amazing! No mistakes found.',
                         headerText: 'text-red-600 dark:text-red-500', badgeBg: 'bg-red-100 dark:bg-red-900/30', badgeText: 'text-red-800 dark:text-red-500', focusRing: 'focus:ring-red-500', borderIcon: 'border-red-200', tagBg: 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    },
+                    notes: {
+                        title: 'Personal Notes', icon: 'fa-pen-to-square', emptyMsg: 'No personal notes found.',
+                        headerText: 'text-purple-600 dark:text-purple-500', badgeBg: 'bg-purple-100 dark:bg-purple-900/30', badgeText: 'text-purple-800 dark:text-purple-500', focusRing: 'focus:ring-purple-500', borderIcon: 'border-purple-200', tagBg: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                     }
                 }[historyViewType];
 
-                return (
-                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                return ReactDOM.createPortal(
+                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setHistoryViewType(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
@@ -8637,7 +8642,7 @@ const renderHomeView = () => {
                                 )
                             })}
                         </div>
-                    </div>
+                    </div>, document.body
                 );
             };
 
@@ -8753,7 +8758,7 @@ const renderHomeView = () => {
                 });
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[200000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
                         {/* HEADER */}
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
@@ -8995,120 +9000,138 @@ const renderHomeView = () => {
                 const totalIncorrect = totalAttempted - totalCorrect;
 
                 return (
-                    <div className="pb-24 pt-6 px-5 animate-in fade-in">
-                        <div className="text-center mb-8 flex flex-col items-center animate-pop-bounce">
-                            {tgUser?.photo_url ? (
-                                <img src={tgUser.photo_url} alt={tgUser.first_name} className="w-28 h-28 rounded-full border-[4px] border-white dark:border-slate-800 shadow-[0_10px_25px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_25px_rgba(0,243,255,0.2)] mb-4 object-cover hover:scale-105 transition-transform" />
-                            ) : (
-                                <div className="w-28 h-28 rounded-full border-[4px] border-white dark:border-slate-800 shadow-[0_10px_25px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_25px_rgba(0,243,255,0.2)] mb-4 flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-5xl font-black uppercase hover:scale-105 transition-transform">
-                                    {tgUser?.first_name ? tgUser.first_name.charAt(0) : 'S'}
-                                </div>
-                            )}
-                            <h2 className="text-2xl font-black text-gray-900 dark:text-white">{tgUser.first_name}</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">ATAXY UID: {tgUser.id}</p>
+                    <div className="pb-24 animate-in fade-in relative overflow-hidden">
+                        {/* Dynamic Background */}
+                        <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-blue-500/10 via-purple-500/5 to-transparent dark:from-blue-600/20 dark:via-purple-600/10 pointer-events-none -z-10"></div>
+                        <div className="absolute -top-24 -right-24 w-64 h-64 bg-cyan-400/20 rounded-full blur-[80px] pointer-events-none -z-10"></div>
+                        <div className="absolute top-20 -left-24 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] pointer-events-none -z-10"></div>
 
-                            <button
-                                onClick={() => setShowAnalyticsModal(true)}
-                                className="mt-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-black shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-transform active:scale-95 border border-blue-400/50"
-                            >
-                                <i className="fa-solid fa-chart-line"></i> View Detailed Analytics
-                            </button>
-                            <button
-                                onClick={() => setConfirmClearScope('all')}
-                                className="mt-3 bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/30 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 w-full max-w-[250px]"
-                            >
-                                <i className="fa-solid fa-trash-can"></i> Clear All Attempts
-                            </button>
-                        </div>
-
-                        <h3 className="font-bold text-gray-800 dark:text-white mb-4 px-1 flex items-center gap-2">
-                            <i className="fa-solid fa-chart-line text-primary-500 dark:text-neon-cyan"></i> Analytics Engine
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4 mb-4 animate-pop-bounce delay-100">
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col justify-center items-center text-center cursor-pointer group hover:border-yellow-500 active:scale-95 transition-all" onClick={() => setHistoryViewType('bookmarks')}>
-                                <div className="w-14 h-14 bg-yellow-50 dark:bg-yellow-400/10 text-yellow-500 dark:text-yellow-400 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:-translate-y-1 transition-transform"><i className="fa-solid fa-bookmark"></i></div>
-                                <h4 className="font-black text-gray-900 dark:text-white text-2xl">{bookmarks.length}</h4>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">Bookmarked</p>
-                            </div>
-                            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col justify-center items-center text-center cursor-pointer group hover:border-green-500 active:scale-95 transition-all" onClick={() => setHistoryViewType('correct')}>
-                                <div className="w-14 h-14 bg-green-50 dark:bg-neon-cyan/10 text-green-500 dark:text-neon-cyan rounded-full flex items-center justify-center text-2xl mb-3 group-hover:-translate-y-1 transition-transform"><i className="fa-solid fa-bullseye"></i></div>
-                                <h4 className="font-black text-gray-900 dark:text-white text-2xl">{accuracy}%</h4>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">{totalCorrect}/{totalAttempted} Correct</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-r from-orange-400 via-red-500 to-rose-500 dark:from-slate-900 dark:to-slate-800 dark:border dark:border-orange-500/30 rounded-3xl p-6 text-white shadow-[0_10px_25px_rgba(249,115,22,0.3)] dark:shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center justify-between mb-8 animate-pop-bounce delay-200 hover:scale-[1.02] transition-transform">
-                            <div>
-                                <h4 className="font-black text-xl flex items-center gap-2 dark:text-orange-400"><i className="fa-solid fa-fire text-yellow-200 dark:text-orange-500"></i> {studyStreak.count} Day Mastery Streak!</h4>
-                                <p className="text-sm text-white/90 dark:text-gray-300 font-medium mt-1">Keep practicing every day to maintain your streak.</p>
-                            </div>
-                            <i className="fa-solid fa-bolt text-5xl opacity-20 dark:text-orange-500 dark:opacity-30 animate-pulse-soft"></i>
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-800 mb-6 animate-slide-up delay-300">
-                            <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-pie text-purple-500"></i> Detailed Analytics</h4>
-                            <div className="grid grid-cols-3 gap-2 mb-5">
-                                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => setHistoryViewType('attempted')}>
-                                    <div className="text-lg font-black text-gray-900 dark:text-white">{totalAttempted}</div>
-                                    <div className="text-[9px] text-gray-500 font-bold uppercase mt-1 tracking-wider">Attempted</div>
-                                </div>
-                                <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center border border-green-100 dark:border-green-900/30 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors" onClick={() => setHistoryViewType('correct')}>
-                                    <div className="text-lg font-black text-green-600 dark:text-green-400">{totalCorrect}</div>
-                                    <div className="text-[9px] text-green-600 dark:text-green-400 font-bold uppercase mt-1 tracking-wider">Correct</div>
-                                </div>
-                                <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center border border-red-100 dark:border-red-900/30 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" onClick={() => setHistoryViewType('incorrect')}>
-                                    <div className="text-lg font-black text-red-600 dark:text-red-400">{totalIncorrect}</div>
-                                    <div className="text-[9px] text-red-600 dark:text-red-400 font-bold uppercase mt-1 tracking-wider">Incorrect</div>
-                                </div>
-                            </div>
-                            <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Subject Wise Accuracy</h5>
-                            <div className="space-y-4">
-                                {Object.keys(subjectStats).map(subName => {
-                                    const s = subjectStats[subName];
-                                    const acc = s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0;
-                                    let barColor = 'bg-blue-500';
-                                    if (subName.toLowerCase().includes('phy')) barColor = 'bg-purple-500';
-                                    if (subName.toLowerCase().includes('bio') || subName.toLowerCase().includes('bot') || subName.toLowerCase().includes('zoo')) barColor = 'bg-green-500';
-                                    if (subName.toLowerCase().includes('chem')) barColor = 'bg-orange-500';
-                                    return (
-                                        <div key={subName}>
-                                            <div className="flex justify-between text-xs mb-1.5">
-                                                <span className="font-bold text-gray-700 dark:text-gray-300">{subName}</span>
-                                                <span className="font-bold text-gray-900 dark:text-white">{acc}% <span className="text-gray-400 font-normal">({s.correct}/{s.attempted})</span></span>
-                                            </div>
-                                            <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
-                                                <div className={`${barColor} h-full rounded-full transition-all duration-1000`} style={{ width: `${acc}%` }}></div>
-                                            </div>
+                        <div className="px-5 pt-8">
+                            {/* Profile Header */}
+                            <div className="flex flex-col items-center mb-10 relative">
+                                <div className="relative group cursor-pointer animate-pop-bounce">
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400 to-purple-500 rounded-full blur-md opacity-60 group-hover:opacity-100 transition-opacity duration-500 animate-pulse-soft"></div>
+                                    {tgUser?.photo_url ? (
+                                        <img src={tgUser.photo_url} alt={tgUser.first_name} className="relative w-32 h-32 rounded-full border-4 border-white dark:border-gray-900 shadow-xl object-cover hover:scale-[1.02] transition-transform duration-300 z-10" />
+                                    ) : (
+                                        <div className="relative w-32 h-32 rounded-full border-4 border-white dark:border-gray-900 shadow-xl flex items-center justify-center bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 text-white text-6xl font-black uppercase hover:scale-[1.02] transition-transform duration-300 z-10">
+                                            {tgUser?.first_name ? tgUser.first_name.charAt(0) : 'S'}
                                         </div>
-                                    );
-                                })}
-                                {Object.keys(subjectStats).length === 0 && <p className="text-xs text-gray-400 italic">Attempt questions to see subject data.</p>}
-                            </div>
-                        </div>
+                                    )}
+                                </div>
+                                <h2 className="text-3xl font-black text-gray-900 dark:text-white mt-5 tracking-tight">{tgUser.first_name}</h2>
+                                <div className="flex items-center gap-2 mt-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">UID: {tgUser.id}</span>
+                                </div>
 
-                        <div className="grid grid-cols-2 gap-3 mb-6 animate-slide-up delay-500">
-                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3 cursor-pointer hover:border-yellow-500 hover:shadow-md active:scale-95 transition-all" onClick={() => setHistoryViewType('bookmarks')}>
-                                <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-xl shrink-0"><i className="fa-solid fa-bookmark"></i></div>
-                                <div className="text-left">
-                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">Bookmarks</h4>
-                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{bookmarks.length} Saved</p>
+                                <div className="flex w-full gap-3 mt-6">
+                                    <button
+                                        onClick={() => setShowAnalyticsModal(true)}
+                                        className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3.5 rounded-2xl font-black shadow-[0_8px_20px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group relative overflow-hidden"
+                                    >
+                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                        <i className="fa-solid fa-chart-pie text-lg group-hover:-translate-y-0.5 transition-transform"></i>
+                                        <span className="text-[10px] uppercase tracking-widest">Full Analytics</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmClearScope('all')}
+                                        className="flex-1 bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/30 py-3.5 rounded-2xl font-bold shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 group"
+                                    >
+                                        <i className="fa-solid fa-trash-can text-lg group-hover:scale-110 transition-transform"></i>
+                                        <span className="text-[10px] uppercase tracking-widest">Clear Data</span>
+                                    </button>
                                 </div>
                             </div>
-                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3 cursor-pointer hover:border-red-500 hover:shadow-md active:scale-95 transition-all" onClick={() => setHistoryViewType('incorrect')}>
-                                <div className="w-12 h-12 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center text-xl shrink-0"><i className="fa-solid fa-times-circle"></i></div>
-                                <div className="text-left">
-                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">Mistakes</h4>
-                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{totalIncorrect} Review</p>
+
+                            {/* Performance Overview Grid */}
+                            <h3 className="font-black text-gray-800 dark:text-white text-lg mb-4 px-2 flex items-center gap-2">
+                                <i className="fa-solid fa-ranking-star text-indigo-500"></i> Performance Overview
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center items-center text-center cursor-pointer group active:scale-95 transition-all relative overflow-hidden" onClick={() => setHistoryViewType('correct')}>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-emerald-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl blur-xl"></div>
+                                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800 text-emerald-500 dark:text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mb-3 shadow-sm group-hover:scale-110 transition-transform duration-300 transform rotate-3 group-hover:rotate-0"><i className="fa-solid fa-bullseye"></i></div>
+                                    <h4 className="font-black text-gray-900 dark:text-white text-3xl tracking-tight">{accuracy}<span className="text-xl text-emerald-500">%</span></h4>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">{totalCorrect}/{totalAttempted} Correct</p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center items-center text-center cursor-pointer group active:scale-95 transition-all relative overflow-hidden" onClick={() => setHistoryViewType('bookmarks')}>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-amber-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl blur-xl"></div>
+                                    <div className="w-16 h-16 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/20 border border-amber-100 dark:border-amber-800 text-amber-500 dark:text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-3 shadow-sm group-hover:scale-110 transition-transform duration-300 transform -rotate-3 group-hover:rotate-0"><i className="fa-solid fa-bookmark"></i></div>
+                                    <h4 className="font-black text-gray-900 dark:text-white text-3xl tracking-tight">{bookmarks.length}</h4>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">Bookmarked</p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center items-center text-center cursor-pointer group active:scale-95 transition-all relative overflow-hidden" onClick={() => setHistoryViewType('incorrect')}>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-red-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl blur-xl"></div>
+                                    <div className="w-16 h-16 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/30 dark:to-rose-900/20 border border-red-100 dark:border-red-800 text-red-500 dark:text-red-400 rounded-2xl flex items-center justify-center text-3xl mb-3 shadow-sm group-hover:scale-110 transition-transform duration-300 transform rotate-3 group-hover:rotate-0"><i className="fa-solid fa-xmark"></i></div>
+                                    <h4 className="font-black text-gray-900 dark:text-white text-3xl tracking-tight">{totalIncorrect}</h4>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">Incorrect</p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center items-center text-center cursor-pointer group active:scale-95 transition-all relative overflow-hidden" onClick={() => setHistoryViewType('notes')}>
+                                    <div className="absolute -inset-2 bg-gradient-to-br from-purple-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl blur-xl"></div>
+                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/20 border border-purple-100 dark:border-purple-800 text-purple-500 dark:text-purple-400 rounded-2xl flex items-center justify-center text-3xl mb-3 shadow-sm group-hover:scale-110 transition-transform duration-300 transform -rotate-3 group-hover:rotate-0"><i className="fa-solid fa-pen-to-square"></i></div>
+                                    <h4 className="font-black text-gray-900 dark:text-white text-3xl tracking-tight">{Object.keys(questionNotes || {}).length}</h4>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">Notes</p>
                                 </div>
                             </div>
-                        </div>
 
-                        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 animate-slide-up delay-500">App Settings</h3>
-                        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 shadow-sm animate-slide-up delay-500">
-                            <div className="p-4 flex items-center justify-between hover:border-ataxy-accent-primary cursor-pointer transition-colors" onClick={() => setIsDarkMode(!isDarkMode)}>
-                                <div className="flex items-center gap-3 text-ataxy-text-primary"><i className={`fa-solid ${isDarkMode ? 'fa-moon text-yellow-400' : 'fa-sun text-orange-500'} w-5`}></i> <span className="font-bold uppercase tracking-widest text-[10px]">{isDarkMode ? 'Deep Space Focus' : 'Strategic Clarity'}</span></div>
-                                <div className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${isDarkMode ? 'bg-ataxy-accent-primary shadow-neon' : 'bg-ataxy-border'}`}>
-                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm ${isDarkMode ? 'translate-x-6' : ''}`}></div>
+                            {/* Detailed Analytics Block */}
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors"></div>
+                                <h4 className="font-black text-gray-900 dark:text-white text-lg mb-5 flex items-center gap-2"><i className="fa-solid fa-microscope text-purple-500"></i> Subject Mastery</h4>
+                                
+                                <div className="space-y-5 relative z-10">
+                                    {Object.keys(subjectStats).length > 0 ? Object.keys(subjectStats).map(subName => {
+                                        const s = subjectStats[subName];
+                                        const acc = s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0;
+                                        let barColor = 'from-blue-400 to-blue-600 shadow-blue-500/30';
+                                        let icon = 'fa-book';
+                                        if (subName.toLowerCase().includes('phy')) { barColor = 'from-purple-400 to-purple-600 shadow-purple-500/30'; icon = 'fa-atom'; }
+                                        if (subName.toLowerCase().includes('bio') || subName.toLowerCase().includes('bot') || subName.toLowerCase().includes('zoo')) { barColor = 'from-emerald-400 to-emerald-600 shadow-emerald-500/30'; icon = 'fa-leaf'; }
+                                        if (subName.toLowerCase().includes('chem')) { barColor = 'from-orange-400 to-orange-600 shadow-orange-500/30'; icon = 'fa-flask'; }
+                                        return (
+                                            <div key={subName} className="group/item">
+                                                <div className="flex justify-between items-end mb-2">
+                                                    <span className="font-bold text-gray-800 dark:text-gray-200 text-sm flex items-center gap-2"><i className={`fa-solid ${icon} text-gray-400 dark:text-gray-500 text-xs`}></i> {subName}</span>
+                                                    <div className="text-right">
+                                                        <span className="font-black text-gray-900 dark:text-white text-base leading-none">{acc}%</span>
+                                                        <span className="text-[10px] text-gray-400 font-bold ml-1">({s.correct}/{s.attempted})</span>
+                                                    </div>
+                                                </div>
+                                                <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden shadow-inner p-0.5">
+                                                    <div className={`bg-gradient-to-r ${barColor} h-full rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden`} style={{ width: `${acc}%` }}>
+                                                        <div className="absolute inset-0 bg-white/20 w-1/2 -skew-x-12 translate-x-[-150%] group-hover/item:translate-x-[250%] transition-transform duration-1000"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 text-center border border-dashed border-gray-200 dark:border-gray-700">
+                                            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400 text-xl"><i className="fa-solid fa-ghost"></i></div>
+                                            <p className="text-sm font-bold text-gray-500 dark:text-gray-400">No data yet. Start dominating your practice sessions!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Settings */}
+                            <h3 className="font-black text-gray-800 dark:text-gray-200 text-lg mb-4 px-2 flex items-center gap-2">
+                                <i className="fa-solid fa-sliders text-cyan-500"></i> App Preferences
+                            </h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 shadow-sm">
+                                <div className="p-5 flex items-center justify-between cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 group" onClick={() => setIsDarkMode(!isDarkMode)}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm transition-colors ${isDarkMode ? 'bg-indigo-900/40 text-indigo-400 border border-indigo-500/30' : 'bg-orange-50 text-orange-500 border border-orange-200'}`}>
+                                            <i className={`fa-solid ${isDarkMode ? 'fa-moon' : 'fa-sun'} group-hover:scale-110 transition-transform`}></i>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white">{isDarkMode ? 'Deep Space Mode' : 'Daylight Mode'}</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Toggle app visual theme</p>
+                                        </div>
+                                    </div>
+                                    <div className={`w-14 h-8 rounded-full flex items-center p-1.5 transition-colors duration-300 shadow-inner ${isDarkMode ? 'bg-indigo-500' : 'bg-gray-200'}`}>
+                                        <div className={`w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-md ${isDarkMode ? 'translate-x-6' : ''}`}></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
