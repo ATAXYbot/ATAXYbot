@@ -8083,7 +8083,7 @@ const renderHomeView = () => {
                                             <button onClick={handleBack} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-md shadow-inner active:scale-95 text-white/70 hover:text-white ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 hover:bg-cyan-800/50' : 'bg-white/10 border border-white/20 hover:bg-white/20'}`}><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight line-clamp-1">{safeRenderText(activePracticeChapter.name)}</h2>
                                         </div>
-                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
                                     </div>
 
                                     <h3 className={`font-black text-xs uppercase tracking-widest mb-4 inline-block px-3 py-1.5 rounded-lg border backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] ${isNeet ? 'text-blue-300 bg-blue-900/40 border-blue-500/30' : isJee ? 'text-cyan-300 bg-cyan-900/40 border-cyan-500/30' : 'text-white bg-white/10 border-white/20'}`}>Select Question Type</h3>
@@ -8558,7 +8558,7 @@ const renderHomeView = () => {
                                         <button onClick={handleBack} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-md shadow-inner active:scale-95 text-white/70 hover:text-white ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 hover:bg-cyan-800/50' : 'bg-white/10 border border-white/20 hover:bg-white/20'}`}><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeSubject.name)}</h2>
                                     </div>
-                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
                                 </div>
                                 <h3 className={`font-black text-xs uppercase tracking-widest mb-4 inline-block px-3 py-1.5 rounded-lg border backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] ${isNeet ? 'text-blue-300 bg-blue-900/40 border-blue-500/30' : isJee ? 'text-cyan-300 bg-cyan-900/40 border-cyan-500/30' : 'text-white bg-white/10 border-white/20'}`}>Chapter Selection</h3>
                                 <div className="space-y-3">
@@ -8583,9 +8583,14 @@ const renderHomeView = () => {
                                         if (activePracticeMode === 'practice') {
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                    <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{activePracticeBatch?.name || 'Practice Modules'}</h2>
+                                <div className="flex justify-between items-center mb-6 relative z-10">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={handleBack} className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 text-white/70 hover:text-white hover:bg-white/20 flex items-center justify-center backdrop-blur-md shadow-inner transition-all active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{activePracticeBatch?.name || 'Practice Modules'}</h2>
+                                    </div>
+                                    {activePracticeBatch && (
+                                        <button onClick={() => setConfirmClearScope({ type: 'batch', data: activePracticeBatch })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Track Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    )}
                                 </div>
 
                                 {qbankError && (
