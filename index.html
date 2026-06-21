@@ -489,7 +489,9 @@
                             question_id: question_id,
                             selected_option: selected_option,
                             user_query: prompt,
-                            prompt_text: `${systemContext}\n\nStudent Doubt: ${prompt}`
+                            prompt_text: `${systemContext}
+
+Student Doubt: ${prompt}`
                         })
                     });
 
@@ -8034,19 +8036,6 @@ const renderHomeView = () => {
                          </div>,
                          document.body
                      )}
-                            <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 mt-6 animate-pop-bounce delay-200">Study Modules</h3>
-                            <div className="grid grid-cols-2 gap-4 mb-6 animate-pop-bounce delay-300">
-                                <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_25px_rgba(0,166,81,0.4)] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
-                                    <i className="fa-solid fa-book-open text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
-                                    <h4 className="font-black text-white text-lg leading-tight">LN modules</h4>
-                                    <i className="fa-solid fa-leaf absolute -right-4 -bottom-4 text-6xl text-green-800/30"></i>
-                                </div>
-                                <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-lg shadow-gray-400/20 dark:shadow-none rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
-                                    <i className="fa-solid fa-layer-group text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
-                                    <h4 className="font-black text-white text-lg leading-tight">Bablu Dablu<br />modules</h4>
-                                    <i className="fa-solid fa-pen-nib absolute -right-4 -bottom-4 text-6xl text-white/5"></i>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 );
@@ -8562,6 +8551,24 @@ const renderHomeView = () => {
                     }
 
                     if (activePracticeBatch) {
+                        if (activePracticeBatch.type === 'jee') {
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeBatch.name)}</h2>
+                                    </div>
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center -mt-20">
+                                        <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-4 animate-pulse-soft border border-blue-500/30">
+                                            <i className="fa-solid fa-rocket text-4xl text-blue-500 animate-pop-bounce delay-150"></i>
+                                        </div>
+                                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Coming Soon!</h3>
+                                        <p className="text-sm text-gray-500 max-w-[250px] mx-auto">We are working hard to bring you the best JEE questions. Stay tuned!</p>
+                                    </div>
+                                </div>
+                            );
+                        }
+                    
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
                                 <div className="flex items-center gap-3 mb-6">
@@ -8585,9 +8592,9 @@ const renderHomeView = () => {
                     }
 
                     const PRACTICE_BATCHES = [
-                        { id: 'pb_allen', name: 'LN modules', type: 'ln', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] },
-                        { id: 'pb_pw', name: 'Bablu Dablu modules', type: 'pw', sourceTable: 'questions', files: [{ id: 'pf_dpp', name: 'DPP' }] },
-                        { id: 'pb_basic_math', name: 'Basic Math & Vectors', type: 'custom', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Module 1' }] }
+                        { id: 'pb_neet_bank', name: 'NEET Bank', type: 'neet', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Basic Math' }] },
+                        { id: 'pb_jee_bank', name: 'JEE Bank', type: 'jee', sourceTable: 'coming_soon', files: [] },
+                        { id: 'pb_checking', name: 'Checking', type: 'checking', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] }
                     ];
 
                     return (
@@ -8599,15 +8606,37 @@ const renderHomeView = () => {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                {PRACTICE_BATCHES.map(batch => (
-                                    <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-6 rounded-3xl cursor-pointer hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 relative overflow-hidden ${batch.type === 'ln' ? 'bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] text-white' : 'bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)] text-white'}`}>
-                                        <div className="relative z-10">
-                                            <h3 className="text-xl font-black mb-1 text-white">{batch.name}</h3>
-                                            <p className={`text-xs font-medium ${batch.type === 'ln' ? 'text-green-100' : 'text-gray-400'}`}>{batch.files.length} Modules Available</p>
+                                {PRACTICE_BATCHES.map(batch => {
+                                    let bgClass = '';
+                                    let iconClass = '';
+                                    let iconName = '';
+                                    
+                                    if (batch.type === 'neet') {
+                                        bgClass = 'bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] text-white';
+                                        iconClass = 'text-green-800/30';
+                                        iconName = 'fa-stethoscope';
+                                    } else if (batch.type === 'jee') {
+                                        bgClass = 'bg-gradient-to-br from-[#00418d] to-[#002f6c] border border-[#00418d]/50 shadow-[0_8px_20px_rgba(0,65,141,0.3)] text-white';
+                                        iconClass = 'text-blue-900/40';
+                                        iconName = 'fa-microchip';
+                                    } else {
+                                        bgClass = 'bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)] text-white';
+                                        iconClass = 'text-white/5';
+                                        iconName = 'fa-vial';
+                                    }
+
+                                    return (
+                                        <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-6 rounded-3xl cursor-pointer hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 relative overflow-hidden ${bgClass}`}>
+                                            <div className="relative z-10">
+                                                <h3 className="text-xl font-black mb-1 text-white">{batch.name}</h3>
+                                                <p className={`text-xs font-medium ${batch.type === 'jee' ? 'text-blue-200' : batch.type === 'neet' ? 'text-green-100' : 'text-gray-400'}`}>
+                                                    {batch.type === 'jee' ? 'Launching Soon' : `${batch.files.length} Modules Available`}
+                                                </p>
+                                            </div>
+                                            <i className={`fa-solid ${iconName} ${iconClass} absolute -right-4 -bottom-4 text-6xl`}></i>
                                         </div>
-                                        <i className={`fa-solid ${batch.type === 'ln' ? 'fa-book text-green-800/30' : 'fa-layer-group text-white/5'} absolute -right-4 -bottom-4 text-6xl`}></i>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     );
@@ -8855,7 +8884,9 @@ const renderHomeView = () => {
 
                 const handleGenerateDPP = (chapterName) => {
                     try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); } catch (e) { }
-                    safeAlert(`Generating Custom DPP for: ${chapterName}...\n\nThis feature will compile your weakest topics into a tailored test.`);
+                    safeAlert(`Generating Custom DPP for: ${chapterName}...
+
+This feature will compile your weakest topics into a tailored test.`);
                 };
 
                 // 5. Active Chapters for Table
