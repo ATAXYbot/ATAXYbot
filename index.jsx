@@ -1,0 +1,9154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script>
+        // Apply dark mode by default for new users before React loads to prevent white flash
+        try { if (localStorage.getItem('ataxy_theme') !== 'light') document.documentElement.classList.add('dark'); } catch (e) { }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ATAXY Learning</title>
+
+    <!-- Prevent aggressive caching by Telegram WebView -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="theme-color" content="#00A7A7" id="theme-color-meta">
+
+    <link rel="icon" href="data:,">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ataxy: {
+                            background: 'var(--color-ataxy-bg-primary)',
+                            surface: 'var(--color-ataxy-surface)',
+                            border: 'var(--color-ataxy-border)',
+                            'text-primary': 'var(--color-ataxy-text-primary)',
+                            'text-secondary': 'var(--color-ataxy-text-secondary)',
+                            'accent-primary': 'var(--color-ataxy-accent-primary)',
+                            'accent-secondary': 'var(--color-ataxy-accent-secondary)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Agora Web RTC & Supabase JS SDK -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.2.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <!-- KaTeX for Math & Chemical Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
+
+    <style>
+        :root {
+            /* LIGHT MODE TOKENS ("Strategic Clarity") */
+            --color-ataxy-bg-primary: #FBFBFB;
+            --color-ataxy-surface: #F5F5F5;
+            --color-ataxy-border: #E0E0E0;
+            --color-ataxy-text-primary: #102A43;
+            --color-ataxy-text-secondary: #627D98;
+            --color-ataxy-accent-primary: #00A7A7;
+            --color-ataxy-accent-secondary: #D4AF37;
+        }
+
+        .dark {
+            /* DARK MODE TOKENS ("Deep Space Focus") */
+            --color-ataxy-bg-primary: #010B1C;
+            --color-ataxy-surface: #021633;
+            --color-ataxy-border: #0AE0D0;
+            --color-ataxy-text-primary: #E0F7FA;
+            --color-ataxy-text-secondary: #A4DFE6;
+            --color-ataxy-accent-primary: #00FFFF;
+            --color-ataxy-accent-secondary: #F9D33A;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+        }
+
+        .yt-wrapper iframe {
+            pointer-events: none !important;
+            transform: scale(1.08);
+        }
+
+        .watermark-marquee {
+            animation: moveWatermark 20s linear infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes moveWatermark {
+            0% {
+                transform: translate(-10%, -10%) rotate(-20deg);
+            }
+
+            100% {
+                transform: translate(10%, 10%) rotate(-20deg);
+            }
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(0.8);
+                opacity: 0;
+            }
+
+            10% {
+                transform: translateY(-20px) scale(1.1);
+                opacity: 1;
+            }
+
+            20% {
+                transform: translateY(-40px) scale(1);
+                opacity: 1;
+            }
+
+            80% {
+                transform: translateY(-150px) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-200px) scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            bottom: 0;
+            color: transparent;
+            cursor: pointer;
+            height: auto;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .np-grid-btn {
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dark .np-grid-btn {
+            border-color: #374151;
+        }
+
+        /* NTA Exam Styling overrides */
+        .katex-display {
+            margin: 0.75em 0 !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 2px;
+        }
+
+        .katex {
+            font-size: 1.05em;
+        }
+
+        /* Addictive UI Custom Animations */
+        @keyframes slideUpFade {
+            0% {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.02);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulseSoft {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes float-soft {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes pop-bounce {
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.03);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-pop-in {
+            animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-pulse-soft {
+            animation: pulseSoft 2s infinite ease-in-out;
+        }
+
+        .animate-float {
+            animation: float-soft 3s ease-in-out infinite;
+        }
+
+        .animate-pop-bounce {
+            animation: pop-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+        }
+
+        /* Addictive Loading Animations */
+        @keyframes scan {
+            0% {
+                transform: translateY(-100%);
+            }
+
+            100% {
+                transform: translateY(200%);
+            }
+        }
+
+        @keyframes pingPong {
+            0% {
+                transform: translateX(0%);
+            }
+
+            100% {
+                transform: translateX(200%);
+            }
+        }
+
+        @keyframes orbit {
+            0% {
+                transform: rotate(0deg) translateX(45px) rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg) translateX(45px) rotate(-360deg);
+            }
+        }
+
+        @keyframes orbit-reverse {
+            0% {
+                transform: rotate(360deg) translateX(65px) rotate(-360deg);
+            }
+
+            100% {
+                transform: rotate(0deg) translateX(65px) rotate(0deg);
+            }
+        }
+
+        .delay-100 {
+            animation-delay: 100ms;
+        }
+
+        .delay-200 {
+            animation-delay: 200ms;
+        }
+
+        .delay-300 {
+            animation-delay: 300ms;
+        }
+
+        .delay-400 {
+            animation-delay: 400ms;
+        }
+
+        .delay-500 {
+            animation-delay: 500ms;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .dark .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .active-tab-glow {
+            filter: drop-shadow(0 0 10px var(--color-ataxy-accent-primary));
+            transform: scale(1.1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Device Safe Area padding */
+        .safe-pb {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        .safe-pt {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 scroll-smooth">
+    <div id="root"></div>
+
+    <script>
+        // Override Babel's default settings to strictly use the classic React runtime
+        // This prevents the "jsx-runtime" and "importSource" compilation crashes
+        Babel.registerPreset('react-classic', {
+            presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]]
+        });
+    </script>
+    <script type="text/babel" data-presets="react-classic" data-type="module">
+        window.addEventListener('error', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.color = 'red';
+            errDiv.style.backgroundColor = 'white';
+            errDiv.style.padding = '20px';
+            errDiv.style.position = 'fixed';
+            errDiv.style.top = '0';
+            errDiv.style.left = '0';
+            errDiv.style.zIndex = '999999';
+            errDiv.innerHTML = `<h1>CRASH</h1><pre>${e.error ? e.error.stack : e.message}</pre>`;
+            document.body.appendChild(errDiv);
+        });
+
+        const { useState, useRef, useEffect, useMemo } = React;
+
+        const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
+
+        const safeGetStr = (key, def) => { try { return localStorage.getItem(key) || def; } catch (e) { return def; } };
+        const safeGetJSON = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } };
+        const safeSetItem = (key, val) => { try { localStorage.setItem(key, val); } catch (e) { } };
+        const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch (e) { } };
+
+        const setCloudData = (key, val) => {
+            const strVal = JSON.stringify(val);
+            try {
+                if (window.Telegram?.WebApp?.CloudStorage && window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                    window.Telegram.WebApp.CloudStorage.setItem(key, strVal, (err) => {
+                        if (err) { try { localStorage.setItem(key, strVal); } catch (e) { } }
+                    });
+                } else {
+                    localStorage.setItem(key, strVal);
+                }
+            } catch (e) {
+                try { localStorage.setItem(key, strVal); } catch (err) { }
+            }
+        };
+
+        const getCloudData = (key) => new Promise(resolve => {
+            try {
+                if (window.Telegram?.WebApp?.CloudStorage && window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                    window.Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
+                        if (err || !val) {
+                            const localVal = localStorage.getItem(key);
+                            resolve(localVal ? JSON.parse(localVal) : null);
+                        } else {
+                            resolve(val ? JSON.parse(val) : null);
+                        }
+                    });
+                } else {
+                    const val = localStorage.getItem(key);
+                    resolve(val ? JSON.parse(val) : null);
+                }
+            } catch (e) {
+                const val = localStorage.getItem(key);
+                resolve(val ? JSON.parse(val) : null);
+            }
+        });
+
+        // ==========================================
+        // 🛡️ NATIVE TELEGRAM SAFE ALERTS & CONFIRMS
+        // ==========================================
+        let globalDialogSetter = null;
+
+        const safeAlert = (msg) => {
+            if (globalDialogSetter) {
+                globalDialogSetter({ type: 'alert', message: msg, isOpen: true });
+            } else {
+                try {
+                    if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
+                    else alert(msg);
+                } catch (e) { alert(msg); }
+            }
+        };
+
+        const safeConfirm = (msg, callback) => {
+            if (globalDialogSetter) {
+                globalDialogSetter({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
+            } else {
+                try {
+                    if (window.Telegram?.WebApp?.showConfirm) {
+                        window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
+                            if (confirmed) callback();
+                        });
+                    } else {
+                        if (confirm(msg)) callback();
+                    }
+                } catch (e) { if (confirm(msg)) callback(); }
+            }
+        };
+
+        // ==========================================
+        // 🤖 SECURE AI MULTI-MODEL FALLBACK ENGINE
+        // ==========================================
+        const fetchGeminiSecure = async (prompt, history = [], systemContext = "", question_id = null, selected_option = null) => {
+            if (question_id && selected_option) {
+                // Task 2: Route question doubts to the new D1 Caching Proxy
+                const cacheProxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
+                try {
+                    const res = await fetch(cacheProxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            question_id: question_id,
+                            selected_option: selected_option,
+                            user_query: prompt,
+                            prompt_text: `${systemContext}\n\nStudent Doubt: ${prompt}`
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        return { explanation: data.explanation, audio: data.audio_base64 };
+                    } else {
+                        const errorData = await res.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Proxy error: ${res.status}`);
+                    }
+                } catch (err) {
+                    console.error("Error fetching cached explanation:", err);
+                    return { explanation: "Sorry, there was an error connecting to the AI Mentor. Please try again.", audio: null };
+                }
+            }
+
+            // Original logic for General Chat (AIMentorView)
+            const modelsToTry = [
+                "gemini-3.1-pro",
+                "gemini-3.1-flash-lite", // The current fastest, high-volume model
+                "gemini-3.5-flash",      // The current stable, smart fallback
+                "gemini-2.5-flash-lite", // Reliable older backup
+                "gemini-2.5-flash",      // Reliable older backup
+                "gemini-2.0-flash",      // Ultimate fallback
+                "gemini-1.5-flash"       // Ultimate fallback
+            ];
+            const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
+
+            let contents = history.map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.text }]
+            }));
+            contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+            let attempts = 0;
+            while (attempts < 8) {
+                for (const model of modelsToTry) {
+                    try {
+                        const res = await fetch(proxyUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            mode: 'cors',
+                            credentials: 'omit',
+                            body: JSON.stringify({ model, contents, systemInstruction: systemContext })
+                        });
+
+                        if (res.status === 429) continue;
+
+                        const rawText = await res.text();
+                        let data;
+                        try {
+                            data = JSON.parse(rawText);
+                        } catch (parseError) {
+                            continue;
+                        }
+
+                        if (res.ok && data.candidates && data.candidates.length > 0) {
+                            return { explanation: data.candidates[0].content.parts[0].text, audio: null };
+                        } else if (data.promptFeedback?.blockReason) {
+                            return { explanation: `Blocked by safety settings: ${data.promptFeedback.blockReason}`, audio: null };
+                        }
+                    } catch (err) {
+                        // Network error, skip to next model
+                    }
+                }
+                attempts++;
+                // Wait 3 seconds before retrying all models again to respect rate limits
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+            return { explanation: "I am currently receiving a high volume of requests. Please wait a moment and ask your doubt again!", audio: null };
+        };
+
+        // ==========================================
+        // 🎵 GLOBAL AUDIO PLAYER ENGINE (Web Audio API)
+        // ==========================================
+        const AIAudioPlayer = {
+            audioCtx: null,
+            currentSource: null,
+            currentId: null,
+            updateCallback: null,
+            isPlaying: false,
+
+            initAudioCtx: function () {
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+
+            play: async function (base64Audio, textContent, id, callback) {
+                this.initAudioCtx();
+
+                // If clicking the same button while playing, toggle (stop)
+                if (this.currentId === id && this.isPlaying) {
+                    this.stop();
+                    return;
+                }
+
+                // Stop any currently playing audio from another button
+                this.stop();
+
+                this.currentId = id;
+                this.updateCallback = callback;
+                this.isPlaying = true;
+
+                if (this.updateCallback) this.updateCallback({ id, isPlaying: true });
+
+                if (this.audioCtx.state === 'suspended') {
+                    await this.audioCtx.resume();
+                }
+
+                if (!base64Audio) {
+                    this.playBrowserTTS(textContent, id, callback);
+                    return;
+                }
+
+                try {
+                    const binaryString = window.atob(base64Audio);
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const arrayBuffer = bytes.buffer;
+
+                    const audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+                    this.currentSource = this.audioCtx.createBufferSource();
+                    this.currentSource.buffer = audioBuffer;
+                    this.currentSource.connect(this.audioCtx.destination);
+                    this.currentSource.onended = () => {
+                        this.stop();
+                    };
+                    this.currentSource.start(0);
+                } catch (e) {
+                    console.error("Web Audio API decode/playback error:", e);
+                    this.playBrowserTTS(textContent, id, callback);
+                }
+            },
+
+            playBrowserTTS: function (textContent, id, callback) {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(textContent.replace(/\*|#/g, ''));
+                    utterance.lang = 'en-US';
+                    utterance.onend = () => this.stop();
+                    utterance.onerror = () => this.stop();
+
+                    setTimeout(() => {
+                        window.speechSynthesis.speak(utterance);
+                    }, 50);
+                }
+            },
+
+            stop: function () {
+                if (this.currentSource) {
+                    try { this.currentSource.stop(); } catch (e) { }
+                    try { this.currentSource.disconnect(); } catch (e) { }
+                    this.currentSource = null;
+                }
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+
+                const prevCallback = this.updateCallback;
+                this.currentId = null;
+                this.updateCallback = null;
+                this.isPlaying = false;
+
+                if (prevCallback) prevCallback({ id: null, isPlaying: false });
+            }
+        };
+
+        // ==========================================
+        // 🎛️ AI AUDIO PLAYER UI COMPONENT
+        // ==========================================
+        const AIAudioPlayerUI = ({ message, messageId, audioState, setAudioState }) => {
+            const isPlaying = audioState.id === messageId && audioState.isPlaying;
+
+            return (
+                <button
+                    onClick={() => AIAudioPlayer.play(message.audio, message.text, messageId, setAudioState)}
+                    className={`mt-3 text-xs border px-3 py-1.5 rounded-full font-bold shadow-sm transition-colors flex items-center gap-1.5 ${isPlaying
+                        ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+                        : 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-800/50'
+                        }`}
+                >
+                    {isPlaying ? (
+                        <>
+                            <i className="fa-solid fa-circle-stop animate-pulse"></i> Stop Audio
+                        </>
+                    ) : (
+                        <>
+                            <i className="fa-solid fa-volume-high"></i> Audio Explanation
+                        </>
+                    )}
+                </button>
+            );
+        };
+
+        // ==========================================
+        // 🛡️ VOICE ROOM ERROR BOUNDARY
+        // ==========================================
+        class VoiceRoomErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null, recoveryAttempts: 0 };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error("Safely caught an error in UI:", error, errorInfo);
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-white h-screen w-full relative z-[2000000]">
+                            <div className="w-20 h-20 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-4xl mb-6 shadow-lg mx-auto border-4 border-red-500">
+                                <i className="fa-solid fa-bomb"></i>
+                            </div>
+                            <h3 className="text-2xl font-black mb-2 text-red-600 uppercase tracking-widest">System Crash</h3>
+                            <p className="text-gray-600 text-sm mb-6 font-bold">Please screenshot this and send to ATAXY Admin.</p>
+
+                            <div className="text-left text-red-900 text-xs mb-8 bg-red-50 p-4 rounded-xl border-2 border-red-200 overflow-auto max-h-[50vh] whitespace-pre-wrap break-words w-full max-w-md shadow-inner font-mono">
+                                <span className="font-black text-red-600 block mb-2">ERROR MESSAGE:</span>
+                                {String(this.state.error?.message || "Unknown Error")}
+                                <span className="font-black text-red-600 block mt-4 mb-2">STACK TRACE:</span>
+                                {String(this.state.error?.stack || "No stack trace available.")}
+                            </div>
+
+                            <button
+                                onClick={() => { localStorage.removeItem('ataxy_practice_perf'); window.location.reload(); }}
+                                className="py-4 px-8 bg-red-600 text-white rounded-xl font-black shadow-xl shadow-red-500/40 active:scale-95 transition-transform uppercase tracking-wider w-full max-w-xs"
+                            >
+                                Reset App Data
+                            </button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        // =========================================================================
+        // 💎 GLOBAL BEAUTIFUL DIALOG COMPONENT
+        // ==========================================
+        const GlobalDialog = () => {
+            const [dialogConfig, setDialogConfig] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
+
+            useEffect(() => {
+                globalDialogSetter = setDialogConfig;
+                return () => { globalDialogSetter = null; };
+            }, []);
+
+            if (!dialogConfig.isOpen) return null;
+
+            const handleClose = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
+
+            const handleConfirm = () => {
+                if (dialogConfig.onConfirm) dialogConfig.onConfirm();
+                handleClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[9999999] flex items-center justify-center p-4 animate-in fade-in" onClick={handleClose}>
+                    <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm text-center border border-[#0AE0D0]/50 shadow-[0_0_40px_rgba(0,255,255,0.2)]" onClick={e => e.stopPropagation()}>
+                        <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-3xl mb-4 border border-[#00FFFF]/50">
+                            <i className={`fa-solid ${dialogConfig.type === 'alert' ? 'fa-bell' : 'fa-circle-question'}`}></i>
+                        </div>
+                        <h3 className="text-xl font-black text-white mb-2 tracking-wide">{dialogConfig.type === 'alert' ? 'Notice' : 'Confirm'}</h3>
+                        <p className="text-sm text-[#A4DFE6] mb-6 whitespace-pre-wrap">{dialogConfig.message}</p>
+
+                        {dialogConfig.type === 'alert' ? (
+                            <button onClick={handleClose} className="w-full py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">OK</button>
+                        ) : (
+                            <div className="flex gap-3">
+                                <button onClick={handleClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/30 text-white rounded-xl font-bold hover:bg-white/5 transition-colors active:scale-95">Cancel</button>
+                                <button onClick={handleConfirm} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Confirm</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // 🔍 ZOOMABLE IMAGE OVERLAY
+        // ==========================================
+        const ZoomableImageOverlay = ({ src, onClose }) => {
+            const [scale, setScale] = useState(1);
+            const [position, setPosition] = useState({ x: 0, y: 0 });
+
+            const touchState = useRef({
+                startX: 0, startY: 0,
+                lastX: 0, lastY: 0,
+                initialDistance: 0,
+                initialScale: 1,
+                isPanning: false,
+                isPinching: false
+            });
+
+            const getDistance = (touches) => {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            };
+
+            const handleTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    touchState.current.isPinching = true;
+                    touchState.current.initialDistance = getDistance(e.touches);
+                    touchState.current.initialScale = scale;
+                } else if (e.touches.length === 1) {
+                    touchState.current.isPanning = true;
+                    touchState.current.startX = e.touches[0].clientX - position.x;
+                    touchState.current.startY = e.touches[0].clientY - position.y;
+                }
+            };
+
+            const handleTouchMove = (e) => {
+                if (e.touches.length === 2 && touchState.current.isPinching) {
+                    const currentDistance = getDistance(e.touches);
+                    const scaleFactor = currentDistance / touchState.current.initialDistance;
+                    let newScale = touchState.current.initialScale * scaleFactor;
+                    newScale = Math.min(Math.max(newScale, 1), 5); // Limit zoom between 1x and 5x
+                    setScale(newScale);
+                } else if (e.touches.length === 1 && touchState.current.isPanning && scale > 1) {
+                    const currentX = e.touches[0].clientX - touchState.current.startX;
+                    const currentY = e.touches[0].clientY - touchState.current.startY;
+                    setPosition({ x: currentX, y: currentY });
+                }
+            };
+
+            const handleTouchEnd = (e) => {
+                if (e.touches.length < 2) touchState.current.isPinching = false;
+                if (e.touches.length === 0) {
+                    touchState.current.isPanning = false;
+                    if (scale <= 1) setPosition({ x: 0, y: 0 });
+                }
+            };
+
+            const lastTapRef = useRef(0);
+            const handleDoubleTap = () => {
+                const now = Date.now();
+                const DOUBLE_TAP_DELAY = 300;
+                if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+                    if (scale > 1) { setScale(1); setPosition({ x: 0, y: 0 }); }
+                    else { setScale(2); }
+                }
+                lastTapRef.current = now;
+            };
+
+            useEffect(() => {
+                const tg = window.Telegram?.WebApp;
+                if (!tg) return;
+                const handleBack = () => { onClose(); };
+                tg.BackButton.onClick(handleBack);
+                return () => tg.BackButton.offClick(handleBack);
+            }, [onClose]);
+
+            return (
+                <div className="fixed inset-0 bg-black/95 z-[9999999] flex items-center justify-center overflow-hidden touch-none animate-in fade-in" onClick={onClose}>
+                    <div
+                        className="w-full h-full flex items-center justify-center"
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchEnd}
+                        onClick={(e) => { e.stopPropagation(); handleDoubleTap(); }}
+                    >
+                        <img
+                            src={src}
+                            alt="Fullscreen"
+                            className="max-w-none max-h-none object-contain transition-transform ease-out duration-100 pointer-events-none"
+                            style={{
+                                transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
+                                width: '100%',
+                                height: '100%'
+                            }}
+                        />
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute top-4 right-4 text-white text-xl font-bold p-2 z-[9999999] bg-black/50 hover:bg-black/80 rounded-full w-10 h-10 flex items-center justify-center transition-colors">
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // ⬇️ ADD YOUR PRACTICE QUESTIONS HERE (ALIEN PLATFORM QBANK) ⬇️
+        // =========================================================================
+        const ALIEN_QBANK = [
+            {
+                id: "sub_phy", name: "Physics", icon: "⚛️", chapters: [
+                    {
+                        id: "c_phy_1", name: "Kinematics 1D", topics: [
+                            {
+                                id: "t_phy_1_1", name: "Distance & Displacement", questions: [
+                                    { id: "q1", text: "A particle is moving in a circular path of radius r. The displacement after half a circle would be:", options: ["Zero", "πr", "2r", "2πr"], correct: 2, correctOption: "C", ncert: true, accuracy: "88%" },
+                                    { id: "q2", text: "Which of the following is a scalar quantity?", options: ["Displacement", "Distance", "Velocity", "Acceleration"], correct: 1, correctOption: "B", ncert: true, accuracy: "95%" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "sub_chem", name: "Chemistry", icon: "⚗️", chapters: [
+                    {
+                        id: "c_chem_1", name: "Some Basic Concepts of Chemistry", topics: [
+                            {
+                                id: "t_chem_1_1", name: "Mole Concept", questions: [
+                                    { id: "q3", text: "The number of atoms in 0.1 mol of a triatomic gas is: (NA = 6.02x10^23)", options: ["6.026 x 10^22", "1.806 x 10^23", "3.600 x 10^23", "1.806 x 10^22"], correct: 1, correctOption: "B", ncert: false, accuracy: "76%" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "sub_bio", name: "Biology", icon: "🌿", chapters: [
+                    {
+                        id: "c_bio_1", name: "The Living World", topics: [
+                            {
+                                id: "t_bio_1_1", name: "What is Living?", questions: [
+                                    { id: "q4", text: "The system of the naming of organisms was developed by", options: ["Robert Hooke", "Carolus Linnaeus", "T. Schwann", "Ernst Mayr"], correct: 1, correctOption: "B", ncert: true, accuracy: "91%" },
+                                    { id: "q5", text: "Which of the following are twin characteristics of growth?", options: ["Increase in mass and number", "Increase in weight and volume", "Increase in height and radius", "None of these"], correct: 0, correctOption: "A", ncert: true, accuracy: "85%" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+        // =========================================================================
+        // ⬆️ END OF PRACTICE QUESTIONS ⬆️
+        // =========================================================================
+
+        // ==========================================
+        // 📝 FORMATTED TEXT COMPONENT (MATH & CHEM)
+        // ==========================================
+        const smartNeetFormatter = (text) => {
+            if (typeof text !== 'string') return text;
+            let t = text;
+
+            t = t.replace(/\\n/g, '\n');
+
+            t = t.replace(/\*\*(.+?)\*\*/g, '<strong class="text-blue-600 dark:text-blue-400">$1</strong>');
+            t = t.replace(/__(.+?)__/g, '<strong class="text-blue-600 dark:text-blue-400">$1</strong>');
+            t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            t = t.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 text-pink-500 px-1 py-0.5 rounded text-xs border border-gray-200 dark:border-gray-700">$1</code>');
+            t = t.replace(/### (.*)/g, '<h3 class="text-sm font-bold mt-2 mb-1 text-gray-800 dark:text-gray-100">$1</h3>');
+            t = t.replace(/## (.*)/g, '<h2 class="text-base font-bold mt-2 mb-1 text-gray-800 dark:text-gray-100">$1</h2>');
+            t = t.replace(/# (.*)/g, '<h1 class="text-lg font-bold mt-2 mb-1 text-gray-800 dark:text-gray-100">$1</h1>');
+
+            t = t.replace(/\n/g, '<br/>');
+
+            return t;
+        };
+
+        const FormattedText = ({ text, className = "" }) => {
+            const containerRef = useRef(null);
+
+            let safeText = '';
+            if (typeof text === 'string') {
+                safeText = text;
+            } else if (text !== null && text !== undefined) {
+                if (typeof text === 'object') {
+                    let extracted = text.text || text.value;
+                    if (extracted !== undefined) {
+                        safeText = typeof extracted === 'string' ? extracted : JSON.stringify(extracted);
+                    } else {
+                        safeText = JSON.stringify(text);
+                    }
+                } else {
+                    safeText = String(text);
+                }
+            }
+
+            // Universal Features State
+            const [currentView, setCurrentView] = useState('rooms');
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+
+            // Sub tab state to align with VoiceRoomsTab logic
+            const [vcSubTab, setVcSubTab] = useState('rooms');
+            const [roomToJoinWithPassword, setRoomToJoinWithPassword] = useState(null);
+            const [joinPasswordInput, setJoinPasswordInput] = useState('');
+            const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [showVCCreateModal, setShowVCCreateModal] = useState(false);
+            const [vcCreateName, setVcCreateName] = useState('');
+            const [vcCreateType, setVcCreateType] = useState('temporary');
+            const [vcCreatePass, setVcCreatePass] = useState('');
+            const [vcCreatePhoto, setVcCreatePhoto] = useState('');
+            const [vcCreatePassEnabled, setVcCreatePassEnabled] = useState(false);
+            const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+
+            const chatEndRef = useRef(null);
+
+            // Friend System & DMs State
+            const [friends, setFriends] = useState([]);
+            const [pendingRequests, setPendingRequests] = useState([]);
+            const [sentRequests, setSentRequests] = useState([]);
+            const [dms, setDms] = useState({});
+            const [activeChatUser, setActiveChatUser] = useState(null);
+
+            const activeChatUserRef = useRef(null);
+            useEffect(() => { activeChatUserRef.current = activeChatUser; }, [activeChatUser]);
+
+            const friendsRef = useRef([]);
+            useEffect(() => { friendsRef.current = friends; }, [friends]);
+
+            const pendingRequestsRef = useRef([]);
+            useEffect(() => { pendingRequestsRef.current = pendingRequests; }, [pendingRequests]);
+
+            const inboxClientRef = useRef(null);
+
+            useEffect(() => {
+                let timeoutId;
+                const renderMath = () => {
+                    if (containerRef.current && window.renderMathInElement) {
+                        try {
+                            window.renderMathInElement(containerRef.current, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\(', right: '\\)', display: false },
+                                    { left: '\\[', right: '\\]', display: true }
+                                ],
+                                throwOnError: false,
+                                output: 'html'
+                            });
+                        } catch (e) {
+                            console.warn("KaTeX render error:", e);
+                        }
+                    } else if (!window.renderMathInElement) {
+                        timeoutId = setTimeout(renderMath, 500); // Retry if script is loading
+                    }
+                };
+                renderMath();
+                return () => clearTimeout(timeoutId);
+            }, [safeText]);
+
+            if (!safeText) return null;
+            return <div ref={containerRef} className={`w-full ${className || 'block'}`} dangerouslySetInnerHTML={{ __html: smartNeetFormatter(safeText) }} />;
+        };
+
+        // ==========================================
+        // 🔄 CIRCULAR RING COMPONENT
+        // ==========================================
+        const CircularRing = ({ score, max, colorClass, label }) => {
+            const radius = 34;
+            const circumference = 2 * Math.PI * radius;
+            const [offset, setOffset] = useState(circumference);
+
+            useEffect(() => {
+                const percent = Math.min(Math.max(score / max, 0), 1);
+                const finalOffset = circumference - (percent * circumference);
+                const t = setTimeout(() => setOffset(finalOffset), 150);
+                return () => clearTimeout(t);
+            }, [score, max, circumference]);
+
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r={radius} stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-100 dark:text-gray-800/80" />
+                            <circle cx="40" cy="40" r={radius} stroke="currentColor" strokeWidth="6" fill="transparent"
+                                strokeDasharray={circumference}
+                                strokeDashoffset={offset}
+                                className={`transition-all duration-1000 ease-out drop-shadow-md ${colorClass}`}
+                                strokeLinecap="round"
+                            />
+                        </svg>
+                        <div className="absolute flex flex-col items-center justify-center mt-0.5">
+                            <span className={`text-lg sm:text-xl font-black ${colorClass} leading-none`}>{score}</span>
+                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">/{max}</span>
+                        </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">{label}</span>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // 🚀 ATAXY BRAND LOGO COMPONENT
+        // ==========================================
+        const AtaxyLogo = ({ className = "w-8 h-8 rounded-full" }) => {
+            // Note: If the logo does not show, you may need the direct image link (e.g., ending in .png) 
+            // instead of the imgbb view page link. Try right-clicking the image on imgbb and copying the image address.
+            const logoUrl = "https://i.ibb.co/rf15FfnP/logo.png";
+
+            return (
+                <div className={`overflow-hidden shrink-0 flex items-center justify-center bg-white ${className}`}>
+                    <img
+                        src={logoUrl}
+                        alt="ATAXY Logo"
+                        // The scale and negative Y translation help crop out the text below the main logo!
+                        className="w-full h-full object-cover object-top scale-[1.4] -translate-y-[8%]"
+                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/00A7A7/FFF?text=ATAXY'; }}
+                    />
+                </div>
+            );
+        };
+
+        // ==========================================
+        // 🪐 GLOBAL ADDICTIVE ORBITAL LOADER
+        // ==========================================
+        const GlobalLoader = ({ text = "Loading Experience...", fade = false }) => (
+            <div className={`fixed inset-0 z-[2000000] bg-[#010B1C] flex flex-col items-center justify-center transition-opacity duration-500 ${fade ? 'opacity-0 pointer-events-none' : 'opacity-100'} overflow-hidden`}>
+                <div className="absolute inset-0 bg-grid-pattern opacity-40"></div>
+                <div className="relative flex items-center justify-center mb-10">
+                    <div className="absolute w-32 h-32 rounded-full border border-cyan-500/30 animate-[spin_3s_linear_infinite]"></div>
+                    <div className="absolute w-40 h-40 rounded-full border-t border-b border-purple-500/40 animate-[spin_4s_linear_infinite_reverse]"></div>
+                    <div className="absolute w-48 h-48 rounded-full border-l border-r border-blue-500/30 animate-[spin_5s_linear_infinite]"></div>
+
+                    <AtaxyLogo className="w-24 h-24 rounded-full shadow-[0_0_50px_rgba(0,167,167,0.8)] border-4 border-[#00A7A7] animate-pulse relative z-10" />
+
+                    <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-cyan-400 rounded-full shadow-[0_0_15px_#00FFFF] -mt-1.5 -ml-1.5 animate-[orbit_2s_linear_infinite]"></div>
+                    <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-purple-400 rounded-full shadow-[0_0_15px_#A855F7] -mt-1 -ml-1 animate-[orbit-reverse_3s_linear_infinite]"></div>
+                </div>
+                <h1 className="text-3xl font-black mt-2 text-white tracking-widest drop-shadow-[0_0_15px_rgba(0,255,255,0.6)]">ATAXY</h1>
+                <p className="text-[#00FFFF] mt-4 tracking-widest uppercase text-xs font-bold animate-pulse drop-shadow-md">{text}</p>
+            </div>
+        );
+
+        // ==========================================
+        // 🚀 CONSTANT TOP NAV BAR
+        // ==========================================
+        const TopNavBar = () => {
+            const handleShare = () => {
+                const shareUrl = 'https://t.me/ATAXYbot/app'; // <-- REPLACE with your actual Telegram bot/app link
+                const shareText = 'Join me on ATAXY Learning - The best practice platform!';
+
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'ATAXY Learning',
+                        text: shareText,
+                        url: shareUrl
+                    }).catch(console.error);
+                } else {
+                    const tgShareLink = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+                    if (window.Telegram?.WebApp?.openTelegramLink) {
+                        window.Telegram.WebApp.openTelegramLink(tgShareLink);
+                    } else {
+                        window.open(tgShareLink, '_blank');
+                    }
+                }
+            };
+
+            return (
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md glass-panel border-b border-ataxy-border z-[1000000] px-4 h-[calc(60px_+_max(env(safe-area-inset-top),_24px))] pt-[max(env(safe-area-inset-top),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                    <div className="flex items-center gap-2">
+                        <AtaxyLogo className="w-9 h-9 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
+                        <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[20px]">
+                        <button onClick={handleShare} className="text-gray-500 dark:text-gray-400 hover:text-ataxy-accent-primary dark:hover:text-cyan-400 hover:scale-110 transition-all drop-shadow-sm hover:drop-shadow-[0_0_5px_rgba(0,255,255,0.5)] mr-1" title="Share App">
+                            <i className="fa-solid fa-share-nodes"></i>
+                        </button>
+                        <a href="https://t.me/ATAXYmentor" target="_blank" rel="noopener noreferrer" className="text-[#0088cc] hover:scale-110 transition-transform drop-shadow-sm hover:drop-shadow-[0_0_5px_rgba(0,136,204,0.5)]" title="Telegram Channel">
+                            <i className="fa-brands fa-telegram"></i>
+                        </a>
+                        <a href="YOUR_WHATSAPP_LINK_HERE" target="_blank" rel="noopener noreferrer" className="text-[#25D366] hover:scale-110 transition-transform drop-shadow-sm hover:drop-shadow-[0_0_5px_rgba(37,211,102,0.5)]" title="WhatsApp Channel">
+                            <i className="fa-brands fa-whatsapp"></i>
+                        </a>
+                        <a href="https://t.me/ATAXYmentorDiscussion" target="_blank" rel="noopener noreferrer" className="text-[#7289da] hover:scale-110 transition-transform drop-shadow-sm hover:drop-shadow-[0_0_5px_rgba(114,137,218,0.5)]" title="Discussion Group">
+                            <i className="fa-solid fa-users"></i>
+                        </a>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // 🔒 PERSISTENT GATEKEEPER
+        // ==========================================
+        const Gatekeeper = ({ onVerify }) => {
+            const [step, setStep] = useState(() => parseInt(safeGetStr('ataxy_verify_step', '0')));
+            const [verifying, setVerifying] = useState(false);
+            const [isCheckingSaved, setIsCheckingSaved] = useState(true);
+            const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || { first_name: "Student", id: "1001", username: "student" };
+
+            useEffect(() => {
+                const checkVerification = async () => {
+                    const savedState = safeGetStr('ataxy_verified', '');
+                    if (savedState === 'true') {
+                        setIsCheckingSaved(false);
+                        onVerify(tgUser);
+                        return;
+                    }
+
+                    if (tgUser?.id && String(tgUser.id) !== "1001") {
+                        try {
+                            const res = await fetch(`${BACKEND_URL}/api/neet/users`);
+                            if (res.ok) {
+                                const data = await res.json();
+                                const isRegistered = data.users?.some(u => String(u.telegram_user_id) === String(tgUser.id));
+                                if (isRegistered) {
+                                    safeSetItem('ataxy_verified', 'true');
+                                    setIsCheckingSaved(false);
+                                    onVerify(tgUser);
+                                    return;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn("Could not check user status", e);
+                        }
+                    }
+                    setIsCheckingSaved(false);
+                };
+                checkVerification();
+            }, []);
+
+            const handleVerify = () => {
+                setVerifying(true);
+                setTimeout(() => {
+                    safeSetItem('ataxy_verified', 'true');
+                    safeRemoveItem('ataxy_verify_step');
+                    setVerifying(false);
+                    onVerify(tgUser);
+                }, 1500);
+            };
+
+            const handleJoin = (url, nextStep) => {
+                setStep(nextStep);
+                safeSetItem('ataxy_verify_step', nextStep.toString());
+                if (window.Telegram?.WebApp?.openTelegramLink) {
+                    window.Telegram.WebApp.openTelegramLink(url);
+                } else {
+                    window.open(url, "_blank");
+                }
+            };
+
+            if (isCheckingSaved) return <div className="min-h-screen bg-gray-900"></div>;
+
+            return (
+                <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                    <AtaxyLogo className="w-28 h-28 rounded-full mb-6 shadow-[0_0_40px_rgba(0,167,167,0.4)] border-4 border-[#00A7A7]" />
+                    <h1 className="text-3xl font-black mb-2 tracking-wide drop-shadow-md">ATAXY Learning</h1>
+                    <p className="text-gray-400 mb-8 text-sm">Welcome, {tgUser.first_name}! Complete these steps to access your batches.</p>
+
+                    <div className="w-full space-y-4 max-w-sm">
+                        <div className={`p-4 rounded-xl border flex items-center justify-between transition-all ${step >= 1 ? 'bg-green-500/10 border-green-500/50' : 'bg-white/5 border-white/10'}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-green-500 text-white' : 'bg-gray-800'}`}>1</div>
+                                <div className="text-left"><h3 className="font-bold">ATAXY Mentor</h3><p className="text-xs text-gray-400">Official Channel</p></div>
+                            </div>
+                            <button onClick={() => handleJoin("https://t.me/ATAXYmentor", Math.max(step, 1))} className={`px-4 py-2 rounded-lg font-bold text-sm ${step >= 1 ? 'bg-green-500/20 text-green-500' : 'bg-blue-600 text-white'}`}>
+                                {step >= 1 ? 'Joined' : 'Join'}
+                            </button>
+                        </div>
+                        <div className={`p-4 rounded-xl border flex items-center justify-between transition-all ${step >= 2 ? 'bg-green-500/10 border-green-500/50' : 'bg-white/5 border-white/10'}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-green-500 text-white' : 'bg-gray-800'}`}>2</div>
+                                <div className="text-left"><h3 className="font-bold">Discussion Group</h3><p className="text-xs text-gray-400">Doubt Solving</p></div>
+                            </div>
+                            <button onClick={() => handleJoin("https://t.me/ATAXYmentorDiscussion", 2)} disabled={step < 1} className={`px-4 py-2 rounded-lg font-bold text-sm ${step >= 2 ? 'bg-green-500/20 text-green-500' : step < 1 ? 'bg-gray-700 text-gray-500' : 'bg-blue-600 text-white'}`}>
+                                {step >= 2 ? 'Joined' : 'Join'}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="mt-10 w-full max-w-sm flex flex-col gap-3">
+                        <button onClick={handleVerify} disabled={step < 2 || verifying} className={`w-full py-4 rounded-xl font-black text-lg transition-all shadow-lg ${step === 2 && !verifying ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:scale-105' : 'bg-gray-800 text-gray-500'}`}>
+                            {verifying ? <i className="fa-solid fa-spinner fa-spin"></i> : "Verify & Login"}
+                        </button>
+                        {step < 2 && (
+                            <button onClick={() => { setStep(2); safeSetItem('ataxy_verify_step', '2'); }} className="text-sm text-gray-400 hover:text-white transition-colors underline">
+                                Already joined? Click here to skip
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // 🎙️ WEPLAY NATIVE WEBRTC MESH VOICE ROOMS (VC TAB)
+        // ==========================================
+
+        // ==========================================
+        // UNIVERSAL AVATAR PROFILE CARD
+        // ==========================================
+        const ProfileCardModal = (props) => {
+            try {
+                const user = props.user || props.targetUser || {};
+                if (Object.keys(user).length === 0) return null;
+
+                const safeId = user.user_id || user.userId || user.id || "No ID";
+                const safeName = user.user_name || user.userName || user.name || "Unknown User";
+                const safePhoto = user.photo_url || user.user_avatar || user.dp || null;
+
+                const isMe = String(safeId) === String(props.currentUserId);
+                const isFriend = Array.isArray(props.friends) ? props.friends.includes(String(safeId)) : false;
+                const isPending = Array.isArray(props.sentRequests) ? props.sentRequests.includes(String(safeId)) : false;
+                const seatNum = user.seat_index ?? user.seat_number;
+
+                const handleAddFriend = () => {
+                    if (safeId !== "No ID" && props.sendFriendRequest) props.sendFriendRequest({ user_id: safeId, user_name: safeName, photo_url: safePhoto });
+                    if (props.onClose) props.onClose();
+                };
+
+                const handleChat = () => {
+                    if (props.onClose) props.onClose();
+                    if (props.setIsMinimized) props.setIsMinimized(true);
+                    if (props.setVcSubTab) props.setVcSubTab('chats');
+                    if (safeId !== "No ID" && props.setActiveChatUser) props.setActiveChatUser({ id: safeId, name: safeName, photo: safePhoto });
+                };
+
+                return (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4 animate-in fade-in" onClick={props.onClose}>
+                        <div className="bg-[#182533] w-full max-w-sm rounded-2xl border border-[#243647] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            {/* Banner / Header */}
+                            <div className="h-24 bg-gradient-to-r from-[#2b5278] to-[#3a6d9c] relative">
+                                <button
+                                    onClick={props.onClose}
+                                    className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Profile Info */}
+                            <div className="px-6 pb-6 relative">
+                                {/* Avatar Container */}
+                                <div className="absolute -top-12 left-6">
+                                    {safePhoto ? (
+                                        <img
+                                            src={safePhoto}
+                                            alt={safeName}
+                                            className="w-24 h-24 rounded-full border-4 border-[#182533] object-cover bg-[#0e1621]"
+                                            onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
+                                        />
+                                    ) : (
+                                        <div className="w-24 h-24 rounded-full border-4 border-[#182533] bg-gradient-to-br from-[#2b5278] to-[#3a6d9c] flex items-center justify-center font-black text-white text-4xl shadow-lg">
+                                            {String(safeName).charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Meta Space to clear absolute avatar */}
+                                <div className="h-14"></div>
+
+                                {/* Name & ID */}
+                                <h3 className="text-xl font-bold text-white truncate">{safeName}</h3>
+                                <div className="flex items-center gap-1.5 mt-1 text-sm text-[#708499]">
+                                    <span>ID: {String(safeId).substring(0, 8)}</span>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(safeId);
+                                            safeAlert('ID Copied!');
+                                            if (window.Telegram?.WebApp?.HapticFeedback) {
+                                                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                                            }
+                                        }}
+                                        className="p-1 hover:bg-[#243647] rounded text-[#4face8] transition-colors text-xs"
+                                        title="Copy ID"
+                                    >
+                                        📋
+                                    </button>
+                                </div>
+
+                                {/* Contextual Action Row */}
+                                <div className="mt-6 flex flex-col gap-3">
+                                    {!isMe && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {!isFriend ? (
+                                                <button onClick={handleAddFriend} disabled={isPending} className={`py-2.5 rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2 ${isPending ? 'bg-[#243647] text-[#708499]' : 'bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white'}`}>
+                                                    <i className={`fa-solid ${isPending ? 'fa-clock' : 'fa-user-plus'}`}></i> {isPending ? 'Pending' : 'Add Friend'}
+                                                </button>
+                                            ) : (
+                                                <button onClick={handleChat} className="py-2.5 bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2">
+                                                    <i className="fa-solid fa-message"></i> Chat
+                                                </button>
+                                            )}
+                                            <button onClick={handleChat} className="py-2.5 bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-2">
+                                                <i className="fa-solid fa-paper-plane"></i> Message
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Seat Management (For Me) */}
+                                    {isMe && seatNum != null && props.activeRoom && (
+                                        <div className="grid grid-cols-2 gap-3 mt-2 border-t border-[#243647] pt-4">
+                                            <button onClick={() => { if (props.leaveSeat) props.leaveSeat(); if (props.onClose) props.onClose(); }} className="py-2.5 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold rounded-xl transition-colors text-sm">Leave Seat</button>
+                                            <button onClick={() => { if (props.toggleMute) props.toggleMute(); if (props.onClose) props.onClose(); }} className={`py-2.5 font-bold rounded-xl border transition-colors text-sm ${props.isLocalMuted ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500 hover:text-white' : 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500 hover:text-white'}`}>
+                                                {props.isLocalMuted ? 'Unmute Mic' : 'Mute Mic'}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Host Actions */}
+                                    {props.isHost && !isMe && props.activeRoom && (
+                                        <div className="grid grid-cols-2 gap-3 mt-2 border-t border-[#243647] pt-4">
+                                            {seatNum != null && (
+                                                <>
+                                                    <button onClick={() => { if (props.toggleSeatMuteByHost) props.toggleSeatMuteByHost(seatNum, user?.is_muted_by_host); if (props.onClose) props.onClose(); }} className={`py-2.5 font-bold rounded-xl border transition-colors text-sm ${user?.is_muted_by_host ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500 hover:text-white' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500 hover:text-white'}`}>
+                                                        {user?.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                                                    </button>
+                                                    <button onClick={() => { if (props.moveToAudience) props.moveToAudience(safeId, seatNum, safeName, safePhoto); if (props.onClose) props.onClose(); }} className="py-2.5 bg-[#4face8]/10 text-[#4face8] border border-[#4face8]/30 hover:bg-[#4face8] hover:text-white font-bold rounded-xl transition-colors text-sm">Move to Audience</button>
+                                                </>
+                                            )}
+                                            <button onClick={() => { if (props.handleKick) props.handleKick(safeId, seatNum); if (props.onClose) props.onClose(); }} className="py-2.5 bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold rounded-xl transition-colors text-sm col-span-2">
+                                                Kick from Room
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            } catch (err) {
+                console.error("ProfileCardModal Error: ", err);
+                return null;
+            }
+        };
+
+        // ==========================================
+        // PERSONAL CHATS FEED INBOX
+        // ==========================================
+        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete }) => {
+            const [dmInput, setDmInput] = useState('');
+            const [pendingImage, setPendingImage] = useState(null);
+            const [replyingTo, setReplyingTo] = useState(null);
+            const [fullScreenImage, setFullScreenImage] = useState(null);
+            const chatEndRef = useRef(null);
+            const [showRequestsInbox, setShowRequestsInbox] = useState(false);
+            const [showSearch, setShowSearch] = useState(false);
+            const [searchInput, setSearchInput] = useState('');
+            const [searchResult, setSearchResult] = useState(null);
+            const [isSearching, setIsSearching] = useState(false);
+            const [showChatProfile, setShowChatProfile] = useState(false);
+
+            // Advanced Messaging State
+            const [msgMenu, setMsgMenu] = useState(null);
+            const [editingMsg, setEditingMsg] = useState(null);
+            const [forwardMsg, setForwardMsg] = useState(null);
+            const touchRef = useRef(null);
+            const longPressTimer = useRef(null);
+
+            useEffect(() => {
+                const handleBackEvent = (e) => {
+                    if (showChatProfile) { e.preventDefault(); setShowChatProfile(false); }
+                    else if (fullScreenImage) { e.preventDefault(); setFullScreenImage(null); }
+                    else if (msgMenu) { e.preventDefault(); setMsgMenu(null); }
+                    else if (forwardMsg) { e.preventDefault(); setForwardMsg(null); }
+                    else if (showRequestsInbox) { e.preventDefault(); setShowRequestsInbox(false); }
+                    else if (showSearch) { e.preventDefault(); setShowSearch(false); setSearchInput(''); setSearchResult(null); }
+                    else if (activeChatUser) { e.preventDefault(); setActiveChatUser(null); }
+                };
+                window.addEventListener('ataxy_back_requested', handleBackEvent);
+                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
+            }, [showChatProfile, fullScreenImage, msgMenu, forwardMsg, showRequestsInbox, showSearch, activeChatUser]);
+
+            const handleTouchStart = (e, m) => {
+                const touch = e.touches ? e.touches[0] : e;
+                touchRef.current = { x: touch.clientX, y: touch.clientY, id: m.id, swiped: false, longPressed: false };
+                longPressTimer.current = setTimeout(() => {
+                    if (touchRef.current) touchRef.current.longPressed = true;
+                    setMsgMenu(m);
+                    try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); } catch (e) { }
+                }, 500);
+            };
+
+            const handleTouchMove = (e) => {
+                if (!touchRef.current) return;
+                const touch = e.touches ? e.touches[0] : e;
+                const dx = touch.clientX - touchRef.current.x;
+                const dy = touch.clientY - touchRef.current.y;
+                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearTimeout(longPressTimer.current);
+
+                const el = document.getElementById(`msg-bubble-${touchRef.current.id}`);
+                const iconEl = document.getElementById(`reply-icon-${touchRef.current.id}`);
+
+                if (el && Math.abs(dx) > 10 && Math.abs(dy) < 30) {
+                    const moveX = Math.max(-60, Math.min(dx, 60));
+                    el.style.transform = `translateX(${moveX}px)`;
+
+                    if (iconEl) {
+                        const progress = Math.abs(moveX) / 60;
+                        iconEl.style.opacity = progress;
+                        iconEl.style.transform = `scale(${0.5 + (0.5 * progress)})`;
+                    }
+                }
+
+                // Swipe to Reply Threshold
+                if (Math.abs(dx) > 40 && !touchRef.current.swiped && Math.abs(dy) < 30) {
+                    touchRef.current.swiped = true;
+                    const m = dms[activeChatUser.id]?.find(msg => msg.id === touchRef.current.id);
+                    if (m) setReplyingTo(m);
+                    try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); } catch (e) { }
+                }
+            };
+
+            const handleTouchEnd = () => {
+                clearTimeout(longPressTimer.current);
+                if (touchRef.current) {
+                    const el = document.getElementById(`msg-bubble-${touchRef.current.id}`);
+                    const iconEl = document.getElementById(`reply-icon-${touchRef.current.id}`);
+                    if (el) {
+                        el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                        el.style.transform = 'translateX(0)';
+                        setTimeout(() => { el.style.transition = ''; }, 200);
+                    }
+                    if (iconEl) {
+                        iconEl.style.transition = 'opacity 0.2s, transform 0.2s';
+                        iconEl.style.opacity = '0';
+                        iconEl.style.transform = 'scale(0.5)';
+                        setTimeout(() => { iconEl.style.transition = ''; }, 200);
+                    }
+                }
+                setTimeout(() => { touchRef.current = null; }, 100);
+            };
+            const [blockedUsers, setBlockedUsers] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('ataxy_blocked_users') || '[]'); } catch (e) { return []; }
+            });
+
+            const handleSearch = async () => {
+                const trimmedId = searchInput.trim();
+                if (!trimmedId || !/^\d+$/.test(trimmedId)) {
+                    safeAlert("Please enter a valid numeric ID.");
+                    return;
+                }
+                if (String(trimmedId) === String(currentUserId)) {
+                    safeAlert("You cannot search for yourself.");
+                    return;
+                }
+
+                setIsSearching(true);
+                let foundUser = null;
+                const friend = friends.find(f => String(f.id) === trimmedId);
+                if (friend) {
+                    foundUser = { id: trimmedId, name: friend.name, photo: friend.photo };
+                }
+                if (!foundUser) {
+                    const pending = pendingRequests.find(p => String(p.id) === trimmedId);
+                    if (pending) {
+                        foundUser = { id: trimmedId, name: pending.name, photo: pending.photo };
+                    }
+                }
+                if (!foundUser && dms[trimmedId]) {
+                    const msgsRev = [...dms[trimmedId]].reverse();
+                    const msgWithTargetMeta = msgsRev.find(m => m.targetName && !m.targetName.startsWith('User '));
+                    const msgWithSenderMeta = msgsRev.find(m => m.senderName && !m.senderName.startsWith('User '));
+                    const metaName = msgWithSenderMeta?.senderName || msgWithTargetMeta?.targetName;
+                    const metaPhoto = msgWithSenderMeta?.senderPhoto || msgWithTargetMeta?.targetPhoto;
+                    if (metaName && !metaName.startsWith('User ')) {
+                        foundUser = { id: trimmedId, name: metaName, photo: metaPhoto || null };
+                    }
+                }
+
+                if (!foundUser) {
+                    try {
+                        const res = await fetch(`${BACKEND_URL}/api/neet/users`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            const serverUser = data.users?.find(u => String(u.telegram_user_id) === String(trimmedId));
+                            if (serverUser) {
+                                foundUser = { id: trimmedId, name: serverUser.first_name || serverUser.username || `User ${trimmedId}`, photo: serverUser.profile_photo_url || null };
+                            }
+                        }
+                    } catch (e) { console.warn("Failed to fetch user from server", e); }
+                }
+                if (!foundUser) {
+                    foundUser = { id: trimmedId, name: `User ${trimmedId}`, photo: null };
+                }
+                setSearchResult(foundUser);
+                setIsSearching(false);
+            };
+
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView();
+            }, [dms, activeChatUser]);
+
+            useEffect(() => {
+                if (activeChatUser && syncFriendStatus) {
+                    const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(activeChatUser.id)) : false;
+                    if (!isFriend) {
+                        syncFriendStatus(activeChatUser.id);
+                    }
+                }
+                if (activeChatUser && markChatAsRead) {
+                    markChatAsRead(activeChatUser.id);
+                }
+            }, [activeChatUser, friends, dms]);
+
+            const unreadCounts = useMemo(() => {
+                return Object.keys(dms).reduce((acc, uid) => {
+                    acc[uid] = dms[uid].filter(m => String(m.sender) !== String(currentUserId) && m.status !== 'read').length;
+                    return acc;
+                }, {});
+            }, [dms, currentUserId]);
+
+            if (activeChatUser) {
+                const targetId = activeChatUser.id;
+                const chatHistory = dms[targetId] || [];
+                const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
+
+                const mySentCount = chatHistory.filter(m => String(m.sender) === String(currentUserId)).length;
+                const canSend = isFriend || mySentCount < 3;
+
+                return ReactDOM.createPortal(
+                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#010B1C] h-[100dvh] w-full max-w-md mx-auto shadow-2xl">
+                        <style>{`div.fixed.bottom-0.w-full.max-w-md.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
+                        <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 shadow-md">
+                            <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
+                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
+                                {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col">
+                                <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline leading-tight" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
+                                <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5" onClick={() => { navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }}>ID: {activeChatUser.id}</p>
+                            </div>
+                            <button onClick={() => setShowChatProfile(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95 shrink-0 ml-auto bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full">
+                                <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
+                            {chatHistory.length === 0 && (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                                    <i className="fa-solid fa-message text-4xl mb-3 opacity-50"></i>
+                                    <p className="text-sm font-bold">Say hi to {activeChatUser?.name || "your friend"}!</p>
+                                    {!isFriend && <p className="text-xs mt-1">You can send up to 3 messages until they accept your request.</p>}
+                                </div>
+                            )}
+                            {chatHistory.map((m, idx) => {
+                                const isMe = String(m.sender) === String(currentUserId);
+                                return (
+                                    <div
+                                        key={idx} id={`msg-${m.id}`}
+                                        className={`flex items-end gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 group mb-1`}
+                                        onTouchStart={(e) => handleTouchStart(e, m)}
+                                        onTouchMove={handleTouchMove}
+                                        onTouchEnd={handleTouchEnd}
+                                        onMouseDown={(e) => handleTouchStart(e, m)}
+                                        onMouseMove={handleTouchMove}
+                                        onMouseUp={handleTouchEnd}
+                                        onMouseLeave={handleTouchEnd}
+                                        onContextMenu={(e) => { e.preventDefault(); setMsgMenu(m); }}
+                                    >
+                                        {!isMe && (
+                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
+                                                {activeChatUser.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : (activeChatUser.name || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <div className={`flex items-center gap-2 w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                            {!isMe && (
+                                                <div id={`reply-icon-${m.id}`} className="w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 opacity-0 transform scale-50 transition-none pointer-events-none">
+                                                    <i className="fa-solid fa-reply text-xs"></i>
+                                                </div>
+                                            )}
+                                            <div id={`msg-bubble-${m.id}`} className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm relative z-10 ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none ml-auto' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none mr-auto'} max-w-[85%]`}>
+                                                {m.isAutoMsg && (
+                                                    <div className={`text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-1 ${isMe ? 'text-[#010B1C]/60' : 'text-[#00FFFF]/80'}`}>
+                                                        <i className="fa-solid fa-robot"></i> Auto Message
+                                                    </div>
+                                                )}
+                                                {m.replyTo && (
+                                                    <div className={`mb-2 p-2 rounded-lg text-xs border-l-2 opacity-80 ${isMe ? 'bg-[#00d8d8] border-[#010B1C] text-[#010B1C]' : 'bg-[#010B1C] border-[#00FFFF] text-[#A4DFE6]'}`} onClick={() => { }}>
+                                                        <p className="font-bold truncate">{m.replyTo.senderName || 'User'}</p>
+                                                        <p className="truncate">{m.replyTo.text || (m.replyTo.imageUrl ? '📷 Photo' : '')}</p>
+                                                    </div>
+                                                )}
+                                                {m.imageUrl && (
+                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/20 cursor-pointer" onClick={() => setFullScreenImage(m.imageUrl)}>
+                                                        <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
+                                                    </div>
+                                                )}
+                                                <p className={`whitespace-pre-wrap break-words ${m.isAutoMsg ? 'italic font-medium' : ''}`}>
+                                                    {m.text}
+                                                    {m.isEdited && <span className="text-[10px] text-[#0AE0D0] italic ml-1">(edited)</span>}
+                                                </p>
+                                                <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
+                                                    {new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {isMe && (
+                                                        <span>
+                                                            {m.status === 'read' ? <i className="fa-solid fa-check-double text-blue-600"></i> :
+                                                                m.status === 'delivered' ? <i className="fa-solid fa-check-double text-gray-500"></i> :
+                                                                    <i className="fa-solid fa-check text-gray-500"></i>}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {isMe && (
+                                                <div id={`reply-icon-${m.id}`} className="w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 opacity-0 transform scale-50 transition-none pointer-events-none">
+                                                    <i className="fa-solid fa-reply text-xs"></i>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {isMe && (
+                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto })}>
+                                                {currentUserPhoto ? <img src={currentUserPhoto} className="w-full h-full object-cover" /> : (currentUserName || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            <div ref={chatEndRef} />
+                        </div>
+                        {replyingTo && (
+                            <div className="mx-4 mt-2 bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-2 border-[#00FFFF] pl-2">
+                                    <p className="text-xs font-bold text-[#00FFFF] truncate">{replyingTo.senderName || (String(replyingTo.sender) === String(currentUserId) ? 'You' : 'User')}</p>
+                                    <p className="text-[10px] text-[#A4DFE6] truncate">{replyingTo.text || (replyingTo.imageUrl ? '📷 Photo' : '')}</p>
+                                </div>
+                                <button onClick={() => setReplyingTo(null)} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                            </div>
+                        )}
+                        {editingMsg && (
+                            <div className="mx-4 mt-2 bg-[#021633] border border-orange-500/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-2 border-orange-500 pl-2">
+                                    <p className="text-xs font-bold text-orange-500 truncate">Editing Message</p>
+                                    <p className="text-[10px] text-[#A4DFE6] truncate">{editingMsg.text}</p>
+                                </div>
+                                <button onClick={() => { setEditingMsg(null); setDmInput(''); }} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                            </div>
+                        )}
+                        {pendingImage && (
+                            <div className="mx-4 mt-2 w-fit bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="w-16 h-16 rounded-lg bg-black/50 overflow-hidden border border-[#00FFFF]/30 relative">
+                                    <img src={pendingImage} className="w-full h-full object-cover" />
+                                    <button onClick={() => setPendingImage(null)} className="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 rounded-bl-lg flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="p-3 bg-[#021633] border-t border-[#0AE0D0]/30 flex gap-2 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shrink-0 items-center">
+                            <button onClick={() => document.getElementById('dm-image-upload').click()} disabled={!canSend} className="w-10 h-10 shrink-0 bg-[#0AE0D0]/10 text-[#00FFFF] rounded-full flex items-center justify-center hover:bg-[#0AE0D0]/30 transition-colors disabled:opacity-50">
+                                <i className="fa-solid fa-image"></i>
+                            </button>
+                            <input type="file" id="dm-image-upload" accept="image/*" className="hidden" onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const canvas = document.createElement('canvas');
+                                        let width = img.width, height = img.height;
+                                        const maxDim = 800;
+                                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                                        canvas.width = width; canvas.height = height;
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(img, 0, 0, width, height);
+                                        setPendingImage(canvas.toDataURL('image/jpeg', 0.5));
+                                    };
+                                    img.src = ev.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                                e.target.value = '';
+                            }} />
+                            <input
+                                value={dmInput}
+                                onChange={(e) => setDmInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && dmInput.trim() && canSend) {
+                                        if (editingMsg) {
+                                            handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
+                                            setEditingMsg(null);
+                                        } else {
+                                            sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo);
+                                            setPendingImage(null);
+                                            setReplyingTo(null);
+                                        }
+                                        setDmInput('');
+                                    }
+                                }}
+                                placeholder={isFriend ? "Type a message..." : (canSend ? `Type a message... (${3 - mySentCount} left)` : "Waiting for friend request approval")}
+                                disabled={!canSend}
+                                className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors disabled:opacity-50"
+                            />
+                            <button
+                                onClick={() => {
+                                    if (canSend && (dmInput.trim() || pendingImage)) {
+                                        if (editingMsg && dmInput.trim()) {
+                                            handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
+                                            setEditingMsg(null);
+                                        } else {
+                                            sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo);
+                                            setPendingImage(null);
+                                            setReplyingTo(null);
+                                        }
+                                        setDmInput('');
+                                    }
+                                }}
+                                disabled={!canSend || (!dmInput.trim() && !pendingImage)}
+                                className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
+                            >
+                                <i className="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        {showRequestsInbox && (
+                            <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
+                                <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                    <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                        <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                        <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                        {pendingRequests.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                                <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
+                                                <p className="text-sm font-bold">No pending requests</p>
+                                            </div>
+                                        ) : (
+                                            pendingRequests.map(req => (
+                                                <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
+                                                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
+                                                        {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                        <div className="flex flex-col">
+                                                            <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0, 8)}`}</span>
+                                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                        <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
+
+                        {/* NEW: Full Screen Chat Profile Settings Modal */}
+                        {showChatProfile && activeChatUser && (
+                            <div className="fixed inset-0 bg-[#010B1C] z-[5000] flex flex-col animate-in slide-in-from-right duration-300">
+                                <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))]">
+                                    <button onClick={() => setShowChatProfile(false)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
+                                    <h3 className="font-bold text-[#00FFFF] text-lg">Contact Info</h3>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+                                    <div className="bg-[#021633] p-6 flex flex-col items-center justify-center border-b border-[#0AE0D0]/20 shadow-md">
+                                        <div className="w-32 h-32 rounded-full bg-[#00FFFF]/20 border-4 border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] text-5xl overflow-hidden mb-4 shadow-[0_0_15px_rgba(0,255,255,0.3)]">
+                                            {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <h2 className="text-2xl font-black text-white text-center">{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h2>
+                                        <p className="text-[#A4DFE6] font-mono mt-1 text-sm">ID: {activeChatUser.id}</p>
+                                    </div>
+
+                                    <div className="mt-4 bg-[#021633] border-y border-[#0AE0D0]/20 divide-y divide-[#0AE0D0]/10">
+                                        {(() => {
+                                            const isFriend = Array.isArray(friends) && friends.some(f => String(f.id || f) === String(activeChatUser.id));
+                                            const isPending = Array.isArray(sentRequests) && sentRequests.includes(String(activeChatUser.id));
+
+                                            if (isFriend) {
+                                                return (
+                                                    <button onClick={() => {
+                                                        safeConfirm(`Remove ${activeChatUser.name || 'this user'} from friends?`, () => { if (removeFriend) removeFriend(activeChatUser.id); });
+                                                    }} className="w-full p-4 flex items-center gap-4 text-red-400 hover:bg-white/5 transition-colors text-left">
+                                                        <i className="fa-solid fa-user-minus w-6 text-center text-lg"></i>
+                                                        <span className="font-bold">Unfriend User</span>
+                                                    </button>
+                                                );
+                                            } else if (isPending) {
+                                                return (
+                                                    <button onClick={() => { if (cancelFriendRequest) cancelFriendRequest(activeChatUser.id); }} className="w-full p-4 flex items-center gap-4 text-orange-400 hover:bg-white/5 transition-colors text-left">
+                                                        <i className="fa-solid fa-user-xmark w-6 text-center text-lg"></i>
+                                                        <span className="font-bold">Cancel Friend Request</span>
+                                                    </button>
+                                                );
+                                            } else {
+                                                return (
+                                                    <button onClick={() => { if (sendFriendRequest) sendFriendRequest({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo }); }} className="w-full p-4 flex items-center gap-4 text-[#00FFFF] hover:bg-white/5 transition-colors text-left">
+                                                        <i className="fa-solid fa-user-plus w-6 text-center text-lg"></i>
+                                                        <span className="font-bold">Add Friend</span>
+                                                    </button>
+                                                );
+                                            }
+                                        })()}
+
+                                        <button onClick={() => {
+                                            const isBlocked = blockedUsers.includes(activeChatUser.id);
+                                            const newBlocked = isBlocked ? blockedUsers.filter(id => id !== activeChatUser.id) : [...blockedUsers, activeChatUser.id];
+                                            setBlockedUsers(newBlocked);
+                                            localStorage.setItem('ataxy_blocked_users', JSON.stringify(newBlocked));
+                                            safeAlert(isBlocked ? "User unblocked." : "User blocked. You will no longer receive their messages.");
+                                        }} className="w-full p-4 flex items-center gap-4 text-red-500 hover:bg-white/5 transition-colors text-left">
+                                            <i className="fa-solid fa-ban w-6 text-center text-lg"></i>
+                                            <span className="font-bold">{blockedUsers.includes(activeChatUser.id) ? 'Unblock User' : 'Block User'}</span>
+                                        </button>
+
+                                        <button onClick={() => {
+                                            safeConfirm("Are you sure you want to delete this entire chat?", () => { if (deleteChatHistory) deleteChatHistory(activeChatUser.id); setActiveChatUser(null); setShowChatProfile(false); });
+                                        }} className="w-full p-4 flex items-center gap-4 text-red-500 hover:bg-white/5 transition-colors text-left">
+                                            <i className="fa-solid fa-trash w-6 text-center text-lg"></i>
+                                            <span className="font-bold">Delete Chat History</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Advanced Messaging Action Modals */}
+                        {msgMenu && (
+                            <div className="fixed inset-0 bg-black/80 z-[6000] flex items-end justify-center animate-in fade-in" onClick={() => setMsgMenu(null)}>
+                                <div className="bg-[#021633] w-full max-w-md rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30 animate-in slide-in-from-bottom-2" onClick={e => e.stopPropagation()}>
+                                    <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                        <h3 className="text-lg font-bold text-white">Message Options</h3>
+                                        <button onClick={() => setMsgMenu(null)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <button onClick={() => { setReplyingTo(msgMenu); setMsgMenu(null); }} className="p-3 text-left hover:bg-white/5 rounded-xl text-[#00FFFF] font-bold"><i className="fa-solid fa-reply w-6 mr-2"></i> Reply</button>
+                                        <button onClick={() => { navigator.clipboard.writeText(msgMenu.text || ''); safeAlert('Copied'); setMsgMenu(null); }} className="p-3 text-left hover:bg-white/5 rounded-xl text-white font-bold"><i className="fa-solid fa-copy w-6 mr-2"></i> Copy</button>
+                                        <button onClick={() => { setForwardMsg(msgMenu); setMsgMenu(null); }} className="p-3 text-left hover:bg-white/5 rounded-xl text-white font-bold"><i className="fa-solid fa-share w-6 mr-2"></i> Forward</button>
+
+                                        {String(msgMenu.sender) === String(currentUserId) && msgMenu.text && !msgMenu.imageUrl && (
+                                            <button onClick={() => { setEditingMsg(msgMenu); setDmInput(msgMenu.text); setMsgMenu(null); }} className="p-3 text-left hover:bg-white/5 rounded-xl text-orange-400 font-bold"><i className="fa-solid fa-pen w-6 mr-2"></i> Edit</button>
+                                        )}
+
+                                        <button onClick={() => { handleLocalDelete(activeChatUser.id, msgMenu.id); setMsgMenu(null); }} className="p-3 text-left hover:bg-white/5 rounded-xl text-red-400 font-bold"><i className="fa-solid fa-trash w-6 mr-2"></i> Delete for me</button>
+
+                                        {String(msgMenu.sender) === String(currentUserId) && (
+                                            <button onClick={() => { handlePrivateAction(activeChatUser.id, 'delete', msgMenu.id); setMsgMenu(null); }} className="p-3 text-left hover:bg-white/5 rounded-xl text-red-500 font-bold"><i className="fa-solid fa-trash-can w-6 mr-2"></i> Delete for everyone</button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {forwardMsg && (
+                            <div className="fixed inset-0 bg-black/80 z-[6000] flex items-end justify-center animate-in fade-in" onClick={() => setForwardMsg(null)}>
+                                <div className="bg-[#021633] w-full max-w-md h-[60vh] rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30 animate-in slide-in-from-bottom-2" onClick={e => e.stopPropagation()}>
+                                    <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                        <h3 className="text-lg font-bold text-white">Forward to...</h3>
+                                        <button onClick={() => setForwardMsg(null)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar">
+                                        {friends.map(f => (
+                                            <div key={f.id} className="flex items-center justify-between p-3 bg-[#010B1C] rounded-xl border border-[#0AE0D0]/10 hover:border-[#00FFFF] cursor-pointer" onClick={() => {
+                                                sendPrivateDM(f.id, forwardMsg.text, forwardMsg.imageUrl, null);
+                                                safeAlert('Message forwarded');
+                                                setForwardMsg(null);
+                                            }}>
+                                                <div className="flex items-center gap-3">
+                                                    {f.photo ? <img src={f.photo} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] flex items-center justify-center font-bold">{String(f.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                    <span className="font-bold text-white">{f.name}</span>
+                                                </div>
+                                                <i className="fa-solid fa-paper-plane text-[#00FFFF]"></i>
+                                            </div>
+                                        ))}
+                                        {friends.length === 0 && <p className="text-gray-500 text-center py-4">No friends to forward to.</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>,
+                    document.body
+                );
+            }
+
+            return (
+                <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setShowSearch(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
+                                <i className="fa-solid fa-search text-sm"></i>
+                            </button>
+                            <button onClick={() => setShowRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
+                                <i className="fa-solid fa-bell text-sm"></i>
+                                {pendingRequests.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                        {pendingRequests.length}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {showSearch && (
+                        <div className="fixed inset-0 bg-black/80 flex items-start justify-center p-4 pt-20 z-[3000]" onClick={() => { setShowSearch(false); setSearchInput(''); setSearchResult(null); }}>
+                            <div className="bg-[#021633] w-full max-w-md rounded-2xl p-4 flex flex-col shadow-[0_10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4"><i className="fa-solid fa-search text-[#00FFFF]"></i> Find User by ID</h3>
+                                <div className="flex gap-2">
+                                    <input value={searchInput} onChange={e => setSearchInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Enter user ID..." className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors" />
+                                    <button onClick={handleSearch} disabled={isSearching} className="px-4 py-2 rounded-xl bg-[#00FFFF] text-[#010B1C] font-bold shadow-md hover:bg-[#00d8d8] transition-colors disabled:opacity-50 min-w-[80px]">
+                                        {isSearching ? <i className="fa-solid fa-spinner fa-spin"></i> : "Search"}
+                                    </button>
+                                </div>
+                                {searchResult && (
+                                    <div className="mt-4 border-t border-[#0AE0D0]/20 pt-4">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Search Result</h4>
+                                        <div onClick={() => { setActiveChatUser(searchResult); setShowSearch(false); setSearchInput(''); setSearchResult(null); }} className="bg-[#010B1C] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors shadow-sm group">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white flex items-center justify-center font-black text-xl border border-[#00FFFF]/40 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+                                                {searchResult.photo ? <img src={searchResult.photo} className="w-full h-full object-cover" /> : String(searchResult.name).charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex-1 overflow-hidden">
+                                                <h4 className="font-bold text-white truncate pr-2">{searchResult.name}</h4>
+                                                <p className="text-[10px] text-[#00FFFF] font-mono">ID: {searchResult.id}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {Object.keys(dms).length === 0 && <p className="text-gray-500 text-center py-6 italic text-sm border border-gray-800 rounded-2xl border-dashed">No conversations yet.</p>}
+                    {Object.entries(dms).sort(([, a], [, b]) => (b[b.length - 1]?.time || 0) - (a[a.length - 1]?.time || 0)).map(([uid, msgs]) => {
+                        const lastMsg = msgs[msgs.length - 1];
+
+                        const msgsRev = [...msgs].reverse();
+                        const msgWithTargetMeta = msgsRev.find(m => m.targetName && !m.targetName.startsWith('User '));
+                        const msgWithSenderMeta = msgsRev.find(m => m.senderName && !m.senderName.startsWith('User '));
+
+                        const metaName = msgWithSenderMeta?.senderName || msgWithTargetMeta?.targetName;
+                        const metaPhoto = msgWithSenderMeta?.senderPhoto || msgWithTargetMeta?.targetPhoto;
+
+                        let targetUserMeta = null;
+                        if (Array.isArray(friends)) {
+                            const found = friends.find(f => String(f.id || f) === String(uid));
+                            if (found && typeof found === 'object') targetUserMeta = found;
+                        }
+                        if (!targetUserMeta && Array.isArray(pendingRequests)) {
+                            targetUserMeta = pendingRequests.find(p => String(p.id) === String(uid));
+                        }
+                        if (!targetUserMeta) {
+                            targetUserMeta = { name: metaName || `User ${String(uid)}`, photo: metaPhoto || null };
+                        }
+
+                        let finalName = targetUserMeta.name;
+                        if (!finalName || finalName.startsWith('User ')) {
+                            finalName = (metaName && !metaName.startsWith('User ')) ? metaName : `User ${String(uid)}`;
+                        }
+                        const finalPhoto = targetUserMeta.photo || metaPhoto || null;
+                        const unreadCount = unreadCounts[uid] || 0;
+
+                        return (
+                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#021633] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors mb-3 shadow-sm group relative">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white flex items-center justify-center font-black text-xl border border-[#00FFFF]/40 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+                                    {finalPhoto ? <img src={finalPhoto} className="w-full h-full object-cover" /> : String(finalName).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                        <h4 className={`font-bold truncate pr-2 ${unreadCount > 0 ? 'text-[#00FFFF]' : 'text-white'}`}>{finalName}</h4>
+                                        {lastMsg && <span className={`text-[9px] shrink-0 ${unreadCount > 0 ? 'text-[#00FFFF] font-bold' : 'text-gray-500'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                                    </div>
+                                    <p className="text-[10px] text-[#00FFFF] mb-1 font-mono">ID: {String(uid)}</p>
+                                    <div className="flex justify-between items-center">
+                                        <p className={`text-xs truncate opacity-80 ${unreadCount > 0 ? 'text-white font-bold' : 'text-[#A4DFE6]'}`}>
+                                            {lastMsg ? (
+                                                <>
+                                                    {String(lastMsg.sender) === String(currentUserId) && (
+                                                        <span className="mr-1 opacity-70">
+                                                            {lastMsg.status === 'read' ? <i className="fa-solid fa-check-double text-blue-500"></i> :
+                                                                lastMsg.status === 'delivered' ? <i className="fa-solid fa-check-double"></i> :
+                                                                    <i className="fa-solid fa-check"></i>}
+                                                        </span>
+                                                    )}
+                                                    {lastMsg.text || (lastMsg.imageUrl ? '📷 Photo' : '')}
+                                                </>
+                                            ) : 'No messages'}
+                                        </p>
+                                        {unreadCount > 0 && (
+                                            <span className="bg-[#00FFFF] text-[#010B1C] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.6)] animate-pulse">
+                                                {unreadCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {showRequestsInbox && (
+                        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
+                            <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                    <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                    {pendingRequests.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                            <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
+                                            <p className="text-sm font-bold">No pending requests</p>
+                                        </div>
+                                    ) : (
+                                        pendingRequests.map(req => (
+                                            <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
+                                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
+                                                    {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0, 8)}`}</span>
+                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // 1. STANDALONE AUDIO FREQUENCY FLICKER HOOK (Zero Supabase DB Cost)
+        let globalAudioContext = null;
+
+        const useAudioAnalyser = (mediaStream) => {
+            const [volume, setVolume] = useState(0);
+            const requestRef = useRef(null);
+            const analyserRef = useRef(null);
+            const sourceRef = useRef(null);
+
+            useEffect(() => {
+                if (!mediaStream) {
+                    setVolume(0);
+                    return;
+                }
+
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!globalAudioContext) {
+                        globalAudioContext = new AudioContext();
+                    }
+                    if (globalAudioContext.state === 'suspended') {
+                        globalAudioContext.resume();
+                    }
+                    analyserRef.current = globalAudioContext.createAnalyser();
+                    analyserRef.current.fftSize = 32;
+
+                    sourceRef.current = globalAudioContext.createMediaStreamSource(mediaStream);
+                    sourceRef.current.connect(analyserRef.current);
+
+                    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+
+                    const updateVolume = () => {
+                        if (analyserRef.current) {
+                            analyserRef.current.getByteFrequencyData(dataArray);
+                            let sum = 0;
+                            for (let i = 0; i < dataArray.length; i++) {
+                                sum += dataArray[i];
+                            }
+                            const average = sum / dataArray.length;
+                            const scale = Math.min(100, Math.max(0, Math.round((average / 255) * 100)));
+                            setVolume(prev => Math.abs(prev - scale) > 3 ? scale : prev);
+                        }
+                        requestRef.current = requestAnimationFrame(updateVolume);
+                    };
+
+                    updateVolume();
+                } catch (error) {
+                    console.error("Audio analyser error:", error);
+                    setVolume(0);
+                }
+
+                return () => {
+                    if (requestRef.current) cancelAnimationFrame(requestRef.current);
+                    if (sourceRef.current) sourceRef.current.disconnect();
+                    // We do NOT close the globalAudioContext here. Closing it can cause hardware mic volume ducking/muting on some browsers when unmounting the analyzer (e.g. minimizing the room).
+                };
+            }, [mediaStream]);
+
+            return volume;
+        };
+
+        // ==========================================
+        // 2. VC SEAT NODE COMPONENT
+        // ==========================================
+        const VCSeatNode = ({ seat, idx, currentUserId, isHost, setShowActionModal, takeSeat, mySeatIndex, remoteStream, localStream, isLocalMuted, handleAvatarClick }) => {
+            const isOccupied = seat && seat.user_id;
+            const isLocked = seat && seat.is_locked;
+            const isHostSeat = idx === 0;
+            const isMe = String(seat?.user_id) === currentUserId;
+            const occupantName = isOccupied ? (seat.user_name || `User ${String(seat.user_id).substring(0, 4)}`) : `Seat ${idx}`;
+
+            const mediaStream = isMe ? localStream : (isOccupied ? remoteStream : null);
+            const volume = useAudioAnalyser(mediaStream);
+
+            const speaking = volume > 5;
+            const intensity = Math.min(Math.max((volume - 5) / 95, 0), 1);
+
+            const baseScale = 1;
+            const dynamicScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
+            const ring1Scale = speaking ? dynamicScale * 1.3 : baseScale;
+            const ring2Scale = speaking ? dynamicScale * 1.7 : baseScale;
+            const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
+            const transitionStyle = speaking ? 'transform 400ms ease-out, opacity 200ms ease-in' : 'transform 4000ms ease-out, opacity 5000ms ease-out';
+            return (
+                <div className="flex flex-col items-center gap-2 relative">
+                    {isOccupied ? (
+                        <div className="relative cursor-pointer group weplay-voice-ring flex items-center justify-center" onClick={() => {
+                            if (seat && (seat.user_id || seat.userId || seat.id)) {
+                                handleAvatarClick(seat);
+                            } else {
+                                // Fallback if occupant object lacks user_id for some reason
+                                if (isHost && idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat: null });
+                            }
+                        }}>
+                            {/* Solid flowing voice glow with lingering memory fade */}
+                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity * 0.5, filter: 'blur(12px)', transition: transitionStyle }}></div>
+                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${ring1Scale})`, opacity: glowOpacity * 0.6, filter: 'blur(6px)', transition: transitionStyle }}></div>
+                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${ring2Scale})`, opacity: glowOpacity * 0.25, filter: 'blur(10px)', transition: transitionStyle }}></div>
+
+                            <div className={`rounded-full border-4 flex items-center justify-center font-black shadow-inner transition-transform group-hover:scale-105 bg-gradient-to-br bg-cover bg-center relative z-10 ${isHostSeat ? 'w-20 h-20 text-2xl border-[#F9D33A] from-[#D4AF37] to-[#F9D33A] text-[#010B1C] shadow-[0_0_15px_rgba(249,211,58,0.5)]' : 'w-16 h-16 text-xl border-[#00FFFF] from-[#00A7A7] to-blue-600 text-white shadow-[0_0_15px_rgba(0,255,255,0.4)]'}`} style={{ ...(seat.photo_url ? { backgroundImage: `url(${seat.photo_url})` } : {}) }}>
+                                {!seat.photo_url && (seat.user_name ? seat.user_name.substring(0, 2).toUpperCase() : seat.user_id.substring(0, 2).toUpperCase())}
+                            </div>
+                            {isHostSeat && <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#F9D33A] text-[#010B1C] text-[9px] px-2 py-0.5 rounded-full font-black border border-[#D4AF37] shadow-sm z-20">HOST</span>}
+                            {seat.is_muted_by_host ? (
+                                <div className="absolute -bottom-1 -right-1 bg-red-600 w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-[0_0_10px_rgba(255,0,0,0.6)] z-20">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-white"></i>
+                                </div>
+                            ) : (isMe && isLocalMuted ? (
+                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-[0_0_10px_rgba(0,0,0,0.6)] z-20">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
+                                </div>
+                            ) : null)}
+                            {isLocked && (
+                                <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
+                                    <i className="fa-solid fa-lock text-[8px] text-white"></i>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={`rounded-full border-[3px] border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${isHostSeat ? 'w-[72px] h-[72px] text-2xl' : 'w-16 h-16 text-xl'} ${isLocked ? 'border-red-500/50 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633]/50 hover:bg-[#0AE0D0]/20'}`} onClick={(e) => {
+                            e.stopPropagation();
+                            if (isHost) {
+                                if (idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat });
+                            } else if (mySeatIndex !== null) {
+                                if (!isLocked) setShowActionModal({ type: 'change_seat_self', seatNum: idx });
+                                else safeAlert("This seat is locked by the host.");
+                            } else if (!isLocked) {
+                                takeSeat(idx);
+                            } else {
+                                safeAlert("This seat is locked by the host.");
+                            }
+                        }}>
+                            <i className={`fa-solid ${isLocked ? 'fa-lock text-red-500/50' : 'fa-plus text-[#0AE0D0]/50'} ${isHostSeat ? 'text-2xl' : 'text-xl'}`}></i>
+                            {seat && seat.is_muted_by_host && (
+                                <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-20">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <span className="text-[10px] font-bold text-[#E0F7FA] bg-[#021633] px-2 py-0.5 rounded-full border border-[#0AE0D0]/20 max-w-[80px] truncate text-center">
+                        {occupantName}
+                    </span>
+                </div>
+            );
+        };
+
+        const useWePlayWebRTC = (supabase, roomId, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, onRecover, onPeerDisconnect) => {
+            const [remoteStreams, setRemoteStreams] = useState({});
+            const peersRef = useRef({});
+            const localStreamRef = useRef(null);
+            const [localStream, setLocalStream] = useState(null);
+            const channelRef = useRef(null);
+            const amISpeaker = mySeatIndex !== null && mySeatIndex >= 0 && mySeatIndex <= 3;
+            const amISpeakerRef = useRef(amISpeaker);
+
+            useEffect(() => { amISpeakerRef.current = amISpeaker; }, [amISpeaker]);
+
+            useEffect(() => {
+                if (!roomId || !supabase) return;
+
+                const createPeer = (peerId, peerIsSpeaker) => {
+                    if (peersRef.current[peerId]) return peersRef.current[peerId];
+
+                    const peer = new RTCPeerConnection({
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                            { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                            { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+                        ],
+                        bundlePolicy: 'max-bundle',
+                        rtcpMuxPolicy: 'require',
+                        iceCandidatePoolSize: 10
+                    });
+                    peersRef.current[peerId] = peer;
+                    peer.queuedIceCandidates = [];
+                    peer.isSettingRemoteDesc = false;
+
+                    if (amISpeakerRef.current && localStreamRef.current) {
+                        localStreamRef.current.getTracks().forEach(t => {
+                            if (!peer.getSenders().find(s => s.track === t)) {
+                                peer.addTrack(t, localStreamRef.current);
+                            }
+                        });
+                    }
+
+                    peer.oniceconnectionstatechange = () => {
+                        if (peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'closed') {
+                            // Do NOT trigger logical disconnect on P2P network fluctuations.
+                        }
+                    };
+
+                    peer.onicecandidate = (e) => {
+                        if (e.candidate && channelRef.current) {
+                            channelRef.current.send({
+                                type: 'broadcast', event: 'webrtc_signal',
+                                payload: { type: 'ice', senderId: currentUserId, targetId: peerId, data: JSON.parse(JSON.stringify(e.candidate)) }
+                            });
+                        }
+                    };
+
+                    peer.ontrack = (e) => {
+                        const stream = (e.streams && e.streams[0]) ? e.streams[0] : new MediaStream([e.track]);
+                        setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
+                    };
+
+                    return peer;
+                };
+
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible') {
+                        if (supabase.realtime.connectionState !== 'OPEN') {
+                            try { supabase.realtime.connect(); } catch (e) { }
+                        }
+
+                        if (channelRef.current && channelRef.current.state !== 'joined' && channelRef.current.state !== 'joining') {
+                            try { channelRef.current.subscribe(); } catch (e) { }
+                        }
+
+                        Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                            if (peer.connectionState === 'disconnected' || peer.connectionState === 'failed') {
+                                try {
+                                    const offer = await peer.createOffer({ offerToReceiveAudio: true, iceRestart: true });
+                                    await peer.setLocalDescription(offer);
+                                    if (channelRef.current) {
+                                        channelRef.current.send({
+                                            type: 'broadcast', event: 'webrtc_signal',
+                                            payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                        });
+                                    }
+                                } catch (e) { }
+                            }
+                        });
+
+                        // Trigger a silent refetch of room_seats and room_audience
+                        if (onRecover) onRecover();
+
+                        if (channelRef.current) {
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current } });
+                        }
+                    }
+                };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+
+                const initChannel = () => {
+                    const topic = `ataxy/vc/webrtc/${roomId}`;
+                    const lwtTopic = `ataxy/vc/webrtc/${roomId}/lwt`;
+                    const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+                        will: { topic: lwtTopic, payload: JSON.stringify({ senderId: currentUserId }), qos: 0, retain: false }
+                    });
+
+                    channelRef.current = {
+                        send: async (msg) => {
+                            if (client.connected) {
+                                client.publish(topic, JSON.stringify(msg));
+                            }
+                        },
+                        close: () => client.end()
+                    };
+
+                    client.on('connect', () => {
+                        client.subscribe(topic);
+                        client.subscribe(lwtTopic);
+                        channelRef.current.send({
+                            type: 'broadcast', event: 'peer_join',
+                            payload: { senderId: currentUserId, senderIsSpeaker: amISpeakerRef.current }
+                        });
+                    });
+
+                    client.on('message', async (t, message) => {
+                        if (t === lwtTopic) {
+                            try {
+                                const payload = JSON.parse(message.toString());
+                                if (payload.senderId && payload.senderId !== currentUserId) {
+                                    if (peersRef.current[payload.senderId]) {
+                                        peersRef.current[payload.senderId].close();
+                                        delete peersRef.current[payload.senderId];
+                                        setRemoteStreams(prev => {
+                                            const ns = { ...prev }; delete ns[payload.senderId]; return ns;
+                                        });
+                                    }
+                                    if (onPeerDisconnect) onPeerDisconnect(payload.senderId);
+                                }
+                            } catch (e) { }
+                            return;
+                        }
+                        if (t !== topic) return;
+                        try {
+                            const { event, payload } = JSON.parse(message.toString());
+
+                            if (event === 'webrtc_signal') {
+                                if (payload.targetId !== currentUserId) return;
+                                const { type, senderId, data, senderIsSpeaker } = payload;
+                                if (type === 'offer') {
+                                    const peer = createPeer(senderId, senderIsSpeaker);
+                                    peer.isSettingRemoteDesc = true;
+                                    await peer.setRemoteDescription(new RTCSessionDescription(data));
+                                    peer.isSettingRemoteDesc = false;
+                                    const answer = await peer.createAnswer();
+                                    await peer.setLocalDescription(answer);
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'webrtc_signal',
+                                        payload: { type: 'answer', senderId: currentUserId, targetId: senderId, data: JSON.parse(JSON.stringify(answer)) }
+                                    });
+                                    if (peer.queuedIceCandidates) {
+                                        peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch (e) { } });
+                                        peer.queuedIceCandidates = [];
+                                    }
+                                } else if (type === 'answer') {
+                                    const peer = peersRef.current[senderId];
+                                    if (peer) {
+                                        peer.isSettingRemoteDesc = true;
+                                        await peer.setRemoteDescription(new RTCSessionDescription(data));
+                                        peer.isSettingRemoteDesc = false;
+                                        if (peer.queuedIceCandidates) {
+                                            peer.queuedIceCandidates.forEach(async (c) => { try { await peer.addIceCandidate(c); } catch (e) { } });
+                                            peer.queuedIceCandidates = [];
+                                        }
+                                    }
+                                } else if (type === 'ice') {
+                                    let peer = peersRef.current[senderId];
+                                    if (!peer) { peer = createPeer(senderId, false); }
+                                    if (peer) {
+                                        if (peer.remoteDescription && peer.remoteDescription.type && !peer.isSettingRemoteDesc) {
+                                            try { await peer.addIceCandidate(new RTCIceCandidate(data)); } catch (e) { }
+                                        } else {
+                                            peer.queuedIceCandidates.push(new RTCIceCandidate(data));
+                                        }
+                                    }
+                                }
+                            } else if (event === 'peer_join') {
+                                const { senderId, senderIsSpeaker } = payload;
+                                if (senderId === currentUserId) return;
+                                if (peersRef.current[senderId]) return;
+                                if (currentUserId > senderId) {
+                                    const peer = createPeer(senderId, senderIsSpeaker);
+                                    const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                    await peer.setLocalDescription(offer);
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'webrtc_signal',
+                                        payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                    });
+                                } else {
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'peer_hello',
+                                        payload: { senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current }
+                                    });
+                                }
+                            } else if (event === 'peer_hello') {
+                                const { senderId, targetId, senderIsSpeaker } = payload;
+                                if (targetId !== currentUserId) return;
+                                if (peersRef.current[senderId]) return;
+                                if (currentUserId > senderId) {
+                                    const peer = createPeer(senderId, senderIsSpeaker);
+                                    const offer = await peer.createOffer({ offerToReceiveAudio: true });
+                                    await peer.setLocalDescription(offer);
+                                    channelRef.current.send({
+                                        type: 'broadcast', event: 'webrtc_signal',
+                                        payload: { type: 'offer', senderId: currentUserId, targetId: senderId, senderIsSpeaker: amISpeakerRef.current, data: JSON.parse(JSON.stringify(offer)) }
+                                    });
+                                }
+                            } else if (event === 'peer_leave') {
+                                const { senderId } = payload;
+                                if (peersRef.current[senderId]) {
+                                    peersRef.current[senderId].close();
+                                    delete peersRef.current[senderId];
+                                    setRemoteStreams(prev => {
+                                        const ns = { ...prev }; delete ns[senderId]; return ns;
+                                    });
+                                }
+                                if (onPeerDisconnect) onPeerDisconnect(senderId);
+                            }
+                        } catch (e) { }
+                    });
+                };
+                initChannel();
+
+                return () => {
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                    if (channelRef.current) {
+                        const oldChannel = channelRef.current;
+                        oldChannel.send({
+                            type: 'broadcast', event: 'peer_leave', payload: { senderId: currentUserId }
+                        });
+                        setTimeout(() => { oldChannel.close(); }, 500);
+                    }
+                    if (localStreamRef.current) {
+                        localStreamRef.current.getTracks().forEach(t => t.stop());
+                        localStreamRef.current = null;
+                    }
+                    Object.values(peersRef.current).forEach(p => p.close());
+                    peersRef.current = {};
+                    setRemoteStreams({});
+                };
+            }, [roomId]);
+
+            // Effect 1: Manages the stream's lifecycle (creation/destruction) based on speaker status.
+            useEffect(() => {
+                if (!roomId || !channelRef.current) return;
+
+                const manageStreamLifecycle = async () => {
+                    if (amISpeaker) {
+                        // If becoming a speaker and no stream exists, create one.
+                        if (!localStreamRef.current) {
+                            try {
+                                const stream = await navigator.mediaDevices.getUserMedia({
+                                    audio: {
+                                        echoCancellation: true,
+                                        noiseSuppression: true,
+                                        autoGainControl: true,
+                                        latency: 0
+                                    },
+                                    video: false
+                                });
+
+                                // Instantly apply mute state so it respects host/local mute before broadcasting
+                                stream.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
+
+                                localStreamRef.current = stream;
+                                setLocalStream(stream);
+
+                                // Add the new track to all existing peer connections and renegotiate.
+                                Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                                    const senders = peer.getSenders();
+                                    let trackAdded = false;
+                                    stream.getTracks().forEach(t => {
+                                        if (!senders.find(s => s.track === t)) {
+                                            peer.addTrack(t, stream);
+                                            trackAdded = true;
+                                        }
+                                    });
+                                    if (trackAdded) {
+                                        try {
+                                            const offer = await peer.createOffer();
+                                            await peer.setLocalDescription(offer);
+                                            channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: true, data: JSON.parse(JSON.stringify(offer)) } });
+                                        } catch (e) { }
+                                    }
+                                });
+                                // Announce new speaker status to establish connections with audience.
+                                channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: true } });
+                            } catch (e) { console.error("Mic error:", e); }
+                        }
+                    } else {
+                        // If becoming an audience member, destroy the stream.
+                        if (localStreamRef.current) {
+                            localStreamRef.current.getTracks().forEach(t => t.stop());
+                            localStreamRef.current = null;
+                            setLocalStream(null);
+
+                            // Remove tracks from peers and renegotiate to stop sending audio.
+                            Object.entries(peersRef.current).forEach(async ([peerId, peer]) => {
+                                const senders = peer.getSenders();
+                                senders.forEach(s => { if (s.track) { peer.removeTrack(s); } });
+                                try { const offer = await peer.createOffer({ offerToReceiveAudio: true }); await peer.setLocalDescription(offer); channelRef.current.send({ type: 'broadcast', event: 'webrtc_signal', payload: { type: 'offer', senderId: currentUserId, targetId: peerId, senderIsSpeaker: false, data: JSON.parse(JSON.stringify(offer)) } }); } catch (e) { }
+                            });
+                            channelRef.current.send({ type: 'broadcast', event: 'peer_join', payload: { senderId: currentUserId, senderIsSpeaker: false } });
+                        }
+                    }
+                };
+                manageStreamLifecycle();
+            }, [amISpeaker]); // This effect ONLY runs when speaker status changes.
+
+            // Effect 2: Applies the correct mute state to an existing audio track.
+            useEffect(() => {
+                if (localStreamRef.current) {
+                    localStreamRef.current.getAudioTracks().forEach(t => t.enabled = !(isMutedByHost || isLocalMuted));
+                }
+            }, [isMutedByHost, isLocalMuted, amISpeaker]); // Re-apply mute state when mute changes OR when becoming a speaker.
+
+            return { remoteStreams, localStream };
+        };
+
+        const VCFloatingWidget = ({ activeRoom, isLocalMuted, isSpeakerMuted, onRestore, toggleMute, toggleSpeaker, onExit }) => {
+            const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
+            const widgetRef = useRef(null);
+
+            const handleTouchStart = (e) => {
+                dragRef.current.isDragging = true;
+                dragRef.current.hasMoved = false;
+                dragRef.current.startX = (e.touches ? e.touches[0].clientX : e.clientX) - dragRef.current.currentX;
+                dragRef.current.startY = (e.touches ? e.touches[0].clientY : e.clientY) - dragRef.current.currentY;
+                if (widgetRef.current) widgetRef.current.style.transition = 'none';
+            };
+            const handleTouchMove = (e) => {
+                if (!dragRef.current.isDragging) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const x = clientX - dragRef.current.startX;
+                const y = clientY - dragRef.current.startY;
+                if (Math.abs(x - dragRef.current.currentX) > 5 || Math.abs(y - dragRef.current.currentY) > 5) dragRef.current.hasMoved = true;
+                dragRef.current.currentX = x;
+                dragRef.current.currentY = y;
+                if (widgetRef.current) widgetRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+            };
+            const handleTouchEnd = () => {
+                dragRef.current.isDragging = false;
+                if (widgetRef.current) widgetRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+            };
+            const handleClick = () => { if (!dragRef.current.hasMoved) onRestore(); };
+
+            return (
+                <div ref={widgetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onMouseDown={handleTouchStart} onMouseMove={handleTouchMove} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd} onClick={handleClick} style={{ transform: `translate3d(${dragRef.current.currentX}px, ${dragRef.current.currentY}px, 0)` }} className="fixed bottom-[120px] right-4 w-fit max-w-[220px] bg-[#021633]/95 backdrop-blur-xl border border-[#0AE0D0]/50 rounded-full p-1.5 flex items-center gap-2 shadow-[0_4px_20px_rgba(0,255,255,0.4)] z-[2000000] cursor-pointer select-none touch-none">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center text-[#010B1C] animate-pulse shrink-0 shadow-[0_0_10px_rgba(0,255,255,0.6)]">
+                        <i className="fa-solid fa-satellite-dish text-[10px]"></i>
+                    </div>
+                    <div className="truncate flex-1 min-w-[60px] pr-1">
+                        <p className="text-white font-black text-[11px] truncate leading-tight drop-shadow-md">{activeRoom.room_name}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 pr-1" onClick={e => e.stopPropagation()}>
+                        <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isLocalMuted ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isLocalMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-[10px]`}></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); toggleSpeaker(); }} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isSpeakerMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-[10px]`}></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); onExit(); }} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white"><i className="fa-solid fa-power-off text-[10px]"></i></button>
+                    </div>
+                </div>
+            );
+        };
+
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange }) => {
+            const currentUserId = String(tgUser?.id || "1001");
+            const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
+            const currentUserPhoto = tgUser?.photo_url || "";
+            const activeChannelRef = useRef(null);
+
+            const [activeRoom, setActiveRoom] = useState(null);
+            const [availableVCRooms, setAvailableVCRooms] = useState([]);
+            const [seats, setSeats] = useState([null, null, null, null]);
+            const [audience, setAudience] = useState([]);
+
+            const activeRoomRef = useRef(null);
+            useEffect(() => { activeRoomRef.current = activeRoom; }, [activeRoom]);
+            const seatsRef = useRef([]);
+            useEffect(() => { seatsRef.current = seats; }, [seats]);
+            const audienceRef = useRef([]);
+            useEffect(() => { audienceRef.current = audience; }, [audience]);
+            const recentlyDroppedRef = useRef(new Set());
+
+            const [joinRoomId, setJoinRoomId] = useState('');
+            const [showJoinModal, setShowJoinModal] = useState(false);
+            const [isLocalMuted, setIsLocalMuted] = useState(true);
+            const [isCreating, setIsCreating] = useState(false);
+            const [roomError, setRoomError] = useState('');
+            const [showActionModal, setShowActionModal] = useState(null);
+            const [pendingInvite, setPendingInvite] = useState(null);
+            const [messages, setMessages] = useState([]);
+            const [chatInput, setChatInput] = useState('');
+            const [entryNotification, setEntryNotification] = useState(null);
+            const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+            const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
+            const [pendingImage, setPendingImage] = useState(null);
+            const [isMinimized, setIsMinimized] = useState(false);
+            const [showRoomMenu, setShowRoomMenu] = useState(false);
+            const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
+            const [showRoomRequestsInbox, setShowRoomRequestsInbox] = useState(false);
+
+            // Universal Features State
+            const [currentView, setCurrentView] = useState('rooms');
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+
+            // Sub tab state to align with VoiceRoomsTab logic
+            const [vcSubTab, setVcSubTab] = useState('rooms');
+            const [roomToJoinWithPassword, setRoomToJoinWithPassword] = useState(null);
+            const [joinPasswordInput, setJoinPasswordInput] = useState('');
+            const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [showVCCreateModal, setShowVCCreateModal] = useState(false);
+            const [vcCreateName, setVcCreateName] = useState('');
+            const [vcCreateType, setVcCreateType] = useState('temporary');
+            const [vcCreatePass, setVcCreatePass] = useState('');
+            const [vcCreatePhoto, setVcCreatePhoto] = useState('');
+            const [vcCreatePassEnabled, setVcCreatePassEnabled] = useState(false);
+            const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+
+            const chatEndRef = useRef(null);
+
+            // Friend System & DMs State
+            const [friends, setFriends] = useState([]);
+            const [pendingRequests, setPendingRequests] = useState([]);
+            const [sentRequests, setSentRequests] = useState([]);
+            const [dms, setDms] = useState({});
+            const [activeChatUser, setActiveChatUser] = useState(null);
+
+            const activeChatUserRef = useRef(null);
+            useEffect(() => { activeChatUserRef.current = activeChatUser; }, [activeChatUser]);
+
+            const friendsRef = useRef([]);
+            useEffect(() => { friendsRef.current = friends; }, [friends]);
+
+            const pendingRequestsRef = useRef([]);
+            useEffect(() => { pendingRequestsRef.current = pendingRequests; }, [pendingRequests]);
+
+            const inboxClientRef = useRef(null);
+
+            useEffect(() => {
+                const handleBackEvent = (e) => {
+                    if (selectedProfileUser) { e.preventDefault(); setSelectedProfileUser(null); }
+                    else if (showVCCreateModal) { e.preventDefault(); setShowVCCreateModal(false); }
+                    else if (showJoinModal) { e.preventDefault(); setShowJoinModal(false); }
+                    else if (roomToJoinWithPassword) { e.preventDefault(); setRoomToJoinWithPassword(null); }
+                    else if (showRoomRequestsInbox) { e.preventDefault(); setShowRoomRequestsInbox(false); }
+                    else if (showRoomSettingsModal) { e.preventDefault(); setShowRoomSettingsModal(false); }
+                };
+                window.addEventListener('ataxy_back_requested', handleBackEvent);
+                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
+            }, [selectedProfileUser, showVCCreateModal, showJoinModal, roomToJoinWithPassword, showRoomRequestsInbox, showRoomSettingsModal]);
+
+
+            const handleAvatarClick = (userObj) => {
+                try {
+                    if (!userObj || typeof userObj !== 'object') return;
+                    setSelectedProfileUser(userObj);
+                } catch (e) { console.error("handleAvatarClick error:", e); }
+            };
+
+            // 1. Establish the Data Mesh Connections
+            const dataConnectionsRef = useRef([]);
+            const peerRef = useRef(null);
+
+            useEffect(() => {
+                if (!currentUserId || currentUserId === "1001") return;
+
+                const inboxTopic = `ataxy/vc/users/${currentUserId}/inbox`;
+                const clientIdForMqtt = `ataxy_vc_${currentUserId}`;
+                const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId: clientIdForMqtt, clean: false, keepalive: 60, reconnectPeriod: 1000 });
+                inboxClientRef.current = client;
+
+                client.on('connect', () => { client.subscribe(inboxTopic, { qos: 1 }); });
+
+                client.on('message', (topic, message) => {
+                    if (topic === inboxTopic) {
+                        try {
+                            const data = JSON.parse(message.toString());
+                            if (processIncomingDataRef.current) processIncomingDataRef.current(data);
+                        } catch (e) { }
+                    }
+                });
+
+                return () => { client.end(); inboxClientRef.current = null; };
+            }, [currentUserId]);
+
+            const sendToUserInbox = (targetId, payload) => {
+                try {
+                    if (inboxClientRef.current && inboxClientRef.current.connected) {
+                        inboxClientRef.current.publish(`ataxy/vc/users/${targetId}/inbox`, JSON.stringify(payload), { qos: 1 });
+                        return true;
+                    }
+                } catch (e) { }
+                return false;
+            };
+
+            const sendDirectMessage = (targetId, payload) => {
+                sendToUserInbox(targetId, payload);
+                try {
+                    const targetPeerId = `ataxy-vc-${targetId}`;
+                    let sent = false;
+                    if (dataConnectionsRef.current && Array.isArray(dataConnectionsRef.current)) {
+                        dataConnectionsRef.current.forEach(c => {
+                            if (c && c.open && c.peer === targetPeerId) { c.send(payload); sent = true; }
+                        });
+                    }
+                    if (!sent && peerRef.current && !peerRef.current.destroyed) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        if (conn) {
+                            conn.on('open', () => { conn.send(payload); setTimeout(() => conn.close(), 1500); });
+                        }
+                    }
+                } catch (e) { }
+            };
+
+            const processIncomingDataRef = useRef(null);
+
+            useEffect(() => {
+                const loadStorageData = async () => {
+                    // WIPE FRIEND STATE FOR TESTING (One-Time Reset)
+                    if (!localStorage.getItem('ataxy_friends_reset_v4')) {
+                        try {
+                            localStorage.removeItem('ataxy_friends');
+                            localStorage.removeItem('ataxy_pending_friends');
+                            localStorage.removeItem('ataxy_sent_requests');
+                            const keysToRemove = [];
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const k = localStorage.key(i);
+                                if (k && k.startsWith('dms_')) keysToRemove.push(k);
+                            }
+                            keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                            if (window.Telegram?.WebApp?.CloudStorage) {
+                                window.Telegram.WebApp.CloudStorage.removeItem('ataxy_friends');
+                                window.Telegram.WebApp.CloudStorage.removeItem('ataxy_pending_friends');
+                                window.Telegram.WebApp.CloudStorage.removeItem('ataxy_sent_requests');
+                                window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
+                                    if (keys) {
+                                        const dmKeys = keys.filter(k => k.startsWith('dms_'));
+                                        if (dmKeys.length > 0) window.Telegram.WebApp.CloudStorage.removeItems(dmKeys);
+                                    }
+                                });
+                            }
+                        } catch (e) { }
+                        localStorage.setItem('ataxy_friends_reset_v4', 'true');
+                    }
+                    const f = await getCloudData('ataxy_friends') || [];
+                    const p = await getCloudData('ataxy_pending_friends') || [];
+                    const sr = await getCloudData('ataxy_sent_requests') || [];
+                    setFriends(f);
+                    setPendingRequests(p);
+                    setSentRequests(sr);
+
+                    if (window.Telegram?.WebApp?.CloudStorage) {
+                        window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
+                            if (keys) {
+                                const dmKeys = keys.filter(k => k.startsWith('dms_'));
+                                window.Telegram.WebApp.CloudStorage.getItems(dmKeys, (err, vals) => {
+                                    const loadedDms = {};
+                                    dmKeys.forEach(k => { try { loadedDms[k.replace('dms_', '')] = JSON.parse(vals[k]); } catch (e) { } });
+                                    setDms(loadedDms);
+                                });
+                            }
+                        });
+                    } else {
+                        // LocalStorage fallback already handled via getCloudData partially, but for iteration:
+                        const loadedDms = {};
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const k = localStorage.key(i);
+                            if (k && k.startsWith('dms_')) {
+                                try { loadedDms[k.replace('dms_', '')] = JSON.parse(localStorage.getItem(k)); } catch (e) { }
+                            }
+                        }
+                        setDms(loadedDms);
+                    }
+                };
+                loadStorageData();
+            }, []);
+
+            // ==========================================
+            // 🌐 WEBRTC DATA CHANNELS (PEERJS) FOR FREE CHAT
+            // ==========================================
+            processIncomingDataRef.current = (data) => {
+                if (data.type === 'CHAT') {
+                    if (activeRoomRef.current && data.room_id && data.room_id !== activeRoomRef.current.id) return;
+                    setMessages(prev => {
+                        if (prev.some(m => m.id === data.id)) return prev;
+                        return [...prev, {
+                            id: data.id,
+                            user_id: data.senderId,
+                            user_name: data.senderName,
+                            user_avatar: data.senderPhoto,
+                            message: data.text,
+                            image_url: data.imageUrl
+                        }];
+                    });
+                } else if (data.type === 'PRIVATE_MESSAGE') {
+                    const senderId = String(data.senderId);
+
+                    try {
+                        const blockedUsers = JSON.parse(localStorage.getItem('ataxy_blocked_users') || '[]');
+                        if (blockedUsers.includes(senderId)) return;
+                    } catch (e) { }
+
+                    const senderName = data.senderName || `User ${senderId.substring(0, 8)}`;
+                    const senderPhoto = data.senderPhoto || '';
+
+                    setFriends(currFriends => {
+                        const isFriend = Array.isArray(currFriends) && currFriends.some(f => String(f.id || f) === senderId);
+
+                        setDms(currDms => {
+                            const history = currDms[senderId] || [];
+                            if (data.id && history.some(m => m.id === data.id)) return currDms;
+
+                            const theirSentCount = history.filter(m => String(m.sender) === String(senderId)).length;
+                            if (!isFriend && theirSentCount >= 3) {
+                                return currDms; // Discard 4th message if not friends
+                            }
+                            const newMsg = {
+                                id: data.id,
+                                sender: senderId,
+                                text: data.text,
+                                imageUrl: data.imageUrl,
+                                replyTo: data.replyTo,
+                                time: Date.now(),
+                                senderName, senderPhoto, status: 'received'
+                            };
+                            const updatedHistory = [...history, newMsg];
+                            setCloudData('dms_' + senderId, updatedHistory);
+                            return { ...currDms, [senderId]: updatedHistory };
+                        });
+                        return currFriends;
+                    });
+
+                    if (activeChatUserRef.current && activeChatUserRef.current.id === senderId) {
+                        sendDirectMessage(senderId, { type: 'MESSAGE_STATUS', status: 'read', targetId: currentUserId, msgId: data.id });
+                    } else {
+                        sendDirectMessage(senderId, { type: 'MESSAGE_STATUS', status: 'delivered', targetId: currentUserId, msgId: data.id });
+                    }
+
+                } else if (data.type === 'MESSAGE_STATUS') {
+                    const chatUserId = String(data.targetId);
+                    setDms(currDms => {
+                        const history = currDms[chatUserId] || [];
+                        let changed = false;
+                        const updated = history.map(m => {
+                            if (String(m.sender) === String(currentUserId) && m.status !== 'read') {
+                                if (data.status === 'read' || (data.status === 'delivered' && m.status !== 'delivered')) {
+                                    changed = true;
+                                    return { ...m, status: data.status };
+                                }
+                            }
+                            return m;
+                        });
+                        if (changed) {
+                            setCloudData('dms_' + chatUserId, updated);
+                            return { ...currDms, [chatUserId]: updated };
+                        }
+                        return currDms;
+                    });
+                } else if (data.type === 'PRIVATE_MESSAGE_ACTION') {
+                    const senderId = String(data.senderId);
+                    setDms(currDms => {
+                        const history = currDms[senderId] || [];
+                        let updated;
+                        if (data.action === 'delete') {
+                            updated = history.filter(m => m.id !== data.msgId);
+                        } else if (data.action === 'edit') {
+                            updated = history.map(m => m.id === data.msgId ? { ...m, text: data.text, isEdited: true } : m);
+                        }
+                        if (updated) {
+                            setCloudData('dms_' + senderId, updated);
+                            return { ...currDms, [senderId]: updated };
+                        }
+                        return currDms;
+                    });
+                } else if (data.type === 'ROOM_EVENT') {
+                    const { event, payload: eventData } = data;
+
+                    // Cross-room isolation:
+                    let incomingRoomId = eventData.room_id;
+                    if (event === 'state_change' && eventData.data) incomingRoomId = eventData.data.room_id;
+                    if (incomingRoomId && activeRoomRef.current && incomingRoomId !== activeRoomRef.current.id) return;
+
+                    if (event === 'state_change') {
+                        const { type: stateType, data: stateData } = eventData;
+                        if (stateType === 'SEAT_UPDATE') {
+                            setSeats(prev => {
+                                const newSeats = [...prev];
+                                if (stateData && stateData.seat_index >= 0 && stateData.seat_index < newSeats.length) {
+                                    newSeats[stateData.seat_index] = stateData;
+                                }
+                                return newSeats;
+                            });
+                            if (stateData && stateData.user_id) {
+                                setAudience(prev => prev.filter(u => String(u.user_id) !== String(stateData.user_id)));
+                            }
+                        } else if (stateType === 'AUDIENCE_JOIN') {
+                            setAudience(prev => {
+                                if (prev.some(u => String(u.user_id) === String(stateData.user_id))) return prev;
+                                return [...prev, stateData];
+                            });
+                            setSeats(prev => {
+                                return prev.map(s => (s && String(s.user_id) === String(stateData.user_id)) ? { ...s, user_id: null, user_name: null, photo_url: null } : s);
+                            });
+                            setEntryNotification(stateData.user_name || 'A user');
+                            setTimeout(() => setEntryNotification(null), 3000);
+                        } else if (stateType === 'AUDIENCE_LEAVE') {
+                            setAudience(prev => prev.filter(u => String(u.user_id) !== String(stateData.user_id)));
+                        }
+                    } else if (event === 'kick') {
+                        if (eventData.target_uid === currentUserId) {
+                            safeAlert("You have been kicked from the room by the host.");
+                            handleExitRoom();
+                        } else {
+                            setSeats(prev => prev.map(s => s?.user_id === eventData.target_uid ? { ...s, user_id: null, user_name: null, photo_url: null } : s));
+                            setAudience(prev => prev.filter(u => String(u.user_id) !== String(eventData.target_uid)));
+                        }
+                    } else if (event === 'invite') {
+                        if (eventData.target === currentUserId) setPendingInvite(eventData);
+                    } else if (event === 'host_transfer') {
+                        if (eventData.new_host_id === currentUserId) {
+                            safeAlert("The host left. You have been promoted to Host and moved to the Host Seat!");
+                        } else {
+                            safeAlert(`${eventData.new_host_name} is the new host.`);
+                        }
+                        fetchRoomData(eventData.room_id);
+                        setActiveRoom(prev => prev ? { ...prev, host_id: eventData.new_host_id, host_name: eventData.new_host_name } : prev);
+                    } else if (event === 'room_closed') {
+                        safeAlert("Room closed by host.");
+                        setActiveRoom(null);
+                        setIsMinimized(false);
+                        dataConnectionsRef.current.forEach(c => { try { c.close(); } catch (e) { } });
+                        dataConnectionsRef.current = [];
+                    } else if (event === 'room_updated') {
+                        setActiveRoom(prev => prev ? { ...prev, ...eventData } : prev);
+                    }
+                    else if (event === 'FRIEND_REQUEST_SEND') {
+                        setPendingRequests(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            if (prevArray.some(p => String(p.id) === String(eventData.id))) return prevArray;
+                            const updated = [...prevArray, { id: eventData.id, name: eventData.name || `User ${String(eventData.id).substring(0, 8)}`, photo: eventData.photo || '' }];
+                            setCloudData('ataxy_pending_friends', updated);
+                            return updated;
+                        });
+                    } else if (event === 'FRIEND_REQUEST_ACCEPTED') {
+                        setFriends(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            if (prevArray.some(f => String(f.id || f) === String(eventData.id))) return prevArray;
+                            const updated = [...prevArray, { id: eventData.id, name: eventData.name || `User ${eventData.id}`, photo: eventData.photo }];
+                            setCloudData('ataxy_friends', updated);
+                            return updated;
+                        });
+                        setSentRequests(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            const updated = prevArray.filter(id => String(id) !== String(eventData.id));
+                            setCloudData('ataxy_sent_requests', updated);
+                            return updated;
+                        });
+                    } else if (event === 'FRIEND_REQUEST_REJECTED') {
+                        setSentRequests(prev => {
+                            const prevArray = Array.isArray(prev) ? prev : [];
+                            const updated = prevArray.filter(id => String(id) !== String(eventData.id));
+                            setCloudData('ataxy_sent_requests', updated);
+                            return updated;
+                        });
+                    } else if (event === 'SYNC_FRIEND_REQUEST') {
+                        const senderId = String(eventData.id);
+                        const isFriend = Array.isArray(friendsRef.current) && friendsRef.current.some(f => String(f.id || f) === senderId);
+
+                        if (isFriend) {
+                            const responsePayload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                            sendDirectMessage(senderId, responsePayload);
+                        } else {
+                            const isPending = Array.isArray(pendingRequestsRef.current) && pendingRequestsRef.current.some(p => String(p.id) === senderId);
+                            if (!isPending) {
+                                setPendingRequests(currPending => {
+                                    const updated = [...(Array.isArray(currPending) ? currPending : []), { id: senderId, name: eventData.name || `User ${senderId.substring(0, 8)}`, photo: eventData.photo || '' }];
+                                    setCloudData('ataxy_pending_friends', updated);
+                                    return updated;
+                                });
+                            }
+                        }
+                    }
+                }
+            };
+
+            const handlePeerData = (data) => {
+                if (processIncomingDataRef.current) processIncomingDataRef.current(data);
+            };
+
+            const broadcastToPeers = (event, payload) => {
+                dataConnectionsRef.current.forEach(connection => {
+                    if (connection && connection.open) {
+                        connection.send({ type: 'ROOM_EVENT', event, payload });
+                    }
+                });
+            };
+
+            const sendFriendRequest = (targetUser) => {
+                try {
+                    if (String(targetUser.user_id) === String(currentUserId)) {
+                        safeAlert("You cannot send a friend request to yourself.");
+                        return;
+                    }
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_SEND', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    sendDirectMessage(targetUser.user_id, payload);
+
+                    setSentRequests(prev => {
+                        const prevArray = Array.isArray(prev) ? prev : [];
+                        if (prevArray.some(id => String(id) === String(targetUser.user_id))) return prevArray;
+                        const updated = [...prevArray, String(targetUser.user_id)];
+                        setCloudData('ataxy_sent_requests', updated);
+                        return updated;
+                    });
+                    safeAlert(`Friend request sent to ${targetUser.user_name || targetUser.user_id}`);
+                } catch (e) {
+                    console.error("sendFriendRequest Error: ", e);
+                    safeAlert("Failed to send friend request. Please try again.");
+                }
+            };
+
+            const acceptFriendRequest = (senderPayload) => {
+                try {
+                    const senderId = String(senderPayload.id);
+                    setFriends(prev => {
+                        const prevArray = Array.isArray(prev) ? prev : [];
+                        if (prevArray.some(f => String(f.id || f) === senderId)) return prevArray;
+                        const updated = [...prevArray, { id: senderId, name: senderPayload.name || `User ${senderId}`, photo: senderPayload.photo }];
+                        setCloudData('ataxy_friends', updated);
+                        return updated;
+                    });
+                    setPendingRequests(prev => {
+                        const prevArray = Array.isArray(prev) ? prev : [];
+                        const updated = prevArray.filter(p => String(p.id) !== senderId);
+                        setCloudData('ataxy_pending_friends', updated);
+                        return updated;
+                    });
+
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    sendDirectMessage(senderId, payload);
+                    safeAlert(`You are now friends with ${senderPayload.name}`);
+                } catch (e) {
+                    console.error("acceptFriendRequest Error: ", e);
+                }
+            };
+
+            const rejectFriendRequest = (senderId) => {
+                setPendingRequests(prev => {
+                    const prevArray = Array.isArray(prev) ? prev : [];
+                    const updated = prevArray.filter(p => String(p.id) !== String(senderId));
+                    setCloudData('ataxy_pending_friends', updated);
+                    return updated;
+                });
+
+                const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
+                sendDirectMessage(senderId, payload);
+            };
+
+            const syncFriendStatus = (targetId) => {
+                const payload = { type: 'ROOM_EVENT', event: 'SYNC_FRIEND_REQUEST', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                sendDirectMessage(targetId, payload);
+            };
+
+            const removeFriend = (targetId) => {
+                setFriends(prev => {
+                    const prevArray = Array.isArray(prev) ? prev : [];
+                    const updated = prevArray.filter(f => String(f.id || f) !== String(targetId));
+                    setCloudData('ataxy_friends', updated);
+                    return updated;
+                });
+            };
+
+            const cancelFriendRequest = (targetId) => {
+                setSentRequests(prev => {
+                    const prevArray = Array.isArray(prev) ? prev : [];
+                    const updated = prevArray.filter(id => String(id) !== String(targetId));
+                    setCloudData('ataxy_sent_requests', updated);
+                    return updated;
+                });
+            };
+
+            const deleteChatHistory = (targetId) => {
+                setDms(prev => {
+                    const newDms = { ...prev };
+                    delete newDms[targetId];
+                    setCloudData('dms_' + targetId, []);
+                    return newDms;
+                });
+            };
+
+            const handlePrivateAction = (targetId, action, msgId, text = null) => {
+                const payload = { type: 'PRIVATE_MESSAGE_ACTION', action, msgId, text, senderId: currentUserId, targetId };
+                sendDirectMessage(targetId, payload);
+
+                setDms(prev => {
+                    const history = prev[targetId] || [];
+                    let updated;
+                    if (action === 'delete') {
+                        updated = history.filter(m => m.id !== msgId);
+                    } else if (action === 'edit') {
+                        updated = history.map(m => m.id === msgId ? { ...m, text, isEdited: true } : m);
+                    }
+                    if (updated) {
+                        setCloudData('dms_' + targetId, updated);
+                        return { ...prev, [targetId]: updated };
+                    }
+                    return prev;
+                });
+            };
+
+            const handleLocalDelete = (targetId, msgId) => {
+                setDms(prev => {
+                    const history = prev[targetId] || [];
+                    const updated = history.filter(m => m.id !== msgId);
+                    setCloudData('dms_' + targetId, updated);
+                    return { ...prev, [targetId]: updated };
+                });
+            };
+
+            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null) => {
+                const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
+                const history = dms[targetId] || [];
+                const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
+
+                if (!isFriend && mySentCount >= 3) {
+                    safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
+                    return;
+                }
+
+                const msgId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+                const newMsg = {
+                    id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, time: Date.now(),
+                    targetName: activeChatUserRef.current?.name || `User ${targetId}`,
+                    targetPhoto: activeChatUserRef.current?.photo || '',
+                    status: 'sent'
+                };
+                const updatedHistory = [...history, newMsg];
+
+                setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
+                setCloudData('dms_' + targetId, updatedHistory);
+
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo };
+                sendDirectMessage(targetId, payload);
+            };
+
+            const markChatAsRead = (targetId) => {
+                setDms(curr => {
+                    const history = curr[targetId] || [];
+                    let changed = false;
+                    const updated = history.map(m => {
+                        if (String(m.sender) !== String(currentUserId) && m.status !== 'read') {
+                            changed = true;
+                            return { ...m, status: 'read' };
+                        }
+                        return m;
+                    });
+                    if (changed) {
+                        setCloudData('dms_' + targetId, updated);
+                        sendDirectMessage(targetId, { type: 'MESSAGE_STATUS', status: 'read', targetId: currentUserId });
+                        return { ...curr, [targetId]: updated };
+                    }
+                    return curr;
+                });
+            };
+
+            const handlePeerDisconnect = async (droppedUserId) => {
+                if (recentlyDroppedRef.current.has(droppedUserId)) return;
+                recentlyDroppedRef.current.add(droppedUserId);
+                setTimeout(() => recentlyDroppedRef.current.delete(droppedUserId), 5000);
+
+                const room = activeRoomRef.current;
+                const currentSeats = seatsRef.current;
+                const currentAudience = audienceRef.current;
+                const iAmHost = (room && String(room.host_id) === currentUserId);
+
+                if (!room) return;
+
+                if (iAmHost) {
+                    const droppedSeat = currentSeats.find(s => s && String(s.user_id) === String(droppedUserId));
+                    if (droppedSeat) {
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', droppedSeat.seat_index);
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: room.id, seat_index: droppedSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: droppedSeat.is_locked, is_muted_by_host: droppedSeat.is_muted_by_host } });
+                    } else {
+                        await supabase.from('room_audience').delete().eq('room_id', room.id).eq('user_id', droppedUserId);
+                        broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: room.id, user_id: droppedUserId } });
+                    }
+                }
+                else if (String(room.host_id) === droppedUserId) {
+                    const nextHostSeat = currentSeats.find((s, i) => i > 0 && s && s.user_id && String(s.user_id) !== droppedUserId);
+                    if (nextHostSeat && String(nextHostSeat.user_id) === currentUserId) {
+                        await supabase.from('active_rooms').update({ host_id: currentUserId, host_name: currentUserName, host_photo: currentUserPhoto }).eq('id', room.id);
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', room.id).eq('seat_index', 0);
+                        await supabase.rpc('move_to_seat', { p_room_id: room.id, p_seat_index: 0, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto, p_force: true });
+                        broadcastToPeers('host_transfer', { new_host_id: currentUserId, new_host_name: currentUserName, room_id: room.id });
+                        const seat0Update = { room_id: room.id, seat_index: 0, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: false, is_muted_by_host: false };
+                        const oldSeatUpdate = { room_id: room.id, seat_index: nextHostSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: nextHostSeat.is_locked, is_muted_by_host: nextHostSeat.is_muted_by_host };
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: seat0Update });
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: oldSeatUpdate });
+                        setSeats(prev => prev.map((s, i) => i === 0 ? seat0Update : (i === nextHostSeat.seat_index ? oldSeatUpdate : s)));
+                    } else if (!nextHostSeat) {
+                        const remainingAudience = currentAudience.filter(a => String(a.user_id) !== droppedUserId);
+                        if (remainingAudience.length > 0 && String(remainingAudience[0].user_id) === currentUserId) {
+                            await supabase.from('active_rooms').delete().eq('id', room.id);
+                            broadcastToPeers('room_closed', { room_id: room.id });
+                        }
+                    }
+                }
+
+                setSeats(prev => prev.map(s => s && String(s.user_id) === droppedUserId ? { ...s, user_id: null, user_name: null, photo_url: null } : s));
+                setAudience(prev => prev.filter(u => String(u.user_id) !== droppedUserId));
+            };
+
+            useEffect(() => {
+                if (!currentUserId || currentUserId === "1001") return;
+
+                const initPeer = () => {
+                    const peer = new window.Peer(`ataxy-vc-${currentUserId}`, {
+                        config: {
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' },
+                                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                                { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+                            ]
+                        }
+                    });
+                    peerRef.current = peer;
+
+                    peer.on('connection', (conn) => {
+                        dataConnectionsRef.current.push(conn);
+                        conn.on('data', handlePeerData);
+                        conn.on('close', () => {
+                            dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== conn.peer);
+                        });
+                        conn.on('error', () => {
+                            dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== conn.peer);
+                        });
+                    });
+                };
+
+                if (!window.Peer) {
+                    const script = document.createElement('script');
+                    script.src = "https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js";
+                    script.onload = initPeer;
+                    document.head.appendChild(script);
+                } else {
+                    initPeer();
+                }
+
+                return () => {
+                    if (peerRef.current) peerRef.current.destroy();
+                    dataConnectionsRef.current = [];
+                };
+            }, [currentUserId]);
+
+            // Connect to other participants in the room
+            useEffect(() => {
+                if (!peerRef.current || !activeRoom) return;
+
+                const currentPeerIds = dataConnectionsRef.current.map(c => c.peer);
+
+                [...seats.filter(s => s && s.user_id), ...audience].forEach(p => {
+                    const targetPeerId = `ataxy-vc-${p.user_id}`;
+                    if (p.user_id !== currentUserId && !currentPeerIds.includes(targetPeerId)) {
+                        const conn = peerRef.current.connect(targetPeerId, { reliable: true });
+                        conn.on('open', () => {
+                            dataConnectionsRef.current.push(conn);
+                            const mySeat = seats.find(s => s && s.user_id === currentUserId);
+                            if (!mySeat) {
+                                conn.send({ type: 'ROOM_EVENT', event: 'state_change', payload: { type: 'AUDIENCE_JOIN', data: { room_id: activeRoom.id, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, joined_at: new Date().toISOString() } } });
+                            }
+                        });
+                        conn.on('data', handlePeerData);
+                        conn.on('close', () => {
+                            dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== targetPeerId);
+                        });
+                        conn.on('error', () => {
+                            dataConnectionsRef.current = dataConnectionsRef.current.filter(c => c.peer !== targetPeerId);
+                        });
+                    }
+                });
+            }, [seats, audience, activeRoom, currentUserId]);
+
+            useEffect(() => {
+                const handleGlobalMinimize = () => setIsMinimized(true);
+                window.addEventListener('minimize_vc_room', handleGlobalMinimize);
+                return () => window.removeEventListener('minimize_vc_room', handleGlobalMinimize);
+            }, []);
+
+            useEffect(() => {
+                const handleBeforeUnload = () => {
+                    if (activeRoomRef.current) {
+                        const rId = activeRoomRef.current.id;
+                        const iAmHostNow = String(activeRoomRef.current.host_id) === currentUserId;
+
+                        try {
+                            const payload = JSON.stringify({ p_room_id: rId, p_user_id: currentUserId, p_is_host: iAmHostNow });
+                            const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+                            const url = `${SUPABASE_PROXY_URL}/rest/v1/rpc/emergency_leave_vc_room`;
+                            fetch(url, { method: 'POST', headers, body: payload, keepalive: true }).catch(() => { });
+                        } catch (e) { }
+
+                        if (!iAmHostNow) {
+                            const myIndex = seatsRef.current?.findIndex(s => s && String(s.user_id) === currentUserId);
+                            if (myIndex !== -1 && myIndex !== undefined) {
+                                broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: myIndex, user_id: null, user_name: null, photo_url: null, is_locked: false, is_muted_by_host: false } });
+                            } else {
+                                broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: rId, user_id: currentUserId } });
+                            }
+                        }
+                    }
+                };
+                window.addEventListener('beforeunload', handleBeforeUnload);
+                window.addEventListener('pagehide', handleBeforeUnload);
+                return () => { window.removeEventListener('beforeunload', handleBeforeUnload); window.removeEventListener('pagehide', handleBeforeUnload); };
+            }, [currentUserId]);
+
+            const mySeat = seats.find(s => s && s.user_id === currentUserId);
+            const mySeatIndex = mySeat ? mySeat.seat_index : null;
+            const isMutedByHost = mySeat ? mySeat.is_muted_by_host : false;
+            const isHost = activeRoom && String(activeRoom.host_id) === String(currentUserId);
+            const totalParticipants = seats.filter(s => s && s.user_id).length + audience.length;
+
+            useEffect(() => {
+                if (onRoomStateChange) {
+                    onRoomStateChange(!!activeRoom, isMinimized);
+                }
+            }, [activeRoom, isMinimized, onRoomStateChange]);
+
+            const handleCopy = (text, type) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text); safeAlert(`${type} copied to clipboard!`);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text; document.body.appendChild(textArea); textArea.select();
+                    try { document.execCommand('copy'); safeAlert(`${type} copied to clipboard!`); } catch (err) { }
+                    document.body.removeChild(textArea);
+                }
+            };
+
+            const fetchRoomData = async (roomId) => {
+                if (!roomId) return;
+
+                // Sync room settings & host transfer reliably for mobile networks
+                const { data: roomSettings } = await supabase.from('active_rooms').select('*').eq('id', roomId).single();
+                if (!roomSettings) {
+                    setActiveRoom(null);
+                    setIsMinimized(false);
+                    dataConnectionsRef.current.forEach(c => { try { c.close(); } catch (e) { } });
+                    dataConnectionsRef.current = [];
+                    safeAlert("The room has been closed.");
+                    return;
+                }
+
+                setActiveRoom(prev => {
+                    if (!prev) return roomSettings;
+                    if (String(prev.host_id) !== String(roomSettings.host_id) || prev.chat_disabled !== roomSettings.chat_disabled || prev.password !== roomSettings.password || prev.room_name !== roomSettings.room_name || prev.host_photo !== roomSettings.host_photo) {
+                        if (String(roomSettings.host_id) === String(currentUserId) && String(prev.host_id) !== String(currentUserId)) {
+                            safeAlert("You have been promoted to Host!");
+                        }
+                        return { ...prev, ...roomSettings };
+                    }
+                    return prev;
+                });
+
+                const { data, error } = await supabase.rpc('get_room_details', { p_room_id: roomId });
+                if (error || !data) { console.error("Fetch room details error:", error); return; }
+                const { seats: seatData, audience: audData, messages: msgsData } = data;
+
+                const newSeats = [null, null, null, null];
+                if (seatData) {
+                    seatData.forEach(s => { if (s.seat_index >= 0 && s.seat_index <= 3) newSeats[s.seat_index] = s; });
+                }
+                setSeats(newSeats);
+
+                const uniqueAud = [];
+                const seen = new Set();
+                let newlyJoined = null;
+                (audData || []).forEach(a => {
+                    if (!seen.has(String(a.user_id))) {
+                        seen.add(String(a.user_id));
+                        uniqueAud.push(a);
+                        if (!audienceRef.current.some(existing => String(existing.user_id) === String(a.user_id)) && String(a.user_id) !== String(currentUserId)) {
+                            newlyJoined = a.user_name || 'A user';
+                        }
+                    }
+                });
+                if (newlyJoined) {
+                    setEntryNotification(newlyJoined);
+                    setTimeout(() => setEntryNotification(null), 3000);
+                }
+                setAudience(uniqueAud);
+
+                // Merge DB messages with local ephemeral WebRTC messages
+                if (msgsData && msgsData.length > 0) {
+                    setMessages(prev => {
+                        const newMsgs = msgsData.filter(dbMsg => !prev.some(m => m.id === dbMsg.id));
+                        return [...prev, ...newMsgs];
+                    });
+                }
+            };
+
+            const { remoteStreams, localStream } = useWePlayWebRTC(supabase, activeRoom?.id, currentUserId, mySeatIndex, isMutedByHost, isLocalMuted, () => {
+                if (activeRoom) fetchRoomData(activeRoom.id);
+            }, handlePeerDisconnect);
+
+            useEffect(() => {
+                Object.entries(remoteStreams).forEach(([peerId, stream]) => {
+                    const audioEl = document.getElementById(`audio-${peerId}`);
+                    if (audioEl) {
+                        if (audioEl.srcObject !== stream) {
+                            audioEl.srcObject = stream;
+                        }
+                        // Ensure playback is started reliably, particularly for iOS/Safari
+                        try {
+                            const playPromise = audioEl.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => { });
+                            }
+                        } catch (e) { }
+                    }
+                });
+            }, [remoteStreams]);
+            useEffect(() => { chatEndRef.current?.scrollIntoView(); }, [messages]);
+
+            useEffect(() => {
+                if (!activeRoom?.id) return;
+                const currentRoomId = activeRoom.id;
+
+                // Zero-Request Flow: Fetch only once upon joining.
+                // All live room updates (chat, seat hops, mutes) are instantly handled 
+                // by the P2P Mesh Network (PeerJS + MQTT) at 0 request cost!
+                fetchRoomData(currentRoomId);
+            }, [activeRoom?.id]);
+
+            const [isRefreshingLobby, setIsRefreshingLobby] = useState(false);
+            const fetchInitialRooms = async () => {
+                if (!supabase) return;
+                const { data } = await supabase.from('active_rooms')
+                    .select('id, room_name, host_id, host_name, host_photo, password, created_at, room_id_5_digit, room_seats(user_id), room_audience(user_id)')
+                    .order('created_at', { ascending: false });
+                if (data) {
+                    const enhancedData = data.map(room => ({
+                        ...room, total_capacity: (room.room_seats || []).filter(s => s.user_id !== null).length + (room.room_audience || []).length
+                    }));
+                    const activeOnlyData = enhancedData.filter(room => room.total_capacity > 0 || String(room.host_id) === currentUserId);
+                    setAvailableVCRooms(activeOnlyData);
+                }
+            };
+
+            useEffect(() => {
+                if (activeRoom || !supabase) return;
+                fetchInitialRooms();
+            }, [activeRoom]);
+
+            const executeCreateRoom = async () => {
+                if (activeRoomRef.current) {
+                    await handleExitRoom();
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                setIsCreating(true);
+                setRoomError('');
+                try {
+                    const { data, error } = await supabase.rpc('create_room_and_seats', {
+                        p_room_name: vcCreateName || `${currentUserName}'s Room`,
+                        p_host_id: currentUserId,
+                        p_host_name: currentUserName,
+                        p_host_photo: (vcCreateType === 'advance' && vcCreatePhoto) ? vcCreatePhoto : currentUserPhoto,
+                        p_password: vcCreatePassEnabled && vcCreatePass ? vcCreatePass : null
+                    });
+
+                    if (error) {
+                        safeAlert("Database Error: " + error.message);
+                        setRoomError("Database Error: " + error.message);
+                        return;
+                    }
+
+                    if (data) {
+                        setActiveRoom(data);
+                        setShowVCCreateModal(false);
+                        setMessages([]);
+                    }
+                } catch (err) {
+                    safeAlert("Connection failed: " + err.message);
+                    setRoomError("Connection failed: " + err.message);
+                }
+                setIsCreating(false);
+            };
+
+            const handleKick = async (targetUserId, seatIndex) => {
+                if (seatIndex !== null && seatIndex !== undefined) {
+                    await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', activeRoom.id).eq('seat_index', seatIndex);
+                } else {
+                    await supabase.from('room_audience').delete().eq('room_id', activeRoom.id).eq('user_id', targetUserId);
+                }
+                broadcastToPeers('kick', { room_id: activeRoom.id, target_uid: targetUserId });
+                setShowParticipantsModal(false);
+                setShowActionModal(null);
+                safeAlert("User kicked from the room.");
+            };
+
+            const joinRoom = async (room) => {
+                if (activeRoomRef.current) {
+                    if (activeRoomRef.current.id === room.id) {
+                        setIsMinimized(false);
+                        setShowJoinModal(false);
+                        return;
+                    }
+                    await handleExitRoom();
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Clear old connections to ensure absolute room isolation
+                const oldConns = [...dataConnectionsRef.current];
+                dataConnectionsRef.current = [];
+                oldConns.forEach(c => { try { c.close(); } catch (e) { } });
+
+                const { error } = await supabase.rpc('join_room_audience', {
+                    p_room_id: room.id,
+                    p_user_id: currentUserId,
+                    p_user_name: currentUserName,
+                    p_photo_url: currentUserPhoto
+                });
+
+                if (error) {
+                    if (error.message?.includes('capacity') || error.details?.includes('capacity')) {
+                        safeAlert("Room is Full! Please join another room or create your own.");
+                    } else if (error.code === '23505' || error.message?.includes('duplicate')) {
+                        setActiveRoom(room); setShowJoinModal(false);
+                        setMessages([]);
+                    } else { safeAlert("Error: " + error.message); }
+                } else {
+                    setActiveRoom(room); setShowJoinModal(false);
+                    setMessages([]);
+                }
+            };
+
+            const joinRoomBy5Digit = async (roomId5Digit) => {
+                const { data: room } = await supabase.from('active_rooms').select('*').eq('room_id_5_digit', roomId5Digit).single();
+                if (!room) { safeAlert('Room not found'); return; }
+
+                if (room.password) {
+                    setRoomToJoinWithPassword(room);
+                    setShowJoinModal(false);
+                } else {
+                    joinRoom(room);
+                }
+            };
+
+            const handleExitRoom = async () => {
+                if (!activeRoom) return;
+                const rId = activeRoom.id;
+
+                if (isHost) {
+                    const nextHostSeat = seats.find((s, i) => i > 0 && s && s.user_id && String(s.user_id) !== currentUserId);
+                    if (nextHostSeat) {
+                        await supabase.from('active_rooms').update({
+                            host_id: nextHostSeat.user_id,
+                            host_name: nextHostSeat.user_name,
+                            host_photo: nextHostSeat.photo_url
+                        }).eq('id', rId);
+
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', rId).eq('seat_index', 0);
+                        await supabase.rpc('move_to_seat', { p_room_id: rId, p_seat_index: 0, p_user_id: nextHostSeat.user_id, p_user_name: nextHostSeat.user_name, p_photo_url: nextHostSeat.photo_url, p_force: true });
+
+                        broadcastToPeers('host_transfer', { new_host_id: nextHostSeat.user_id, new_host_name: nextHostSeat.user_name, room_id: rId });
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: 0, user_id: nextHostSeat.user_id, user_name: nextHostSeat.user_name, photo_url: nextHostSeat.photo_url, is_locked: false, is_muted_by_host: false } });
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: nextHostSeat.seat_index, user_id: null, user_name: null, photo_url: null, is_locked: nextHostSeat.is_locked, is_muted_by_host: nextHostSeat.is_muted_by_host } });
+                    } else {
+                        await supabase.from('active_rooms').delete().eq('id', rId);
+                        broadcastToPeers('room_closed', { room_id: rId });
+                    }
+                } else {
+                    if (mySeatIndex !== null) {
+                        const existingSeat = seats[mySeatIndex] || {};
+                        broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: rId, seat_index: mySeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } });
+                        await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', rId).eq('seat_index', mySeatIndex);
+                    } else {
+                        broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { user_id: currentUserId } });
+                        await supabase.from('room_audience').delete().eq('room_id', rId).eq('user_id', currentUserId);
+                    }
+                }
+
+                // Disconnect PeerJS Data Channels for this room to prevent spying/ghost connections
+                setTimeout(() => {
+                    dataConnectionsRef.current.forEach(c => { try { c.close(); } catch (e) { } });
+                    dataConnectionsRef.current = [];
+                }, 500);
+
+                setActiveRoom(null); // Optimistic UI unmount instantly
+                setIsMinimized(false);
+                setMessages([]); // Clear chat messages for the next room
+            };
+
+            const takeSeat = async (idx, roomId = activeRoom?.id, bypassLock = false) => {
+                const existingSeat = seats[idx] || {};
+                const oldSeatIndex = mySeatIndex;
+
+                // 1. Optimistic UI Update (Zero lag for user)
+                setSeats(prev => prev.map((s, i) => {
+                    if (i === idx) return { ...s, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false };
+                    if (i === oldSeatIndex) return { ...s, seat_index: oldSeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: s?.is_locked || false, is_muted_by_host: s?.is_muted_by_host || false };
+                    return s;
+                }));
+                if (oldSeatIndex === null) {
+                    setAudience(prev => prev.filter(u => u.user_id !== currentUserId));
+                }
+                setIsLocalMuted(existingSeat.is_muted_by_host || false);
+
+                // 2. Instant Broadcast (Zero lag for everyone else)
+                if (oldSeatIndex !== null) {
+                    broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: roomId, seat_index: oldSeatIndex, user_id: null, user_name: null, photo_url: null, is_locked: seats[oldSeatIndex]?.is_locked || false, is_muted_by_host: seats[oldSeatIndex]?.is_muted_by_host || false } });
+                } else {
+                    broadcastToPeers('state_change', { type: 'AUDIENCE_LEAVE', data: { room_id: roomId, user_id: currentUserId } });
+                }
+                broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: { room_id: roomId, seat_index: idx, user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false } });
+
+                try {
+                    // 3. Atomic Database Transaction via RPC
+                    const { error } = await supabase.rpc('move_to_seat', {
+                        p_room_id: roomId,
+                        p_seat_index: idx,
+                        p_user_id: currentUserId,
+                        p_user_name: currentUserName,
+                        p_photo_url: currentUserPhoto,
+                        p_force: bypassLock
+                    });
+                    if (error) {
+                        if (error.message.includes('function') || error.code === 'PGRST202') {
+                            if (bypassLock) {
+                                await supabase.from('room_seats').update({ is_locked: false }).eq('room_id', roomId).eq('seat_index', idx);
+                                const { error: err2 } = await supabase.rpc('move_to_seat', { p_room_id: roomId, p_seat_index: idx, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                                await supabase.from('room_seats').update({ is_locked: true }).eq('room_id', roomId).eq('seat_index', idx);
+                                if (err2) throw err2;
+                            } else {
+                                const { error: err3 } = await supabase.rpc('move_to_seat', { p_room_id: roomId, p_seat_index: idx, p_user_id: currentUserId, p_user_name: currentUserName, p_photo_url: currentUserPhoto });
+                                if (err3) throw err3;
+                            }
+                        } else {
+                            throw error;
+                        }
+                    }
+                } catch (e) {
+                    safeAlert("Failed to take seat: " + e.message);
+                    fetchRoomData(activeRoom.id); // Rollback to actual state
+                }
+            };
+
+            const moveToAudience = async (targetId, idx, targetName, targetPhoto) => {
+                const existingSeat = seats[idx] || {};
+                const expectedSeat = { room_id: activeRoom.id, seat_index: idx, user_id: null, user_name: null, photo_url: null, is_locked: existingSeat.is_locked || false, is_muted_by_host: existingSeat.is_muted_by_host || false };
+                const newAudienceMember = { room_id: activeRoom.id, user_id: targetId, user_name: targetName || 'User', photo_url: targetPhoto || '' };
+
+                // Optimistic UI for Host
+                setSeats(prev => { const n = [...prev]; n[idx] = expectedSeat; return n; });
+                setAudience(prev => { if (prev.some(u => u.user_id === targetId)) return prev; return [...prev, { ...newAudienceMember, joined_at: new Date().toISOString() }]; });
+
+                broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: expectedSeat });
+                broadcastToPeers('state_change', { type: 'AUDIENCE_JOIN', data: { ...newAudienceMember, joined_at: new Date().toISOString() } });
+
+                try {
+                    await supabase.from('room_seats').update({ user_id: null, user_name: null, photo_url: null }).eq('room_id', activeRoom.id).eq('seat_index', idx);
+                    await supabase.from('room_audience').insert(newAudienceMember);
+                } catch (e) { fetchRoomData(activeRoom.id); }
+            };
+
+            const toggleSeatLock = async (index, currentLocked) => {
+                const isLocked = !currentLocked;
+                const expectedSeat = seats[index] ? { ...seats[index], is_locked: isLocked } : { room_id: activeRoom.id, seat_index: index, user_id: null, is_locked: isLocked, is_muted_by_host: false };
+
+                setSeats(prev => { const n = [...prev]; n[index] = expectedSeat; return n; });
+                broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: expectedSeat });
+
+                try { await supabase.from('room_seats').update({ is_locked: isLocked }).eq('room_id', activeRoom.id).eq('seat_index', index); }
+                catch (e) { fetchRoomData(activeRoom.id); }
+            };
+
+            const toggleSeatMuteByHost = async (index, currentMuted) => {
+                const isMuted = !currentMuted;
+                const expectedSeat = seats[index] ? { ...seats[index], is_muted_by_host: isMuted } : null;
+                if (!expectedSeat) return;
+
+                setSeats(prev => { const n = [...prev]; n[index] = expectedSeat; return n; });
+                broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: expectedSeat });
+
+                try { await supabase.from('room_seats').update({ is_muted_by_host: isMuted }).eq('room_id', activeRoom.id).eq('seat_index', index); }
+                catch (e) { fetchRoomData(activeRoom.id); }
+            };
+
+            // Client-Side Active Room Sorting (Zero Server Cost)
+            const sortedActiveRooms = useMemo(() => {
+                return [...availableVCRooms]
+                    .filter(room => true) // Ghost room cleanups fall into DB naturally
+                    .sort((a, b) => {
+                        const countA = a.total_capacity || 0;
+                        const countB = b.total_capacity || 0;
+
+                        const isAFull = countA >= 12;
+                        const isBFull = countB >= 12;
+
+                        if (isAFull && !isBFull) return 1;
+                        if (!isAFull && isBFull) return -1;
+
+                        if (countB !== countA) return countB - countA;
+
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    });
+            }, [availableVCRooms]);
+
+            // 2. Peer-to-Peer Message Broadcasting
+            const sendPeerChatMessage = (messageText, imageUrl = null) => {
+                if (!messageText.trim() && !imageUrl) return;
+
+                const clientMsgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                const newMsg = {
+                    id: clientMsgId,
+                    room_id: activeRoom?.id,
+                    user_id: currentUserId,
+                    user_name: currentUserName,
+                    user_avatar: currentUserPhoto,
+                    message: messageText || '📸 Sent an image',
+                    image_url: imageUrl
+                };
+
+                // Locally append message to sender's own UI state
+                setMessages(prev => [...prev, newMsg]);
+
+                // Broadcast via WebRTC Data Channels bypassing Supabase
+                dataConnectionsRef.current.forEach(connection => {
+                    if (connection && connection.open) {
+                        connection.send({
+                            type: 'CHAT',
+                            id: clientMsgId,
+                            room_id: activeRoom?.id,
+                            text: newMsg.message,
+                            senderId: currentUserId,
+                            senderName: currentUserName,
+                            senderPhoto: currentUserPhoto,
+                            imageUrl: imageUrl
+                        });
+                    }
+                });
+            };
+
+            const renderDashboard = () => {
+                if (currentView === 'chats') {
+                    return (
+                        <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
+                            <div className="flex bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-md relative z-30">
+                                <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all ${currentView === 'rooms' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
+                                <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>
+                                    Chats
+                                    {pendingRequests.length > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>}
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-hidden relative">
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} />
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010714] text-white space-y-0">
+                        <div className="flex bg-[#031530] p-1.5 rounded-2xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-lg relative z-30">
+                            <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${currentView === 'rooms' ? 'bg-gradient-to-r from-[#00FFFF] to-blue-500 text-[#010714] shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
+                            <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-gradient-to-r from-[#00FFFF] to-blue-500 text-[#010714] shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'text-[#A4DFE6] hover:text-white'}`}>
+                                Chats
+                                {pendingRequests.length > 0 && <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.9)]"></span>}
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
+                            {/* Hero Section */}
+                            <div className="px-6 py-6 relative overflow-hidden bg-gradient-to-b from-[#021A40] to-transparent shrink-0">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[80px] opacity-20 animate-pulse"></div>
+                                <div className="relative z-10 flex items-center gap-4">
+                                    <AtaxyLogo className="w-16 h-16 rounded-full shadow-[0_0_25px_rgba(0,255,255,0.5)] border-2 border-[#00FFFF]/50" />
+                                    <div>
+                                        <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00FFFF] to-blue-400 drop-shadow-sm uppercase tracking-wider">Voice Lounge</h2>
+                                        <p className="text-blue-200/70 text-xs font-semibold mt-1">Join study sessions with crystal clear audio.</p>
+                                    </div>
+                                </div>
+
+                                {roomError && (
+                                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-xl w-full text-xs font-bold text-center animate-in fade-in mt-4 backdrop-blur-sm">
+                                        <i className="fa-solid fa-triangle-exclamation mr-1.5"></i> {roomError}
+                                    </div>
+                                )}
+
+                                <div className="w-full flex gap-3 mt-6">
+                                    <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} disabled={isCreating} className="flex-1 bg-gradient-to-br from-[#00FFFF] to-blue-600 text-[#010714] py-4 rounded-2xl font-black shadow-[0_8px_20px_rgba(0,255,255,0.3)] hover:shadow-[0_8px_25px_rgba(0,255,255,0.5)] hover:-translate-y-1 transition-all text-sm disabled:opacity-50 flex flex-col items-center justify-center gap-1 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                        {isCreating ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-satellite-dish text-xl mb-0.5"></i>}
+                                        <span>CREATE ROOM</span>
+                                    </button>
+                                    <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-[#021A40] border-2 border-[#0AE0D0]/30 text-[#00FFFF] py-4 rounded-2xl font-black shadow-[0_8px_20px_rgba(0,0,0,0.4)] hover:bg-[#00FFFF]/10 hover:border-[#00FFFF]/60 hover:-translate-y-1 transition-all text-sm flex flex-col items-center justify-center gap-1">
+                                        <i className="fa-solid fa-hashtag text-xl mb-0.5"></i>
+                                        <span>JOIN BY ID</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Active Rooms List */}
+                            <div className="px-4 pb-6 flex-1">
+                                <div className="flex items-center justify-between mb-4 px-2">
+                                    <h3 className="font-black text-white text-base flex items-center gap-2 drop-shadow-md">
+                                        Live Rooms <span className="bg-[#00FFFF] text-[#010714] text-[10px] px-2 py-0.5 rounded-full font-black">{sortedActiveRooms.length}</span>
+                                    </h3>
+                                    <button onClick={async () => { setIsRefreshingLobby(true); await fetchInitialRooms(); setTimeout(() => setIsRefreshingLobby(false), 500); }} className="text-[#A4DFE6] hover:text-[#00FFFF] p-2 rounded-full hover:bg-[#00FFFF]/10 transition-colors">
+                                        <i className={`fa-solid fa-rotate-right ${isRefreshingLobby ? 'animate-spin' : ''} text-lg`}></i>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {sortedActiveRooms.length === 0 ? (
+                                        <div className="bg-[#021A40]/50 border border-blue-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                                            <div className="w-16 h-16 bg-[#00FFFF]/10 rounded-full flex items-center justify-center mb-3">
+                                                <i className="fa-solid fa-microphone-slash text-[#00FFFF] text-2xl opacity-80"></i>
+                                            </div>
+                                            <p className="text-[#A4DFE6] font-bold">No active rooms right now.</p>
+                                            <p className="text-gray-500 text-xs mt-1">Start a room to study with others!</p>
+                                        </div>
+                                    ) : (
+                                        sortedActiveRooms.map(room => (
+                                            <div key={room.id} onClick={() => {
+                                                if (room.password) { setRoomToJoinWithPassword(room); }
+                                                else { joinRoom(room); }
+                                            }} className="bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/20 p-3 rounded-2xl flex flex-row gap-4 items-stretch cursor-pointer hover:border-[#00FFFF]/50 hover:shadow-[0_5px_20px_rgba(0,255,255,0.15)] transition-all group relative overflow-hidden h-[90px]">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-[#00FFFF]/5 rounded-full blur-xl group-hover:bg-[#00FFFF]/10 transition-colors"></div>
+
+                                                {/* Left Column: Square Curved Profile Pic */}
+                                                <div className="relative w-[66px] h-full shrink-0">
+                                                    <div className="w-full h-full rounded-[14px] bg-[#010714] bg-cover bg-center text-[#00FFFF] font-black text-2xl flex items-center justify-center shadow-inner border border-blue-500/30 overflow-hidden" style={room.host_photo ? { backgroundImage: `url(${room.host_photo})` } : {}}>
+                                                        {!room.host_photo && (room.host_name ? room.host_name[0].toUpperCase() : 'H')}
+                                                    </div>
+                                                    <div className="absolute -bottom-1 -right-1 bg-green-500 w-3.5 h-3.5 rounded-full border-2 border-[#010714] shadow-sm"></div>
+                                                </div>
+
+                                                {/* Right Column: Room Info & Join */}
+                                                <div className="flex-1 flex flex-col justify-between py-0.5 relative z-10 min-w-0">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h4 className="text-[15px] font-black text-white leading-tight truncate group-hover:text-[#00FFFF] transition-colors">{room.room_name}</h4>
+                                                            <p className="text-[10px] text-[#A4DFE6] font-semibold mt-0.5 truncate">Host: {room.host_name || String(room.host_id).substring(0, 4)}</p>
+                                                        </div>
+                                                        {room.password && (
+                                                            <div className="bg-[#010714] border border-[#00FFFF]/30 px-1.5 py-0.5 rounded-md shrink-0">
+                                                                <i className="fa-solid fa-lock text-[#00FFFF] text-[10px]"></i>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5 bg-[#010714]/60 px-2 py-1 rounded-lg border border-blue-500/20">
+                                                            <i className="fa-solid fa-headphones text-[#00FFFF] text-[9px]"></i>
+                                                            <span className="text-[10px] font-black text-white">{room.total_capacity || 1}<span className="text-gray-500">/12</span></span>
+                                                        </div>
+                                                        <button className="bg-[#00FFFF]/10 text-[#00FFFF] border border-[#00FFFF]/30 px-4 py-1.5 rounded-xl text-[10px] font-black shadow-sm group-hover:bg-[#00FFFF] group-hover:text-[#010714] transition-all uppercase tracking-widest shrink-0">
+                                                            Join
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {showJoinModal && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
+                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Enter 5-digit Room ID</h3>
+                                    <input type="number" value={joinRoomId} onChange={e => setJoinRoomId(e.target.value)} placeholder="e.g. 12345" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-xl text-center font-black tracking-[0.5em] focus:outline-none focus:border-[#00FFFF]" />
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setShowJoinModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={() => joinRoomBy5Digit(joinRoomId)} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {roomToJoinWithPassword && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300]" onClick={() => setRoomToJoinWithPassword(null)}>
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                    <h3 className="text-xl font-black mb-2 text-[#00FFFF]"><i className="fa-solid fa-lock mr-2"></i>Private Room</h3>
+                                    <p className="text-sm text-[#A4DFE6] mb-4">Enter the password to join <strong>{roomToJoinWithPassword.room_name}</strong></p>
+                                    <input type="text" value={joinPasswordInput} onChange={e => setJoinPasswordInput(e.target.value)} placeholder="Password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setRoomToJoinWithPassword(null)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={() => {
+                                            if (joinPasswordInput === roomToJoinWithPassword.password) {
+                                                joinRoom(roomToJoinWithPassword);
+                                                setRoomToJoinWithPassword(null);
+                                                setJoinPasswordInput('');
+                                            } else { safeAlert("Incorrect password."); }
+                                        }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showVCCreateModal && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
+                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Create Voice Lounge</h3>
+                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                    <input type="text" value={vcCreateName} onChange={e => setVcCreateName(e.target.value)} placeholder={`${currentUserName}'s Room`} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
+                                    <div className="flex gap-2 mb-4">
+                                        <button type="button" onClick={() => setVcCreateType('temporary')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${vcCreateType === 'temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Temporary</button>
+                                        <button type="button" onClick={() => setVcCreateType('advance')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${vcCreateType === 'advance' ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Advance</button>
+                                    </div>
+                                    {vcCreateType === 'advance' && (
+                                        <div className="mb-4">
+                                            <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Profile Picture (Advance Only)</label>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 overflow-hidden flex items-center justify-center shrink-0">
+                                                    {vcCreatePhoto ? <img src={vcCreatePhoto} className="w-full h-full object-cover" /> : <i className="fa-solid fa-image text-gray-500"></i>}
+                                                </div>
+                                                <input type="file" accept="image/*" onChange={(e) => {
+                                                    const f = e.target.files[0]; if (!f) return;
+                                                    const r = new FileReader(); r.onload = (ev) => {
+                                                        const img = new Image(); img.onload = () => {
+                                                            const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 400;
+                                                            if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
+                                                            c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+                                                            setVcCreatePhoto(c.toDataURL('image/jpeg', 0.8));
+                                                        }; img.src = ev.target.result;
+                                                    }; r.readAsDataURL(f);
+                                                }} className="text-[10px] flex-1 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#00FFFF]/20 file:text-[#00FFFF] hover:file:bg-[#00FFFF]/30 cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider">Enable Password</label>
+                                        <input type="checkbox" checked={vcCreatePassEnabled} onChange={e => setVcCreatePassEnabled(e.target.checked)} className="w-4 h-4 accent-[#00FFFF]" />
+                                    </div>
+                                    {vcCreatePassEnabled && (
+                                        <input type="text" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value)} placeholder="Enter password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    )}
+                                    <div className="flex gap-3 mt-6">
+                                        <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={executeCreateRoom} disabled={isCreating} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isCreating ? 'Creating...' : 'Create'}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            const renderActiveRoom = () => (
+                <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={() => setShowRoomMenu(false)}>
+                    <style>{`div.fixed.bottom-0.w-full.max-w-md.glass-panel { display: none !important; }`}</style>
+                    {/* Header */}
+                    <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+max(env(safe-area-inset-top),_24px))]">
+                        <div className="flex items-center gap-2 overflow-hidden flex-1">
+                            <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
+                                <i className="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div className="flex flex-col overflow-hidden min-w-0">
+                                <h2 className="font-black text-base sm:text-lg text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,255,255,0.4)] truncate">{activeRoom.room_name}</h2>
+                                <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold mt-0.5">
+                                    <span onClick={() => handleCopy(activeRoom.room_id_5_digit, 'Room ID')} className="cursor-pointer bg-[#00FFFF]/20 text-[#00FFFF] px-1.5 py-0.5 rounded border border-[#00FFFF]/50 active:scale-95 transition-transform flex items-center gap-1 shrink-0">
+                                        ID: {activeRoom.room_id_5_digit} <i className="fa-regular fa-copy text-[9px]"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
+                                <i className="fa-solid fa-bell text-sm"></i>
+                                {pendingRequests.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                        {pendingRequests.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button onClick={() => setShowParticipantsModal(true)} className="text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 px-2 py-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold">
+                                <i className="fa-solid fa-users"></i> {totalParticipants}/12
+                            </button>
+
+                            <div className="relative">
+                                <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95">
+                                    <i className="fa-solid fa-ellipsis-vertical text-xl"></i>
+                                </button>
+                                {showRoomMenu && (
+                                    <div className="absolute right-0 top-full mt-3 bg-[#021633]/95 backdrop-blur-xl border border-[#0AE0D0]/30 rounded-2xl shadow-[0_10px_40px_rgba(0,255,255,0.2)] p-2 z-[3000] flex items-center gap-1 animate-in fade-in zoom-in" onClick={e => e.stopPropagation()}>
+                                        {isHost && (
+                                            <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex flex-col items-center justify-center p-3 hover:bg-[#00FFFF]/10 rounded-xl transition-all min-w-[70px] active:scale-95">
+                                                <i className="fa-solid fa-gear text-[#00FFFF] text-[22px] mb-1.5"></i>
+                                                <span className="text-[9px] font-bold text-[#E0F7FA] uppercase tracking-wider">Settings</span>
+                                            </button>
+                                        )}
+                                        <button onClick={() => { setShowRoomMenu(false); safeAlert("Room reported for review by ATAXY Admins."); }} className="flex flex-col items-center justify-center p-3 hover:bg-orange-500/10 rounded-xl transition-all min-w-[70px] active:scale-95">
+                                            <i className="fa-solid fa-flag text-orange-400 text-[22px] mb-1.5"></i>
+                                            <span className="text-[9px] font-bold text-orange-100 uppercase tracking-wider">Report</span>
+                                        </button>
+                                        <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex flex-col items-center justify-center p-3 hover:bg-red-500/10 rounded-xl transition-all min-w-[70px] active:scale-95">
+                                            <i className="fa-solid fa-arrow-right-from-bracket text-red-500 text-[22px] mb-1.5"></i>
+                                            <span className="text-[9px] font-bold text-red-100 uppercase tracking-wider">Exit</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Stage */}
+                    <div className="shrink-0 px-4 pt-4 pb-2">
+                        <div className="grid grid-cols-2 gap-y-5 gap-x-4 justify-items-center">
+                            {seats.map((seat, idx) => (
+                                <VCSeatNode
+                                    key={idx}
+                                    seat={seat}
+                                    idx={idx}
+                                    currentUserId={currentUserId}
+                                    isHost={isHost}
+                                    setShowActionModal={setShowActionModal}
+                                    takeSeat={takeSeat}
+                                    remoteStream={seat?.user_id ? remoteStreams[seat.user_id] : null}
+                                    localStream={localStream}
+                                    isLocalMuted={isLocalMuted}
+                                    handleAvatarClick={handleAvatarClick}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Audience (Compact Horizontal Strip) */}
+                    <div className="shrink-0 mx-4 bg-[#021633]/50 border border-[#0AE0D0]/20 rounded-xl p-2 backdrop-blur shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]">
+                        <div className="flex items-center justify-between mb-2 px-1">
+                            <span className="text-[10px] font-black text-[#A4DFE6] uppercase tracking-widest"><i className="fa-solid fa-users text-[#00FFFF] mr-1"></i> Audience ({audience.length})</span>
+                            <span className="text-[9px] bg-[#010B1C] text-gray-400 px-2 py-0.5 rounded-full border border-gray-800">Listeners</span>
+                        </div>
+                        {audience.length === 0 ? (
+                            <p className="text-center text-gray-500 italic py-2 font-bold text-[10px]">No audience members yet.</p>
+                        ) : (
+                            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 px-1">
+                                {audience.map(m => (
+                                    <div key={m.user_id} className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0 w-12" onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAvatarClick(m);
+                                    }}>
+                                        <div className="w-8 h-8 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 flex items-center justify-center text-sm font-black text-[#00FFFF] shadow-inner group-hover:border-[#00FFFF] transition-colors bg-cover bg-center" style={m.photo_url ? { backgroundImage: `url(${m.photo_url})` } : {}}>
+                                            {!m.photo_url && (m.user_name ? m.user_name.substring(0, 2).toUpperCase() : String(m.user_id).substring(0, 2).toUpperCase())}
+                                        </div>
+                                        <span className="text-[9px] font-bold text-[#A4DFE6] truncate w-full text-center">{m.user_name || `User ${String(m.user_id).substring(0, 4)}`}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Chat Messages */}
+                    <div className="flex-1 overflow-y-auto mx-2 sm:mx-4 mt-2 mb-2 bg-gradient-to-b from-transparent to-[#021633]/40 border border-[#0AE0D0]/10 rounded-2xl p-2 flex flex-col shadow-sm pointer-events-auto overscroll-contain">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-1 flex flex-col">
+                            <div className="flex flex-col gap-2 mt-auto pb-2">
+                                {messages.map(m => (
+                                    <div key={m.id} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-1.5 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2 shadow-sm">
+                                        <span className="font-bold text-[#A4DFE6] mr-2 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.userId || "unknown", user_name: m?.user_name || m?.userName || "User", photo_url: m?.image_url || m?.userAvatar }); }}>{m?.user_name || m?.userName || "User"}:</span>
+                                        <span className="text-white">{m.message}</span>
+                                        {m.image_url && (
+                                            <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(m.image_url)}>
+                                                <img src={m.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                <div ref={chatEndRef} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Interactive Bar */}
+                    <div className="shrink-0 w-full bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-2 sm:p-3 flex flex-col gap-2 z-[150] pb-[calc(8px+env(safe-area-inset-bottom,0px))]">
+                        {/* Pending Image Preview Overlay */}
+                        {pendingImage && (
+                            <div className="w-full bg-[#021633] border border-[#0AE0D0]/50 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-[#00FFFF]/30">
+                                        <img src={pendingImage} className="max-w-full max-h-full object-cover" />
+                                    </div>
+                                    <span className="text-xs font-bold text-[#A4DFE6]">Image selected</span>
+                                </div>
+                                <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex gap-2 items-center w-full">
+                            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
+                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
+                            </button>
+
+                            <button onClick={() => {
+                                if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted);
+                                else if (isHost) takeSeat(0);
+                                else safeAlert('Take a seat to use the mic!');
+                            }} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${mySeatIndex === null && !isHost ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : (isLocalMuted || isMutedByHost) ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
+                                <i className={`fa-solid ${isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost) ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
+                            </button>
+
+                            <div className="flex-1 relative flex items-center min-w-[80px]">
+                                <button disabled={!isHost && activeRoom.chat_disabled} onClick={() => document.getElementById('vc-chat-img').click()} className={`absolute left-3 transition-colors z-10 ${(!isHost && activeRoom.chat_disabled) ? 'text-gray-600' : 'text-[#A4DFE6] hover:text-[#00FFFF]'}`}><i className="fa-solid fa-image text-sm"></i></button>
+                                <input type="file" id="vc-chat-img" accept="image/*" className="hidden" disabled={!isHost && activeRoom.chat_disabled} onChange={(e) => {
+                                    const f = e.target.files[0]; if (!f) return;
+                                    const r = new FileReader(); r.onload = (ev) => {
+                                        const img = new Image(); img.onload = () => {
+                                            const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 800;
+                                            if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
+                                            c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+                                            setPendingImage(c.toDataURL('image/jpeg', 0.5));
+                                        }; img.src = ev.target.result;
+                                    }; r.readAsDataURL(f); e.target.value = '';
+                                }} />
+                                <input disabled={!isHost && activeRoom.chat_disabled} value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={(!isHost && activeRoom.chat_disabled) ? "Chat disabled by host" : "Message room..."} className="w-full bg-[#021633] border border-[#0AE0D0]/30 rounded-full pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF] disabled:opacity-50" onKeyDown={(e) => { if (e.key === 'Enter' && (chatInput.trim() || pendingImage) && !(!isHost && activeRoom.chat_disabled)) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} />
+                            </div>
+                            <button disabled={!isHost && activeRoom.chat_disabled} onClick={() => { if ((chatInput.trim() || pendingImage) && !(!isHost && activeRoom.chat_disabled)) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors ${(!isHost && activeRoom.chat_disabled) ? 'bg-gray-700 text-gray-500' : 'bg-[#00FFFF] text-[#010B1C] hover:bg-[#00d8d8]'}`}><i className="fa-solid fa-paper-plane text-sm"></i></button>
+                        </div>
+                    </div>
+
+                    {/* Action Modals */}
+                    {showActionModal && showActionModal.type === 'self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { moveToAudience(currentUserId, showActionModal.idx, currentUserName, currentUserPhoto); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Move to Audience</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'host_target' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal?.occupant?.user_name || showActionModal?.occupant?.name || "User"}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {showActionModal.seat.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.idx, oldOccupant: showActionModal.seat }); }} className="py-3 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-xl font-bold transition-colors border border-indigo-500/50">Change User</button>
+                                    <button onClick={() => { moveToAudience(showActionModal.seat.user_id, showActionModal.idx, showActionModal.seat.user_name, showActionModal.seat.photo_url); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
+                                    <button onClick={() => { handleKick(showActionModal.seat.user_id, showActionModal.idx); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'empty_seat_host' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.idx}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.idx }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
+                                    <button onClick={() => { toggleSeatLock(showActionModal.idx, showActionModal.seat?.is_locked); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat?.is_locked ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white border-red-500/50'}`}>
+                                        {showActionModal.seat?.is_locked ? 'Unlock Seat' : 'Lock Seat'}
+                                    </button>
+                                    <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat?.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat?.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {showActionModal.seat?.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'invite' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal?.target?.user_name || showActionModal?.target?.name || "User"}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => {
+                                        const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
+                                        if (emptySeatIdx !== -1) {
+                                            broadcastToPeers('invite', { room_id: activeRoom.id, target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName });
+                                            if (lockedSeats[showActionModal.seatNum]) {
+                                                sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked: false });
+                                                setLockedSeats(prev => ({ ...prev, [showActionModal.seatNum]: false }));
+                                            }
+                                            safeAlert(`Invitation sent to ${showActionModal.target.user_name}`);
+                                        } else {
+                                            safeAlert("No empty unlocked seats available!");
+                                        }
+                                        setShowActionModal(null);
+                                    }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Stage</button>
+                                    <button onClick={() => { handleKick(showActionModal.target.user_id, null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'invite_to_seat' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-t-3xl p-4 w-full max-w-md h-[60vh] flex flex-col border border-[#0AE0D0]/30 shadow-[0_-10px_40px_rgba(0,255,255,0.15)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Invite to Seat {showActionModal.seatNum}</h3>
+                                <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
+                                    {(() => {
+                                        const candidates = [
+                                            ...seats.filter(s => s && s.user_id && s.user_id !== currentUserId && s.user_id !== showActionModal.oldOccupant?.user_id).map(s => ({ ...s, isSeated: true })),
+                                            ...audience.map(a => ({ ...a, isSeated: false }))
+                                        ];
+
+                                        if (candidates.length === 0) return <p className="text-gray-400 text-center py-10 italic">No eligible users to invite.</p>;
+
+                                        return candidates.map((c, i) => (
+                                            <div key={i} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10 hover:border-[#0AE0D0]/40 transition-colors">
+                                                <div className="flex items-center gap-3 text-white font-bold text-sm">
+                                                    {c.photo_url || c.user_avatar ? (
+                                                        <img src={c.photo_url || c.user_avatar} className="w-10 h-10 rounded-full object-cover border border-[#00FFFF]/30" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 text-lg">{String(c.user_name || 'U').charAt(0).toUpperCase()}</div>
+                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className="truncate max-w-[150px]">{String(c.user_name || 'User')}</span>
+                                                        <span className="text-[10px] text-[#A4DFE6] font-normal">{c.isSeated ? `Currently on Seat ${c.seat_index}` : 'In Audience'}</span>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => {
+                                                    if (showActionModal.oldOccupant) {
+                                                        moveToAudience(showActionModal.oldOccupant.user_id, showActionModal.seatNum, showActionModal.oldOccupant.user_name, showActionModal.oldOccupant.photo_url);
+                                                    }
+                                                    broadcastToPeers('invite', { room_id: activeRoom.id, target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName });
+                                                    safeAlert('Invite sent!');
+                                                    setShowActionModal(null);
+                                                }} className="bg-[#00FFFF] text-[#010B1C] px-4 py-1.5 rounded-lg text-xs font-black shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Invite</button>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showActionModal && showActionModal.type === 'change_seat_self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-chair"></i></div>
+                                <h3 className="text-xl font-bold text-white mb-2">Change Seat?</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">Do you want to move to Seat {showActionModal.seatNum}?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowActionModal(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                    <button onClick={() => { takeSeat(showActionModal.seatNum); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Move</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {pendingInvite && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPendingInvite(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-microphone"></i></div>
+                                <h3 className="text-xl font-bold text-white mb-2">Stage Invitation</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">{pendingInvite.hostName} invited you to take Seat {pendingInvite.seatIndex}.</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
+                                    <button onClick={() => {
+                                        const sIdx = pendingInvite.seatIndex;
+                                        takeSeat(sIdx, activeRoom.id, true);
+                                        setPendingInvite(null);
+                                    }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {entryNotification && (
+                        <div className="fixed bottom-[33%] left-1/2 z-[3000] pointer-events-none flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black shadow-[0_0_15px_rgba(0,255,255,0.6)] bg-gradient-to-r from-[#00FFFF]/90 to-blue-600/90 text-[#010B1C] border border-[#00FFFF]/50"
+                            style={{ animation: 'entrySlideRight 3s ease-in-out forwards' }}>
+                            <style>{`
+                        @keyframes entrySlideRight {
+                            0% { opacity: 0; transform: translateX(-50%) scale(0.9); }
+                            10% { opacity: 1; transform: translateX(-40%) scale(1); }
+                            80% { opacity: 1; transform: translateX(20%) scale(1); }
+                            100% { opacity: 0; transform: translateX(100vw) scale(0.9); }
+                        }
+                    `}</style>
+                            👋 {entryNotification} entered the room
+                        </div>
+                    )}
+
+                    {showParticipantsModal && (
+                        <div className="fixed inset-0 bg-black/80 flex justify-center items-end z-[2000] animate-in fade-in slide-in-from-bottom" onClick={() => setShowParticipantsModal(false)}>
+                            <div className="bg-[#021633] w-full max-w-md rounded-t-3xl p-5 h-[75vh] flex flex-col shadow-[0_-10px_40px_rgba(0,255,255,0.15)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3 shrink-0">
+                                    <h3 className="font-bold text-lg text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Room Participants ({totalParticipants})</h3>
+                                    <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white transition-colors"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                    {[...seats.filter(s => s && s.user_id), ...audience].map((p, i) => {
+                                        const isHostUser = p.seat_index === 0;
+                                        const isSeatedUser = p.seat_index !== undefined && p.seat_index !== null && p.seat_index > 0;
+                                        const statusLabel = isHostUser ? "Host" : (isSeatedUser ? `Seat ${p.seat_index}` : "Audience");
+                                        const statusColor = isHostUser ? "text-[#010B1C] bg-[#F9D33A] border-[#F9D33A]" : (isSeatedUser ? "text-[#00FFFF] bg-[#00FFFF]/10 border-[#00FFFF]/30" : "text-gray-400 bg-gray-800 border-gray-700");
+
+                                        return (
+                                            <div key={i} className="flex items-center gap-3 bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/20 shadow-sm hover:border-[#0AE0D0]/50 transition-colors">
+                                                {p.photo_url || p.user_avatar ? (
+                                                    <img src={p.photo_url || p.user_avatar} className={`w-12 h-12 rounded-full object-cover border-2 shrink-0 ${isHostUser ? 'border-[#F9D33A]' : 'border-[#00FFFF]/50'}`} />
+                                                ) : (
+                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black shrink-0 text-xl border-2 ${isHostUser ? 'bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] text-[#010B1C] border-[#F9D33A]' : 'bg-[#00FFFF]/10 text-[#00FFFF] border-[#00FFFF]/30'}`}>
+                                                        {String(p?.user_name || p?.userName || p?.name || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 overflow-hidden">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <p className="font-bold text-sm text-white truncate max-w-[140px]">{p?.user_name || p?.userName || p?.name || `User ${String(p?.user_id).substring(0, 4)}`}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${statusColor} uppercase tracking-wider shrink-0`}>{statusLabel}</span>
+                                                            {isHost && p.user_id !== currentUserId && (
+                                                                <div className="flex gap-1.5 shrink-0">
+                                                                    {isSeatedUser && (
+                                                                        <button onClick={(e) => { e.stopPropagation(); toggleSeatMuteByHost(p.seat_index, p.is_muted_by_host); setShowParticipantsModal(false); }} className="px-2 py-1 rounded bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center gap-1 text-[10px] font-bold" title={p.is_muted_by_host ? "Unmute Seat" : "Mute Seat"}>
+                                                                            <i className={`fa-solid ${p.is_muted_by_host ? 'fa-microphone' : 'fa-microphone-slash'}`}></i>
+                                                                            {p.is_muted_by_host ? "Unmute" : "Mute"}
+                                                                        </button>
+                                                                    )}
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleKick(p.user_id, p.seat_index); }} className="px-2 py-1 rounded bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-1 text-[10px] font-bold" title="Kick User">
+                                                                        <i className="fa-solid fa-ban"></i> Kick
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <p onClick={() => handleCopy(p.user_id, 'User ID')} className="text-[10px] text-[#A4DFE6] font-mono truncate cursor-pointer active:scale-95 transition-transform inline-flex items-center gap-1 w-fit">UID: {p.user_id} <i className="fa-regular fa-copy text-[10px]"></i></p>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showRoomSettingsModal && (
+                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300]" onClick={() => setShowRoomSettingsModal(false)}>
+                            <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-black mb-4 text-[#00FFFF]"><i className="fa-solid fa-gear mr-2"></i>Room Settings</h3>
+
+                                <div className="mb-4 flex items-center gap-4">
+                                    <div className="w-16 h-16 rounded-full bg-[#010B1C] border-2 border-[#0AE0D0]/50 overflow-hidden flex items-center justify-center shrink-0">
+                                        <img id="edit-room-photo-preview" src={activeRoom.host_photo || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} className="w-full h-full object-cover" style={{ display: activeRoom.host_photo ? 'block' : 'none' }} />
+                                        {!activeRoom.host_photo && <i id="edit-room-photo-icon" className="fa-solid fa-image text-gray-500 text-2xl"></i>}
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Profile Picture</label>
+                                        <input type="file" accept="image/*" id="edit-room-photo" onChange={(e) => {
+                                            const f = e.target.files[0]; if (!f) return;
+                                            const r = new FileReader(); r.onload = (ev) => {
+                                                const img = new Image(); img.onload = () => {
+                                                    const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 400;
+                                                    if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
+                                                    c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+                                                    const base64 = c.toDataURL('image/jpeg', 0.8);
+                                                    document.getElementById('edit-room-photo').dataset.b64 = base64;
+                                                    document.getElementById('edit-room-photo-preview').src = base64;
+                                                    document.getElementById('edit-room-photo-preview').style.display = 'block';
+                                                    if (document.getElementById('edit-room-photo-icon')) document.getElementById('edit-room-photo-icon').style.display = 'none';
+                                                }; img.src = ev.target.result;
+                                            }; r.readAsDataURL(f);
+                                        }} className="text-[10px] w-full file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#00FFFF]/20 file:text-[#00FFFF] hover:file:bg-[#00FFFF]/30 cursor-pointer" />
+                                    </div>
+                                </div>
+
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input type="text" id="edit-room-name" defaultValue={activeRoom.room_name} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password (Optional)</label>
+                                <input type="text" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+
+                                <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-6">
+                                    <span className="text-sm font-bold text-white">Disable Text Chat</span>
+                                    <input type="checkbox" id="edit-chat-disabled" defaultChecked={activeRoom.chat_disabled || false} className="w-5 h-5 accent-[#00FFFF]" />
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowRoomSettingsModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                    <button onClick={async (e) => {
+                                        const btn = e.target; btn.innerText = 'Saving...'; btn.disabled = true;
+                                        const newName = document.getElementById('edit-room-name').value;
+                                        const newPass = document.getElementById('edit-room-pass').value;
+                                        const chatOff = document.getElementById('edit-chat-disabled').checked;
+                                        const photoInput = document.getElementById('edit-room-photo');
+                                        const photo = photoInput.dataset.b64 || activeRoom.host_photo || '';
+
+                                        await supabase.from('active_rooms').update({ room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }).eq('id', activeRoom.id);
+                                        broadcastToPeers('room_updated', { room_id: activeRoom.id, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo });
+
+                                        if (photo !== activeRoom.host_photo) {
+                                            await supabase.from('room_seats').update({ photo_url: photo }).eq('room_id', activeRoom.id).eq('user_id', currentUserId);
+                                            const expectedSeat = { ...seats[0], photo_url: photo };
+                                            setSeats(prev => { const n = [...prev]; n[0] = expectedSeat; return n; });
+                                            broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: expectedSeat });
+                                        }
+
+                                        setActiveRoom(prev => ({ ...prev, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }));
+                                        setShowRoomSettingsModal(false); safeAlert("Room settings updated successfully!");
+                                    }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showRoomRequestsInbox && (
+                        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRoomRequestsInbox(false)}>
+                            <div className="bg-[#021633] w-full max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                    <button onClick={() => setShowRoomRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                    {pendingRequests.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                            <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
+                                            <p className="text-sm font-bold">No pending requests</p>
+                                        </div>
+                                    ) : (
+                                        pendingRequests.map(req => (
+                                            <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
+                                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRoomRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
+                                                    {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0, 8)}`}</span>
+                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Full Screen Image Overlay */}
+                    {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
+                </div>
+            );
+
+            // Component return handler
+            if (!isVisible && !activeRoom) return null;
+
+            return (
+                <>
+                    {isVisible && !activeRoom && renderDashboard()}
+                    {isVisible && activeRoom && isMinimized && renderDashboard()}
+                    {activeRoom && isMinimized && (
+                        <VCFloatingWidget
+                            activeRoom={activeRoom} isLocalMuted={isLocalMuted || isMutedByHost}
+                            isSpeakerMuted={isSpeakerMuted}
+                            onRestore={() => { setIsMinimized(false); }}
+                            toggleMute={() => { if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else safeAlert('Take a seat to use mic!'); }}
+                            toggleSpeaker={() => setIsSpeakerMuted(!isSpeakerMuted)}
+                            onExit={() => setShowExitConfirmModal(true)}
+                        />
+                    )}
+                    {activeRoom && !isMinimized && renderActiveRoom()}
+
+                    {showExitConfirmModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[3000000] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowExitConfirmModal(false)}>
+                            <div className="bg-[#021633] rounded-3xl p-6 w-full max-w-sm text-center border border-[#0AE0D0]/50 shadow-[0_0_40px_rgba(0,255,255,0.2)]" onClick={e => e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 mx-auto flex items-center justify-center text-3xl mb-4 border border-red-500/50">
+                                    <i className="fa-solid fa-power-off"></i>
+                                </div>
+                                <h3 className="text-xl font-black text-white mb-2 tracking-wide">Exit Room?</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">Are you sure you want to leave the voice room?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowExitConfirmModal(false)} className="flex-1 py-3 bg-[#010B1C] border border-gray-700 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                    <button onClick={() => { setShowExitConfirmModal(false); handleExitRoom(); }} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(255,0,0,0.4)]">Exit Room</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {Object.keys(remoteStreams).map(peerId => (
+                        <audio key={peerId} id={`audio-${peerId}`} autoPlay playsInline muted={isSpeakerMuted} className="hidden" />
+                    ))}
+
+                    {selectedProfileUser && typeof selectedProfileUser === 'object' && (
+                        <ProfileCardModal
+                            user={selectedProfileUser}
+                            onClose={() => setSelectedProfileUser(null)}
+                            currentUserId={currentUserId}
+                            activeRoom={activeRoom}
+                            isHost={isHost}
+                            friends={friends}
+                            pendingRequests={pendingRequests}
+                            sentRequests={sentRequests}
+                            sendFriendRequest={sendFriendRequest}
+                            setVcSubTab={setCurrentView}
+                            setActiveChatUser={setActiveChatUser}
+                            setIsMinimized={setIsMinimized}
+                            leaveSeat={() => { if (mySeatIndex !== null) moveToAudience(currentUserId, mySeatIndex, currentUserName, currentUserPhoto); }}
+                            toggleMute={() => setIsLocalMuted(!isLocalMuted)}
+                            isLocalMuted={isLocalMuted}
+                            handleKick={handleKick}
+                            toggleSeatMuteByHost={toggleSeatMuteByHost}
+                            moveToAudience={moveToAudience}
+                        />
+                    )}
+                </>
+            );
+        };
+
+        // ==========================================
+        // 🚀 AI QUESTION ASSISTANT COMPONENT
+        // ==========================================
+        const QuestionAIAssistant = ({ q, attemptIdx }) => {
+            const isAnswered = attemptIdx !== undefined;
+            const [showAIChat, setShowAIChat] = useState(false);
+            const [aiMsgs, setAiMsgs] = useState([]);
+            const [aiInput, setAiInput] = useState("");
+            const [aiTyping, setAiTyping] = useState(false);
+            const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
+            const chatEndRef = useRef(null);
+
+            useEffect(() => {
+                return () => AIAudioPlayer.stop();
+            }, []);
+
+            useEffect(() => {
+                if (aiTyping) {
+                    chatEndRef.current?.scrollIntoView();
+                }
+            }, [aiTyping]);
+
+            // Reset chat if the user navigates to a new question
+            useEffect(() => {
+                setShowAIChat(false);
+                setAiMsgs([]);
+                setAiInput("");
+                setAiTyping(false);
+                AIAudioPlayer.stop();
+            }, [q.id]);
+
+            const handleAskAI = async (promptText) => {
+                if (!promptText.trim()) return;
+
+                const userMsg = promptText;
+                setAiMsgs(prev => [...prev, { sender: 'user', text: userMsg }]);
+                setAiInput("");
+                setAiTyping(true);
+
+                const optionsArray = Array.isArray(q.options) ? q.options : ['A', 'B', 'C', 'D'];
+                const systemContext = `You are ATAXY, a mentor to help all the students, an encouraging academic tutor for NEET/JEE. You must never say you are an AI.
+The student is practicing a question and needs help.
+QUESTION CONTEXT:
+"${q.text}"
+OPTIONS:
+1. ${optionsArray[0] || 'A'}
+2. ${optionsArray[1] || 'B'}
+3. ${optionsArray[2] || 'C'}
+4. ${optionsArray[3] || 'D'}
+CORRECT ANSWER: Option ${q.correctOption || 'A'} (${optionsArray[q.correct] || 'Unknown'})
+USER'S ANSWER: ${isAnswered ? `Option ${['A', 'B', 'C', 'D'][attemptIdx]} (${optionsArray[attemptIdx] || 'Unknown'})` : 'Not answered yet'}
+EXPLANATION GIVEN: ${q.explanation || 'None'}
+
+INSTRUCTIONS: 
+- Address the user's specific doubt concisely.
+- Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas.
+- Be encouraging, especially if they answered incorrectly.`;
+
+                const selectedOption = isAnswered ? ['A', 'B', 'C', 'D'][attemptIdx] : 'None';
+
+                // Fetch using our new Cloudflare D1 Cache Proxy
+                const aiReply = await fetchGeminiSecure(userMsg, aiMsgs, systemContext, String(q.id), selectedOption);
+
+                setAiMsgs(prev => [...prev, { sender: 'ai', text: aiReply.explanation, audio: aiReply.audio }]);
+                setAiTyping(false);
+            };
+
+            return (
+                <>
+                    <button onClick={() => setShowAIChat(!showAIChat)} className={`mt-4 w-full text-sm font-bold px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border ${showAIChat ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-gradient-to-r from-[#00418d] to-[#1e5eb0] hover:from-[#003370] hover:to-[#174c91] border-transparent text-white shadow-md'}`}>
+                        <AtaxyLogo className={`w-5 h-5 rounded-full ${showAIChat ? '' : 'border border-white/20 shadow-sm'}`} />
+                        <span>{showAIChat ? 'Close Mentor' : 'Ask ATAXY Mentor'}</span>
+                        {!showAIChat && <i className="fa-solid fa-sparkles ml-1 opacity-90"></i>}
+                    </button>
+
+                    {showAIChat && (
+                        <div className="w-full mt-3 bg-white border border-gray-200 rounded-2xl p-4 shadow-[0_8px_30px_rgba(0,65,141,0.12)] animate-in fade-in slide-in-from-top-2 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                            <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-4">
+                                <div className="relative">
+                                    <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm bg-white" />
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-800 text-base">ATAXY Mentor</h4>
+                                    <p className="text-[11px] text-gray-500 font-medium">Your Personal Tutor</p>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[300px] overflow-y-auto no-scrollbar space-y-3 mb-3">
+                                {aiMsgs.length === 0 && (
+                                    <div className="text-xs text-gray-500 italic opacity-80 text-center py-2">Ask me anything about this specific question! I already know what you answered.</div>
+                                )}
+                                {aiMsgs.map((m, i) => (
+                                    <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#00418d] text-white rounded-br-none' : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-bl-none'}`}>
+                                            <FormattedText text={m.text} />
+                                            {m.sender === 'ai' && <AIAudioPlayerUI message={m} messageId={i} audioState={audioState} setAudioState={setAudioState} />}
+                                        </div>
+                                    </div>
+                                ))}
+                                {aiTyping && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-[#021633] border border-blue-500/50 p-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(0,100,255,0.2)] flex flex-col gap-3 w-[240px] relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,100,255,0.15),transparent)] animate-[scan_1.5s_linear_infinite]"></div>
+                                            <div className="flex items-center gap-2 relative z-10">
+                                                <div className="relative flex items-center justify-center w-6 h-6">
+                                                    <div className="absolute inset-0 border-2 border-[#0AE0D0] rounded-full animate-[spin_2s_linear_infinite] border-t-transparent"></div>
+                                                    <i className="fa-solid fa-brain text-[#0AE0D0] text-[10px] animate-pulse"></i>
+                                                </div>
+                                                <span className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-[#0AE0D0] uppercase tracking-widest">Ataxy Neural Net</span>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 relative z-10">
+                                                <div className="h-1.5 w-full bg-blue-900/50 rounded-full overflow-hidden shadow-inner border border-blue-500/20">
+                                                    <div className="h-full bg-gradient-to-r from-blue-500 to-[#0AE0D0] w-1/3 rounded-full animate-[pingPong_1s_ease-in-out_infinite_alternate]"></div>
+                                                </div>
+                                                <div className="text-[9px] text-[#0AE0D0] font-medium uppercase tracking-widest text-right animate-pulse">Synthesizing Solution...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={chatEndRef}></div>
+                            </div>
+
+                            {aiMsgs.length === 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3 justify-center">
+                                    <button onClick={() => handleAskAI("Can you explain this step-by-step?")} className="bg-blue-50 border border-blue-100 text-xs font-semibold px-3 py-1.5 rounded-full text-blue-700 hover:bg-blue-100 transition-colors shadow-sm">Explain step-by-step</button>
+                                    {isAnswered && attemptIdx !== q.correct && (
+                                        <button onClick={() => handleAskAI("Why is my answer wrong?")} className="bg-red-50 border border-red-100 text-xs font-semibold px-3 py-1.5 rounded-full text-red-700 hover:bg-red-100 transition-colors shadow-sm">Why is my answer wrong?</button>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                <input value={aiInput} onChange={(e) => setAiInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAskAI(aiInput)} placeholder="Type your doubt..." className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00418d] text-gray-800 shadow-inner" />
+                                <button onClick={() => handleAskAI(aiInput)} disabled={aiTyping || !aiInput.trim()} className="w-10 h-10 bg-[#00418d] text-white rounded-xl flex items-center justify-center hover:bg-[#003370] shadow-sm disabled:opacity-50 transition-colors"><i className="fa-solid fa-paper-plane text-xs"></i></button>
+                            </div>
+                        </div>
+                    )}
+
+                </>
+            );
+        };
+
+
+        // ==========================================
+        // 🚀 LIVE GLOBAL CHAT (FIREBASE CLOUD INTEGRATION)
+        // ==========================================
+        const ChatView = ({ user }) => {
+            const [msg, setMsg] = useState('');
+            const [showProfile, setShowProfile] = useState(null);
+            const [chats, setChats] = useState([]);
+            const [fbApp, setFbApp] = useState(null);
+            const chatEndRef = useRef(null);
+
+            // FIREBASE INITIALIZATION & REAL-TIME LISTENER
+            useEffect(() => {
+                const initFirebase = async () => {
+                    try {
+                        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                        const { getAuth, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                        const { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                        // Empty config defaults to a mocked local array if Firebase credentials aren't supplied in env.
+                        // You MUST add valid Firebase config to `__firebase_config` global variable to go live!
+                        let app, db, auth;
+                        if (window.__firebase_config) {
+                            app = initializeApp(JSON.parse(window.__firebase_config));
+                            auth = getAuth(app);
+                            db = getFirestore(app);
+                            await signInAnonymously(auth);
+                        }
+
+                        setFbApp({ db, addDoc, collection, serverTimestamp });
+
+                        if (db) {
+                            // Listen to live database
+                            const q = query(collection(db, 'ataxy_global_chat'));
+                            onSnapshot(q, (snapshot) => {
+                                const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                                // Sort manually as per Rule 2 (No orderBy)
+                                msgs.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                                setChats(msgs);
+                            }, (err) => console.error(err));
+                        } else {
+                            setChats(safeGetJSON('ataxy_global_chat', []));
+                        }
+                    } catch (e) { console.error(e); }
+                };
+                initFirebase();
+            }, []);
+
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView();
+                if (!fbApp?.db) safeSetItem('ataxy_global_chat', JSON.stringify(chats));
+            }, [chats]);
+
+            const sendMsg = async (e) => {
+                e.preventDefault();
+                if (!msg.trim()) return;
+
+                const newMsg = {
+                    name: user.first_name,
+                    tgId: user.id || "101",
+                    username: user.username || "student",
+                    text: msg,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                setMsg(''); // clear input instantly
+
+                if (fbApp?.db) {
+                    await fbApp.addDoc(fbApp.collection(fbApp.db, 'ataxy_global_chat'), { ...newMsg, createdAt: fbApp.serverTimestamp() });
+                } else {
+                    setChats(prev => [...prev, { id: Date.now(), ...newMsg }]);
+                }
+            };
+
+            return (
+                <div className="pb-[80px] animate-in fade-in flex flex-col h-full">
+                    <div className="fixed top-[max(env(safe-area-inset-top),_24px)] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                        <div className="flex items-center gap-3">
+                            <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
+                            <div>
+                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight text-lg">ATAXY Global Chat</h2>
+                                <p className="text-[10px] text-green-500 font-bold tracking-wide flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> {fbApp?.db ? 'Live' : 'Local'} Network Connected</p>
+                            </div>
+                        </div>
+                        <i className="fa-solid fa-users text-gray-400"></i>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pt-[70px]">
+                        <div className="text-center"><span className="bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] px-3 py-1 rounded-full font-bold">Welcome to ATAXY Community</span></div>
+                        {chats.map((c, i) => (
+                            <div key={i} className={`flex flex-col ${c.name === user.first_name ? 'items-end' : 'items-start'}`}>
+                                <span onClick={() => setShowProfile(c)} className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 ml-1 font-bold flex items-center gap-1 cursor-pointer hover:underline">
+                                    {c.name} {c.admin && <i className="fa-solid fa-circle-check text-blue-500"></i>}
+                                </span>
+                                <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${c.name === user.first_name ? 'bg-blue-600 text-white rounded-br-none' : c.admin ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-gray-800 dark:text-gray-200 rounded-bl-none' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
+                                    <p className="text-sm">{c.text}</p>
+                                    <div className={`text-[9px] mt-1 text-right ${c.name === user.first_name ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'}`}>{c.time}</div>
+                                </div>
+                            </div>
+                        ))}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    <form onSubmit={sendMsg} className="fixed bottom-[65px] w-full max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
+                        <input
+                            value={msg}
+                            onChange={e => setMsg(e.target.value)}
+                            onFocus={() => {
+                                setTimeout(() => {
+                                    chatEndRef.current?.scrollIntoView();
+                                    if (window.Telegram?.WebApp?.expand) window.Telegram.WebApp.expand();
+                                }, 300);
+                            }}
+                            type="text"
+                            placeholder="Type a message..."
+                            className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-0 focus:outline-none text-gray-900 dark:text-white"
+                        />
+                        <button type="submit" className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md"><i className="fa-solid fa-paper-plane text-sm"></i></button>
+                    </form>
+
+                    {showProfile && (
+                        <div className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowProfile(null)}>
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
+                                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-black mb-4 uppercase shadow-inner">{String(showProfile?.name || showProfile?.user_name || 'U').charAt(0)}</div>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-1">
+                                    {showProfile?.name || showProfile?.user_name || 'User'} {showProfile?.admin && <i className="fa-solid fa-circle-check text-blue-500 text-sm"></i>}
+                                </h3>
+                                <p className="text-blue-500 font-bold text-sm mt-1">@{showProfile?.username || showProfile?.user_name || 'user'}</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 bg-gray-100 dark:bg-gray-800 py-1 px-3 rounded-lg inline-block">UID: {showProfile?.tgId || 'N/A'}</p>
+                                <button onClick={() => setShowProfile(null)} className="mt-6 w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold rounded-xl transition-colors">Close</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Full Screen Image Overlay */}
+                    {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
+                </div>
+            )
+        };
+
+        // ==========================================
+        // 🎙️ AGORA REAL-TIME LAYER & WEPLAY VOICE ROOMS (ISP BYPASSED)
+        // ==========================================
+        const SUPABASE_PROXY_URL = 'https://kwzpnupjtvfrevpwfaao.supabase.co'; // Connect directly to fix WebSockets
+        const SUPABASE_ANON_KEY = 'sb_publishable_' + 'BQ3FzD6jag0nHhYmUu0Bcw_Qq1CEeal';
+        const AGORA_APP_ID = "1711d81c" + "41114b1bb4f102b27147821c";
+
+        // ISP Block Bypass: Route all Supabase REST API requests through the free Cloudflare Proxy
+        const ispBypassFetch = (url, options) => {
+            const bypassedUrl = typeof url === 'string'
+                ? url.replace('https://kwzpnupjtvfrevpwfaao.supabase.co', 'https://supabase-proxy.thevoicesession.workers.dev')
+                : url;
+            return fetch(bypassedUrl, options);
+        };
+
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_PROXY_URL, SUPABASE_ANON_KEY, {
+            global: { fetch: ispBypassFetch },
+            realtime: {
+                worker: true,
+                heartbeatCallback: (status) => {
+                    if (status === 'disconnected' && window.supabase && supabase.realtime) {
+                        try { supabase.realtime.connect(); } catch (e) { }
+                    }
+                }
+            }
+        }) : null;
+
+        async function getAgoraToken(channelName, userId, password = null) {
+            try {
+                const bodyStr = JSON.stringify({
+                    channelName: channelName,
+                    uid: String(userId), // Ensure UID is a string for Telegram IDs
+                    password: password
+                });
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                };
+
+                const response = await fetch('https://supabase-proxy.thevoicesession.workers.dev/functions/v1/agora-token', {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyStr
+                });
+
+                if (!response.ok) {
+                    let errData;
+                    try { errData = await response.json(); } catch (e) { throw new Error(`Server returned status ${response.status}`); }
+                    throw new Error(errData?.error || `Server returned status ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data.token;
+            } catch (error) {
+                console.error("Token acquisition failed:", error);
+                safeAlert("Could not retrieve voice security token: " + error.message);
+                throw error;
+            }
+        }
+
+        const CreateRoomModal = ({ onClose, onCreate }) => {
+            const [name, setName] = useState('');
+            const [type, setType] = useState('temporary');
+            const [password, setPassword] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!name.trim()) return;
+                setIsSubmitting(true);
+                const success = await onCreate(name, type, password || null);
+                setIsSubmitting(false);
+                if (success !== false) {
+                    onClose();
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-4">Create Voice Lounge</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input autoFocus required type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Late Night Study" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setType('temporary')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${type === 'temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Temporary</button>
+                                    <button type="button" onClick={() => setType('permanent')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${type === 'permanent' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Permanent</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
+                                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Creating...' : 'Create Room'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const JoinRoomModal = ({ room, onClose, onJoin }) => {
+            const [password, setPassword] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsSubmitting(true);
+                const success = await onJoin(room, password);
+                setIsSubmitting(false);
+                if (success) onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-2">Join {room.channel_name}</h3>
+                        <p className="text-sm text-[#A4DFE6] mb-4">This room is locked. Please enter the password to join.</p>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <input autoFocus required type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter Room Password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Joining...' : 'Join'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const useGlobalVoice = (tgUser) => {
+            const [client, setClient] = useState(null);
+            const clientRef = useRef(null);
+            useEffect(() => { clientRef.current = client; }, [client]);
+
+            const userSeatRef = useRef(null);
+
+            const [activeRoom, setActiveRoom] = useState(null);
+            const roomRef = useRef(null);
+            useEffect(() => { roomRef.current = activeRoom; }, [activeRoom]);
+
+            const [participants, setParticipants] = useState([]);
+            const participantsRef = useRef([]);
+            useEffect(() => { participantsRef.current = participants; }, [participants]);
+
+            // 🚀 INSTANT SYNC REFS: Eliminates 1-render desync crashes on fast seat hopping
+            const [localAudioTrackState, setLocalAudioTrackState] = useState(null);
+            const trackRef = useRef(null);
+            const setLocalAudioTrack = (val) => { trackRef.current = val; setLocalAudioTrackState(val); };
+            const localAudioTrack = localAudioTrackState;
+
+            const [isMutedState, setIsMutedState] = useState(true);
+            const isMutedRef = useRef(true);
+            const setIsMuted = (val) => { isMutedRef.current = val; setIsMutedState(val); };
+            const isMuted = isMutedState;
+
+            const [activeSpeakers, setActiveSpeakers] = useState({});
+            const [realtimeChannel, setRealtimeChannel] = useState(null);
+            const channelRef = useRef(null);
+            useEffect(() => { channelRef.current = realtimeChannel; }, [realtimeChannel]);
+
+            const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
+            const speakerMutedRef = useRef(false);
+            useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
+
+            const [availableRooms, setAvailableRooms] = useState([]);
+            const [chatMessages, setChatMessages] = useState([]);
+            const [micRequests, setMicRequests] = useState([]);
+            const [pendingInvite, setPendingInvite] = useState(null);
+
+            // --- WEPLAY-STYLE FEATURES (EMOJIS, SFX) ---
+            const [lockedSeats, setLockedSeats] = useState({});
+            const [mutedSeats, setMutedSeats] = useState({});
+            const mutedSeatsRef = useRef({});
+            useEffect(() => { mutedSeatsRef.current = mutedSeats; }, [mutedSeats]);
+
+            const [isMinimized, setIsMinimized] = useState(false);
+            const [currentMusic, setCurrentMusic] = useState(null);
+
+            // 🛡️ STRICT CONNECTION DEBOUNCE LOCK
+            const [isProcessingState, setIsProcessingState] = useState(false);
+            const isProcessingRef = useRef(false);
+            const setIsProcessing = (val) => {
+                isProcessingRef.current = val;
+                setIsProcessingState(val);
+            };
+            const isProcessing = isProcessingState;
+
+            // 🛡️ GHOST BUSTER: Anti-Rubberbanding. Prevents reappearance of old states due to sync race conditions
+            const recentlyChangedRef = useRef(new Set());
+            const markRecentlyChanged = (uid) => {
+                recentlyChangedRef.current.add(String(uid));
+                setTimeout(() => recentlyChangedRef.current.delete(String(uid)), 3000);
+            };
+
+            const toggleSpeaker = () => {
+                setIsSpeakerMuted(prev => !prev);
+            };
+
+            // 2. STATE-TRIGGERED AUDIO ENGINE (The WePlay Secret)
+            // Hardware follows state strictly, never the other way around.
+            useEffect(() => {
+                const syncHardwareWithState = async () => {
+                    if (!clientRef.current) return;
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+
+                    const myParticipant = participants.find(p => String(p.user_id) === userIdString);
+                    const hasSeat = myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined;
+
+                    try {
+                        if (hasSeat) {
+                            const seatIsMuted = mutedSeats[myParticipant.seat_number] || false;
+                            const effectiveMute = isMutedRef.current || seatIsMuted;
+
+                            if (!trackRef.current) {
+                                await clientRef.current.setClientRole("host");
+                                const track = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true });
+                                await track.setMuted(effectiveMute);
+                                setLocalAudioTrack(track);
+                                await clientRef.current.publish([track]);
+                            } else {
+                                await trackRef.current.setMuted(effectiveMute);
+                            }
+                        } else {
+                            if (trackRef.current) {
+                                const track = trackRef.current;
+                                try { await clientRef.current.unpublish([track]); } catch (e) { }
+                                try { track.stop(); } catch (e) { }
+                                try { track.close(); } catch (e) { }
+                                setLocalAudioTrack(null);
+                                await clientRef.current.setClientRole("audience");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Hardware sync failed:", error);
+                    }
+                };
+                syncHardwareWithState();
+            }, [participants, tgUser, mutedSeats]);
+
+            // 🛡️ SOFT MUTE ENGINE (App-level volume control instead of hardware track manipulation)
+            useEffect(() => {
+                if (!clientRef.current) return;
+                clientRef.current.remoteUsers.forEach(rUser => {
+                    if (rUser.audioTrack) {
+                        const participant = participants.find(p => String(p.user_id) === String(rUser.uid));
+
+                        let seatMuted = false;
+                        let notSeated = true;
+                        if (participant && participant.seat_number !== null && participant.seat_number !== undefined) {
+                            seatMuted = mutedSeats[participant.seat_number];
+                            notSeated = false;
+                        }
+
+                        const shouldBeMuted = (participant && participant.is_muted) || isSpeakerMuted || seatMuted || notSeated;
+                        try { rUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100); } catch (e) { }
+                    }
+                });
+            }, [participants, isSpeakerMuted, mutedSeats]);
+
+            // --- ORPHANED ROOM CLEANUP ---
+            useEffect(() => {
+                const handleBeforeUnload = () => {
+                    if (roomRef.current && clientRef.current) {
+                        try {
+                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                            const userIdString = String(tgData?.id || "1001");
+                            const roomId = roomRef.current.id;
+                            const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+                            fetch(`${SUPABASE_PROXY_URL}/rest/v1/room_participants?user_id=eq.${userIdString}&room_id=eq.${roomId}`, { method: 'DELETE', headers, keepalive: true }).catch(() => { });
+                        } catch (e) { }
+                        leaveRoom(clientRef.current, roomRef.current.id, true);
+                    }
+                };
+                window.addEventListener("beforeunload", handleBeforeUnload);
+                window.addEventListener("pagehide", handleBeforeUnload);
+                return () => { window.removeEventListener("beforeunload", handleBeforeUnload); window.removeEventListener("pagehide", handleBeforeUnload); };
+            }, []);
+
+            const triggerSFX = (type) => {
+                const sfxUrls = {
+                    applause: 'https://actions.google.com/sounds/v1/crowds/crowd_cheer.ogg',
+                    laughter: 'https://actions.google.com/sounds/v1/crowds/female_crowd_laughing.ogg',
+                    drumroll: 'https://actions.google.com/sounds/v1/cartoon/drum_roll.ogg',
+                    magic: 'https://actions.google.com/sounds/v1/cartoon/magic_chime_chord.ogg'
+                };
+                try {
+                    if (sfxUrls[type]) {
+                        const audio = new Audio(sfxUrls[type]);
+                        audio.volume = 0.5;
+                        audio.play().catch(e => console.error("SFX play error", e));
+                    }
+                } catch (e) { }
+            };
+
+            const sendBroadcast = (event, payload) => {
+                try {
+                    if (channelRef.current) {
+                        channelRef.current.send({ type: 'broadcast', event: event, payload: payload });
+                    }
+                } catch (e) { console.warn("Broadcast Error:", e); }
+            };
+
+            const fetchRooms = async () => {
+                if (!supabase) return;
+                const { data: rooms, error } = await supabase
+                    .from('voice_rooms')
+                    .select('*')
+                    .eq('is_live', true)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error("Error fetching rooms:", error);
+                    return;
+                }
+                if (rooms) {
+                    setAvailableRooms(rooms);
+                }
+            };
+
+            useEffect(() => {
+                if (!supabase) return;
+                fetchRooms();
+
+                const channel = supabase.channel('voice_rooms_sync')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_rooms' }, () => {
+                        fetchRooms();
+                    })
+                    .subscribe();
+                return () => { supabase.removeChannel(channel); };
+            }, []);
+
+            const joinRoom = async (roomData, password = null, bypassLock = false) => {
+                try {
+                    if (!bypassLock) {
+                        if (isProcessingRef.current) return false;
+                        setIsProcessing(true);
+                    }
+
+                    // 🛡️ FRESH START: Always force user into audience state upon entry
+                    userSeatRef.current = null;
+                    setIsMuted(true);
+
+                    // Connection Lock: Explicitly leave if already connecting/connected to prevent Race Conditions
+                    if (clientRef.current && (clientRef.current.connectionState === "CONNECTED" || clientRef.current.connectionState === "CONNECTING")) {
+                        try { await clientRef.current.unpublish(); } catch (e) { }
+                        try { await clientRef.current.leave(); } catch (e) { }
+                        try { clientRef.current.removeAllListeners(); } catch (e) { }
+                    }
+
+                    if (roomData.password && roomData.password !== password) {
+                        safeAlert("Incorrect password!");
+                        return false;
+                    }
+
+                    let token = null;
+                    try {
+                        token = await getAgoraToken(roomData.id, tgUser.id, password);
+                        if (!token) {
+                            throw new Error("Received an empty token from the server.");
+                        }
+                    } catch (e) {
+                        return false;
+                    }
+
+                    const agoraClient = window.AgoraRTC.createClient({ mode: "live", codec: "vp8" });
+                    setClient(agoraClient);
+
+                    agoraClient.on("user-published", async (remoteUser, mediaType) => {
+                        try {
+                            if (mediaType === "audio") {
+                                const userIdStr = String(remoteUser.uid);
+                                await agoraClient.subscribe(remoteUser, mediaType);
+
+                                // Safely play without binding to a DOM element container
+                                if (remoteUser.audioTrack) {
+                                    remoteUser.audioTrack.play();
+
+                                    // 3. SAFE REMOTE TRACK HANDLING: Immediately mute if not explicitly seated
+                                    const participant = participantsRef.current.find(p => String(p.user_id) === userIdStr);
+                                    let seatMuted = false;
+                                    let notSeated = true;
+                                    if (participant && participant.seat_number !== null && participant.seat_number !== undefined) {
+                                        seatMuted = !!mutedSeatsRef.current[participant.seat_number];
+                                        notSeated = false;
+                                    }
+                                    const shouldBeMuted = (participant && participant.is_muted) || speakerMutedRef.current || seatMuted || notSeated;
+
+                                    remoteUser.audioTrack.setVolume(shouldBeMuted ? 0 : 100);
+                                }
+
+                                // Update only the mute state badge visually
+                                setParticipants(prev => prev.map(s => String(s.user_id) === userIdStr ? { ...s, is_muted: false } : s));
+                            }
+                        } catch (err) {
+                            console.error("Safely bypassed user-published exception:", err);
+                        }
+                    });
+
+                    agoraClient.on("user-unpublished", async (remoteUser, mediaType) => {
+                        try {
+                            if (mediaType === "audio") {
+                                const userIdStr = String(remoteUser.uid);
+                                // CRITICAL: NEVER call .stop() or .close() on remoteUser tracks manually!
+                                // Simply update the visual badge state. Agora cleans up internal memory.
+                                setParticipants(prev => prev.map(s => String(s.user_id) === userIdStr ? { ...s, is_muted: true } : s));
+                            }
+                        } catch (err) {
+                            console.error("Safely bypassed user-unpublished exception:", err);
+                        }
+                    });
+
+                    agoraClient.on("user-left", async (remoteUser) => {
+                        try {
+                            const userIdStr = String(remoteUser.uid);
+
+                            // Instantly remove from UI
+                            setParticipants(prev => prev.filter(s => String(s.user_id) !== userIdStr));
+                        } catch (err) {
+                            console.error("Safely bypassed user-left exception:", err);
+                        }
+                    });
+
+                    let lastVolumeUpdate = 0;
+                    agoraClient.enableAudioVolumeIndicator();
+                    agoraClient.on("volume-indicator", (volumes) => {
+                        const now = Date.now();
+                        if (now - lastVolumeUpdate < 100) return; // Debounce to ~10fps max for smooth UI
+                        lastVolumeUpdate = now;
+                        try {
+                            setActiveSpeakers(prev => {
+                                const newMap = { ...prev };
+                                let changed = false;
+
+                                const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                const myUidStr = String(tgData?.id || "1001");
+
+                                volumes.forEach(v => {
+                                    const uidStr = String(v.uid);
+                                    const p = participantsRef.current.find(pt => String(pt.user_id) === uidStr);
+
+                                    let isSoftMuted = p ? p.is_muted : false;
+                                    // STRICT LOCAL MUTE OVERRIDE: Prevent ghost voice ring when speaking loudly
+                                    if (uidStr === myUidStr) {
+                                        isSoftMuted = isMutedRef.current;
+                                    }
+
+                                    let notSeated = true;
+                                    if (p && p.seat_number !== null && p.seat_number !== undefined) {
+                                        if (mutedSeatsRef.current[p.seat_number]) isSoftMuted = true;
+                                        notSeated = false;
+                                    }
+                                    const level = (!isSoftMuted && !notSeated && v.level > 5) ? v.level : 0;
+                                    if ((prev[uidStr] || 0) !== level) {
+                                        newMap[uidStr] = level;
+                                        changed = true;
+                                    }
+                                });
+                                // Zero out anyone who stopped speaking completely
+                                Object.keys(prev).forEach(uidStr => {
+                                    if (prev[uidStr] > 0 && !volumes.some(v => String(v.uid) === uidStr)) {
+                                        newMap[uidStr] = 0;
+                                        changed = true;
+                                    }
+                                });
+                                return changed ? newMap : prev;
+                            });
+                        } catch (e) { }
+                    });
+
+                    // 1. AUDIENCE DEFAULT: Force audience role on entry
+                    await agoraClient.setClientRole("audience");
+                    await agoraClient.join(AGORA_APP_ID, String(roomData.id), token, String(tgUser?.id || "1001"));
+
+                    if (supabase) {
+                        const myPresenceState = {
+                            user_id: String(tgUser.id),
+                            user_name: tgUser.first_name || tgUser.username || "Unknown",
+                            photo_url: tgUser.photo_url || null,
+                            seat_number: null,
+                            is_muted: true
+                        };
+
+                        const channel = supabase.channel(`room:${roomData.id}`, {
+                            config: { presence: { key: String(tgUser.id) } }
+                        })
+                            .on('presence', { event: 'sync' }, () => {
+                                const state = channel.presenceState();
+                                const currentParticipants = [];
+
+                                for (const id in state) {
+                                    // 🛡️ GHOST BUSTER: Do not overwrite users who recently changed state locally.
+                                    if (recentlyChangedRef.current.has(String(id))) {
+                                        const localP = participantsRef.current.find(p => String(p.user_id) === String(id));
+                                        if (localP) currentParticipants.push(localP);
+                                        else {
+                                            const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
+                                            if (seatedConnection || state[id][0]) currentParticipants.push(seatedConnection || state[id][0]);
+                                        }
+                                        continue;
+                                    }
+
+                                    if (state[id] && state[id].length > 0) {
+                                        const seatedConnection = state[id].find(c => c.seat_number !== null && c.seat_number !== undefined);
+                                        currentParticipants.push(seatedConnection || state[id][0]);
+                                    }
+                                }
+
+                                // Ensure local user is always present if recently changed
+                                const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                const myIdStr = String(tgData?.id || "1001");
+                                if (recentlyChangedRef.current.has(myIdStr) && !currentParticipants.some(p => String(p.user_id) === myIdStr)) {
+                                    const localP = participantsRef.current.find(p => String(p.user_id) === myIdStr);
+                                    if (localP) {
+                                        currentParticipants.push(localP);
+                                    } else {
+                                        currentParticipants.push({
+                                            user_id: myIdStr,
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: isMutedRef.current
+                                        });
+                                    }
+                                }
+                                setParticipants(currentParticipants);
+
+                                if ((roomData.room_type === 'advance' || roomData.room_type === 'permanent') && !currentParticipants.some(p => String(p.user_id) === String(roomData.host_user_id))) {
+                                    setLockedSeats(prev => ({ ...prev, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true }));
+                                }
+                            })
+                            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                                if (recentlyChangedRef.current.has(String(key))) return; // Ignored if we caused it locally
+                                if (newPresences && newPresences.length > 0) {
+                                    if (String(key) !== String(tgUser.id)) {
+                                        const userName = newPresences[0].user_name || 'Someone';
+                                        const msgId = Date.now() + Math.random().toString();
+                                        setChatMessages(prev => [...prev, { id: msgId, isSystem: true, text: `${userName} entered`, time: Date.now() }]);
+
+                                        // 🛡️ SYSTEM NOTIFICATION: Disappear dynamically after 4 seconds
+                                        setTimeout(() => {
+                                            setChatMessages(prev => prev.filter(m => m.id !== msgId));
+                                        }, 4000);
+                                    }
+                                    // Add to participants so they show up instantly without waiting for sync
+                                    setParticipants(prev => prev.some(p => String(p.user_id) === String(key)) ? prev.map(p => String(p.user_id) === String(key) ? newPresences[0] : p) : [...prev, newPresences[0]]);
+                                }
+                            })
+                            .on('presence', { event: 'leave' }, ({ key }) => {
+                                if (recentlyChangedRef.current.has(String(key))) return;
+                                setParticipants(prev => prev.filter(p => String(p.user_id) !== String(key)));
+                            })
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+                                if (payload.new.is_live === false) {
+                                    safeAlert("The live room has ended.");
+                                    leaveRoom(agoraClient, roomData.id);
+                                } else {
+                                    setActiveRoom(payload.new);
+                                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                    const userIdString = String(tgData?.id || "1001");
+                                    if (payload.new.host_user_id === userIdString && String(roomRef.current?.host_user_id) !== userIdString) {
+                                        takeSeat(0, roomData.id, null, true);
+                                        safeAlert("The previous host disconnected. You have been promoted to Host!");
+                                    }
+                                }
+                            })
+                            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'voice_rooms', filter: `id=eq.${roomData.id}` }, () => {
+                                safeAlert("The host has closed the room.");
+                                leaveRoom(agoraClient, roomData.id);
+                            })
+                            .on('broadcast', { event: 'mute' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    setIsMuted(true);
+                                    if (channelRef.current) {
+                                        const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                        channelRef.current.track({
+                                            user_id: String(tgData.id || "1001"),
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: true
+                                        });
+                                    }
+                                } else {
+                                    setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: true } : p));
+                                }
+                            })
+                            .on('broadcast', { event: 'unmute' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    setIsMuted(false);
+                                    if (channelRef.current) {
+                                        const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                        channelRef.current.track({
+                                            user_id: String(tgData.id || "1001"),
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: userSeatRef.current,
+                                            is_muted: false
+                                        });
+                                    }
+                                } else {
+                                    setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: false } : p));
+                                }
+                            })
+                            .on('broadcast', { event: 'kick' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    leaveRoom(agoraClient, roomData.id);
+                                } else {
+                                    setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
+                                }
+                            })
+                            .on('broadcast', { event: 'mute_toggle' }, ({ payload }) => {
+                                setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: payload.isMuted } : p));
+                            })
+                            .on('broadcast', { event: 'text_chat' }, ({ payload }) => {
+                                setChatMessages(prev => [...prev, payload]);
+                            })
+                            .on('broadcast', { event: 'invite_to_seat' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) setPendingInvite(payload);
+                            })
+                            .on('broadcast', { event: 'request_seat' }, ({ payload }) => {
+                                if (String(roomData.host_user_id) === String(tgUser.id)) {
+                                    setMicRequests(prev => {
+                                        if (!prev.some(r => r.uid === payload.uid)) return [...prev, payload];
+                                        return prev;
+                                    });
+                                }
+                            })
+                            .on('broadcast', { event: 'approve_seat' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) takeSeat(payload.seatNum);
+                            })
+                            .on('broadcast', { event: 'lift_user' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    stepDown(true);
+                                    safeAlert("You have been moved to the audience by the host.");
+                                } else {
+                                    setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: null, is_muted: true } : p));
+                                }
+                            })
+                            .on('broadcast', { event: 'play_sfx' }, ({ payload }) => {
+                                triggerSFX(payload.type);
+                            })
+                            .on('broadcast', { event: 'seat_lock' }, ({ payload }) => {
+                                setLockedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isLocked }));
+                            })
+                            .on('broadcast', { event: 'seat_mute' }, ({ payload }) => {
+                                setMutedSeats(prev => ({ ...prev, [payload.seatNum]: payload.isMuted }));
+                                if (payload.isMuted && userSeatRef.current === payload.seatNum) {
+                                    safeAlert("Your seat has been muted by the host.");
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(true); trackRef.current.setEnabled(false); } catch (e) { }
+                                        lastAppliedMuteRef.current = true;
+                                    }
+                                } else if (!payload.isMuted && userSeatRef.current === payload.seatNum) {
+                                    const effectiveMute = isMutedRef.current;
+                                    if (trackRef.current) {
+                                        try { trackRef.current.setMuted(effectiveMute); trackRef.current.setEnabled(!effectiveMute); } catch (e) { }
+                                        lastAppliedMuteRef.current = effectiveMute;
+                                    }
+                                }
+                            })
+                            .on('broadcast', { event: 'change_seat' }, ({ payload }) => {
+                                setParticipants(prev => {
+                                    if (prev.some(p => String(p.user_id) === String(payload.target_uid))) {
+                                        return prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, seat_number: payload.seatNum, is_muted: payload.isMuted } : p);
+                                    } else {
+                                        return [...prev, {
+                                            user_id: payload.target_uid,
+                                            user_name: payload.userName || "Unknown",
+                                            photo_url: payload.photoUrl || null,
+                                            seat_number: payload.seatNum,
+                                            is_muted: payload.isMuted
+                                        }];
+                                    }
+                                });
+                            })
+                            .on('broadcast', { event: 'user_joined' }, ({ payload }) => {
+                                setParticipants(prev => {
+                                    if (prev.some(p => String(p.user_id) === String(payload.user_id))) {
+                                        return prev.map(p => String(p.user_id) === String(payload.user_id) ? payload : p);
+                                    }
+                                    return [...prev, payload];
+                                });
+                            })
+                            .on('broadcast', { event: 'promote_to_host' }, ({ payload }) => {
+                                if (payload.target_uid === String(tgUser.id)) {
+                                    takeSeat(0, roomData.id);
+                                    safeAlert("The previous host stepped down. You have been promoted to Host!");
+                                }
+                            })
+                            .on('broadcast', { event: 'host_transfer_instant' }, ({ payload }) => {
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: payload.host_uid } : prev);
+                            })
+                            .on('broadcast', { event: 'music_status' }, ({ payload }) => {
+                                setCurrentMusic(payload);
+                            })
+                            .on('broadcast', { event: 'user_left' }, ({ payload }) => {
+                                setParticipants(prev => prev.filter(p => String(p.user_id) !== String(payload.target_uid)));
+                            })
+                            .on('broadcast', { event: 'advance_host_left' }, () => {
+                                if (String(tgUser.id) !== String(roomData.host_user_id)) {
+                                    if (userSeatRef.current !== null && userSeatRef.current !== undefined) {
+                                        stepDown();
+                                        safeAlert("The host has left the Advance Room. All users have been moved to the audience.");
+                                    }
+                                }
+                                setLockedSeats(prev => ({ ...prev, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true }));
+                            })
+                            .subscribe(async (status) => {
+                                if (status === 'SUBSCRIBED') {
+                                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                                    const userIdString = String(tgData.id || "1001");
+                                    const currentSeat = userSeatRef.current;
+                                    const currentMute = isMutedRef.current;
+                                    setParticipants(prev => {
+                                        if (prev.some(p => String(p.user_id) === userIdString)) return prev;
+                                        return [...prev, {
+                                            user_id: userIdString,
+                                            user_name: tgData.first_name || tgData.username || "Unknown",
+                                            photo_url: tgData.photo_url || null,
+                                            seat_number: currentSeat,
+                                            is_muted: currentMute
+                                        }];
+                                    });
+                                    await channel.track({
+                                        user_id: userIdString,
+                                        user_name: tgData.first_name || tgData.username || "Unknown",
+                                        photo_url: tgData.photo_url || null,
+                                        seat_number: currentSeat,
+                                        is_muted: currentMute
+                                    });
+                                }
+                            });
+
+                        setRealtimeChannel(channel);
+                    }
+                    setActiveRoom(roomData);
+                    setChatMessages([]);
+                    setLockedSeats({});
+                    setMutedSeats({});
+                    setIsMinimized(false);
+                    return agoraClient;
+                } catch (e) {
+                    console.error("Join Error", e);
+                    safeAlert("Failed to join room: " + e.message);
+                    return false;
+                } finally {
+                    if (!bypassLock) setIsProcessing(false);
+                }
+            };
+
+            const leaveRoom = async (forcedClient = client, roomId = activeRoom?.id, isUnloading = false) => {
+                if (!isUnloading && isProcessingRef.current) return;
+                if (!isUnloading) setIsProcessing(true);
+                try {
+                    const r = roomRef.current;
+                    const track = trackRef.current;
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+
+                    // 🛡️ FRESH START: Clear local state memory immediately on exit
+                    userSeatRef.current = null;
+                    setIsMuted(true);
+
+                    markRecentlyChanged(userIdString);
+
+                    // 🚀 EXPLICIT BROADCAST BEFORE DISCONNECTING FOR INSTANT UI REMOVAL
+                    try {
+                        if (channelRef.current) {
+                            await channelRef.current.send({ type: 'broadcast', event: 'user_left', payload: { target_uid: userIdString } });
+                        }
+                    } catch (e) { }
+
+                    // 1. Safely stop and close localAudioTrack ONLY if it exists. Set it to null.
+                    if (track) {
+                        try { track.stop(); } catch (e) { }
+                        try { track.close(); } catch (e) { }
+                        setLocalAudioTrack(null);
+                    }
+
+                    if (forcedClient) {
+                        // 2. Call await agoraClient.unpublish() without args to blanket unpublish
+                        try { await forcedClient.unpublish(); } catch (e) { }
+
+                        // 3. Call await agoraClient.leave()
+                        try { await forcedClient.leave(); } catch (e) { }
+
+                        // 4. Remove all Agora event listeners
+                        try { forcedClient.removeAllListeners(); } catch (e) { }
+                    }
+
+                    if (supabase && r && roomId) {
+                        // 5. Remove user from room_participants table
+                        try { await supabase.from('room_participants').delete().eq('user_id', userIdString).eq('room_id', roomId); } catch (e) { }
+
+                        if (String(r.host_user_id) === userIdString) {
+                            if (r.room_type === 'temporary') {
+                                const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a, b) => Number(a.seat_number) - Number(b.seat_number));
+                                if (remainingMics.length > 0) {
+                                    const nextHost = remainingMics[0];
+                                    sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                    sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
+                                } else {
+                                    if (supabase) {
+                                        try { await supabase.from('voice_rooms').delete().eq('id', r.id); } catch (e) { }
+                                    }
+                                }
+                            } else if (r.room_type === 'advance' || r.room_type === 'permanent') {
+                                // Advance Room: Host left the room
+                                // Normal users lift up automatically and seats lock
+                                if (channelRef.current) {
+                                    try { await channelRef.current.send({ type: 'broadcast', event: 'advance_host_left', payload: {} }); } catch (e) { }
+                                }
+                            }
+                        }
+                        if (channelRef.current) {
+                            try { await channelRef.current.untrack(); } catch (e) { }
+                            supabase.removeChannel(channelRef.current);
+                        }
+                    }
+                    if (!isUnloading) {
+                        setActiveRoom(null);
+                        setParticipants([]);
+                        setLocalAudioTrack(null);
+                        setIsMuted(true);
+                        setClient(null);
+                        setRealtimeChannel(null);
+                        setChatMessages([]);
+                        setMicRequests([]);
+                        setPendingInvite(null);
+                        setLockedSeats({});
+                        setMutedSeats({});
+                        setIsMinimized(false);
+                        setCurrentMusic(null);
+                    }
+                } catch (err) {
+                    console.error("Safe leaveRoom failed:", err);
+                } finally {
+                    if (!isUnloading) setIsProcessing(false);
+                }
+            };
+
+            const createRoom = async (name, type, password = null) => {
+                if (!supabase) return;
+                if (isProcessingRef.current) return false;
+                setIsProcessing(true);
+                try {
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+
+                    const { data, error } = await supabase.from('voice_rooms').insert({
+                        channel_name: name,
+                        host_user_id: userIdString,
+                        owner_id: type === 'permanent' ? userIdString : null,
+                        room_type: type,
+                        require_mic_request: false,
+                        password: password || null,
+                        is_live: true
+                    }).select().single();
+
+                    if (error) throw error;
+
+                    if (data) {
+                        const agoraClient = await joinRoom(data, password, true);
+                        if (agoraClient) {
+                            await takeSeat(0, data.id, agoraClient, true);
+                            return true;
+                        }
+                    }
+                    return false;
+                } catch (error) {
+                    let errorMsg = error.message;
+                    if (error.code === '23505' || errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
+                        errorMsg = "A room with this name already exists! Please choose a different name.";
+                    }
+                    safeAlert("Failed to create room: " + errorMsg);
+                    console.error("createRoom error:", error);
+                    return false;
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const takeSeat = async (seatIdx, roomId = roomRef.current?.id, passedClient = null, bypassLock = false) => {
+                try {
+                    if (!bypassLock) {
+                        if (isProcessingRef.current) return;
+                        setIsProcessing(true);
+                    }
+                    const activeClient = passedClient || clientRef.current;
+                    if (!activeClient) {
+                        console.warn("No active Agora client to take seat");
+                        return;
+                    }
+
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const username = tgData?.first_name || tgData?.username || "User";
+                    const photo_url = tgData?.photo_url || "";
+                    const userIdString = String(tgData?.id || "1001");
+
+                    // 🛡️ WePlay Replica: Personal mute state is preserved when hopping seats.
+                    // The seat's mute state is an independent layer applied on top.
+                    const currentMute = isMutedRef.current;
+
+                    userSeatRef.current = seatIdx;
+
+                    markRecentlyChanged(userIdString);
+
+                    if (supabase && channelRef.current) {
+                        setParticipants(prev => {
+                            const exists = prev.some(p => String(p.user_id) === userIdString);
+                            if (exists) {
+                                return prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: seatIdx, is_muted: currentMute } : p);
+                            } else {
+                                return [...prev, { user_id: userIdString, user_name: username, photo_url: photo_url, seat_number: seatIdx, is_muted: currentMute }];
+                            }
+                        });
+
+                        try {
+                            channelRef.current.track({
+                                user_id: userIdString,
+                                user_name: username,
+                                photo_url: photo_url,
+                                seat_number: seatIdx,
+                                is_muted: currentMute
+                            });
+                        } catch (e) { }
+
+                        // Instantly notify everyone in the room of the new seat without waiting for network sync
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: seatIdx, isMuted: currentMute, userName: username, photoUrl: photo_url });
+
+                        const rId = roomId || roomRef.current?.id;
+                        if (seatIdx === 0 && rId) {
+                            try { await supabase.from('voice_rooms').update({ host_user_id: userIdString }).eq('id', rId); } catch (e) { }
+                            setActiveRoom(prev => prev ? { ...prev, host_user_id: userIdString } : prev);
+                            sendBroadcast('host_transfer_instant', { host_uid: userIdString });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Safe takeSeat failed:", e);
+                    safeAlert("Microphone access was denied or failed. Check browser permissions.");
+                } finally {
+                    if (!bypassLock) setIsProcessing(false);
+                }
+            };
+
+            const stepDown = async (bypassLock = false) => {
+                if (!bypassLock && isProcessingRef.current) return;
+                if (!bypassLock) setIsProcessing(true);
+                try {
+                    const track = trackRef.current;
+                    const c = clientRef.current;
+                    const r = roomRef.current;
+
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+                    const username = tgData?.first_name || tgData?.username || "User";
+                    const photo_url = tgData?.photo_url || "";
+
+                    userSeatRef.current = null;
+                    setIsMuted(true);
+
+                    markRecentlyChanged(userIdString);
+
+                    // 🚀 INSTANT PUBLIC UPDATE
+                    if (supabase && channelRef.current) {
+                        setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, seat_number: null, is_muted: true } : p));
+
+                        sendBroadcast('change_seat', { target_uid: userIdString, seatNum: null, isMuted: true, userName: username, photoUrl: photo_url });
+
+                        try {
+                            channelRef.current.track({
+                                user_id: userIdString,
+                                user_name: username,
+                                photo_url: photo_url,
+                                seat_number: null,
+                                is_muted: true
+                            });
+                        } catch (e) { }
+                    }
+
+                    // Server background tasks (Ownership transfer)
+                    if (r && String(r.host_user_id) === userIdString) {
+                        const remainingMics = participantsRef.current.filter(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) > 0 && String(p.user_id) !== userIdString).sort((a, b) => Number(a.seat_number) - Number(b.seat_number));
+                        const audienceMembers = participantsRef.current.filter(p => (p.seat_number === null || p.seat_number === undefined) && String(p.user_id) !== userIdString);
+
+                        let nextHost = null;
+                        if (remainingMics.length > 0) {
+                            nextHost = remainingMics[0];
+                        } else {
+                            nextHost = { user_id: 'no_host' };
+                        }
+
+                        if (r.room_type === 'temporary') {
+                            if (nextHost.user_id !== 'no_host') {
+                                try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch (e) { }
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
+                                sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
+                            } else {
+                                try { supabase.from('voice_rooms').delete().eq('id', r.id).then(); } catch (e) { }
+                                setActiveRoom(null);
+                            }
+                        } else {
+                            if (nextHost) {
+                                try { supabase.from('voice_rooms').update({ host_user_id: String(nextHost.user_id) }).eq('id', r.id).then(); } catch (e) { }
+                                setActiveRoom(prev => prev ? { ...prev, host_user_id: String(nextHost.user_id) } : prev);
+                                sendBroadcast('promote_to_host', { target_uid: String(nextHost.user_id) });
+                                sendBroadcast('host_transfer_instant', { host_uid: String(nextHost.user_id) });
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Safe stepDown failed:", e);
+                } finally {
+                    if (!bypassLock) setIsProcessing(false);
+                }
+            };
+
+            const toggleMute = async () => {
+                if (isProcessingRef.current) return;
+                if (userSeatRef.current !== null && userSeatRef.current !== undefined && mutedSeatsRef.current[userSeatRef.current]) {
+                    safeAlert("This seat is currently muted by the host.");
+                    return;
+                }
+                setIsProcessing(true);
+                try {
+                    if (!trackRef.current) return;
+                    const shouldMute = !isMuted;
+
+                    setIsMuted(shouldMute);
+
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+
+                    markRecentlyChanged(userIdString);
+
+                    setParticipants(prev => prev.map(p => String(p.user_id) === userIdString ? { ...p, is_muted: shouldMute } : p));
+
+                    if (channelRef.current) {
+                        try {
+                            channelRef.current.track({
+                                user_id: userIdString,
+                                user_name: tgData?.first_name || tgData?.username || "Unknown",
+                                photo_url: tgData?.photo_url || null,
+                                seat_number: userSeatRef.current,
+                                is_muted: shouldMute
+                            });
+                        } catch (e) { console.warn("Mute broadcast failed:", e); }
+
+                        // 🚀 INSTANT PUBLIC UPDATE
+                        sendBroadcast('mute_toggle', { target_uid: userIdString, isMuted: shouldMute });
+                    }
+                } catch (e) {
+                    console.error("Safe mute toggle failed:", e);
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const sendHostAction = (action, targetUid) => {
+                try {
+                    if (channelRef.current && String(roomRef.current?.host_user_id) === String(tgUser.id)) {
+                        channelRef.current.send({ type: 'broadcast', event: action, payload: { target_uid: String(targetUid) } });
+
+                        // 🚀 OPTIMISTIC UI UPDATES FOR HOST (Zero Delay)
+                        if (action === 'kick') {
+                            participantsRef.current = participantsRef.current.filter(p => String(p.user_id) !== String(targetUid));
+                        } else {
+                            participantsRef.current = participantsRef.current.map(p => {
+                                if (String(p.user_id) === String(targetUid)) {
+                                    if (action === 'mute') return { ...p, is_muted: true };
+                                    if (action === 'unmute') return { ...p, is_muted: false };
+                                    if (action === 'lift_user') return { ...p, seat_number: null, is_muted: true };
+                                }
+                                return p;
+                            });
+                        }
+                        setParticipants(participantsRef.current);
+                    }
+                } catch (e) { console.warn("Host Action Error:", e); }
+            };
+
+            const sendChat = (text, imageUrl = null) => {
+                const payload = { id: Date.now() + Math.random().toString(), userId: String(tgUser.id), userName: tgUser.first_name, userAvatar: tgUser.photo_url, text, imageUrl, time: new Date().toISOString() };
+                realtimeChannel?.send({ type: 'broadcast', event: 'text_chat', payload });
+                setChatMessages(prev => [...prev, payload]); // Optimistic update
+            };
+
+            const updateRoomSettings = async (newName, newPassword, reqMic) => {
+                if (!supabase || !roomRef.current) return false;
+                try {
+                    const { error } = await supabase.from('voice_rooms').update({
+                        channel_name: newName,
+                        password: newPassword || null,
+                        require_mic_request: reqMic
+                    }).eq('id', roomRef.current.id);
+                    if (error) {
+                        let errorMsg = error.message;
+                        if (errorMsg.includes('duplicate key') || errorMsg.includes('voice_rooms_channel_name_key')) {
+                            errorMsg = "A room with this name already exists! Please choose a different name.";
+                        }
+                        safeAlert("Failed to update room: " + errorMsg);
+                        return false;
+                    }
+                    return true;
+                } catch (err) {
+                    return false;
+                }
+            };
+
+            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isProcessing, currentMusic, setCurrentMusic };
+        };
+
+        const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
+            const { activeRoom, isMuted, toggleMute, isSpeakerMuted, toggleSpeaker, leaveRoom, isProcessing } = voiceState;
+            const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
+            const widgetRef = useRef(null);
+
+            if (!activeRoom) return null;
+
+            const handleTouchStart = (e) => {
+                dragRef.current.isDragging = true;
+                dragRef.current.hasMoved = false;
+                dragRef.current.startX = e.touches[0].clientX - dragRef.current.currentX;
+                dragRef.current.startY = e.touches[0].clientY - dragRef.current.currentY;
+                if (widgetRef.current) {
+                    widgetRef.current.style.transition = 'none';
+                }
+            };
+            const handleTouchMove = (e) => {
+                if (!dragRef.current.isDragging) return;
+                const x = e.touches[0].clientX - dragRef.current.startX;
+                const y = e.touches[0].clientY - dragRef.current.startY;
+                if (Math.abs(x - dragRef.current.currentX) > 5 || Math.abs(y - dragRef.current.currentY) > 5) {
+                    dragRef.current.hasMoved = true;
+                }
+                dragRef.current.currentX = x;
+                dragRef.current.currentY = y;
+                if (widgetRef.current) {
+                    widgetRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                }
+            };
+            const handleTouchEnd = () => {
+                dragRef.current.isDragging = false;
+                if (widgetRef.current) {
+                    widgetRef.current.style.transition = '';
+                }
+            };
+            const handleClick = (e) => {
+                if (!dragRef.current.hasMoved) {
+                    onRestore();
+                }
+            };
+
+            return (
+                <div
+                    ref={widgetRef}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={handleClick}
+                    style={{ transform: `translate3d(${dragRef.current.currentX}px, ${dragRef.current.currentY}px, 0)` }}
+                    className="fixed bottom-[80px] right-4 w-[280px] bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] touch-none"
+                >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] animate-pulse shrink-0"><i className="fa-solid fa-volume-high text-xs"></i></div>
+                        <div className="truncate">
+                            <p className="text-white font-bold text-sm truncate">{activeRoom.channel_name}</p>
+                            <p className="text-[#00FFFF] text-[10px] uppercase font-bold tracking-widest">Live Session Active</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                        <button onClick={(e) => { e.stopPropagation(); if (!isProcessing) toggleMute(); }} disabled={isProcessing} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}><i className={`fa-solid ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-xs`}></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); toggleSpeaker(); }} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isSpeakerMuted ? 'bg-gray-700 text-gray-400' : 'bg-[#00FFFF] text-[#010B1C]'}`}><i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-xs`}></i></button>
+                        <button onClick={(e) => { e.stopPropagation(); if (!isProcessing) leaveRoom(); }} disabled={isProcessing} className={`w-9 h-9 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}><i className="fa-solid fa-phone-slash text-xs"></i></button>
+                    </div>
+                </div>
+            );
+        };
+
+        const VoiceRoomsTab = ({ tgUser, voiceState }) => {
+            const { activeRoom, leaveRoom, availableRooms, fetchRooms, createRoom, joinRoom, isProcessing } = voiceState;
+            const [showCreateModal, setShowCreateModal] = useState(false);
+            const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
+            const [isRefreshing, setIsRefreshing] = useState(false);
+            const [dashboardFilter, setDashboardFilter] = useState('active');
+
+            const tgUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
+            const myAdvanceRoom = availableRooms.find(r => String(r.owner_id) === tgUserId && (r.room_type === 'permanent' || r.room_type === 'advance'));
+
+            useEffect(() => {
+                const handleBackEvent = (e) => {
+                    if (showCreateModal) { e.preventDefault(); setShowCreateModal(false); }
+                    else if (selectedRoomToJoin) { e.preventDefault(); setSelectedRoomToJoin(null); }
+                };
+                window.addEventListener('ataxy_back_requested', handleBackEvent);
+                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
+            }, [showCreateModal, selectedRoomToJoin]);
+
+            const handleRefresh = async () => {
+                setIsRefreshing(true);
+                await fetchRooms();
+                setTimeout(() => setIsRefreshing(false), 500);
+            };
+
+            const handleJoinClick = (room) => {
+                if (isProcessing) return;
+                if (room.password) {
+                    setSelectedRoomToJoin(room);
+                } else {
+                    joinRoom(room);
+                }
+            };
+
+            let displayRooms = [];
+            if (dashboardFilter === 'active') {
+                displayRooms = availableRooms.filter(r => r.id !== myAdvanceRoom?.id);
+            } else {
+                displayRooms = []; // Mock recent/joined
+            }
+
+            return (
+                <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
+                    <div className="p-4 flex-1 overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-black text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
+                            <button onClick={handleRefresh} className="text-[#00FFFF] hover:text-white transition-colors p-2">
+                                <i className={`fa-solid fa-sync-alt ${isRefreshing ? 'animate-spin' : ''}`}></i>
+                            </button>
+                        </div>
+
+                        {/* Pinned Advance Room Section */}
+                        <div className="mb-6">
+                            {myAdvanceRoom ? (
+                                <div onClick={() => handleJoinClick(myAdvanceRoom)} className={`bg-gradient-to-br from-[#1a1c02] to-[#010B1C] rounded-2xl p-4 transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)]`}>
+                                    <span className="absolute top-0 right-0 bg-gradient-to-r from-[#D4AF37] to-[#F9D33A] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">My Advance Room</span>
+                                    <div className="relative z-10 flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(212,175,55,0.5)] overflow-hidden">
+                                                {myAdvanceRoom.room_dp_url ? <img src={myAdvanceRoom.room_dp_url} className="w-full h-full object-cover" /> : myAdvanceRoom.channel_name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                    {myAdvanceRoom.channel_name}
+                                                    {myAdvanceRoom.password && <i className="fa-solid fa-lock text-[#F9D33A] text-xs"></i>}
+                                                </h3>
+                                                <div className="flex text-sm text-[#F9D33A] gap-3">
+                                                    <span><i className="fa-solid fa-crown mr-1"></i> Host: You</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:text-[#010B1C] transition-colors">
+                                            <i className="fa-solid fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowCreateModal(true)} className="w-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F9D33A]/10 hover:from-[#D4AF37]/30 hover:to-[#F9D33A]/20 border border-[#D4AF37]/50 border-dashed py-4 rounded-2xl font-bold transition-all text-sm uppercase tracking-wider text-[#F9D33A] flex flex-col items-center justify-center gap-2">
+                                    <i className="fa-solid fa-crown text-2xl drop-shadow-[0_0_8px_rgba(249,211,58,0.5)]"></i>
+                                    Create Premium Advance Room
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Navigation Buttons */}
+                        <div className="flex gap-2 mb-6 bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20">
+                            <button onClick={() => setDashboardFilter('active')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'active' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>Active</button>
+                            <button onClick={() => setDashboardFilter('recent')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'recent' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>Recent</button>
+                            <button onClick={() => setDashboardFilter('joined')} className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${dashboardFilter === 'joined' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white hover:bg-white/5'}`}>Joined</button>
+                        </div>
+
+                        {!myAdvanceRoom && (
+                            <button onClick={() => setShowCreateModal(true)} className="w-full mb-6 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] shadow-[0_0_15px_rgba(0,255,255,0.4)] py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-95">
+                                <i className="fa-solid fa-plus"></i> Create Temporary Room
+                            </button>
+                        )}
+
+                        <div className="space-y-4 pb-20">
+                            {displayRooms.length === 0 ? (
+                                <div className="text-center py-10 text-gray-500">
+                                    <i className="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
+                                    <p>No rooms found for this filter.</p>
+                                </div>
+                            ) : (
+                                displayRooms.map(room => {
+                                    const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
+                                    return (
+                                        <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
+                                            {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
+                                            <div className="relative z-10 flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(0,255,255,0.5)] overflow-hidden">
+                                                        {room.room_dp_url ? <img src={room.room_dp_url} className="w-full h-full object-cover" /> : room.channel_name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                            {room.channel_name}
+                                                            {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                        </h3>
+                                                        <div className="flex text-sm text-[#A4DFE6] gap-3">
+                                                            <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {String(room.host_user_id).substring(0, 5)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
+                                                    <i className="fa-solid fa-arrow-right"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            )}
+                        </div>
+                    </div>
+                    {showCreateModal && <CreateRoomModal onClose={() => setShowCreateModal(false)} onCreate={createRoom} />}
+                    {selectedRoomToJoin && <JoinRoomModal room={selectedRoomToJoin} onClose={() => setSelectedRoomToJoin(null)} onJoin={joinRoom} />}
+                </div>
+            );
+        };
+
+        const RoomSettingsModal = ({ activeRoom, onClose, onSave, currentMusic, onUpdateMusic }) => {
+            const [name, setName] = useState(activeRoom.channel_name);
+            const [password, setPassword] = useState(activeRoom.password || '');
+            const [requireMic, setRequireMic] = useState(activeRoom.require_mic_request || false);
+            const [musicTitle, setMusicTitle] = useState(currentMusic?.title || '');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!name.trim()) return;
+                setIsSubmitting(true);
+                const success = await onSave(name, password, requireMic);
+                setIsSubmitting(false);
+                if (success) onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-4"><i className="fa-solid fa-sliders mr-2 text-[#00FFFF]"></i>Room Settings</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input required type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
+                                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Mic Requests</label>
+                                <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3">
+                                    <span className="text-white text-sm">Require permission to speak</span>
+                                    <button type="button" onClick={() => setRequireMic(!requireMic)} className={`w-12 h-6 rounded-full transition-colors ${requireMic ? 'bg-[#00FFFF]' : 'bg-gray-600'} flex items-center px-1`}>
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${requireMic ? 'translate-x-6' : ''}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Currently Playing (Music)</label>
+                                <div className="flex gap-2">
+                                    <input type="text" value={musicTitle} onChange={e => setMusicTitle(e.target.value)} placeholder="e.g. Lofi Study Beats" className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <button type="button" onClick={() => onUpdateMusic(musicTitle)} className="bg-[#00FFFF]/20 text-[#00FFFF] border border-[#00FFFF]/50 px-4 rounded-xl font-bold hover:bg-[#00FFFF] hover:text-[#010B1C] transition-colors shadow-[0_0_10px_rgba(0,255,255,0.2)]">Set</button>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Saving...' : 'Save'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
+            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => { }, mutedSeats = {}, setMutedSeats = () => { }, isProcessing, currentMusic, setCurrentMusic } = voiceState;
+            const [showActionModal, setShowActionModal] = useState(null);
+            const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [showRequestsModal, setShowRequestsModal] = useState(false);
+            const [chatInput, setChatInput] = useState('');
+            const [pendingImage, setPendingImage] = useState(null);
+            const [fullScreenImage, setFullScreenImage] = useState(null);
+
+            useEffect(() => {
+                const handleBackEvent = (e) => {
+                    if (showActionModal) { e.preventDefault(); setShowActionModal(null); }
+                    else if (showParticipantsModal) { e.preventDefault(); setShowParticipantsModal(false); }
+                    else if (showSettingsModal) { e.preventDefault(); setShowSettingsModal(false); }
+                    else if (showRequestsModal) { e.preventDefault(); setShowRequestsModal(false); }
+                    else if (fullScreenImage) { e.preventDefault(); setFullScreenImage(null); }
+                    else if (pendingInvite) { e.preventDefault(); setPendingInvite(null); }
+                    else if (selectedProfileUser) { e.preventDefault(); setSelectedProfileUser(null); }
+                };
+                window.addEventListener('ataxy_back_requested', handleBackEvent);
+                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
+            }, [showActionModal, showParticipantsModal, showSettingsModal, showRequestsModal, fullScreenImage, pendingInvite, selectedProfileUser]);
+
+            const currentUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
+            const isHost = String(activeRoom.host_user_id) === currentUserId;
+            const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
+            const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
+            const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
+            const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
+            const effectiveMutedUI = isMuted || mySeatMuted;
+
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+            const handleAvatarClick = (userObj) => {
+                if (!userObj || typeof userObj !== 'object') return;
+                setSelectedProfileUser(userObj);
+            };
+
+            const handleSeatClick = (seatNum, occupant) => {
+                if (occupant) {
+                    handleAvatarClick(occupant);
+                } else {
+                    if (isHost) {
+                        if (seatNum !== 0) {
+                            setShowActionModal({ type: 'empty_seat_host', seatNum });
+                        }
+                    } else if (isSpeaker) {
+                        if (lockedSeats[seatNum]) {
+                            safeAlert("This seat is locked by the host.");
+                            return;
+                        }
+                        if (activeRoom.host_user_id === 'no_host') {
+                            safeAlert("There is no active host in this room. You cannot switch seats.");
+                            return;
+                        }
+                        safeConfirm(`Are you sure you want to change to Seat ${seatNum}?`, () => {
+                            takeSeat(seatNum);
+                        });
+                    } else {
+                        if (lockedSeats[seatNum]) {
+                            safeAlert("This seat is locked by the host.");
+                            return;
+                        }
+                        if (activeRoom.host_user_id === 'no_host') {
+                            safeAlert("There is no active host in this room. You cannot take a seat.");
+                            return;
+                        }
+                        if (activeRoom.require_mic_request) {
+                            if (micRequests.some(r => String(r.uid) === currentUserId)) {
+                                safeAlert("Your request is already pending host approval.");
+                                return;
+                            }
+                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                            sendBroadcast('request_seat', { uid: currentUserId, name: tgData.first_name, seatNum: seatNum });
+                            safeAlert("Requested to speak. Waiting for host approval.");
+                        } else {
+                            takeSeat(seatNum);
+                        }
+                    }
+                }
+            };
+
+            const renderSeat = (seatNum, occupant, label, isLarge = false) => {
+                if (occupant && !occupant.user_id) return null; // Safe guard
+                const isOfflineHost = occupant?.is_offline_host;
+                const isMe = String(occupant?.user_id) === currentUserId;
+
+                // --- Seat Render Styling ---
+                const isHostSeat = seatNum === 0;
+
+                const baseScale = isLarge ? 1.05 : 1;
+
+                const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : (isOfflineHost ? activeRoom.room_dp_url : occupant?.photo_url);
+
+                // 🛡️ SAFE MUTE CHECK: Read directly from Supabase Presence
+                let isOccupantMuted = false;
+                if (occupant && occupant.user_id) {
+                    isOccupantMuted = !!occupant.is_muted;
+                }
+
+                const isLocked = lockedSeats[seatNum];
+                const isSeatMuted = mutedSeats[seatNum];
+
+                // 🛡️ SAFE OCCUPANT NAME: Prevent ReferenceError crashes
+                const occupantName = occupant ? (isOfflineHost ? 'Host' : (occupant.user_name || "Unknown")) : (isLocked ? 'Locked' : label);
+
+                return (
+                    <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
+                        {occupant ? (
+                            <div className="relative group flex items-center justify-center">
+                                {/* Layer 1 & 2: The Base Avatar and Static Highlight Ring */}
+                                {dpUrl ? (
+                                    <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-2 relative z-10 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${isHostSeat ? 'border-[#F9D33A]' : 'border-[#00FFFF]'}`} />
+                                ) : (
+                                    <div className={`rounded-full flex items-center justify-center font-black border-2 bg-gradient-to-br from-[#00FFFF] to-blue-600 relative z-10 ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-2xl'} ${isHostSeat ? 'border-[#F9D33A] text-[#010B1C] from-[#D4AF37] to-[#F9D33A]' : 'border-[#00FFFF] text-[#010B1C]'}`}>
+                                        {occupantName.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                {isOfflineHost && (
+                                    <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-20 overflow-hidden">
+                                        <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded-full backdrop-blur-sm">Left</span>
+                                    </div>
+                                )}
+                                {isSeatMuted ? (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-20">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
+                                    </div>
+                                ) : ((isMe ? isMuted : isOccupantMuted) ? (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border border-gray-600 shadow-md z-20">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-gray-400"></i>
+                                    </div>
+                                ) : null)}
+                                {isLocked && (
+                                    <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
+                                        <i className="fa-solid fa-lock text-[8px] text-white"></i>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="relative group">
+                                <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/30 bg-[#021633]/50 hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
+                                    <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
+                                </div>
+                                {isSeatMuted && (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-10">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupantName}</span>
+                    </div>
+                )
+            };
+
+            const handleUpdateMusic = (title) => {
+                const payload = title ? { title, isPlaying: true } : null;
+                sendBroadcast('music_status', payload);
+                setCurrentMusic(payload);
+                safeAlert(title ? "Music status updated!" : "Music status cleared.");
+            };
+
+            return (
+                <div className="flex-1 flex flex-col relative z-10">
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
+                        <div className="flex items-center gap-2 overflow-hidden pr-2 flex-1 min-w-0">
+                            <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors" title="Back to Rooms">
+                                <i className="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div className="flex flex-col overflow-hidden min-w-0">
+                                <h2 className="text-lg sm:text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
+                                <p className="text-xs text-[#00FFFF] font-bold">
+                                    <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> {activeRoom.room_type} Room
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
+                            <button onClick={() => !isProcessing && leaveRoom()} disabled={isProcessing} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
+                        </div>
+                    </div>
+                    {activeRoom.announcement && (
+                        <div className="mx-4 mt-3 p-3 bg-[#021633]/80 rounded-xl border border-[#D4AF37]/40 text-xs text-[#F9D33A] shadow-[0_0_10px_rgba(212,175,55,0.2)] backdrop-blur flex items-start gap-2 animate-in slide-in-from-top-2 z-20 relative">
+                            <i className="fa-solid fa-bullhorn mt-0.5 animate-pulse"></i>
+                            <span>{activeRoom.announcement}</span>
+                        </div>
+                    )}
+                    {currentMusic && (
+                        <div className="absolute top-[calc(64px+max(env(safe-area-inset-top),_24px))] left-1/2 -translate-x-1/2 bg-[#021633]/80 backdrop-blur-md border border-[#00FFFF]/40 rounded-full px-4 py-1.5 flex items-center gap-2 z-20 shadow-[0_0_15px_rgba(0,255,255,0.2)] w-max max-w-[90%]">
+                            <i className="fa-solid fa-music text-[#00FFFF] animate-pulse text-[10px]"></i>
+                            <span className="text-[#E0F7FA] text-xs font-bold truncate">{currentMusic.title}</span>
+                        </div>
+                    )}
+                    <div className="p-6">
+                        <div className="flex justify-center gap-8 mb-8">
+                            {renderSeat(0,
+                                participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0) ||
+                                ((activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && !participants.some(p => String(p.user_id) === String(activeRoom.host_user_id)) ? { is_offline_host: true, user_id: activeRoom.host_user_id, user_name: "Host" } : undefined),
+                                "Host", true
+                            )}
+                            {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 1), "Partner", true)}
+                        </div>
+                        <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
+                            {[2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+                                <React.Fragment key={i}>
+                                    {renderSeat(i, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === i), `Seat ${i}`)}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-24">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col pointer-events-auto overscroll-contain">
+                            <div className="flex flex-col gap-2 mt-auto pb-2">
+                                {chatMessages.map((msg, idx) => {
+                                    if (msg.isSystem) {
+                                        return (
+                                            <div key={msg.id || idx} className={`bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm animate-in fade-in zoom-in duration-300 ${msg.type === 'entry' ? 'bg-gradient-to-r from-[#00FFFF]/20 to-blue-500/20 text-[#00FFFF] border-[#00FFFF]/40 shadow-[0_0_10px_rgba(0,255,255,0.2)] font-bold' : ''}`}>
+                                                <i className={`fa-solid ${msg.type === 'entry' ? 'fa-plane-arrival' : 'fa-shoe-prints'}`}></i> {msg.text}
+                                            </div>
+                                        );
+                                    }
+
+                                    const senderName = msg?.user_name || msg?.userName || "User";
+                                    const senderPhoto = msg?.user_avatar || msg?.userAvatar || msg?.photo_url || msg?.photoUrl || null;
+                                    const senderId = msg?.user_id || msg?.userId || "unknown";
+
+                                    return (
+                                        <div key={msg.id || idx} className="flex items-end gap-2 max-w-[85%] animate-in fade-in slide-in-from-bottom-2">
+                                            <div
+                                                className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer shadow-sm"
+                                                onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: senderId, user_name: senderName, photo_url: senderPhoto }); }}
+                                            >
+                                                {senderPhoto ? <img src={senderPhoto} className="w-full h-full object-cover" /> : senderName.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit shadow-sm">
+                                                <span className="font-bold text-[#A4DFE6] cursor-pointer hover:underline text-[10px] block mb-0.5 leading-none" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: senderId, user_name: senderName, photo_url: senderPhoto }); }}>{senderName}</span>
+                                                <span className="text-white break-words whitespace-pre-wrap leading-tight">{msg.text || msg.message}</span>
+                                                {(msg.imageUrl || msg.image_url) && (
+                                                    <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(msg.imageUrl || msg.image_url)}>
+                                                        <img src={msg.imageUrl || msg.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        {audience.length > 0 && (
+                            <div className="flex gap-3 pt-2 border-t border-[#0AE0D0]/20 overflow-x-auto no-scrollbar pb-1">
+                                {audience.map(p => {
+                                    const uName = p.user_name || "Unknown";
+                                    return (
+                                        <div key={p.user_id || Math.random()} className="flex flex-col items-center gap-1 shrink-0 w-12 cursor-pointer" title={uName} onClick={(e) => { e.stopPropagation(); handleAvatarClick(p); }}>
+                                            {p.photo_url ? (
+                                                <img src={p.photo_url} alt={uName} className="w-8 h-8 rounded-full object-cover border border-[#0AE0D0]/30" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center border border-[#0AE0D0]/30 text-[#00FFFF] font-bold text-[12px]">
+                                                    {uName.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <span className="text-[8px] text-[#A4DFE6] truncate w-full text-center">{uName.split(' ')[0]}</span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="fixed bottom-0 w-full max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex flex-col gap-2 z-20 pb-[env(safe-area-inset-bottom,_12px)]">
+                        {/* Pending Image Preview Overlay */}
+                        {pendingImage && (
+                            <div className="w-full bg-[#021633] border border-[#0AE0D0]/50 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-[#00FFFF]/30">
+                                        <img src={pendingImage} className="max-w-full max-h-full object-cover" />
+                                    </div>
+                                    <span className="text-xs font-bold text-[#A4DFE6]">Image selected</span>
+                                </div>
+                                <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex gap-2 items-center w-full">
+                            {/* LEFT: Speaker & Mic Options */}
+                            <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
+                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
+                            </button>
+
+                            <button onClick={() => {
+                                if (isProcessing) return;
+                                if (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined) {
+                                    toggleMute();
+                                } else if (isHost) {
+                                    takeSeat(0);
+                                } else {
+                                    safeAlert('Take a seat to use the mic!');
+                                }
+                            }} disabled={isProcessing} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : effectiveMutedUI ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>
+                                <i className={`fa-solid ${effectiveMutedUI || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
+                            </button>
+
+                            {/* MIDDLE: Input Bar with Embedded Image Upload Icon */}
+                            <div className="flex-1 relative flex items-center min-w-[80px]">
+                                <button onClick={() => document.getElementById('chat-image-upload').click()} className="absolute left-3 text-[#A4DFE6] hover:text-[#00FFFF] transition-colors z-10">
+                                    <i className="fa-solid fa-image text-sm"></i>
+                                </button>
+                                <input type="file" id="chat-image-upload" accept="image/*" className="hidden" onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                        const img = new Image();
+                                        img.onload = () => {
+                                            const canvas = document.createElement('canvas');
+                                            let width = img.width, height = img.height;
+                                            const maxDim = 800; // Aggressive compression for live websockets
+                                            if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                                            else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                                            canvas.width = width; canvas.height = height;
+                                            const ctx = canvas.getContext('2d');
+                                            ctx.drawImage(img, 0, 0, width, height);
+                                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                                            setPendingImage(compressedBase64);
+                                        };
+                                        img.src = ev.target.result;
+                                    };
+                                    reader.readAsDataURL(file);
+                                    e.target.value = ''; // Reset input
+                                }} />
+                                <input
+                                    value={chatInput} onChange={e => setChatInput(e.target.value)}
+                                    placeholder="Message room..."
+                                    className="w-full bg-[#021633] border border-[#0AE0D0]/30 rounded-full pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF]"
+                                    onKeyDown={(e) => { if (e.key === 'Enter' && (chatInput.trim() || pendingImage)) { sendChat(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }}
+                                />
+                            </div>
+
+                            {/* RIGHT: Send Button & Settings */}
+                            <button onClick={() => { if (chatInput.trim() || pendingImage) { sendChat(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className="w-9 h-9 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center hover:bg-[#00d8d8] shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors">
+                                <i className="fa-solid fa-paper-plane text-sm"></i>
+                            </button>
+
+                            {isHost && (
+                                <button onClick={() => setShowSettingsModal(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 transition-colors bg-transparent">
+                                    <i className="fa-solid fa-sliders text-sm"></i>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {isHost && micRequests.length > 0 && (
+                        <button onClick={() => setShowRequestsModal(true)} className="absolute bottom-20 right-4 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-[0_0_15px_rgba(255,0,0,0.5)] animate-bounce flex items-center gap-1.5 z-30">
+                            <i className="fa-solid fa-hand"></i> {micRequests.length} Requests
+                        </button>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { stepDown(); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Move to Audience</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'host_target' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant?.user_name || showActionModal.occupant?.name || "User"}</h3>
+                                <div className="flex flex-col gap-3">
+                                    {showActionModal.occupant.is_muted ? (
+                                        <button onClick={() => { sendHostAction('unmute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white rounded-xl font-bold transition-colors border border-green-500/50">Unmute Microphone</button>
+                                    ) : (
+                                        <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
+                                    )}
+                                    <button onClick={() => {
+                                        const isSeatMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted: isSeatMuted });
+                                        setMutedSeats(prev => ({ ...prev, [showActionModal.seatNum]: isSeatMuted }));
+                                        setShowActionModal(null);
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
+                                    <button onClick={() => { sendHostAction('lift_user', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
+                                    <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'empty_seat_host' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat {showActionModal.seatNum}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.seatNum }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
+                                    <button onClick={() => {
+                                        const isSeatMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted: isSeatMuted });
+                                        setMutedSeats(prev => ({ ...prev, [showActionModal.seatNum]: isSeatMuted }));
+                                        setShowActionModal(null);
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => {
+                                        const isLocked = !lockedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked });
+                                        setLockedSeats(prev => ({ ...prev, [showActionModal.seatNum]: isLocked }));
+                                        setShowActionModal(null);
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${lockedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white border-red-500/50'}`}>
+                                        {lockedSeats[showActionModal.seatNum] ? 'Unlock Seat' : 'Lock Seat'}
+                                    </button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'change_seat_self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-chair"></i></div>
+                                <h3 className="text-xl font-bold text-white mb-2">Change Seat?</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">Do you want to move to Seat {showActionModal.seatNum}?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowActionModal(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                    <button onClick={() => { takeSeat(showActionModal.seatNum); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Move</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'invite_to_seat' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-t-3xl p-4 w-full max-w-md h-[60vh] flex flex-col border border-[#0AE0D0]/30 shadow-[0_-10px_40px_rgba(0,255,255,0.15)]" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Invite to Seat {showActionModal.seatNum}</h3>
+                                <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
+                                    {(() => {
+                                        const candidates = [
+                                            ...seats.filter(s => s && s.user_id && s.user_id !== currentUserId && s.user_id !== showActionModal.oldOccupant?.user_id).map(s => ({ ...s, isSeated: true })),
+                                            ...audience.map(a => ({ ...a, isSeated: false }))
+                                        ];
+
+                                        if (candidates.length === 0) return <p className="text-gray-400 text-center py-10 italic">No eligible users to invite.</p>;
+
+                                        return candidates.map((c, i) => (
+                                            <div key={i} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10 hover:border-[#0AE0D0]/40 transition-colors">
+                                                <div className="flex items-center gap-3 text-white font-bold text-sm">
+                                                    {c.photo_url || c.user_avatar ? (
+                                                        <img src={c.photo_url || c.user_avatar} className="w-10 h-10 rounded-full object-cover border border-[#00FFFF]/30" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 text-lg">{String(c.user_name || 'U').charAt(0).toUpperCase()}</div>
+                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className="truncate max-w-[150px]">{String(c.user_name || 'User')}</span>
+                                                        <span className="text-[10px] text-[#A4DFE6] font-normal">{c.isSeated ? `Currently on Seat ${c.seat_index}` : 'In Audience'}</span>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => {
+                                                    if (showActionModal.oldOccupant) {
+                                                        moveToAudience(showActionModal.oldOccupant.user_id, showActionModal.seatNum, showActionModal.oldOccupant.user_name, showActionModal.oldOccupant.photo_url);
+                                                    }
+                                                    if (activeChannelRef.current) {
+                                                        activeChannelRef.current.send({ type: 'broadcast', event: 'invite', payload: { target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName } });
+                                                    }
+                                                    safeAlert('Invite sent!');
+                                                    setShowActionModal(null);
+                                                }} className="bg-[#00FFFF] text-[#010B1C] px-4 py-1.5 rounded-lg text-xs font-black shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Invite</button>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {pendingInvite && (
+                        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPendingInvite(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50">
+                                    <i className="fa-solid fa-microphone"></i>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Host Invitation</h3>
+                                <p className="text-sm text-[#A4DFE6] mb-6">{pendingInvite?.hostName || pendingInvite?.host_name || "The host"} invited you to take Seat {pendingInvite?.seatNum ?? pendingInvite?.seatIndex ?? "a seat"}. Do you accept?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
+                                    <button onClick={() => {
+                                        takeSeat(pendingInvite.seatNum, activeRoom.id, null, true);
+                                        setPendingInvite(null);
+                                    }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showRequestsModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowRequestsModal(false)}>
+                            <div className="bg-[#021633] rounded-t-2xl p-4 w-full max-w-md h-[50vh] flex flex-col border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-white mb-4">Mic Requests</h3>
+                                <div className="flex-1 overflow-y-auto space-y-2">
+                                    {micRequests.length === 0 && <p className="text-gray-400 text-center py-10">No pending requests.</p>}
+                                    {micRequests.map(req => (
+                                        <div key={req.uid} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
+                                            <div className="flex items-center gap-2 text-white font-bold text-sm">
+                                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">{String(req?.name || req?.user_name || 'U').charAt(0).toUpperCase()}</div>
+                                                <div>
+                                                    <p>{req?.name || req?.user_name || "Unknown User"}</p>
+                                                    <p className="text-[10px] text-gray-400 font-normal">Requests Seat {req.seatNum}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setMicRequests(prev => prev.filter(r => r.uid !== req.uid))} className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Reject</button>
+                                                <button onClick={() => { sendBroadcast('approve_seat', { target_uid: req.uid, seatNum: req.seatNum }); setMicRequests(prev => prev.filter(r => r.uid !== req.uid)); }} className="bg-[#00FFFF] text-[#010B1C] px-3 py-1.5 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(0,255,255,0.4)]">Approve</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showParticipantsModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom" onClick={() => setShowParticipantsModal(false)}>
+                            <div className="bg-[#021633] w-full max-w-md h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white">Participants ({participants.length})</h3>
+                                    <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3">
+                                    {participants.map(p => (
+                                        <div key={p.id} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10">
+                                            <div className="flex items-center gap-3">
+                                                {p.photo_url ? <img src={p.photo_url} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-[#00FFFF] text-[#010B1C] font-bold flex items-center justify-center">{String(p?.user_name || p?.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                <div>
+                                                    <p className="text-white font-bold text-sm">{p?.user_name || p?.name || "User"} {p.user_id === activeRoom.host_user_id && <i className="fa-solid fa-crown text-yellow-400 text-xs ml-1"></i>}</p>
+                                                    <p className="text-[#A4DFE6] text-[10px]">{p.seat_number !== null ? `Seat ${p.seat_number}` : 'Audience'} • ID: {p.user_id}</p>
+                                                </div>
+                                            </div>
+                                            {isHost && p.user_id !== String(tgUser.id) && (
+                                                <div className="flex gap-2">
+                                                    {p.is_muted ? (
+                                                        <button onClick={() => { sendHostAction('unmute', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center hover:bg-green-500 hover:text-white" title="Unmute Mic"><i className="fa-solid fa-microphone text-xs"></i></button>
+                                                    ) : (
+                                                        <button onClick={() => { sendHostAction('mute', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white" title="Mute Mic"><i className="fa-solid fa-microphone-slash text-xs"></i></button>
+                                                    )}
+                                                    <button onClick={() => { sendHostAction('kick', p.user_id); setShowParticipantsModal(false); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Kick User"><i className="fa-solid fa-ban text-xs"></i></button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showSettingsModal && <RoomSettingsModal activeRoom={activeRoom} onClose={() => setShowSettingsModal(false)} onSave={updateRoomSettings} currentMusic={currentMusic} onUpdateMusic={handleUpdateMusic} />}
+                </div>
+            );
+        };
+
+
+        // ==========================================
+        // 🚀 AI MENTOR TAB (ATAXY AI MENTOR)
+        // ==========================================
+        const AIMentorView = () => {
+            const [msg, setMsg] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [chats, setChats] = useState([
+                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, a mentor to help all the students. I can help you solve Physics, Chemistry, and Biology doubts. Ask me anything!" }
+            ]);
+            const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
+            const chatEndRef = useRef(null);
+
+            useEffect(() => { chatEndRef.current?.scrollIntoView(); }, [chats, isTyping]);
+
+            useEffect(() => {
+                return () => AIAudioPlayer.stop();
+            }, []);
+
+            const sendMsg = async (e) => {
+                e.preventDefault();
+                if (!msg.trim()) return;
+
+                const userMsg = msg;
+                setChats(prev => [...prev, { id: Date.now(), sender: 'user', text: userMsg }]);
+                setMsg('');
+                setIsTyping(true);
+
+                let success = false;
+                let attempts = 0;
+                const maxAttempts = 6; // Queue up to 6 times (1 minute)
+                let finalResponse = "Connection error with ATAXY Mentor.";
+                let finalAudio = null;
+
+                while (attempts < maxAttempts && !success) {
+                    try {
+                        const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
+                        const res = await fetch(proxyUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ query_text: userMsg })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            finalResponse = data.text_response || "Sorry, I couldn't process that.";
+                            finalAudio = data.audio_base64;
+                            success = true;
+                        } else {
+                            const errorData = await res.json().catch(() => ({}));
+                            if (res.status === 500 || res.status === 400) {
+                                finalResponse = `Server Error: ${errorData.error || res.statusText}`;
+                                success = true; // Stop retrying on hard errors
+                            }
+                        }
+                    } catch (err) {
+                        console.warn(`Chat attempt ${attempts + 1} failed. Retrying...`);
+                    }
+                    if (!success) {
+                        attempts++;
+                        if (attempts < maxAttempts) await new Promise(r => setTimeout(r, 10000));
+                    }
+                }
+
+                if (!success) finalResponse = "I am currently receiving a very high volume of requests. Please try again in a minute!";
+
+                setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: finalResponse, audio: finalAudio }]);
+
+                setIsTyping(false);
+            };
+
+            return (
+                <div className="pb-[calc(140px_+_env(safe-area-inset-bottom,_0px))] animate-in fade-in flex flex-col h-full bg-gray-50 dark:bg-gray-950">
+                    <div className="fixed top-[max(env(safe-area-inset-top),_24px)] w-full max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                        <div className="flex items-center gap-3">
+                            <AtaxyLogo className="w-10 h-10 rounded-full border border-purple-500/30 shadow-inner" />
+                            <div>
+                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY Mentor</h2>
+                                <p className="text-[10px] text-purple-500 font-bold tracking-wide">Powered by ATAXY</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pt-[70px]">
+                        {chats.map((c, i) => (
+                            <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] p-3.5 rounded-2xl shadow-sm text-sm whitespace-pre-wrap leading-relaxed ${c.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
+                                    <FormattedText text={c.text} />
+                                    {c.sender === 'ai' && <AIAudioPlayerUI message={c} messageId={c.id} audioState={audioState} setAudioState={setAudioState} />}
+                                </div>
+                            </div>
+                        ))}
+                        {isTyping && (
+                            <div className="flex justify-start">
+                                <div className="bg-gray-900 border border-purple-500/50 p-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(168,85,247,0.2)] flex flex-col gap-3 w-[240px] relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(168,85,247,0.15),transparent)] animate-[scan_1.5s_linear_infinite]"></div>
+                                    <div className="flex items-center gap-2 relative z-10">
+                                        <div className="relative flex items-center justify-center w-6 h-6">
+                                            <div className="absolute inset-0 border-2 border-cyan-400 rounded-full animate-[spin_2s_linear_infinite] border-t-transparent"></div>
+                                            <i className="fa-solid fa-brain text-purple-400 text-[10px] animate-pulse"></i>
+                                        </div>
+                                        <span className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-widest">Ataxy Neural Net</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5 relative z-10">
+                                        <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden shadow-inner">
+                                            <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 w-1/3 rounded-full animate-[pingPong_1s_ease-in-out_infinite_alternate]"></div>
+                                        </div>
+                                        <div className="text-[9px] text-gray-400 font-medium uppercase tracking-widest text-right animate-pulse">Synthesizing Concept...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    <form onSubmit={sendMsg} className="fixed bottom-[calc(72px_+_env(safe-area-inset-bottom,_0px))] w-full max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
+                        <input value={msg} onChange={e => setMsg(e.target.value)} type="text" placeholder="Ask your doubt..." className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-0 focus:outline-none text-gray-900 dark:text-white" />
+                        <button type="submit" disabled={isTyping} className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center hover:bg-purple-700 shadow-md transition-colors"><i className="fa-solid fa-arrow-up text-sm"></i></button>
+                    </form>
+                </div>
+            );
+        };
+
+
+
+        // ==========================================
+        // ⏱️ PRACTICE SESSION TIMER
+        // ==========================================
+        const PracticeTimer = ({ active, questionId, isAnswered }) => {
+            const timesRef = useRef({});
+            const [time, setTime] = useState(0);
+
+            useEffect(() => {
+                if (questionId) {
+                    setTime(timesRef.current[questionId] || 0);
+                }
+            }, [questionId]);
+
+            useEffect(() => {
+                if (!active || !questionId || isAnswered) return;
+                const timer = setInterval(() => {
+                    setTime(t => { const newTime = t + 1; timesRef.current[questionId] = newTime; return newTime; });
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [active, questionId, isAnswered]);
+
+            const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+            return (
+                <div className="text-[13px] font-bold tracking-wider flex items-center gap-1.5">
+                    <i className="fa-regular fa-clock"></i> {formatTime(time)}
+                </div>
+            );
+        };
+
+        // ==========================================
+        // 📱 GLOBAL STATUS BAR SPACER
+        // ==========================================
+        const GlobalStatusBar = ({ isVoiceRoom }) => {
+            return (
+                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md h-[max(env(safe-area-inset-top),_24px)] z-[9999999] transition-colors duration-300 ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-[#00A7A7] dark:bg-[#021633] shadow-md'}`}></div>
+            );
+        };
+
+        // ==========================================
+        // 🚀 MAIN APP & NAVIGATION ROUTER
+        // ==========================================
+        function App() {
+            const safeRenderText = (val) => {
+                if (val === null || val === undefined) return '';
+                if (typeof val === 'object') {
+                    try { return JSON.stringify(val); } catch (e) { return 'Object'; }
+                }
+                return String(val);
+            };
+
+            const [isDarkMode, setIsDarkMode] = useState(() => safeGetStr('ataxy_theme', 'dark') === 'dark');
+            useEffect(() => {
+                const themeMeta = document.getElementById('theme-color-meta');
+                if (isDarkMode) {
+                    document.documentElement.classList.add('dark');
+                    safeSetItem('ataxy_theme', 'dark');
+                    try { if (window.Telegram?.WebApp) { window.Telegram.WebApp.setHeaderColor('#021633'); window.Telegram.WebApp.setBackgroundColor('#010B1C'); } } catch (e) { }
+                    if (themeMeta) themeMeta.setAttribute('content', '#021633');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    safeSetItem('ataxy_theme', 'light');
+                    try { if (window.Telegram?.WebApp) { window.Telegram.WebApp.setHeaderColor('#00A7A7'); window.Telegram.WebApp.setBackgroundColor('#FBFBFB'); } } catch (e) { }
+                    if (themeMeta) themeMeta.setAttribute('content', '#00A7A7');
+                }
+            }, [isDarkMode]);
+
+            const [isVerified, setIsVerified] = useState(() => safeGetStr('ataxy_verified', '') === 'true');
+            const [tgUser, setTgUser] = useState(() => {
+                const tg = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                if (tg && tg.id) return tg;
+                const randomId = "100" + Math.floor(Math.random() * 1000);
+                return { first_name: "Student_" + randomId.substring(3), id: randomId, username: "student" };
+            });
+
+            const voiceState = useGlobalVoice(tgUser);
+            const [showSplash, setShowSplash] = useState(true);
+            const [splashFading, setSplashFading] = useState(false);
+            const [pendingJumpQuestion, setPendingJumpQuestion] = useState(null);
+            const [returnPath, setReturnPath] = useState(null);
+            const [vcRoomActive, setVcRoomActive] = useState(false);
+            const [vcRoomMinimized, setVcRoomMinimized] = useState(false);
+            const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+            useEffect(() => {
+                const handleOffline = () => setIsOffline(true);
+                const handleOnline = () => {
+                    setIsOffline(false);
+                    if (typeof supabase !== 'undefined' && supabase && supabase.realtime) {
+                        try { supabase.realtime.connect(); } catch (e) { }
+                    }
+                };
+                window.addEventListener('offline', handleOffline);
+                window.addEventListener('online', handleOnline);
+                return () => { window.removeEventListener('offline', handleOffline); window.removeEventListener('online', handleOnline); };
+            }, []);
+
+            useEffect(() => {
+                const fadeTimer = setTimeout(() => setSplashFading(true), 1500);
+                const removeTimer = setTimeout(() => setShowSplash(false), 2000);
+                return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
+            }, []);
+
+            const handleBackRef = useRef(null);
+
+            const handleBack = () => {
+                const event = new CustomEvent('ataxy_back_requested', { cancelable: true });
+                window.dispatchEvent(event);
+                if (event.defaultPrevented) return;
+
+                if (showAnalyticsModal) setShowAnalyticsModal(false);
+                else if (historyViewType) setHistoryViewType(null);
+                else if (showQuiz) {
+                    if (returnPath) {
+                        setHistoryViewType(returnPath.type);
+                        if (returnPath.wasAnalyticsOpen) setShowAnalyticsModal(true);
+                        setCurrentTab('profile');
+                        setReturnPath(null);
+                        setShowQuiz(false);
+                        setActivePracticeChapter(null);
+                        setActivePracticeSubject(null);
+                    } else {
+                        setShowQuiz(false);
+                    }
+                }
+                else if (voiceState.activeRoom && !voiceState.isMinimized) { voiceState.setIsMinimized(true); }
+                else if (vcRoomActive && !vcRoomMinimized) {
+                    window.dispatchEvent(new Event('minimize_vc_room'));
+                }
+                else if (activePracticeChapter) setActivePracticeChapter(null);
+                else if (activePracticeSubject) setActivePracticeSubject(null);
+                else if (activePracticeFile) setActivePracticeFile(null);
+                else if (activePracticeBatch) setActivePracticeBatch(null);
+                else if (currentTab !== 'home') setCurrentTab('home');
+            };
+
+            const resetDeepState = () => {
+                setShowAnalyticsModal(false);
+                setHistoryViewType(null);
+                setShowQuiz(false);
+                setActivePracticeChapter(null);
+                setActivePracticeSubject(null);
+                setActivePracticeFile(null);
+                setActivePracticeBatch(null);
+                setReturnPath(null);
+            };
+
+            useEffect(() => { handleBackRef.current = handleBack; });
+
+            useEffect(() => {
+                const tg = window.Telegram?.WebApp;
+                if (!tg) return;
+                const onTgBack = () => { if (handleBackRef.current) handleBackRef.current(); };
+                tg.BackButton.onClick(onTgBack);
+                return () => tg.BackButton.offClick(onTgBack);
+            }, []);
+
+            const jumpToQuestion = (q) => {
+                setReturnPath({
+                    type: historyViewType,
+                    wasAnalyticsOpen: showAnalyticsModal
+                });
+
+                setShowAnalyticsModal(false);
+                const subject = qbankData.find(s => s.name === q.subjectName);
+                if (subject) {
+                    setActivePracticeSubject(subject);
+                    const chapter = subject.chapters?.find(c => c.name === q.chapterName);
+                    if (chapter) {
+                        setActivePracticeChapter(chapter);
+                        setPracticeSelectedTopic(q.topicName);
+                        setPendingJumpQuestion(q.id);
+                    }
+                }
+                setHistoryViewType(null);
+                setCurrentTab('questions');
+                setShowQuiz(true);
+            };
+
+            const renderExpandedQuestionDetails = (q) => {
+                const attempt = practiceAttempts[q.id];
+                return (
+                    <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 animate-in fade-in">
+                        {q.imageUrl && (
+                            <div className="mb-4 rounded-xl overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700 p-2">
+                                <img src={q.imageUrl} alt="Question" className="max-w-full max-h-48 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                            </div>
+                        )}
+                        <div className="flex flex-col border border-gray-300 dark:border-gray-700 rounded-sm overflow-hidden mb-4 relative">
+                            {Array.isArray(q.options) ? q.options.map((opt, idx) => {
+                                const isSelected = attempt === idx;
+                                const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === q.correctOption;
+                                let bg = "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200";
+                                let numBg = "border-r border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400";
+                                if (isCorrectChoice) {
+                                    bg = "bg-[#e6f4ea] dark:bg-green-900/20 text-[#1e7e34] dark:text-green-400 font-semibold";
+                                    numBg = "border-r border-[#cce8d6] dark:border-green-800 bg-[#cce8d6] dark:bg-green-800 text-[#1e7e34] dark:text-green-400 font-semibold";
+                                } else if (isSelected) {
+                                    bg = "bg-[#fce8e6] dark:bg-red-900/20 text-[#c5221f] dark:text-red-400 font-semibold";
+                                    numBg = "border-r border-[#fad2cf] dark:border-red-800 bg-[#fad2cf] dark:bg-red-800 text-[#c5221f] dark:text-red-400 font-semibold";
+                                }
+                                return (
+                                    <div key={idx} className={`np-grid-btn w-full text-left flex items-stretch border-b border-gray-300 dark:border-gray-700 last:border-b-0 ${bg} relative`}>
+                                        <div className={`w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] ${numBg}`}>({idx + 1})</div>
+                                        <div className="p-3 text-sm w-full text-left break-words overflow-hidden pr-16"><FormattedText text={opt} /></div>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-end gap-1">
+                                            {isSelected && !isCorrectChoice && <span className="text-[9px] uppercase tracking-wider text-red-500 font-bold bg-white dark:bg-gray-900 px-1 rounded shadow-sm border border-red-100 dark:border-red-900"><i className="fa-solid fa-times"></i> Pick</span>}
+                                            {isCorrectChoice && <i className="fa-solid fa-check-circle text-green-600 dark:text-green-400 text-lg bg-white dark:bg-transparent rounded-full shadow-sm dark:shadow-none"></i>}
+                                        </div>
+                                    </div>
+                                );
+                            }) : null}
+                        </div>
+                        {q.explanation && (
+                            <div className="p-3 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-xl text-sm text-gray-800 dark:text-gray-200 shadow-inner">
+                                <p className="font-bold text-yellow-600 dark:text-yellow-500 mb-2 text-[10px] uppercase tracking-wider flex items-center gap-1"><i className="fa-solid fa-lightbulb"></i> Explanation</p>
+                                <FormattedText text={q.explanation} />
+                            </div>
+                        )}
+                        <div className="mb-4">
+                            <QuestionAIAssistant q={q} attemptIdx={attempt} />
+                        </div>
+                        {questionNotes[q.id] && (
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs font-semibold text-blue-600 flex items-center gap-1">
+                                        <i className="fa-solid fa-note-sticky"></i> My Notes
+                                    </span>
+                                </div>
+                                <div className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-sm text-sm text-gray-800 dark:text-gray-200 p-3 whitespace-pre-wrap">
+                                    {questionNotes[q.id]}
+                                </div>
+                            </div>
+                        )}
+                        <div className="mt-4 flex justify-end">
+                            <button onClick={(e) => { e.stopPropagation(); jumpToQuestion(q); }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-md transition-colors flex items-center gap-2">
+                                View in Practice <i className="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const [currentTab, setCurrentTab] = useState('home');
+            const [vcChatOpen, setVcChatOpen] = useState(false);
+            const [activePracticeSubject, setActivePracticeSubject] = useState(null);
+            const [activePracticeChapter, setActivePracticeChapter] = useState(null);
+            const [activePracticeBatch, setActivePracticeBatch] = useState(null);
+            const [activePracticeFile, setActivePracticeFile] = useState(null);
+            const [practiceSelectedTopic, setPracticeSelectedTopic] = useState(null);
+            const [showQuiz, setShowQuiz] = useState(false);
+            const [practiceAttempts, setPracticeAttempts] = useState(() => safeGetJSON('ataxy_practice_perf', null) || {});
+            const [practiceReview, setPracticeReview] = useState(() => safeGetJSON('ataxy_practice_review', null) || []);
+            const [practiceVisited, setPracticeVisited] = useState(() => safeGetJSON('ataxy_practice_visited', null) || []);
+            const [practiceShowPalette, setPracticeShowPalette] = useState(false);
+
+            const [bookmarks, setBookmarks] = useState(() => { const b = safeGetJSON('ataxy_bookmarks', null); return Array.isArray(b) ? b : []; });
+            const [questionNotes, setQuestionNotes] = useState(() => safeGetJSON('ataxy_question_notes', null) || {});
+            const [questionFilter, setQuestionFilter] = useState('all');
+            const [showNoteInput, setShowNoteInput] = useState({});
+
+            const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+            const [activeAnalysisTab, setActiveAnalysisTab] = useState('Physics');
+            const [isAnalysisRefreshing, setIsAnalysisRefreshing] = useState(false);
+            const [expandedAnalysisChapter, setExpandedAnalysisChapter] = useState(null);
+            const [analysisChapterFilters, setAnalysisChapterFilters] = useState({ topic: '', incorrect: false, bookmarked: false, notes: false });
+            // 📊 Unified History Viewer State
+            const [historyViewType, setHistoryViewType] = useState(null); // 'bookmarks' | 'incorrect' | 'correct' | 'attempted'
+            const [historySearch, setHistorySearch] = useState('');
+            const [historySubjectFilter, setHistorySubjectFilter] = useState('');
+            const [historyChapterFilter, setHistoryChapterFilter] = useState('');
+            const [historyTopicFilter, setHistoryTopicFilter] = useState('');
+            const [activeHistoryId, setActiveHistoryId] = useState(null);
+            const [confirmClearScope, setConfirmClearScope] = useState(null);
+
+            useEffect(() => {
+                if (historyViewType && activeHistoryId) {
+                    setTimeout(() => document.getElementById(`history-item-${activeHistoryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                }
+            }, [historyViewType, activeHistoryId]);
+
+            const [qbankData, setQbankData] = useState([]);
+            const [qbankDataByTable, setQbankDataByTable] = useState({});
+            const [qbankError, setQbankError] = useState(null);
+
+            // 🟢 Practice Questions State
+            const [loadedQuestions, setLoadedQuestions] = useState([]);
+            const [questionsLoading, setQuestionsLoading] = useState(false);
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+            const handleClearProgress = (scope) => {
+                if (scope === 'all') {
+                    setPracticeAttempts({});
+                } else {
+                    const newAttempts = { ...practiceAttempts };
+                    let idsToRemove = [];
+
+                    if (scope.type === 'subject') {
+                        scope.data.chapters?.forEach(c => c.topics?.forEach(t => t.questions?.forEach(q => idsToRemove.push(q.id))));
+                    } else if (scope.type === 'chapter') {
+                        scope.data.topics?.forEach(t => t.questions?.forEach(q => idsToRemove.push(q.id)));
+                    } else if (scope.type === 'topic') {
+                        scope.data.questions?.forEach(q => idsToRemove.push(q.id));
+                    }
+
+                    idsToRemove.forEach(id => {
+                        delete newAttempts[id];
+                    });
+                    setPracticeAttempts(newAttempts);
+                }
+                setConfirmClearScope(null);
+                try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) { }
+            };
+
+            // 📈 Analytics State (Local Storage Only)
+            const [studyStreak, setStudyStreak] = useState(() => safeGetJSON('ataxy_streak', null) || { count: 1, lastDate: new Date().toDateString() });
+            useEffect(() => {
+                const todayStr = new Date().toDateString();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toDateString();
+                setStudyStreak(prev => {
+                    if (!prev) return { count: 1, lastDate: todayStr };
+                    if (prev.lastDate === todayStr) return prev;
+                    if (prev.lastDate === yesterdayStr) return { count: prev.count + 1, lastDate: todayStr };
+                    return { count: 1, lastDate: todayStr };
+                });
+            }, []);
+            useEffect(() => { safeSetItem('ataxy_streak', JSON.stringify(studyStreak)); }, [studyStreak]);
+
+            const practiceQuestions = useMemo(() => {
+                if (!activePracticeChapter) return [];
+                let flat = [];
+                let gIdx = 1;
+                activePracticeChapter.topics?.forEach(t => {
+                    t.questions?.forEach(q => flat.push({ ...q, globalIndex: gIdx++, topicId: t.id, topicName: t.name }));
+                });
+                return flat;
+            }, [activePracticeChapter]);
+
+            // Daily Targets
+            const getTodayStr = () => new Date().toISOString().split('T')[0];
+            const [selectedDate, setSelectedDate] = useState(getTodayStr());
+            const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', null) || {});
+            const [newTarget, setNewTarget] = useState("");
+            const [showDetailedAnalyzer, setShowDetailedAnalyzer] = useState(false);
+
+            useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
+            useEffect(() => {
+                const tg = window.Telegram?.WebApp;
+                if (tg) {
+                    // 1. App Ready Signal: Tells Telegram the webview is fully loaded
+                    tg.ready();
+                    // 2. Expand Fallback: Expands the app to max height for older clients
+                    tg.expand();
+                    // 3. Native Fullscreen: Hides the system UI (time, battery, etc.)
+                    try {
+                        if (typeof tg.requestFullscreen === 'function') {
+                            tg.requestFullscreen();
+                        }
+                    } catch (e) {
+                        console.warn('Fullscreen request failed or not supported:', e);
+                    }
+                }
+            }, []);
+            useEffect(() => {
+                const registerTelegramUser = async () => {
+                    if (!tgUser?.id) return;
+                    try {
+                        await fetch(`${BACKEND_URL}/api/neet/user/register`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                telegramUserId: tgUser.id,
+                                firstName: tgUser.first_name || '',
+                                lastName: tgUser.last_name || '',
+                                username: tgUser.username || '',
+                                photoUrl: tgUser.photo_url || ''
+                            })
+                        });
+                        safeSetItem('ataxy_registered_telegram_user_id', String(tgUser.id));
+                    } catch (error) {
+                        console.warn('Telegram user registration failed', error);
+                    }
+                };
+
+                if (isVerified && tgUser?.id) {
+                    const registeredId = safeGetStr('ataxy_registered_telegram_user_id', '');
+                    if (registeredId !== String(tgUser.id)) {
+                        registerTelegramUser();
+                    }
+                }
+            }, [isVerified, tgUser]);
+            useEffect(() => { safeSetItem('ataxy_practice_perf', JSON.stringify(practiceAttempts)); }, [practiceAttempts]);
+            useEffect(() => { safeSetItem('ataxy_practice_review', JSON.stringify(practiceReview)); }, [practiceReview]);
+            useEffect(() => { safeSetItem('ataxy_practice_visited', JSON.stringify(practiceVisited)); }, [practiceVisited]);
+
+            useEffect(() => {
+                if (currentTab === 'practice' && showQuiz) {
+                    let dQs = practiceSelectedTopic ? loadedQuestions.filter(q => q.topicName === practiceSelectedTopic) : loadedQuestions;
+                    if (questionFilter === 'bookmarked') dQs = dQs.filter(q => bookmarks.includes(q.id));
+                    else if (questionFilter === 'incorrect') dQs = dQs.filter(q => { const ansIdx = practiceAttempts[q.id]; return ansIdx !== undefined && ['A', 'B', 'C', 'D'][ansIdx] !== q.correctOption; });
+
+                    const safeIdx = Math.min(currentQuestionIndex, Math.max(0, dQs.length - 1));
+                    const cq = dQs[safeIdx];
+                    if (cq && !practiceVisited.includes(cq.id)) {
+                        setPracticeVisited(prev => [...prev, cq.id]);
+                    }
+                }
+            }, [currentTab, showQuiz, currentQuestionIndex, practiceSelectedTopic, questionFilter, loadedQuestions, practiceVisited]);
+            useEffect(() => { safeSetItem('ataxy_bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
+            useEffect(() => { safeSetItem('ataxy_question_notes', JSON.stringify(questionNotes)); }, [questionNotes]);
+
+            // 🟢 Load QBank on Mount
+            useEffect(() => {
+                const fetchSupabaseData = async () => {
+                    try {
+                        setQbankError(null);
+
+                        // Fetch via your secure Cloudflare Worker Proxy
+                        // Note: Keys are now securely hidden inside the Cloudflare Worker!
+                        const supabaseUrl = 'https://supabase-proxy.thevoicesession.workers.dev/rest/v1';
+                        const headers = {
+                            'Content-Type': 'application/json'
+                        };
+
+                        const fetchTable = async (table) => {
+                            let res;
+                            try {
+                                res = await fetch(`${supabaseUrl}/${encodeURIComponent(table)}?select=*&limit=5000`, {
+                                    headers,
+                                    cache: 'no-store'
+                                });
+                                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            } catch (err) {
+                                throw new Error(`Network Error: Ensure your Supabase Proxy Worker is deployed and online. Details: ${err.message}`);
+                            }
+
+                            if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
+
+                            const text = await res.text();
+                            let data;
+                            try { data = JSON.parse(text); } catch (e) { throw new Error("Invalid JSON"); }
+
+                            let arr = [];
+                            if (Array.isArray(data)) arr = data;
+                            else if (data && Array.isArray(data.data)) arr = data.data;
+                            else if (data && typeof data === 'object') {
+                                for (const key in data) {
+                                    if (Array.isArray(data[key])) { arr = data[key]; break; }
+                                }
+                            }
+
+                            arr.forEach((item, i) => {
+                                if (!item.id) {
+                                    const txt = (item.question_text || item.question || '').substring(0, 15).replace(/[^a-zA-Z0-9]/g, '');
+                                    item.id = `${table}_${i}_${txt}`;
+                                } else {
+                                    item.id = String(item.id);
+                                }
+                            });
+                            return arr;
+                        };
+
+                        let q1 = [], q2 = [], q3 = [];
+                        let errors = [];
+                        try { q1 = await fetchTable('questions'); } catch (e) { errors.push(`Q1: ${e.message}`); }
+                        try { q2 = await fetchTable('Raceee_testttingg_checkinggg'); } catch (e) { errors.push(`Q2: ${e.message}`); }
+                        try { q3 = await fetchTable('basic_mathmatics_&_vector'); } catch (e) { errors.push(`Q3: ${e.message}`); }
+
+                        const allQuestions = [...q1, ...q2, ...q3];
+                        if (allQuestions.length === 0) {
+                            throw new Error(`Cloudflare Proxy empty. Details: ${errors.join(' | ')}`);
+                        }
+                        const questions = allQuestions;
+
+                        // Try to fetch chapters and topics
+                        let chapters = [], topics = [];
+                        try { chapters = await fetchTable('chapters'); } catch (e) { }
+                        try { topics = await fetchTable('topics'); } catch (e) { }
+
+                        const buildTreeForQuestions = (batchQuestions) => {
+                            const subjectsMap = {};
+                            const matchedQuestionIds = new Set();
+
+                            chapters.forEach(chap => {
+                                const subjName = chap.subject || 'Chemistry';
+                                if (!subjectsMap[subjName]) {
+                                    subjectsMap[subjName] = { id: 'sub_' + subjName, name: subjName, icon: subjName === 'Physics' ? '⚛️' : (subjName === 'Biology' ? '🌿' : '⚗️'), chapters: [] };
+                                }
+                                const chapterNode = { id: chap.id, name: chap.name, topics: [] };
+                                const chapTopics = topics.filter(t => t.chapter_id === chap.id);
+
+                                chapTopics.forEach(top => {
+                                    const topicNode = { id: top.id, name: top.name, questions: [] };
+                                    const topQuestions = batchQuestions.filter(q => q.topic_id === top.id || q.topic === top.name);
+
+                                    topQuestions.forEach(q => {
+                                        matchedQuestionIds.add(q.id);
+                                        let parsedOpts = (q.option_a || q.option_b) ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
+                                        if (!parsedOpts || parsedOpts.length === 0) {
+                                            parsedOpts = q.options;
+                                            if (typeof parsedOpts === 'string') { try { parsedOpts = JSON.parse(parsedOpts); } catch (e) { parsedOpts = []; } }
+                                        }
+                                        if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
+
+                                        let correctIdx = parseInt(q.correct_answer, 10);
+                                        if (isNaN(correctIdx) && q.correct_option) {
+                                            correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                                        }
+                                        if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
+                                        if (isNaN(correctIdx)) correctIdx = 0;
+
+                                        topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A', 'B', 'C', 'D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
+                                    });
+                                    if (topicNode.questions.length > 0) { chapterNode.topics.push(topicNode); }
+                                });
+                                if (chapterNode.topics.length > 0) { subjectsMap[subjName].chapters.push(chapterNode); }
+                            });
+
+                            // Process unmatched questions so none are ever lost
+                            const unmatchedQuestions = batchQuestions.filter(q => !matchedQuestionIds.has(q.id));
+                            unmatchedQuestions.forEach((q, idx) => {
+                                const subjName = q.subject || 'Mixed Subjects';
+                                const chapName = q.chapter || 'Mixed Chapters';
+                                const topName = q.topic || 'Mixed Topics';
+
+                                if (!subjectsMap[subjName]) {
+                                    subjectsMap[subjName] = { id: 'sub_unm_' + subjName, name: subjName, icon: '📂', chapters: [] };
+                                }
+                                let chapterNode = subjectsMap[subjName].chapters.find(c => c.name === chapName);
+                                if (!chapterNode) {
+                                    chapterNode = { id: 'chap_unm_' + chapName, name: chapName, topics: [] };
+                                    subjectsMap[subjName].chapters.push(chapterNode);
+                                }
+                                let topicNode = chapterNode.topics.find(t => t.name === topName);
+                                if (!topicNode) {
+                                    topicNode = { id: 'top_unm_' + topName, name: topName, questions: [] };
+                                    chapterNode.topics.push(topicNode);
+                                }
+
+                                let parsedOpts = (q.option_a || q.option_b) ? [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) : null;
+                                if (!parsedOpts || parsedOpts.length === 0) {
+                                    parsedOpts = q.options || q.Options || q.options_array;
+                                    if (typeof parsedOpts === 'string') { try { parsedOpts = JSON.parse(parsedOpts); } catch (e) { parsedOpts = []; } }
+                                }
+                                if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
+
+                                let correctIdx = parseInt(q.correct_answer, 10);
+                                if (isNaN(correctIdx) && q.correct_option) {
+                                    correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                                }
+                                if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
+                                if (isNaN(correctIdx)) correctIdx = 0;
+
+                                topicNode.questions.push({
+                                    id: q.id,
+                                    text: q.question_text || q.question || 'Unnamed Question',
+                                    imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null,
+                                    options: parsedOpts,
+                                    correctOption: ['A', 'B', 'C', 'D'][correctIdx] || 'A',
+                                    correct: correctIdx,
+                                    explanation: q.explanation || q.Explanation || 'No explanation',
+                                    difficulty: q.difficulty || 'Medium',
+                                    ncert: true, accuracy: 'N/A'
+                                });
+                            });
+
+                            let finalData = Object.values(subjectsMap);
+
+                            if (finalData.length > 0) {
+                                // Clean up empty branches
+                                finalData = finalData.filter(s => {
+                                    s.chapters = s.chapters.filter(c => {
+                                        c.topics = c.topics.filter(t => t.questions.length > 0);
+                                        return c.topics.length > 0;
+                                    });
+                                    return s.chapters.length > 0;
+                                });
+                            }
+                            return finalData;
+                        };
+
+                        setQbankDataByTable({
+                            'questions': buildTreeForQuestions(q1),
+                            'Raceee_testttingg_checkinggg': buildTreeForQuestions(q2),
+                            'basic_mathmatics_&_vector': buildTreeForQuestions(q3)
+                        });
+
+                        let finalData = buildTreeForQuestions(allQuestions);
+
+                        if (finalData.length > 0) {
+                            // Clean up empty branches
+                            finalData = finalData.filter(s => {
+                                s.chapters = s.chapters.filter(c => {
+                                    c.topics = c.topics.filter(t => t.questions.length > 0);
+                                    return c.topics.length > 0;
+                                });
+                                return s.chapters.length > 0;
+                            });
+                        }
+
+                        if (finalData.length > 0) {
+                            setQbankData(finalData);
+                        } else {
+                            setQbankError("Connected to Cloudflare proxy, but it returned empty categories.");
+                            setQbankData(ALIEN_QBANK);
+                        }
+                    } catch (e) {
+                        console.error("Cloudflare Proxy Fetch Error:", e);
+                        let errorMsg = e.message;
+                        if (errorMsg === "Failed to fetch" || errorMsg.includes("NetworkError")) {
+                            errorMsg = "Telegram Webview blocked the connection. Try closing the mini-app and opening it again.";
+                        }
+                        setQbankError(errorMsg);
+                        setQbankData(ALIEN_QBANK); // Fallback to local hardcoded data on error
+                    }
+                };
+                fetchSupabaseData();
+            }, []);
+
+            useEffect(() => {
+                if (!activePracticeChapter) {
+                    setLoadedQuestions([]);
+                    setCurrentQuestionIndex(0);
+                    return;
+                }
+
+                const loadQuestions = () => {
+                    setQuestionsLoading(true);
+                    setCurrentQuestionIndex(0);
+
+                    let allQuestions = [];
+                    let gIdx = 1;
+                    try {
+                        if (activePracticeChapter.topics) {
+                            activePracticeChapter.topics.forEach(t => {
+                                if (t && t.questions && Array.isArray(t.questions)) {
+                                    t.questions.forEach(q => allQuestions.push({ ...q, globalIndex: gIdx++, topicId: t?.id, topicName: t?.name }));
+                                }
+                            });
+                        }
+
+                        if (allQuestions.length > 0) {
+                            setLoadedQuestions(allQuestions);
+                        } else {
+                            setLoadedQuestions([]);
+                        }
+                    } catch (err) {
+                        console.error("Critical Error loading questions array", err);
+                    } finally {
+                        setQuestionsLoading(false);
+                    }
+                };
+
+                loadQuestions();
+            }, [activePracticeChapter]);
+
+            useEffect(() => { setPracticeSelectedTopic(null); setPracticeShowPalette(false); }, [activePracticeChapter]);
+
+            useEffect(() => {
+                const tg = window.Telegram?.WebApp;
+                if (!tg) return;
+                const isDeep = showAnalyticsModal || historyViewType || showQuiz || activePracticeChapter || activePracticeSubject || activePracticeFile || activePracticeBatch || currentTab !== 'home' || (voiceState.activeRoom && !voiceState.isMinimized);
+                if (isDeep) {
+                    tg.BackButton.show();
+                } else {
+                    tg.BackButton.hide();
+                }
+            }, [showAnalyticsModal, historyViewType, showQuiz, activePracticeChapter, activePracticeSubject, activePracticeFile, activePracticeBatch, currentTab, voiceState.activeRoom, voiceState.isMinimized]);
+            useEffect(() => {
+                if (loadedQuestions.length > 0 && pendingJumpQuestion) {
+                    const relevantQuestions = practiceSelectedTopic ? loadedQuestions.filter(q => q.topicName === practiceSelectedTopic) : loadedQuestions;
+                    const idx = relevantQuestions.findIndex(q => q.id === pendingJumpQuestion);
+                    if (idx !== -1) {
+                        setCurrentQuestionIndex(idx);
+                    } else {
+                        const globalIdx = loadedQuestions.findIndex(q => q.id === pendingJumpQuestion);
+                        if (globalIdx !== -1) {
+                            setPracticeSelectedTopic(null);
+                            setCurrentQuestionIndex(globalIdx);
+                        }
+                    }
+                    setPendingJumpQuestion(null);
+                }
+            }, [loadedQuestions, pendingJumpQuestion, practiceSelectedTopic]);
+
+if (!isVerified) return <Gatekeeper onVerify={(user) => { setTgUser(user); setIsVerified(true); }} />;
+
+
+const renderHomeView = () => {
+                const currentTargets = targetsData[selectedDate] || [];
+                const toggleTarget = (id) => { const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); setTargetsData({ ...targetsData, [selectedDate]: u }); };
+                const removeTarget = (id) => { const u = currentTargets.filter(t => t.id !== id); setTargetsData({ ...targetsData, [selectedDate]: u }); };
+                const addTarget = (e) => { e.preventDefault(); if (!newTarget.trim()) return; const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false }]; setTargetsData({ ...targetsData, [selectedDate]: u }); setNewTarget(""); };
+
+                // --- DEEP TARGET ANALYZER LOGIC ---
+                let totalTargets = 0;
+                let completedTargets = 0;
+                let productiveDays = 0;
+                
+                const rawDaysData = Object.entries(targetsData)
+                    .sort((a,b) => new Date(b[0]) - new Date(a[0]))
+                    .map(([dateStr, dayTargets]) => {
+                        if (!Array.isArray(dayTargets) || dayTargets.length === 0) return null;
+                        const dayDone = dayTargets.filter(t => t.done).length;
+                        const dayTotal = dayTargets.length;
+                        const dayRate = Math.round((dayDone / dayTotal) * 100);
+                        return { dateStr, dayTargets, dayDone, dayTotal, dayRate };
+                    }).filter(Boolean);
+
+                // Subject Auto-Detection
+                const subjectsBreakdown = { physics: 0, chemistry: 0, biology: 0, mock: 0, other: 0 };
+                const phyRegex = /phy|kinematics|thermo|electro|optics|magnet|mechanic|gravitation|fluid/i;
+                const chemRegex = /chem|organic|inorg|physical|atom|mole|solution|equilibrium|kinetic/i;
+                const bioRegex = /bio|zoo|bot|genetics|cell|plant|human|anatomy|morphology|reproduction/i;
+                const mockRegex = /mock|test|revise|revision|pyq|paper|exam/i;
+
+                rawDaysData.forEach(d => {
+                    totalTargets += d.dayTotal;
+                    completedTargets += d.dayDone;
+                    if (d.dayDone > 0) productiveDays++;
+                    d.dayTargets.forEach(t => {
+                        if (mockRegex.test(t.text)) subjectsBreakdown.mock++;
+                        else if (phyRegex.test(t.text)) subjectsBreakdown.physics++;
+                        else if (chemRegex.test(t.text)) subjectsBreakdown.chemistry++;
+                        else if (bioRegex.test(t.text)) subjectsBreakdown.biology++;
+                        else subjectsBreakdown.other++;
+                    });
+                });
+
+                // Streaks
+                let currentStreak = 0;
+                let bestStreak = 0;
+                let tempStreak = 0;
+                const oldestToNewest = [...rawDaysData].reverse();
+                
+                oldestToNewest.forEach(d => {
+                    if (d.dayRate >= 50) {
+                        tempStreak++;
+                        if (tempStreak > bestStreak) bestStreak = tempStreak;
+                    } else {
+                        tempStreak = 0;
+                    }
+                });
+                const yesterdayDate = new Date();
+                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+                const todayStr = getTodayStr();
+                const lastRecorded = oldestToNewest[oldestToNewest.length - 1]?.dateStr;
+                
+                if (lastRecorded === todayStr || lastRecorded === yesterdayStr) {
+                    currentStreak = tempStreak;
+                } else {
+                    currentStreak = 0;
+                }
+
+                const completionRate = totalTargets > 0 ? Math.round((completedTargets / totalTargets) * 100) : 0;
+                const last7Days = rawDaysData.slice(0, 7).reverse();
+
+                // Dominator Verdict
+                let verdict = "Log targets daily to unlock the Dominator's Verdict.";
+                let verdictColor = "text-gray-400";
+                if (last7Days.length >= 3) {
+                    const recent3 = last7Days.slice(-3); // Get latest 3 days
+                    const recentAvg = Math.round(recent3.reduce((acc, d) => acc + d.dayRate, 0) / recent3.length);
+                    if (recentAvg >= 85) {
+                        verdict = "Unstoppable momentum! You are studying like a pure AIR 1 candidate. Maintain this ruthless consistency.";
+                        verdictColor = "text-[#00FFFF]";
+                    } else if (recentAvg >= 50) {
+                        verdict = "Good effort, but AIR 1 requires obsession. Push your completion rate higher and leave no target behind.";
+                        verdictColor = "text-yellow-400";
+                    } else {
+                        verdict = "Your momentum is dropping. At this rate, your rank will slip. Wake up, focus, and dominate tomorrow!";
+                        verdictColor = "text-red-400";
+                    }
+                }
+
+                let consistencyScore = "Novice";
+                let consistencyColor = "from-gray-400 to-gray-500";
+                if (completionRate >= 90) { consistencyScore = "AIR 1 Candidate"; consistencyColor = "from-yellow-400 to-yellow-600"; }
+                else if (completionRate >= 75) { consistencyScore = "Top Ranker"; consistencyColor = "from-purple-500 to-indigo-600"; }
+                else if (completionRate >= 50) { consistencyScore = "Consistent"; consistencyColor = "from-blue-400 to-blue-600"; }
+                else if (totalTargets > 0) { consistencyScore = "Needs Focus"; consistencyColor = "from-red-400 to-orange-500"; }
+
+                return (
+                    <div className="pb-24 pt-4 animate-in fade-in overflow-x-hidden">
+                        <div className="bg-gradient-to-r from-[#00A7A7] via-[#008f8f] to-cyan-600 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-[0_10px_30px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_30px_rgba(0,255,255,0.2)] border border-transparent dark:border-cyan-500/30 text-white mx-4 mb-6 relative overflow-hidden mt-4 animate-pop-bounce transform hover:scale-[1.02] transition-transform duration-300">
+                            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_100%] animate-[shimmer_3s_infinite]"></div>
+                            <div className="relative z-10 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-2xl font-bold">Hello, {tgUser.first_name}! 👋</h2>
+                                    <p className="text-cyan-100 dark:text-cyan-400 text-[11px] font-bold tracking-widest uppercase mt-1">Welcome to ATAXY</p>
+                                    <p className="text-white/90 dark:text-gray-300 text-sm mt-0.5 font-medium">Ready to crack your goals?</p>
+                                </div>
+                                {tgUser?.photo_url ? (
+                                    <img src={tgUser.photo_url} alt="Profile" className="h-14 w-14 rounded-full border-[3px] border-white/30 dark:border-cyan-500/50 shadow-[0_0_15px_rgba(255,255,255,0.2)] shrink-0 object-cover" />
+                                ) : (
+                                    <div className="h-14 w-14 rounded-full border-[3px] border-white/30 dark:border-cyan-500/50 shadow-[0_0_15px_rgba(255,255,255,0.2)] shrink-0 bg-white dark:bg-slate-800 flex items-center justify-center text-[#00A7A7] dark:text-cyan-400 font-bold text-xl uppercase">
+                                        {tgUser?.first_name ? tgUser.first_name.charAt(0) : 'S'}
+                                    </div>
+                                )}
+                            </div>
+                            <i className="fa-solid fa-rocket absolute -right-2 -bottom-2 text-7xl text-white opacity-10 animate-float"></i>
+                        </div>
+
+                        <div className="px-5 space-y-6">
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
+                                    <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
+                                </div>
+                                <div className="space-y-2 mb-4 min-h-[60px]">
+                                    {currentTargets.length === 0 ? <p className="text-xs text-gray-400 italic text-center py-2">No targets set. Add one below!</p> : currentTargets.map(t => (
+                                        <div key={t.id} className={`flex items-center justify-between p-3 rounded-xl transition-all duration-300 transform ${t.done ? 'bg-gray-50 dark:bg-gray-800 opacity-60 scale-[0.98]' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md'}`}>
+                                            <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
+                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${t.done ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-600'}`}>{t.done && <i className="fa-solid fa-check text-white text-xs animate-pop-in"></i>}</div>
+                                                <span className={`text-sm font-medium ${t.done ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>{t.text}</span>
+                                            </div>
+                                            <button onClick={() => removeTarget(t.id)} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><i className="fa-solid fa-trash text-sm"></i></button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <form onSubmit={addTarget} className="flex gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                                    <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
+                                    <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md"><i className="fa-solid fa-plus"></i></button>
+                                </form>
+                            </div>
+
+                     
+{/* COMPACT TARGET ANALYZER WIDGET */}
+<div onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-br from-gray-900 to-[#010B1C] rounded-2xl p-4 shadow-lg border border-[#00FFFF]/30 cursor-pointer hover:scale-[1.02] transition-all flex items-center justify-between mb-6 animate-slide-up">
+    <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-[#00FFFF]/10 flex items-center justify-center border border-[#00FFFF]/30 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
+            <i className="fa-solid fa-bullseye text-[#00FFFF] text-xl"></i>
+        </div>
+        <div>
+            <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2">Target Analyzer <i className="fa-solid fa-arrow-right text-[10px] text-[#00FFFF] opacity-50"></i></h3>
+            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Today's Completion Rate</p>
+        </div>
+    </div>
+    <div className="text-right">
+        <span className="text-3xl font-black text-[#00FFFF] drop-shadow-md">
+            {currentTargets.length > 0 ? Math.round((currentTargets.filter(t=>t.done).length / currentTargets.length) * 100) : 0}%
+        </span>
+    </div>
+</div>
+{/* Detailed Analyzer Modal */}
+                     {showDetailedAnalyzer && ReactDOM.createPortal(
+                         <div className="fixed inset-0 z-[3000000] bg-[#010B1C]/95 backdrop-blur-xl flex flex-col w-full max-w-md mx-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
+                             <div className="flex items-center gap-3 p-5 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(20px+max(env(safe-area-inset-top),_24px))] shadow-lg relative overflow-hidden">
+                                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
+                                 <button onClick={() => setShowDetailedAnalyzer(false)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-10 h-10 flex items-center justify-center bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full z-10">
+                                     <i className="fa-solid fa-arrow-left"></i>
+                                 </button>
+                                 <div className="flex-1 z-10">
+                                     <h2 className="text-xl font-black text-white leading-tight">Detailed Analysis</h2>
+                                     <p className="text-xs text-[#00FFFF] font-bold uppercase tracking-widest">Performance History</p>
+                                 </div>
+                             </div>
+
+                             <div className="flex-1 overflow-y-auto no-scrollbar p-5 pb-20 relative">
+                                 {/* Summary Header inside Modal */}
+                                 <div className="bg-[#021633] rounded-3xl p-6 shadow-xl border border-[#0AE0D0]/30 mb-6 relative overflow-hidden">
+                                     <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-500 rounded-full filter blur-[60px] opacity-20 pointer-events-none"></div>
+                                     <div className="text-center mb-6">
+                                         <h3 className="text-[#A4DFE6] text-xs font-bold uppercase tracking-widest mb-1">Overall Consistency</h3>
+                                         <div className="text-5xl font-black text-white font-mono drop-shadow-[0_0_15px_rgba(0,255,255,0.3)]">{completionRate}%</div>
+                                         <div className={`mt-3 inline-block bg-gradient-to-r ${consistencyColor} px-4 py-1.5 rounded-full text-white text-xs font-black uppercase tracking-widest shadow-lg`}>
+                                             {consistencyScore}
+                                         </div>
+                                     </div>
+                                     {/* Streaks */}
+                                     <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4 mb-4">
+                                         <div className="bg-[#010B1C]/50 rounded-xl p-3 text-center border border-orange-500/20">
+                                             <div className="text-2xl font-black text-orange-500 flex items-center justify-center gap-1"><i className="fa-solid fa-fire text-lg"></i> {currentStreak}</div>
+                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Current Streak</div>
+                                         </div>
+                                         <div className="bg-[#010B1C]/50 rounded-xl p-3 text-center border border-yellow-500/20">
+                                             <div className="text-2xl font-black text-yellow-500 flex items-center justify-center gap-1"><i className="fa-solid fa-crown text-lg"></i> {bestStreak}</div>
+                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Best Streak</div>
+                                         </div>
+                                     </div>
+
+                                     {/* Base Stats */}
+                                     <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4">
+                                         <div className="text-center">
+                                             <div className="text-xl font-black text-white">{totalTargets}</div>
+                                             <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Targets</div>
+                                         </div>
+                                         <div className="text-center border-l border-[#0AE0D0]/20">
+                                             <div className="text-xl font-black text-green-400">{completedTargets}</div>
+                                             <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Achieved</div>
+                                         </div>
+                                     </div>
+                                 </div>
+
+                                 {/* Dominator's Verdict */}
+                                 <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-5 border border-gray-800 shadow-lg mb-6 relative overflow-hidden group">
+                                     <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/20 rounded-full blur-[40px] pointer-events-none"></div>
+                                     <div className="flex items-center gap-3 mb-3 relative z-10">
+                                         <div className="w-8 h-8 rounded-full bg-[#010B1C] flex items-center justify-center border border-gray-700 shadow-inner shrink-0">
+                                             <i className="fa-solid fa-robot text-purple-400 text-sm"></i>
+                                         </div>
+                                         <h3 className="text-white font-bold text-sm uppercase tracking-widest">Dominator's Verdict</h3>
+                                     </div>
+                                     <p className={`text-sm font-medium leading-relaxed relative z-10 ${verdictColor}`}>{verdict}</p>
+                                 </div>
+
+                                 {/* 7-Day Momentum */}
+                                 <div className="bg-[#021633] rounded-3xl p-5 border border-[#0AE0D0]/20 shadow-lg mb-6 relative overflow-hidden">
+                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400 opacity-50"></div>
+                                     <h3 className="text-[#00FFFF] font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-column"></i> 7-Day Momentum</h3>
+                                     <div className="flex items-end justify-between h-32 gap-2 mt-2">
+                                         {last7Days.map((d, i) => (
+                                             <div key={i} className="flex flex-col items-center flex-1 gap-2 group h-full">
+                                                 <div className="w-full bg-[#010B1C] rounded-t-sm rounded-b-lg h-full relative overflow-hidden flex items-end border border-gray-800 transition-colors group-hover:border-gray-600">
+                                                     <div className={`w-full transition-all duration-1000 ease-out rounded-t-sm rounded-b-lg ${d.dayRate >= 85 ? 'bg-gradient-to-t from-green-600 to-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]' : d.dayRate >= 50 ? 'bg-gradient-to-t from-blue-600 to-blue-400' : 'bg-gradient-to-t from-red-600 to-red-400 opacity-60'}`} style={{ height: `${d.dayRate}%` }}></div>
+                                                 </div>
+                                                 <span className="text-[8px] text-gray-500 font-bold">{d.dateStr.split('-')[2]}/{d.dateStr.split('-')[1]}</span>
+                                             </div>
+                                         ))}
+                                         {last7Days.length === 0 && <div className="w-full text-center text-xs text-gray-500 flex items-center justify-center h-full">No recent data</div>}
+                                     </div>
+                                 </div>
+
+                                 {/* Subject Radar */}
+                                 <div className="grid grid-cols-2 gap-3 mb-6">
+                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-blue-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                         <i className="fa-solid fa-atom absolute -right-3 -bottom-3 text-5xl text-blue-500/10"></i>
+                                         <span className="text-2xl font-black text-blue-400">{subjectsBreakdown.physics}</span>
+                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Physics Focus</span>
+                                     </div>
+                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-emerald-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                         <i className="fa-solid fa-flask absolute -right-3 -bottom-3 text-5xl text-emerald-500/10"></i>
+                                         <span className="text-2xl font-black text-emerald-400">{subjectsBreakdown.chemistry}</span>
+                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Chem Focus</span>
+                                     </div>
+                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-green-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                         <i className="fa-solid fa-leaf absolute -right-3 -bottom-3 text-5xl text-green-500/10"></i>
+                                         <span className="text-2xl font-black text-green-400">{subjectsBreakdown.biology}</span>
+                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Bio Focus</span>
+                                     </div>
+                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-purple-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                         <i className="fa-solid fa-file-pen absolute -right-3 -bottom-3 text-5xl text-purple-500/10"></i>
+                                         <span className="text-2xl font-black text-purple-400">{subjectsBreakdown.mock}</span>
+                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mock/Rev Focus</span>
+                                     </div>
+                                 </div>
+
+                                 <h3 className="text-[#00FFFF] font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
+                                     <i className="fa-solid fa-clock-rotate-left"></i> Day-by-Day History Feed
+                                 </h3>
+
+                                 <div className="space-y-4">
+                                     {rawDaysData.length === 0 ? (
+                                         <div className="text-center text-gray-500 py-10 bg-[#021633] rounded-2xl border border-gray-800 border-dashed">
+                                             <i className="fa-solid fa-folder-open text-3xl mb-3 opacity-50"></i>
+                                             <p className="text-sm font-bold">No historical data found</p>
+                                         </div>
+                                     ) : (
+                                         rawDaysData.map(({ dateStr, dayTargets, dayDone, dayTotal, dayRate }) => {
+                                             const isToday = dateStr === getTodayStr();
+
+                                             return (
+                                                 <div key={dateStr} className="bg-[#021633] border border-[#0AE0D0]/10 rounded-2xl p-4 shadow-md hover:border-[#00FFFF]/30 transition-colors group">
+                                                     <div className="flex justify-between items-center mb-3">
+                                                         <div className="flex items-center gap-2">
+                                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${dayRate === 100 ? 'bg-green-500/20 text-green-400' : (dayRate >= 50 ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400')}`}>
+                                                                 <i className={`fa-solid ${dayRate === 100 ? 'fa-star' : (dayRate >= 50 ? 'fa-fire' : 'fa-triangle-exclamation')} text-sm`}></i>
+                                                             </div>
+                                                             <div>
+                                                                 <h4 className="font-bold text-white text-sm">{isToday ? 'Today' : new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</h4>
+                                                                 <p className="text-[10px] text-gray-400 font-mono">{dayDone} of {dayTotal} tasks done</p>
+                                                             </div>
+                                                         </div>
+                                                         <div className="text-right">
+                                                             <span className={`text-lg font-black ${dayRate === 100 ? 'text-green-400' : (dayRate >= 50 ? 'text-blue-400' : 'text-orange-400')}`}>{dayRate}%</span>
+                                                         </div>
+                                                     </div>
+                                                     
+                                                     <div className="w-full h-1.5 bg-gray-800 rounded-full mb-4 overflow-hidden">
+                                                         <div className={`h-full rounded-full ${dayRate === 100 ? 'bg-green-500' : (dayRate >= 50 ? 'bg-blue-500' : 'bg-orange-500')}`} style={{ width: `${dayRate}%` }}></div>
+                                                     </div>
+
+                                                     <div className="space-y-1.5 border-t border-white/5 pt-3">
+                                                         {dayTargets.map((t, idx) => (
+                                                             <div key={idx} className="flex items-start gap-2">
+                                                                 <i className={`fa-solid mt-0.5 text-[10px] ${t.done ? 'fa-circle-check text-green-500' : 'fa-circle-xmark text-gray-600'}`}></i>
+                                                                 <span className={`text-xs ${t.done ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{t.text}</span>
+                                                             </div>
+                                                         ))}
+                                                     </div>
+                                                 </div>
+                                             );
+                                         })
+                                     )}
+                                 </div>
+                             </div>
+                         </div>,
+                         document.body
+                     )}
+                            <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 mt-6 animate-pop-bounce delay-200">Study Modules</h3>
+                            <div className="grid grid-cols-2 gap-4 mb-6 animate-pop-bounce delay-300">
+                                <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_25px_rgba(0,166,81,0.4)] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
+                                    <i className="fa-solid fa-book-open text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
+                                    <h4 className="font-black text-white text-lg leading-tight">LN modules</h4>
+                                    <i className="fa-solid fa-leaf absolute -right-4 -bottom-4 text-6xl text-green-800/30"></i>
+                                </div>
+                                <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-lg shadow-gray-400/20 dark:shadow-none rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
+                                    <i className="fa-solid fa-layer-group text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
+                                    <h4 className="font-black text-white text-lg leading-tight">Bablu Dablu<br />modules</h4>
+                                    <i className="fa-solid fa-pen-nib absolute -right-4 -bottom-4 text-6xl text-white/5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- NEETPREP PRACTICE ENGINE ---
+            const renderQuestionsView = () => {
+                try {
+                    if (activePracticeChapter) {
+                        if (!showQuiz) {
+                            const totalQs = activePracticeChapter.topics?.reduce((acc, t) => acc + (t.questions?.length || 0), 0) || 0;
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
+                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{safeRenderText(activePracticeChapter.name)}</h2>
+                                        </div>
+                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    </div>
+
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5 mb-6 shadow-sm flex justify-between items-center">
+                                        <div>
+                                            <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">Practice All Topics</h3>
+                                            <p className="text-blue-600 dark:text-blue-400 text-xs font-semibold mt-1">{totalQs} Questions Available</p>
+                                        </div>
+                                        <button
+                                            onClick={() => { if (totalQs > 0) { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }}
+                                            disabled={totalQs === 0}
+                                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors shrink-0 ${totalQs > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/30' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                                        >
+                                            <i className="fa-solid fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+
+                                    <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Specific Topics</h3>
+
+                                    <div className="space-y-3">
+                                        {activePracticeChapter.topics?.map((top, i) => (
+                                            <div key={i} onClick={() => { if (top.questions?.length > 0) { setPracticeSelectedTopic(top.name); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm transition-all group ${top.questions?.length > 0 ? 'cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651]' : 'opacity-60'}`}>
+                                                <div className="flex-1 mr-4">
+                                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(top.name)}</h4>
+                                                    <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{top.questions?.length || 0} Qs</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'topic', data: top }); }} className={`w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center shrink-0 ${top.questions?.length > 0 ? '' : 'hidden'}`} title="Clear Topic Progress">
+                                                        <i className="fa-solid fa-trash-can text-xs"></i>
+                                                    </button>
+                                                    <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 ${top.questions?.length > 0 ? 'group-hover:bg-[#00a651] group-hover:text-white' : ''} transition-colors flex items-center justify-center shrink-0`}>
+                                                        <i className="fa-solid fa-play ml-0.5 text-xs"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        const selectedTopic = practiceSelectedTopic;
+                        const attempts = practiceAttempts;
+                        const showPalette = practiceShowPalette;
+                        const allQuestions = loadedQuestions;
+
+                        let displayedQuestions = selectedTopic ? allQuestions.filter(q => q.topicName === selectedTopic) : allQuestions;
+
+                        if (questionFilter === 'bookmarked') {
+                            displayedQuestions = displayedQuestions.filter(q => bookmarks.includes(q.id));
+                        } else if (questionFilter === 'incorrect') {
+                            displayedQuestions = displayedQuestions.filter(q => {
+                                const ansIdx = attempts[q.id];
+                                return ansIdx !== undefined && ['A', 'B', 'C', 'D'][ansIdx] !== q.correctOption;
+                            });
+                        }
+
+                        const safeQuestionIndex = Math.min(currentQuestionIndex, Math.max(0, displayedQuestions.length - 1));
+                        const currentQuestion = displayedQuestions[safeQuestionIndex] || {};
+
+                        const triggerHaptic = (type = 'light') => {
+                            try {
+                                if (window.Telegram?.WebApp?.HapticFeedback) {
+                                    if (type === 'success' && window.Telegram.WebApp.HapticFeedback.notificationOccurred) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                                    else if (type === 'error' && window.Telegram.WebApp.HapticFeedback.notificationOccurred) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                                    else if (window.Telegram.WebApp.HapticFeedback.impactOccurred) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                                }
+                            } catch (e) { }
+                        };
+
+                        const toggleBookmark = (qId) => {
+                            setBookmarks(prev => prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]);
+                            triggerHaptic('light');
+                        };
+
+                        const handleAttempt = (qId, optionIdx) => {
+                            const options = ['A', 'B', 'C', 'D'];
+                            const selectedOption = options[optionIdx];
+                            const isCorrect = currentQuestion && selectedOption === currentQuestion.correctOption;
+                            setPracticeAttempts({ ...attempts, [qId]: optionIdx });
+                            if (isCorrect) triggerHaptic('success');
+                            else triggerHaptic('error');
+                        };
+
+                        const handleClear = (qId) => {
+                            const newAttempts = { ...attempts };
+                            delete newAttempts[qId];
+                            setPracticeAttempts(newAttempts);
+                        };
+
+                        const handleNext = () => {
+                            if (safeQuestionIndex < displayedQuestions.length - 1) {
+                                setCurrentQuestionIndex(safeQuestionIndex + 1);
+                                setTimeout(() => {
+                                    try {
+                                        document.querySelector('[data-qa-card]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    } catch (e) {
+                                        document.querySelector('[data-qa-card]')?.scrollIntoView();
+                                    }
+                                }, 50);
+                            }
+                        };
+
+                        const handlePrevious = () => {
+                            if (safeQuestionIndex > 0) {
+                                setCurrentQuestionIndex(safeQuestionIndex - 1);
+                                setTimeout(() => {
+                                    try {
+                                        document.querySelector('[data-qa-card]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    } catch (e) {
+                                        document.querySelector('[data-qa-card]')?.scrollIntoView();
+                                    }
+                                }, 50);
+                            }
+                        };
+
+                        const scrollToQuestion = (idx) => {
+                            setPracticeShowPalette(false);
+                            setCurrentQuestionIndex(idx);
+                            setTimeout(() => {
+                                try {
+                                    document.querySelector('[data-qa-card]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                } catch (e) {
+                                    document.querySelector('[data-qa-card]')?.scrollIntoView();
+                                }
+                            }, 50);
+                        };
+
+                        if (questionsLoading) {
+                            return <GlobalLoader text="Extracting Database..." />;
+                        }
+
+                        const isAnswered = currentQuestion ? attempts[currentQuestion.id] !== undefined : false;
+                        const selectedOptionIdx = currentQuestion ? attempts[currentQuestion.id] : -1;
+                        const isCorrect = currentQuestion && isAnswered && ['A', 'B', 'C', 'D'][selectedOptionIdx] === currentQuestion.correctOption;
+
+                        return (
+                            <div className="pb-32 animate-pop-in relative min-h-screen bg-[#F3F4F6] text-gray-900 font-sans">
+                                {/* CBT Header */}
+                                <div className="px-4 py-3 flex items-center justify-between bg-[#00418d] text-white shadow-md relative z-20">
+                                    <div className="flex items-center gap-3 w-full">
+                                        <button onClick={handleBack} className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center shrink-0 transition-colors"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <div className="flex-1 overflow-hidden">
+                                            <h2 className="text-base font-bold text-white leading-tight truncate">{safeRenderText(activePracticeChapter.name)}</h2>
+                                            <p className="text-xs text-blue-100 opacity-90">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
+                                        </div>
+                                        <div className="shrink-0 bg-black/20 px-3 py-1.5 rounded-sm border border-white/10 font-mono text-sm tracking-widest font-bold">
+                                            <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Optional Filters & Topic Selector */}
+                                <div className="bg-white px-4 py-2 border-b border-gray-300 shadow-sm flex items-center justify-between z-10 relative">
+                                    <div className="flex gap-2 items-center overflow-x-auto no-scrollbar flex-1 mr-2">
+                                        <select
+                                            value={practiceSelectedTopic || ""}
+                                            onChange={(e) => {
+                                                setPracticeSelectedTopic(e.target.value || null);
+                                                setCurrentQuestionIndex(0);
+                                            }}
+                                            className="border border-gray-300 rounded-sm text-xs font-semibold px-2 py-1.5 bg-gray-50 text-gray-800 outline-none hover:border-[#00418d] focus:border-[#00418d] max-w-[140px] md:max-w-[200px] shrink-0 cursor-pointer transition-colors"
+                                        >
+                                            <option value="">All Topics</option>
+                                            {activePracticeChapter.topics?.map((top, i) => (
+                                                <option key={i} value={top.name}>{top.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="h-4 w-px bg-gray-300 mx-1 shrink-0"></div>
+                                        <button onClick={() => { setQuestionFilter('all'); setCurrentQuestionIndex(0); }} className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>All Qs</button>
+                                        <button onClick={() => { setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Bookmarked</button>
+                                        <button onClick={() => { setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Incorrect</button>
+                                    </div>
+                                    <button onClick={() => setPracticeShowPalette(true)} className="ml-2 bg-[#00418d] text-white px-3 py-1.5 rounded-sm text-xs font-bold shrink-0 shadow-sm active:scale-95 transition-transform"><i className="fa-solid fa-grip mr-1"></i> Palette</button>
+                                </div>
+
+                                {/* Question Content */}
+                                <div data-qa-card className="p-3 md:p-5 max-w-4xl mx-auto">
+                                    {displayedQuestions.length === 0 ? (
+                                        <div className="bg-white border border-gray-300 shadow-sm py-12 text-center px-4 rounded-sm mt-4">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
+                                            <h3 className="font-bold text-gray-900 mb-2">No questions found</h3>
+                                            <p className="text-sm text-gray-500 mb-4">Adjust your filters to see questions.</p>
+                                            <button onClick={() => { setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className="bg-[#00418d] text-white font-semibold text-sm px-4 py-2 rounded-sm mt-2 transition-colors hover:bg-blue-800">Clear Filters</button>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-white border border-gray-300 shadow-md rounded-sm mt-2">
+                                            <div className="p-4 md:p-6">
+                                                <div className="flex justify-between items-start mb-3 gap-4">
+                                                    <div className="text-black text-[15px] md:text-base leading-relaxed font-medium">
+                                                        <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
+                                                    </div>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <button onClick={() => toggleBookmark(currentQuestion.id)} className={`p-1 text-xl transition-all active:scale-90 ${bookmarks.includes(currentQuestion.id) ? 'text-yellow-500' : 'text-gray-300 hover:text-gray-400'}`} title="Bookmark">
+                                                            <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid' : 'regular'} fa-bookmark`}></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end mb-4">
+                                                    <button onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: !prev[currentQuestion.id] }))} className={`px-3 py-1.5 rounded-sm text-xs font-bold border transition-colors flex items-center gap-1.5 shadow-sm active:scale-95 ${questionNotes[currentQuestion.id] || showNoteInput[currentQuestion.id] ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
+                                                        <i className="fa-solid fa-pen-to-square"></i> {questionNotes[currentQuestion.id] ? 'Edit Notes' : 'Add Notes'}
+                                                    </button>
+                                                </div>
+                                                {(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
+                                                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm mb-4 animate-in fade-in slide-in-from-top-1">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-xs font-bold text-blue-800 uppercase tracking-wider"><i className="fa-solid fa-note-sticky mr-1"></i> My Notes</span>
+                                                            {questionNotes[currentQuestion.id] && <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-sm border border-blue-200"><i className="fa-solid fa-check mr-1"></i>Saved</span>}
+                                                        </div>
+                                                        <textarea
+                                                            className="w-full text-sm p-2 border border-blue-300 rounded-sm bg-white text-gray-800 focus:outline-none focus:border-[#00418d] min-h-[70px] resize-y placeholder-blue-300 mb-2"
+                                                            placeholder="Type your notes for this question here... (auto-saved securely)"
+                                                            value={questionNotes[currentQuestion.id] || ''}
+                                                            onChange={(e) => setQuestionNotes(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
+                                                        ></textarea>
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={() => {
+                                                                const newNotes = { ...questionNotes };
+                                                                delete newNotes[currentQuestion.id];
+                                                                setQuestionNotes(newNotes);
+                                                                setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }));
+                                                            }} className="text-red-500 hover:bg-red-50 px-3 py-1 rounded-sm text-xs font-bold border border-transparent hover:border-red-200 transition-colors">
+                                                                Delete
+                                                            </button>
+                                                            <button onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }))} className="bg-[#00418d] text-white px-4 py-1.5 rounded-sm text-xs font-bold hover:bg-blue-800 transition-colors shadow-sm">
+                                                                Save & Close
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {currentQuestion.imageUrl && (
+                                                    <div className="mb-6 rounded-sm overflow-hidden bg-white flex items-center justify-center border border-gray-200 p-2">
+                                                        <img src={currentQuestion.imageUrl} alt="Question Image" className="max-w-full max-h-[40vh] object-contain" onError={(e) => { e.target.style.display = 'none' }} />
+                                                    </div>
+                                                )}
+
+                                                {/* Options Display */}
+                                                <div className="flex flex-col border border-gray-300 rounded-sm overflow-hidden mb-6">
+                                                    {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((opt, idx) => {
+                                                        return (
+                                                            <div key={idx} className="w-full text-left flex items-stretch border-b border-gray-300 last:border-b-0 bg-white">
+                                                                <div className="w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] border-r border-gray-300 bg-gray-50 text-gray-700">({idx + 1})</div>
+                                                                <div className="p-3 text-[14px] md:text-[15px] text-black w-full break-words leading-relaxed"><FormattedText text={opt} /></div>
+                                                            </div>
+                                                        );
+                                                    }) : null}
+                                                </div>
+
+                                                {/* CBT Options Selection Bar */}
+                                                <div className="flex justify-center gap-4 mb-5">
+                                                    {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((_, idx) => {
+                                                        const isSelected = selectedOptionIdx === idx;
+                                                        const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === currentQuestion.correctOption;
+                                                        let btnClass = "bg-white border-gray-400 text-gray-800 hover:bg-blue-50 hover:border-blue-300";
+                                                        if (isAnswered) {
+                                                            if (isCorrectChoice) btnClass = "bg-[#1e7e34] border-[#1e7e34] text-white ring-2 ring-[#1e7e34] ring-offset-2 z-10";
+                                                            else if (isSelected) btnClass = "bg-[#c5221f] border-[#c5221f] text-white ring-2 ring-[#c5221f] ring-offset-2 z-10";
+                                                            else btnClass = "bg-gray-100 border-gray-300 text-gray-400";
+                                                        } else if (isSelected) {
+                                                            btnClass = "bg-[#00418d] border-[#00418d] text-white ring-2 ring-[#00418d] ring-offset-2 z-10";
+                                                        }
+                                                        return (
+                                                            <button
+                                                                key={`cbt-opt-${idx}`}
+                                                                disabled={isAnswered}
+                                                                onClick={() => handleAttempt(currentQuestion.id, idx)}
+                                                                className={`w-12 h-12 flex items-center justify-center border-2 rounded-full font-bold text-lg transition-all duration-200 disabled:cursor-default ${btnClass} ${!isAnswered ? 'active:scale-95 cursor-pointer shadow-sm' : ''}`}
+                                                            >
+                                                                {idx + 1}
+                                                            </button>
+                                                        );
+                                                    }) : null}
+                                                </div>
+
+                                                {isAnswered && (
+                                                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm mt-6 animate-in fade-in slide-in-from-top-2">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <i className={`fa-solid ${isCorrect ? 'fa-circle-check text-[#1e7e34]' : 'fa-circle-xmark text-[#c5221f]'} text-lg`}></i>
+                                                            <span className={`font-bold text-sm ${isCorrect ? 'text-[#1e7e34]' : 'text-[#c5221f]'}`}>
+                                                                {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
+                                                            </span>
+                                                        </div>
+                                                        {currentQuestion.explanation && currentQuestion.explanation.trim().toLowerCase() !== 'no explanation' && (
+                                                            <div className="text-sm text-gray-700 mt-2 bg-white p-3 border border-gray-200 rounded-sm">
+                                                                <span className="font-semibold text-black">Explanation:</span> <FormattedText text={currentQuestion.explanation} />
+                                                            </div>
+                                                        )}
+                                                        <div className="mt-4">
+                                                            <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* CBT Bottom Bar */}
+                                <div className="fixed bottom-0 w-full bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-safe">
+                                    <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-between items-center">
+                                        <div className="flex gap-2 flex-1 md:flex-none">
+                                            <button onClick={() => handleClear(currentQuestion.id)} className="flex-1 md:flex-none bg-white border border-gray-400 text-gray-800 hover:bg-gray-50 text-[10px] sm:text-xs font-semibold px-2 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
+                                                Clear<span className="hidden sm:inline"> Response</span>
+                                            </button>
+                                            <button onClick={() => {
+                                                if (currentQuestion) setPracticeReview(prev => prev.includes(currentQuestion.id) ? prev : [...prev, currentQuestion.id]);
+                                                handleNext();
+                                            }} className="flex-1 md:flex-none bg-orange-500 border border-orange-600 text-white hover:bg-orange-600 text-[10px] sm:text-xs font-semibold px-2 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
+                                                Review & Next
+                                            </button>
+                                        </div>
+                                        <div className="flex gap-2 flex-1 md:flex-none justify-end mt-2 md:mt-0 w-full md:w-auto">
+                                            <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="flex-1 md:flex-none bg-white border border-gray-400 text-gray-800 hover:bg-gray-50 disabled:opacity-50 text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
+                                                &lt;&lt; Back
+                                            </button>
+                                            <button onClick={() => {
+                                                if (currentQuestion && practiceReview.includes(currentQuestion.id)) setPracticeReview(prev => prev.filter(id => id !== currentQuestion.id));
+                                                handleNext();
+                                            }} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="flex-1 md:flex-none bg-[#1ea020] border border-[#187f1a] text-white hover:bg-[#187f1a] disabled:opacity-50 text-[10px] sm:text-xs font-semibold px-4 sm:px-6 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
+                                                Save & Next &gt;&gt;
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* CBT Palette Slide-over Modal */}
+                                {showPalette && (
+                                    <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-end md:justify-center md:items-end animate-in fade-in" onClick={() => setPracticeShowPalette(false)}>
+                                        <div className="bg-[#f0f4f7] h-[80vh] md:h-full w-full md:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 transform transition-transform" onClick={e => e.stopPropagation()}>
+                                            <div className="bg-[#00418d] text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0">
+                                                <h3 className="font-bold text-sm uppercase tracking-wider"><i className="fa-solid fa-grip mr-2"></i> Question Palette</h3>
+                                                <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 rounded-sm hover:bg-white/20 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
+                                            </div>
+                                            <div className="p-4 bg-white border-b border-gray-300 shadow-sm flex flex-wrap justify-between gap-y-3 text-[11px] font-semibold text-gray-700 shrink-0">
+                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-white border border-gray-400 rounded-sm text-[10px] shadow-sm">1</div> Not Visited</div>
+                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-[#fce8e6] border border-[#c5221f] text-[#c5221f] rounded-bl-[10px] rounded-br-[4px] rounded-t-[4px] text-[10px] shadow-sm">2</div> Not Answered</div>
+                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-[#e6f4ea] border border-[#1e7e34] text-[#1e7e34] rounded-tl-[10px] rounded-tr-[4px] rounded-b-[4px] text-[10px] shadow-sm">3</div> Answered</div>
+                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] shadow-sm">4</div> Marked for Review</div>
+                                                <div className="flex items-center gap-1.5 w-full mt-1"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#1e7e34] rounded-full ring-1 ring-white"></div></div> Answered & Marked for Review</div>
+                                            </div>
+                                            <div className="p-4 flex-1 overflow-y-auto bg-gray-50">
+                                                <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
+                                                    {displayedQuestions.map((q, qIdx) => {
+                                                        const isAns = attempts[q.id] !== undefined;
+                                                        const isRev = practiceReview.includes(q.id);
+
+                                                        let shapeClass = "bg-white border-gray-400 text-gray-800 rounded-sm";
+                                                        if (isAns && isRev) shapeClass = "bg-purple-100 border-purple-600 text-purple-700 rounded-full relative";
+                                                        else if (isRev) shapeClass = "bg-purple-100 border-purple-600 text-purple-700 rounded-full";
+                                                        else if (isAns) shapeClass = "bg-[#e6f4ea] border-[#1e7e34] text-[#1e7e34] rounded-tl-[10px] rounded-tr-[4px] rounded-b-[4px]";
+                                                        else if (practiceVisited.includes(q.id)) shapeClass = "bg-[#fce8e6] border-[#c5221f] text-[#c5221f] rounded-bl-[10px] rounded-br-[4px] rounded-t-[4px]";
+
+                                                        return (
+                                                            <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? 'ring-2 ring-[#00418d] ring-offset-1' : ''}`}>
+                                                                {qIdx + 1}
+                                                                {isAns && isRev && <div className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-[#1e7e34] rounded-full ring-1 ring-white"></div>}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+
+                    if (activePracticeSubject) {
+                        return (
+                            <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeSubject.name)}</h2>
+                                    </div>
+                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                </div>
+                                <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Chapter Selection</h3>
+                                <div className="space-y-3">
+                                    {activePracticeSubject.chapters && activePracticeSubject.chapters.length > 0 ? (
+                                        activePracticeSubject.chapters.map((chap, i) => (
+                                            <div key={i} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
+                                                <div>
+                                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(chap.name)}</h4>
+                                                    <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{chap.topics?.length || 0} Topics</p>
+                                                </div>
+                                                <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-[#00a651] transition-colors"></i>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-gray-500 text-center mt-8">No chapters available</p>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    if (activePracticeFile) {
+                        return (
+                            <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeFile.name)} Subjects</h2>
+                                </div>
+
+                                {qbankError && (
+                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-5 shadow-sm text-sm text-red-800 dark:text-red-200">
+                                        <div className="font-bold flex items-center gap-2 mb-2">
+                                            <i className="fa-solid fa-cloud"></i> Network Issue
+                                        </div>
+                                        <p className="mb-2 opacity-90">{qbankError}</p>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    {(() => {
+                                        const activeData = activePracticeBatch && activePracticeBatch.sourceTable
+                                            ? (qbankDataByTable[activePracticeBatch.sourceTable] || [])
+                                            : qbankData;
+                                        return activeData.length > 0 ? activeData.map(sub => (
+                                            <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center text-center group">
+                                                <span className="text-4xl mb-3 group-hover:-translate-y-1 transition-transform duration-300">{sub.icon}</span>
+                                                <h3 className="font-bold text-gray-800 dark:text-gray-200 mt-2 group-hover:text-[#00a651] transition-colors">{safeRenderText(sub.name)}</h3>
+                                                <p className="text-[10px] text-gray-500 mt-1">{sub.chapters?.length || 0} Chapters</p>
+                                            </div>
+                                        )) : (
+                                            <p className="text-sm text-gray-500 text-center col-span-2 py-8">Loading subjects...</p>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    if (activePracticeBatch) {
+                        return (
+                            <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeBatch.name)}</h2>
+                                </div>
+                                <div className="space-y-3">
+                                    {activePracticeBatch.files.map((file, i) => (
+                                        <div key={i} onClick={() => setActivePracticeFile(file)} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex items-center gap-4 shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
+                                            <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[#00a651] flex items-center justify-center text-lg"><i className="fa-solid fa-file-alt"></i></div>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-base text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(file.name)}</h3>
+                                                <p className="text-xs text-gray-500">Practice Module</p>
+                                            </div>
+                                            <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-[#00a651] transition-colors"></i>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    const PRACTICE_BATCHES = [
+                        { id: 'pb_allen', name: 'LN modules', type: 'ln', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] },
+                        { id: 'pb_pw', name: 'Bablu Dablu modules', type: 'pw', sourceTable: 'questions', files: [{ id: 'pf_dpp', name: 'DPP' }] },
+                        { id: 'pb_basic_math', name: 'Basic Math & Vectors', type: 'custom', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Module 1' }] }
+                    ];
+
+                    return (
+                        <div className="pb-24 pt-6 px-5 animate-in fade-in min-h-screen">
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-3">
+                                    <AtaxyLogo className="w-10 h-10 rounded-full shadow-md border border-gray-200" />
+                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-wider">ATAXY BANK</h2>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                {PRACTICE_BATCHES.map(batch => (
+                                    <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-6 rounded-3xl cursor-pointer hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 relative overflow-hidden ${batch.type === 'ln' ? 'bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] text-white' : 'bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)] text-white'}`}>
+                                        <div className="relative z-10">
+                                            <h3 className="text-xl font-black mb-1 text-white">{batch.name}</h3>
+                                            <p className={`text-xs font-medium ${batch.type === 'ln' ? 'text-green-100' : 'text-gray-400'}`}>{batch.files.length} Modules Available</p>
+                                        </div>
+                                        <i className={`fa-solid ${batch.type === 'ln' ? 'fa-book text-green-800/30' : 'fa-layer-group text-white/5'} absolute -right-4 -bottom-4 text-6xl`}></i>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                } catch (err) {
+                    return (
+                        <div className="min-h-screen bg-red-600 text-white flex flex-col items-center justify-center p-10 z-[9999999] relative">
+                            <h1 className="text-5xl font-black mb-4"><i className="fa-solid fa-bomb"></i> UI CRASH</h1>
+                            <p className="text-xl font-bold mb-4">Please screenshot this!</p>
+                            <div className="bg-red-900/50 p-4 rounded-xl text-left w-full overflow-auto max-h-[50vh] font-mono text-sm break-words shadow-inner">
+                                <p><strong>Message:</strong> {String(err.message)}</p>
+                                <p className="mt-4"><strong>Stack:</strong> {String(err.stack)}</p>
+                            </div>
+                            <button onClick={() => { setActivePracticeChapter(null); setShowQuiz(false); }} className="mt-8 bg-white text-red-600 px-6 py-3 rounded-xl font-black shadow-lg active:scale-95 transition-transform">Go Back</button>
+                        </div>
+                    );
+                }
+            };
+
+            // --- UNIFIED HISTORY VIEWER (ADVANCED FILTERING) ---
+            const renderHistoryViewer = () => {
+                if (!historyViewType) return null;
+                const allItems = [];
+                const perf = safeGetJSON('ataxy_practice_perf', null) || {};
+
+                qbankData.forEach(sub => {
+                    sub.chapters?.forEach(chap => {
+                        chap.topics?.forEach(top => {
+                            top.questions?.forEach(q => {
+                                let include = false;
+                                const isAns = perf[q.id] !== undefined;
+                                const isCorrect = isAns && ['A', 'B', 'C', 'D'][perf[q.id]] === q.correctOption;
+
+                                if (historyViewType === 'bookmarks' && bookmarks.includes(q.id)) include = true;
+                                else if (historyViewType === 'attempted' && isAns) include = true;
+                                else if (historyViewType === 'correct' && isCorrect) include = true;
+                                else if (historyViewType === 'incorrect' && isAns && !isCorrect) include = true;
+
+                                if (include) {
+                                    allItems.push({
+                                        ...q,
+                                        subjectName: sub.name,
+                                        chapterName: chap.name,
+                                        topicName: top.name,
+                                        userAttempt: perf[q.id]
+                                    });
+                                }
+                            });
+                        });
+                    });
+                });
+
+                let subjects = new Set();
+                let chapters = new Set();
+                let topics = new Set();
+
+                allItems.forEach(q => {
+                    subjects.add(q.subjectName);
+                    if (!historySubjectFilter || q.subjectName === historySubjectFilter) {
+                        chapters.add(q.chapterName);
+                        if (!historyChapterFilter || q.chapterName === historyChapterFilter) {
+                            topics.add(q.topicName);
+                        }
+                    }
+                });
+
+                const filtered = allItems.filter(q => {
+                    if (historySearch && !q.text.toLowerCase().includes(historySearch.toLowerCase())) return false;
+                    if (historySubjectFilter && q.subjectName !== historySubjectFilter) return false;
+                    if (historyChapterFilter && q.chapterName !== historyChapterFilter) return false;
+                    if (historyTopicFilter && q.topicName !== historyTopicFilter) return false;
+                    return true;
+                });
+
+                const config = {
+                    bookmarks: {
+                        title: 'Bookmarks', icon: 'fa-bookmark', emptyMsg: 'No bookmarks found.',
+                        headerText: 'text-yellow-600 dark:text-yellow-500', badgeBg: 'bg-yellow-100 dark:bg-yellow-900/30', badgeText: 'text-yellow-800 dark:text-yellow-500', focusRing: 'focus:ring-yellow-500', borderIcon: 'border-yellow-200', tagBg: 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
+                    },
+                    attempted: {
+                        title: 'Attempted Questions', icon: 'fa-list-ul', emptyMsg: 'No attempted questions yet.',
+                        headerText: 'text-blue-600 dark:text-blue-500', badgeBg: 'bg-blue-100 dark:bg-blue-900/30', badgeText: 'text-blue-800 dark:text-blue-500', focusRing: 'focus:ring-blue-500', borderIcon: 'border-blue-200', tagBg: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    },
+                    correct: {
+                        title: 'Correct Answers', icon: 'fa-check-circle', emptyMsg: 'No correct answers yet. Keep practicing!',
+                        headerText: 'text-green-600 dark:text-green-500', badgeBg: 'bg-green-100 dark:bg-green-900/30', badgeText: 'text-green-800 dark:text-green-500', focusRing: 'focus:ring-green-500', borderIcon: 'border-green-200', tagBg: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                    },
+                    incorrect: {
+                        title: 'Mistakes to Review', icon: 'fa-times-circle', emptyMsg: 'Amazing! No mistakes found.',
+                        headerText: 'text-red-600 dark:text-red-500', badgeBg: 'bg-red-100 dark:bg-red-900/30', badgeText: 'text-red-800 dark:text-red-500', focusRing: 'focus:ring-red-500', borderIcon: 'border-red-200', tagBg: 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    }
+                }[historyViewType];
+
+                return (
+                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[100000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up duration-300 max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setHistoryViewType(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
+                                    <i className="fa-solid fa-arrow-left"></i>
+                                </button>
+                                <AtaxyLogo className={`w-8 h-8 rounded-full shadow-sm border ${config.borderIcon}`} />
+                                <h2 className={`font-bold text-lg ${config.headerText} leading-tight`}>{config.title}</h2>
+                            </div>
+                            <span className={`text-xs font-bold ${config.badgeBg} ${config.badgeText} px-2 py-1 rounded shadow-sm`}>{filtered.length} Qs</span>
+                        </div>
+
+                        <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 space-y-3 z-10">
+                            <div className="relative">
+                                <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" placeholder={`Search ${config.title.toLowerCase()}...`} value={historySearch} onChange={e => setHistorySearch(e.target.value)} className={`w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 ${config.focusRing} outline-none transition-all`} />
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                <select value={historySubjectFilter} onChange={e => { setHistorySubjectFilter(e.target.value); setHistoryChapterFilter(''); setHistoryTopicFilter(''); }} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                    <option value="">All Subjects</option>
+                                    {[...subjects].map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <select value={historyChapterFilter} onChange={e => { setHistoryChapterFilter(e.target.value); setHistoryTopicFilter(''); }} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                    <option value="">All Chapters</option>
+                                    {[...chapters].map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                <select value={historyTopicFilter} onChange={e => setHistoryTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
+                                    <option value="">All Topics</option>
+                                    {[...topics].map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {filtered.length === 0 ? (
+                                <div className="text-center py-12 animate-pop-in">
+                                    <i className={`fa-solid ${config.icon} text-4xl text-gray-300 dark:text-gray-600 mb-3`}></i>
+                                    <p className="text-gray-500 dark:text-gray-400 font-medium">{config.emptyMsg}</p>
+                                </div>
+                            ) : filtered.map((q, idx) => {
+                                const isExpanded = activeHistoryId === q.id;
+                                return (
+                                    <div key={q.id} id={`history-item-${q.id}`} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden animate-slide-up" style={{ animationDelay: `${Math.min(idx * 50, 400)}ms` }}>
+                                        <div className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveHistoryId(isExpanded ? null : q.id)}>
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                <span className={`text-[9px] ${config.tagBg} px-2 py-0.5 rounded font-bold uppercase tracking-wider`}>{config.title.split(' ')[0]}</span>
+                                                <span className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider truncate max-w-[200px]">{q.topicName}</span>
+                                            </div>
+                                            <div className="text-[15px] font-medium text-gray-800 dark:text-gray-200 line-clamp-3 mb-3">
+                                                <FormattedText text={q.text} className="inline" />
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                {historyViewType === 'bookmarks' ? (
+                                                    <button onClick={(e) => { e.stopPropagation(); setBookmarks(prev => prev.filter(id => id !== q.id)); }} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1.5 rounded-lg font-bold transition-colors">
+                                                        <i className="fa-solid fa-trash"></i> Remove
+                                                    </button>
+                                                ) : <div></div>}
+                                                <span className="text-blue-600 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg">{isExpanded ? 'Hide Solution' : 'Revise Mistake'} <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} ml-1`}></i></span>
+                                            </div>
+                                        </div>
+
+                                        {isExpanded && renderExpandedQuestionDetails(q)}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- DETAILED ANALYTICS MODAL ---
+            const renderTargetAnalyzerModal = () => {
+    if (!showDetailedAnalyzer) return null;
+    
+    // Group targets
+    const allDays = Object.entries(targetsData).map(([dateStr, dayTargets]) => {
+        if (!Array.isArray(dayTargets) || dayTargets.length === 0) return null;
+        const dayDone = dayTargets.filter(t => t.done).length;
+        const dayTotal = dayTargets.length;
+        const dayRate = Math.round((dayDone / dayTotal) * 100);
+        return { dateStr, dayTargets, dayDone, dayTotal, dayRate };
+    }).filter(Boolean).sort((a,b) => new Date(b.dateStr) - new Date(a.dateStr));
+
+    const totalSet = allDays.reduce((acc, d) => acc + d.dayTotal, 0);
+    const totalDone = allDays.reduce((acc, d) => acc + d.dayDone, 0);
+    const totalRate = totalSet > 0 ? Math.round((totalDone/totalSet)*100) : 0;
+
+    return (
+        <div className="fixed inset-0 pt-[max(env(safe-area-inset-top),_16px)] z-[200000] bg-[#010B1C] flex flex-col animate-slide-up overflow-hidden w-full mx-auto shadow-2xl">
+            {/* HEADER */}
+            <div className="flex items-center justify-between p-4 bg-[#021633] border-b border-[#0AE0D0]/30 shadow-[0_4px_20px_rgba(0,255,255,0.1)] z-10">
+                <div className="flex items-center gap-3">
+                    <button onClick={() => setShowDetailedAnalyzer(false)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center text-white active:scale-90 border border-white/10">
+                        <i className="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 className="font-bold text-lg text-white leading-tight flex items-center gap-2">
+                        <i className="fa-solid fa-bullseye text-[#00FFFF]"></i> Deep Target Analyzer
+                    </h2>
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                <div className="bg-[#021633] rounded-3xl p-6 border border-[#0AE0D0]/30 shadow-[0_10px_30px_rgba(0,255,255,0.1)] text-center">
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Total Historic Completion</p>
+                    <h1 className="text-5xl font-black text-[#00FFFF] mb-2">{totalRate}%</h1>
+                    <p className="text-sm text-gray-300 font-semibold">{totalDone} achieved out of {totalSet} targets</p>
+                </div>
+
+                <h3 className="font-bold text-white text-lg px-2 flex items-center gap-2"><i className="fa-solid fa-calendar-days text-[#A4DFE6]"></i> Daily Breakdown</h3>
+                
+                <div className="space-y-3">
+                    {allDays.map((d, idx) => (
+                        <details key={idx} className="bg-[#021633] rounded-2xl border border-gray-800 overflow-hidden group">
+                            <summary className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors list-none">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${d.dayRate >= 80 ? 'bg-green-500/20 text-green-400 border border-green-500/30' : d.dayRate >= 50 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                                        {d.dayRate}%
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white text-sm">{new Date(d.dateStr).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                        <p className="text-[10px] text-gray-400 font-semibold uppercase">{d.dayDone} of {d.dayTotal} targets</p>
+                                    </div>
+                                </div>
+                                <i className="fa-solid fa-chevron-down text-gray-500 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div className="p-4 pt-0 border-t border-gray-800 bg-[#010B1C]/50">
+                                <ul className="space-y-2 mt-3">
+                                    {d.dayTargets.map((t, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-sm">
+                                            <i className={`fa-solid mt-0.5 ${t.done ? 'fa-circle-check text-green-400' : 'fa-circle-xmark text-red-400'}`}></i>
+                                            <span className={`flex-1 ${t.done ? 'text-gray-300 line-through' : 'text-white'}`}>{t.text}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </details>
+                    ))}
+                    {allDays.length === 0 && (
+                        <div className="text-center p-8 text-gray-500 font-semibold">No targets recorded yet.</div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const renderAnalyticsModal = () => {
+                if (!showAnalyticsModal) return null;
+
+                const perf = safeGetJSON('ataxy_practice_perf', null) || {};
+
+                
+                // 1. Group Data Dynamically
+                let totalAttempted = 0;
+                let totalCorrect = 0;
+
+                const subjectStats = {};
+                const chapterStats = {};
+                const colors = ['text-blue-500', 'text-purple-500', 'text-orange-500', 'text-emerald-500', 'text-pink-500', 'text-cyan-500'];
+
+                qbankData.forEach((sub, idx) => {
+                    const group = sub.name;
+                    if (!subjectStats[group]) {
+                        subjectStats[group] = { attempted: 0, correct: 0, colorClass: colors[idx % colors.length] };
+                    }
+
+                    sub.chapters?.forEach(chap => {
+                        chap.topics?.forEach(top => top.questions?.forEach(q => {
+                            if (perf[q.id] !== undefined) {
+                                if (!chapterStats[chap.name]) {
+                                    chapterStats[chap.name] = { subjectGroup: group, attempted: 0, correct: 0 };
+                                }
+                                totalAttempted++;
+                                subjectStats[group].attempted++;
+                                chapterStats[chap.name].attempted++;
+                                if (perf[q.id] === q.correct || ['A', 'B', 'C', 'D'][perf[q.id]] === q.correctOption) {
+                                    totalCorrect++;
+                                    subjectStats[group].correct++;
+                                    chapterStats[chap.name].correct++;
+                                }
+                            }
+                        }));
+                    });
+                });
+
+                // Compute Accuracies
+                const getAccuracy = (group) => {
+                    const s = subjectStats[group];
+                    if (!s || s.attempted === 0) return 0;
+                    return Math.round((s.correct / s.attempted) * 100);
+                };
+
+                const overallAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+                
+                
+                            {/* OVERALL ACCURACY (CORE FEATURE) */}
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800/80 text-center relative overflow-hidden mb-6">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+                                <h3 className="font-black text-xl text-gray-900 dark:text-white mb-1 tracking-wide">
+                                    Overall Accuracy: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{overallAccuracy}%</span>
+                                </h3>
+                                <p className="text-[10px] text-gray-500 mb-6 uppercase tracking-widest font-semibold">Based on universal question practice</p>
+
+                                <div className="flex justify-around items-center flex-wrap gap-4">
+                                    {Object.keys(subjectStats).filter(k => subjectStats[k].attempted > 0).map(group => (
+                                        <CircularRing key={group} score={getAccuracy(group)} max={100} colorClass={subjectStats[group].colorClass} label={group} />
+                                    ))}
+                                    {Object.keys(subjectStats).filter(k => subjectStats[k].attempted > 0).length === 0 && (
+                                        <div className="text-gray-400 text-sm italic py-4 w-full">Solve questions to see subject accuracies.</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* SUBJECT TABS & CHAPTER-WISE TABLE */}
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800/80 overflow-hidden flex flex-col">
+                                {/* Pill Tabs */}
+                                <div className="flex p-2 bg-gray-50 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800/80">
+                                    
+                                    {Object.keys(subjectStats).filter(k => subjectStats[k].attempted > 0).map(tab => (
+                                        <button 
+                                            key={tab} 
+                                            onClick={() => setActiveAnalysisTab(tab)} 
+                                            className={`flex-1 py-3 px-2 text-sm font-bold border-b-2 transition-all truncate ${activeAnalysisTab === tab ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                        >
+                                            {tab}
+</button>
+                                    ))}
+                                </div>
+
+                                {/* Data Table */}
+                                <div className="overflow-x-auto w-full">
+                                    <table className="w-full text-left border-collapse min-w-[340px]">
+                                        <thead>
+                                            <tr className="bg-gray-50/50 dark:bg-gray-800/20 text-[9px] uppercase tracking-widest text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800/80">
+                                                <th className="p-3 font-bold">Chapter</th>
+                                                <th className="p-3 font-bold text-center">Attempted Qs</th>
+                                                <th className="p-3 font-bold text-center min-w-[80px]">Correct %</th>
+                                                <th className="p-3 font-bold text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {activeChapters.map((chap, idx) => {
+                                                const chapterAcc = chap.attempted > 0 ? Math.round((chap.correct / chap.attempted) * 100) : 0;
+                                                const isWeak = chapterAcc < 40;
+                                                const isExpanded = expandedAnalysisChapter === chap.name;
+
+                                                return (
+                                                    <React.Fragment key={idx}>
+                                                        <tr
+                                                            onClick={() => {
+                                                                if (isExpanded) {
+                                                                    setExpandedAnalysisChapter(null);
+                                                                } else {
+                                                                    setExpandedAnalysisChapter(chap.name);
+                                                                    setAnalysisChapterFilters({ topic: '', incorrect: false, bookmarked: false, notes: false });
+                                                                }
+                                                                try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light'); } catch (e) { }
+                                                            }}
+                                                            className={`border-b border-gray-100 dark:border-gray-800/60 last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors ${isWeak ? 'bg-red-50/30 dark:bg-red-900/10' : ''} ${isExpanded ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
+                                                        >
+                                                            <td className={`p-3 text-[11px] font-semibold ${isWeak ? 'text-red-500 dark:text-red-400' : 'text-gray-800 dark:text-gray-200'} max-w-[120px] truncate`} title={chap.name}>
+                                                                {chap.name} {isExpanded ? <i className="fa-solid fa-chevron-up text-[9px] ml-1 text-gray-400"></i> : <i className="fa-solid fa-chevron-down text-[9px] ml-1 text-gray-400"></i>}
+                                                            </td>
+                                                            <td className="p-3 text-[11px] text-center font-bold text-gray-600 dark:text-gray-400">
+                                                                {chap.attempted}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center justify-center gap-1.5">
+                                                                    <span className={`text-[10px] font-black ${isWeak ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>{chapterAcc}%</span>
+                                                                    <div className="w-10 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shrink-0">
+                                                                        <div className={`h-full rounded-full transition-all duration-1000 ${isWeak ? 'bg-red-500' : chapterAcc >= 75 ? 'bg-green-500' : 'bg-yellow-500'}`} style={{ width: `${chapterAcc}%` }}></div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                                                <button onClick={() => handleGenerateDPP(chap.name)} className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap border border-indigo-400/50">
+                                                                    GEN DPP
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        {isExpanded && (
+                                                            <tr className="bg-gray-50/50 dark:bg-gray-800/20 border-b border-gray-100 dark:border-gray-800/80">
+                                                                <td colSpan="4" className="p-3">
+                                                                    <div className="animate-in slide-in-from-top-2 flex flex-col gap-3">
+                                                                        {/* Filters */}
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            <select
+                                                                                value={analysisChapterFilters.topic}
+                                                                                onChange={e => setAnalysisChapterFilters(prev => ({ ...prev, topic: e.target.value }))}
+                                                                                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-[10px] font-bold px-2 py-1.5 text-gray-700 dark:text-gray-300 outline-none"
+                                                                            >
+                                                                                <option value="">All Topics</option>
+                                                                                {[...new Set(chapterQuestions.map(q => q.topicName))].map(t => <option key={t} value={t}>{t}</option>)}
+                                                                            </select>
+
+                                                                            <button
+                                                                                onClick={() => setAnalysisChapterFilters(prev => ({ ...prev, incorrect: !prev.incorrect }))}
+                                                                                className={`text-[10px] font-bold px-2 py-1.5 rounded-md border transition-colors ${analysisChapterFilters.incorrect ? 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-700 dark:text-red-400' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}
+                                                                            >
+                                                                                Incorrect
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setAnalysisChapterFilters(prev => ({ ...prev, bookmarked: !prev.bookmarked }))}
+                                                                                className={`text-[10px] font-bold px-2 py-1.5 rounded-md border transition-colors ${analysisChapterFilters.bookmarked ? 'bg-yellow-100 dark:bg-yellow-900/40 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}
+                                                                            >
+                                                                                Bookmarked
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setAnalysisChapterFilters(prev => ({ ...prev, notes: !prev.notes }))}
+                                                                                className={`text-[10px] font-bold px-2 py-1.5 rounded-md border transition-colors ${analysisChapterFilters.notes ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}
+                                                                            >
+                                                                                Notes
+                                                                            </button>
+                                                                        </div>
+
+                                                                        {/* Questions List */}
+                                                                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1 pb-2">
+                                                                            {filteredChapterQuestions.length === 0 ? (
+                                                                                <p className="text-center text-[10px] text-gray-500 py-6 italic bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">No questions match your filters.</p>
+                                                                            ) : (
+                                                                                filteredChapterQuestions.map(q => {
+                                                                                    const isExpandedHistory = activeHistoryId === q.id;
+                                                                                    return (
+                                                                                        <div key={q.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                                                                                            <div className="p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setActiveHistoryId(isExpandedHistory ? null : q.id)}>
+                                                                                                <div className="flex flex-col gap-1.5 w-full pr-3">
+                                                                                                    <div className="flex items-center gap-2">
+                                                                                                        <span className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider truncate max-w-[150px]">{q.topicName}</span>
+                                                                                                        {bookmarks.includes(q.id) && <i className="fa-solid fa-bookmark text-[9px] text-yellow-500"></i>}
+                                                                                                        {questionNotes[q.id] && <i className="fa-solid fa-pen-to-square text-[9px] text-blue-500"></i>}
+                                                                                                        {perf[q.id] !== undefined && (
+                                                                                                            (perf[q.id] === q.correct || ['A', 'B', 'C', 'D'][perf[q.id]] === q.correctOption)
+                                                                                                                ? <i className="fa-solid fa-check-circle text-[9px] text-green-500"></i>
+                                                                                                                : <i className="fa-solid fa-times-circle text-[9px] text-red-500"></i>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                    <div className="text-[11px] text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug">
+                                                                                                        <FormattedText text={q.text} className="inline" />
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <i className={`fa-solid fa-chevron-${isExpandedHistory ? 'up' : 'down'} text-gray-400 text-[10px] shrink-0 w-4 h-4 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full`}></i>
+                                                                                            </div>
+                                                                                            {isExpandedHistory && renderExpandedQuestionDetails(q)}
+                                                                                        </div>
+                                                                                    )
+                                                                                })
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                            {activeChapters.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center p-8 text-xs text-gray-400 italic bg-gray-50/30 dark:bg-gray-900/30">
+                                                        <i className="fa-solid fa-folder-open mb-2 text-2xl text-gray-300 dark:text-gray-700 block"></i>
+                                                        No questions attempted in {activeAnalysisTab} yet.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- PROFILE & PERFORMANCE ---
+            const renderProfileView = () => {
+                const perf = safeGetJSON('ataxy_practice_perf', null) || {};
+
+                const totalAttempted = Object.keys(perf).length;
+                let totalCorrect = 0;
+                let subjectStats = {};
+
+                qbankData.forEach(sub => {
+                    subjectStats[sub.name] = { attempted: 0, correct: 0 };
+                    sub.chapters?.forEach(chap => chap.topics?.forEach(top => top.questions?.forEach(q => {
+                        if (perf[q.id] !== undefined) {
+                            subjectStats[sub.name].attempted++;
+                            if (perf[q.id] === q.correct) {
+                                totalCorrect++;
+                                subjectStats[sub.name].correct++;
+                            }
+                        }
+                    })));
+                });
+
+                const accuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+                const totalIncorrect = totalAttempted - totalCorrect;
+
+                return (
+                    <div className="pb-24 pt-6 px-5 animate-in fade-in">
+                        <div className="text-center mb-8 flex flex-col items-center animate-pop-bounce">
+                            {tgUser?.photo_url ? (
+                                <img src={tgUser.photo_url} alt={tgUser.first_name} className="w-28 h-28 rounded-full border-[4px] border-white dark:border-slate-800 shadow-[0_10px_25px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_25px_rgba(0,243,255,0.2)] mb-4 object-cover hover:scale-105 transition-transform" />
+                            ) : (
+                                <div className="w-28 h-28 rounded-full border-[4px] border-white dark:border-slate-800 shadow-[0_10px_25px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_25px_rgba(0,243,255,0.2)] mb-4 flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-5xl font-black uppercase hover:scale-105 transition-transform">
+                                    {tgUser?.first_name ? tgUser.first_name.charAt(0) : 'S'}
+                                </div>
+                            )}
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-white">{tgUser.first_name}</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">ATAXY UID: {tgUser.id}</p>
+
+                            <button
+                                onClick={() => setShowAnalyticsModal(true)}
+                                className="mt-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-black shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-transform active:scale-95 border border-blue-400/50"
+                            >
+                                <i className="fa-solid fa-chart-line"></i> View Detailed Analytics
+                            </button>
+                            <button
+                                onClick={() => setConfirmClearScope('all')}
+                                className="mt-3 bg-white dark:bg-gray-800 text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/30 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 w-full max-w-[250px]"
+                            >
+                                <i className="fa-solid fa-trash-can"></i> Clear All Attempts
+                            </button>
+                        </div>
+
+                        <h3 className="font-bold text-gray-800 dark:text-white mb-4 px-1 flex items-center gap-2">
+                            <i className="fa-solid fa-chart-line text-primary-500 dark:text-neon-cyan"></i> Analytics Engine
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 mb-4 animate-pop-bounce delay-100">
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col justify-center items-center text-center cursor-pointer group hover:border-yellow-500 active:scale-95 transition-all" onClick={() => setHistoryViewType('bookmarks')}>
+                                <div className="w-14 h-14 bg-yellow-50 dark:bg-yellow-400/10 text-yellow-500 dark:text-yellow-400 rounded-full flex items-center justify-center text-2xl mb-3 group-hover:-translate-y-1 transition-transform"><i className="fa-solid fa-bookmark"></i></div>
+                                <h4 className="font-black text-gray-900 dark:text-white text-2xl">{bookmarks.length}</h4>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">Bookmarked</p>
+                            </div>
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col justify-center items-center text-center cursor-pointer group hover:border-green-500 active:scale-95 transition-all" onClick={() => setHistoryViewType('correct')}>
+                                <div className="w-14 h-14 bg-green-50 dark:bg-neon-cyan/10 text-green-500 dark:text-neon-cyan rounded-full flex items-center justify-center text-2xl mb-3 group-hover:-translate-y-1 transition-transform"><i className="fa-solid fa-bullseye"></i></div>
+                                <h4 className="font-black text-gray-900 dark:text-white text-2xl">{accuracy}%</h4>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">{totalCorrect}/{totalAttempted} Correct</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-orange-400 via-red-500 to-rose-500 dark:from-slate-900 dark:to-slate-800 dark:border dark:border-orange-500/30 rounded-3xl p-6 text-white shadow-[0_10px_25px_rgba(249,115,22,0.3)] dark:shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center justify-between mb-8 animate-pop-bounce delay-200 hover:scale-[1.02] transition-transform">
+                            <div>
+                                <h4 className="font-black text-xl flex items-center gap-2 dark:text-orange-400"><i className="fa-solid fa-fire text-yellow-200 dark:text-orange-500"></i> {studyStreak.count} Day Mastery Streak!</h4>
+                                <p className="text-sm text-white/90 dark:text-gray-300 font-medium mt-1">Keep practicing every day to maintain your streak.</p>
+                            </div>
+                            <i className="fa-solid fa-bolt text-5xl opacity-20 dark:text-orange-500 dark:opacity-30 animate-pulse-soft"></i>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-800 mb-6 animate-slide-up delay-300">
+                            <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-pie text-purple-500"></i> Detailed Analytics</h4>
+                            <div className="grid grid-cols-3 gap-2 mb-5">
+                                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => setHistoryViewType('attempted')}>
+                                    <div className="text-lg font-black text-gray-900 dark:text-white">{totalAttempted}</div>
+                                    <div className="text-[9px] text-gray-500 font-bold uppercase mt-1 tracking-wider">Attempted</div>
+                                </div>
+                                <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center border border-green-100 dark:border-green-900/30 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors" onClick={() => setHistoryViewType('correct')}>
+                                    <div className="text-lg font-black text-green-600 dark:text-green-400">{totalCorrect}</div>
+                                    <div className="text-[9px] text-green-600 dark:text-green-400 font-bold uppercase mt-1 tracking-wider">Correct</div>
+                                </div>
+                                <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center border border-red-100 dark:border-red-900/30 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" onClick={() => setHistoryViewType('incorrect')}>
+                                    <div className="text-lg font-black text-red-600 dark:text-red-400">{totalIncorrect}</div>
+                                    <div className="text-[9px] text-red-600 dark:text-red-400 font-bold uppercase mt-1 tracking-wider">Incorrect</div>
+                                </div>
+                            </div>
+                            <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Subject Wise Accuracy</h5>
+                            <div className="space-y-4">
+                                {Object.keys(subjectStats).map(subName => {
+                                    const s = subjectStats[subName];
+                                    const acc = s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0;
+                                    let barColor = 'bg-blue-500';
+                                    if (subName.toLowerCase().includes('phy')) barColor = 'bg-purple-500';
+                                    if (subName.toLowerCase().includes('bio') || subName.toLowerCase().includes('bot') || subName.toLowerCase().includes('zoo')) barColor = 'bg-green-500';
+                                    if (subName.toLowerCase().includes('chem')) barColor = 'bg-orange-500';
+                                    return (
+                                        <div key={subName}>
+                                            <div className="flex justify-between text-xs mb-1.5">
+                                                <span className="font-bold text-gray-700 dark:text-gray-300">{subName}</span>
+                                                <span className="font-bold text-gray-900 dark:text-white">{acc}% <span className="text-gray-400 font-normal">({s.correct}/{s.attempted})</span></span>
+                                            </div>
+                                            <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                                                <div className={`${barColor} h-full rounded-full transition-all duration-1000`} style={{ width: `${acc}%` }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {Object.keys(subjectStats).length === 0 && <p className="text-xs text-gray-400 italic">Attempt questions to see subject data.</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-6 animate-slide-up delay-500">
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3 cursor-pointer hover:border-yellow-500 hover:shadow-md active:scale-95 transition-all" onClick={() => setHistoryViewType('bookmarks')}>
+                                <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center text-xl shrink-0"><i className="fa-solid fa-bookmark"></i></div>
+                                <div className="text-left">
+                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">Bookmarks</h4>
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{bookmarks.length} Saved</p>
+                                </div>
+                            </div>
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-3 cursor-pointer hover:border-red-500 hover:shadow-md active:scale-95 transition-all" onClick={() => setHistoryViewType('incorrect')}>
+                                <div className="w-12 h-12 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center text-xl shrink-0"><i className="fa-solid fa-times-circle"></i></div>
+                                <div className="text-left">
+                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">Mistakes</h4>
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{totalIncorrect} Review</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 animate-slide-up delay-500">App Settings</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 shadow-sm animate-slide-up delay-500">
+                            <div className="p-4 flex items-center justify-between hover:border-ataxy-accent-primary cursor-pointer transition-colors" onClick={() => setIsDarkMode(!isDarkMode)}>
+                                <div className="flex items-center gap-3 text-ataxy-text-primary"><i className={`fa-solid ${isDarkMode ? 'fa-moon text-yellow-400' : 'fa-sun text-orange-500'} w-5`}></i> <span className="font-bold uppercase tracking-widest text-[10px]">{isDarkMode ? 'Deep Space Focus' : 'Strategic Clarity'}</span></div>
+                                <div className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${isDarkMode ? 'bg-ataxy-accent-primary shadow-neon' : 'bg-ataxy-border'}`}>
+                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm ${isDarkMode ? 'translate-x-6' : ''}`}></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const showTopNav = currentTab === 'home' || currentTab === 'profile' || (currentTab === 'vc' && !vcChatOpen);
+
+            return (
+                <VoiceRoomErrorBoundary>
+                    <div className={`min-h-[100dvh] font-sans max-w-md mx-auto relative overflow-hidden ${showTopNav ? 'pt-[calc(60px_+_max(env(safe-area-inset-top),_24px))]' : 'pt-[max(env(safe-area-inset-top),_24px)]'}`}>
+
+                        {/* Addictive Animated Ambient Background for Blank Spaces */}
+                        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gray-50 dark:bg-gray-950">
+                            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/10 dark:bg-purple-900/20 rounded-full blur-[80px] animate-blob mix-blend-multiply dark:mix-blend-lighten"></div>
+                            <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] bg-cyan-500/10 dark:bg-cyan-900/20 rounded-full blur-[80px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-lighten"></div>
+                            <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] bg-blue-500/10 dark:bg-blue-900/20 rounded-full blur-[80px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-lighten"></div>
+                            <div className="absolute inset-0 bg-grid-pattern z-0 opacity-60 dark:opacity-100"></div>
+                        </div>
+
+                        <GlobalStatusBar isVoiceRoom={voiceState.activeRoom && !voiceState.isMinimized} />
+
+                        {showSplash && <GlobalLoader text="Loading Experience..." fade={splashFading} />}
+
+                        {showTopNav && <TopNavBar />}
+
+                        <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : ''}`}>
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} />
+                            {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
+                                <>
+                                    {currentTab === 'home' && renderHomeView()}
+                                    {currentTab === 'ai' && <AIMentorView />}
+                                    {currentTab === 'voice' && <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />}
+                                    {currentTab === 'questions' && renderQuestionsView()}
+                                    {currentTab === 'profile' && renderProfileView()}
+
+                                    
+{renderTargetAnalyzerModal()}
+{renderAnalyticsModal()}
+                                    {renderHistoryViewer()}
+
+                                    {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
+                                    {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
+                                        <div className="fixed bottom-0 w-full max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)]">
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('voice'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'voice' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-satellite-dish text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">VC</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Voice Room Global Overlay */}
+                        {voiceState.activeRoom && !voiceState.isMinimized && (
+                            <div className="fixed inset-0 z-[1500000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
+                                <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
+                            </div>
+                        )}
+
+                        {/* Floating Voice Widget is completely global now */}
+                        {voiceState.activeRoom && voiceState.isMinimized && <FloatingVoiceWidget voiceState={voiceState} onRestore={() => voiceState.setIsMinimized(false)} />}
+
+                        {/* Clear Progress Confirmation Modal */}
+                        {confirmClearScope && (
+                            <div className="fixed inset-0 bg-black/60 z-[999999] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setConfirmClearScope(null)}>
+                                <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
+                                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full mx-auto flex items-center justify-center text-3xl mb-4">
+                                        <i className="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Are you sure?</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                        Are you sure you want to clear {confirmClearScope === 'all' ? 'all' : 'these'} attempted questions? It will delete your data and analysis whatever you attempted.
+                                    </p>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setConfirmClearScope(null)} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold rounded-xl transition-colors">No</button>
+                                        <button onClick={() => handleClearProgress(confirmClearScope)} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/30">Yes, Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <GlobalDialog />
+
+                        {isOffline && (
+                            <div className="fixed inset-0 z-[4000000] bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in text-center text-white">
+                                <div className="bg-[#021633]/90 border border-[#0AE0D0]/30 p-5 rounded-3xl flex flex-col items-center justify-center shadow-[0_0_30px_rgba(0,255,255,0.2)] backdrop-blur-md">
+                                    <div className="relative w-16 h-16 flex items-center justify-center mb-3">
+                                        <div className="absolute inset-0 border-[3px] border-[#0AE0D0] border-t-transparent rounded-full animate-spin"></div>
+                                        <div className="absolute inset-1.5 border-[3px] border-[#F9D33A] border-b-transparent rounded-full animate-[spin_1.5s_linear_infinite_reverse]"></div>
+                                        <i className="fa-solid fa-wifi text-2xl text-red-500 absolute animate-ping opacity-20"></i>
+                                        <AtaxyLogo className="w-10 h-10 rounded-full animate-pulse relative z-10 border border-[#00FFFF]/30 shadow-[0_0_10px_rgba(0,255,255,0.5)]" />
+                                    </div>
+                                    <h3 className="text-sm font-black mb-1 text-[#00FFFF] uppercase tracking-widest drop-shadow-[0_0_5px_rgba(0,255,255,0.4)]">Reconnecting</h3>
+                                    <p className="text-[#A4DFE6] text-[10px] font-bold animate-pulse">Waiting for internet...</p>
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                </VoiceRoomErrorBoundary>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>

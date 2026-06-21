@@ -1,0 +1,15 @@
+<USER_REQUEST>
+when i am clicking on practice all quesiton in practice tab then  a system crash screen appesrs so fix it
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-21T01:34:49+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\risha\ATAXYbot\index.html (LANGUAGE_HTML)
+Cursor is on line: 7800
+Other open documents:
+- c:\Users\risha\ATAXYbot\index.html (LANGUAGE_HTML)
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.1 Pro (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
