@@ -8190,14 +8190,13 @@ const renderHomeView = () => {
                                                     <div className="text-black text-[15px] md:text-base leading-relaxed font-medium">
                                                         <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
                                                     </div>
-                                                </div>
-                                                
-                                                {/* Enhanced Bookmark Button */}
-                                                <div className="flex justify-end gap-2 mb-4">
-                                                    <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
-                                                        <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i> 
-                                                        {bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}
-                                                    </button>
+                                                    {/* Enhanced Bookmark Button */}
+                                                    <div className="shrink-0">
+                                                        <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
+                                                            <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i> 
+                                                            <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 {currentQuestion.imageUrl && (
                                                     <div className="mb-6 rounded-sm overflow-hidden bg-white flex items-center justify-center border border-gray-200 p-2">
