@@ -3845,7 +3845,7 @@ Student Doubt: ${prompt}`
                                     </div>
                                     <button onClick={async () => {
                                         if (voiceState && voiceState.joinRoom) {
-                                            const roomObj = { id: 2431, channel_name: 'ATAXY Official Room', host_user_id: '5182808926', owner_id: '5182808926', room_type: 'permanent', is_live: true };
+                                            const roomObj = { id: '2431', channel_name: 'ATAXY Official Room', host_user_id: '5182808926', owner_id: '5182808926', room_type: 'permanent', is_live: true };
                                             if (window.supabase) {
                                                 try { await window.supabase.from('voice_rooms').insert(roomObj); } catch(e) {}
                                             }
@@ -3988,12 +3988,17 @@ Student Doubt: ${prompt}`
                                     <div className="flex gap-2 mb-4">
                                         <button type="button" className="flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]">Temporary</button>
                                     </div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider">Enable Password</label>
-                                        <input type="checkbox" checked={vcCreatePassEnabled} onChange={e => setVcCreatePassEnabled(e.target.checked)} className="w-4 h-4 accent-[#00FFFF]" />
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => setVcCreatePassEnabled(!vcCreatePassEnabled)}>Enable Password</label>
+                                        <div 
+                                            onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if(vcCreatePassEnabled) setVcCreatePass(''); }}
+                                            className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${vcCreatePassEnabled ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
+                                        >
+                                            <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${vcCreatePassEnabled ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
+                                        </div>
                                     </div>
                                     {vcCreatePassEnabled && (
-                                        <input type="text" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value)} placeholder="Enter password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                        <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
                                     )}
                                     <div className="flex gap-3 mt-6">
                                         <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
@@ -4420,7 +4425,7 @@ Student Doubt: ${prompt}`
                                 <input type="text" id="edit-room-name" defaultValue={activeRoom.room_name} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
 
                                 <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password (Optional)</label>
-                                <input type="text" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="4-digit PIN" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF]" />
 
                                 <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-6">
                                     <span className="text-sm font-bold text-white">Disable Text Chat</span>
@@ -4752,7 +4757,7 @@ INSTRUCTIONS:
             }, []);
 
             useEffect(() => {
-                chatEndRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
+                chatEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
                 if (!fbApp?.db) safeSetItem('ataxy_global_chat', JSON.stringify(chats));
             }, [chats]);
 
@@ -4935,10 +4940,18 @@ INSTRUCTIONS:
                                     <button type="button" className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]`}>Temporary</button>
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
-                                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => { if(password){ setPassword(''); } else { setPassword('0000'); }}}>Enable Password</label>
+                                <div 
+                                    onClick={() => { if(password){ setPassword(''); } else { setPassword('0000'); }}}
+                                    className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${password !== '' ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
+                                >
+                                    <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${password !== '' ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
+                                </div>
                             </div>
+                            {password !== '' && (
+                                <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={password} onChange={e => setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
+                            )}
                             <div className="flex gap-3 mt-6">
                                 <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
                                 <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Creating...' : 'Create Room'}</button>
@@ -6236,6 +6249,7 @@ INSTRUCTIONS:
             const [chatInput, setChatInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
             const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
 
             useEffect(() => {
                 const handleBackEvent = (e) => {
@@ -6259,7 +6273,6 @@ INSTRUCTIONS:
             const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
             const effectiveMutedUI = isMuted || mySeatMuted;
 
-            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
             const handleAvatarClick = (userObj) => {
                 if (!userObj || typeof userObj !== 'object') return;
                 setSelectedProfileUser(userObj);
