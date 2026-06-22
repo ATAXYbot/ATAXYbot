@@ -8726,8 +8726,9 @@ const getStatus = (qId) => {
                                 generatedTestResult.questions.forEach(q => {
                                     const chap = q.chapterName || 'Unknown Chapter';
                                     const top = q.topicName || 'Unknown Topic';
-                                    if (!analysis[chap]) analysis[chap] = { name: chap, total: 0, correct: 0, incorrect: 0, unattempted: 0, topics: {} };
-                                    if (!analysis[chap].topics[top]) analysis[chap].topics[top] = { name: top, total: 0, correct: 0, incorrect: 0, unattempted: 0 };
+                                    const sub = q.subjectName || 'Unknown Subject';
+                                    if (!analysis[chap]) analysis[chap] = { name: chap, subject: sub, total: 0, correct: 0, incorrect: 0, unattempted: 0, topics: {} };
+                                    if (!analysis[chap].topics[top]) analysis[chap].topics[top] = { name: top, subject: sub, total: 0, correct: 0, incorrect: 0, unattempted: 0 };
                                     
                                     analysis[chap].total++;
                                     analysis[chap].topics[top].total++;
@@ -8748,6 +8749,41 @@ const getStatus = (qId) => {
                                 });
                                 return Object.values(analysis).map(c => ({ ...c, topics: Object.values(c.topics) }));
                             })();
+
+                            const handleGenerateTargetedDPP = (subjectName, chapterName, topicName) => {
+                                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
+                                const subData = availableQuestions.find(s => s.name === subjectName);
+                                let testQuestions = [];
+                                if (subData) {
+                                    const chapData = subData.chapters?.find(c => c.name === chapterName);
+                                    if (chapData) {
+                                        const topData = chapData.topics?.find(t => t.name === topicName);
+                                        if (topData) {
+                                            topData.questions?.forEach(q => testQuestions.push({ ...q, topicName: topData.name, chapterName: chapData.name, subjectName: subData.name }));
+                                        }
+                                    }
+                                }
+                                if (testQuestions.length === 0) {
+                                    safeAlert('No questions available to generate DPP for this topic.');
+                                    return;
+                                }
+                                testQuestions.sort(() => Math.random() - 0.5);
+                                testQuestions = testQuestions.slice(0, 15);
+                                
+                                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+                                const newTest = {
+                                    id: 'test_' + Date.now(),
+                                    type: 'dpp',
+                                    date: new Date().toISOString(),
+                                    questions: testQuestions,
+                                    totalMarks: testQuestions.length * 4,
+                                    isNeetPattern: false,
+                                    name: 'Targeted DPP: ' + topicName + ' - ' + dateName,
+                                    config: { dppSubject: subjectName, dppChapter: chapterName, dppTopics: [topicName], dppCount: 15 }
+                                };
+                                setGeneratedTestsHistory(prev => [newTest, ...prev]);
+                                safeAlert('Targeted DPP Generated Successfully! Check your saved tests.');
+                            };
 
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-[80vh] flex items-center justify-center">
@@ -8823,7 +8859,10 @@ const getStatus = (qId) => {
                                                                     {chap.topics.map((top, j) => (
                                                                         <div key={j} className="flex justify-between items-center bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
                                                                             <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 truncate pr-2" title={top.name}>{top.name}</span>
-                                                                            <div className="flex gap-1 shrink-0">
+                                                                            <div className="flex gap-1 shrink-0 items-center">
+                                                                                {(top.incorrect > 0 || top.unattempted > 0) && (
+                                                                                    <button onClick={(e) => { e.preventDefault(); handleGenerateTargetedDPP(chap.subject, chap.name, top.name); }} className="px-2 h-4 mr-1 flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-sm text-[9px] font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-colors active:scale-95" title="Auto-Generate DPP"><i className="fa-solid fa-bullseye mr-1"></i> Auto-DPP</button>
+                                                                                )}
                                                                                 {top.correct > 0 && <span className="w-4 h-4 flex items-center justify-center bg-green-100 text-green-700 rounded text-[9px] font-bold" title="Correct">{top.correct}</span>}
                                                                                 {top.incorrect > 0 && <span className="w-4 h-4 flex items-center justify-center bg-red-100 text-red-700 rounded text-[9px] font-bold" title="Incorrect">{top.incorrect}</span>}
                                                                                 {top.unattempted > 0 && <span className="w-4 h-4 flex items-center justify-center bg-gray-100 text-gray-600 rounded text-[9px] font-bold" title="Unattempted">{top.unattempted}</span>}
