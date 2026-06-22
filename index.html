@@ -7337,6 +7337,76 @@ INSTRUCTIONS:
             const [questionsLoading, setQuestionsLoading] = useState(false);
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+            const handleGenerateTargetedDPP = (subjectName, chapterName, topicNamesArray, count) => {
+                setPendingDPPConfig({ subjectName, chapterName, topicNamesArray, count });
+            };
+
+            const processGenerateDPP = () => {
+                if (!pendingDPPConfig) return;
+                const { subjectName, chapterName, topicNamesArray, count } = pendingDPPConfig;
+                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
+                const subData = availableQuestions.find(s => s.name === subjectName);
+                let testQuestions = [];
+                if (subData) {
+                    const chapData = subData.chapters?.find(c => c.name === chapterName);
+                    if (chapData) {
+                        chapData.topics?.forEach(t => {
+                            if (topicNamesArray.length === 0 || topicNamesArray.includes(t.name)) {
+                                t.questions?.forEach(q => testQuestions.push({ ...q, topicName: t.name, chapterName: chapData.name, subjectName: subData.name }));
+                            }
+                        });
+                    }
+                }
+                if (testQuestions.length === 0) {
+                    safeAlert('No questions available to generate DPP for the selected topics.');
+                    setPendingDPPConfig(null);
+                    return;
+                }
+                testQuestions.sort(() => Math.random() - 0.5);
+                testQuestions = testQuestions.slice(0, count);
+                
+                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+                const testTitleName = topicNamesArray.length === 1 ? topicNamesArray[0] : (topicNamesArray.length === 0 ? chapterName : chapterName + ' (Weak Topics)');
+                const newTest = {
+                    id: 'test_' + Date.now(),
+                    type: 'dpp',
+                    date: new Date().toISOString(),
+                    questions: testQuestions,
+                    totalMarks: testQuestions.length * 4,
+                    isNeetPattern: false,
+                    name: 'Targeted DPP: ' + testTitleName + ' - ' + dateName,
+                    config: { dppSubject: subjectName, dppChapter: chapterName, dppTopics: topicNamesArray, dppCount: count }
+                };
+                setPendingGeneratedDPP(newTest);
+                setPendingDPPConfig(null);
+            };
+
+            const handleSaveDPP = () => {
+                if (pendingGeneratedDPP) {
+                    setGeneratedTestsHistory(prev => [pendingGeneratedDPP, ...prev]);
+                    safeAlert(`Targeted DPP (${pendingGeneratedDPP.questions.length} Qs) Saved Successfully! Check your saved tests.`);
+                }
+                setPendingGeneratedDPP(null);
+            };
+
+            const handleStartDPP = () => {
+                if (pendingGeneratedDPP) {
+                    setGeneratedTestsHistory(prev => [pendingGeneratedDPP, ...prev]);
+                    setPracticeAttempts({});
+                    setPracticeVisited([]);
+                    setPracticeReview([]);
+                    setCurrentQuestionIndex(0);
+                    setActiveGeneratedTest({ ...pendingGeneratedDPP, startTime: Date.now() });
+                    setLoadedQuestions(pendingGeneratedDPP.questions);
+                    setActivePracticeChapter({ name: pendingGeneratedDPP.name, isCustomTest: true });
+                    setShowQuiz(true);
+                    setGeneratedTestResult(null);
+                    setShowScoreSummary(false);
+                    setShowAnalyticsModal(false);
+                }
+                setPendingGeneratedDPP(null);
+            };
+
             const handleClearProgress = (scope, clearType = 'all') => {
                 let idsToRemove = [];
                 if (scope === 'all') {
@@ -8541,7 +8611,9 @@ const getStatus = (qId) => {
                                                 <div key={i} onClick={() => { if (qCount > 0) { setActiveQuestionType(type); setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden ${qCount > 0 ? 'cursor-pointer hover:-translate-y-1 ' + (isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10') : 'opacity-50 grayscale'}`}>
                                                     <div className="flex-1 mr-4">
                                                         <h4 className={`font-black text-lg text-white transition-colors drop-shadow-sm ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-gray-300'}`}>{type}</h4>
-                                                        <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{qCount} Qs</p>
+                                                        {type !== 'All combined' && (
+                                                            <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{qCount} Qs</p>
+                                                        )}
                                                     </div>
                                                     <div className="flex items-center gap-3">
                                                         {qCount > 0 && (
@@ -9138,75 +9210,6 @@ const getStatus = (qId) => {
                                 return Object.values(analysis).map(c => ({ ...c, topics: Object.values(c.topics) }));
                             })();
 
-                            const handleGenerateTargetedDPP = (subjectName, chapterName, topicNamesArray, count) => {
-                                setPendingDPPConfig({ subjectName, chapterName, topicNamesArray, count });
-                            };
-
-                            const processGenerateDPP = () => {
-                                if (!pendingDPPConfig) return;
-                                const { subjectName, chapterName, topicNamesArray, count } = pendingDPPConfig;
-                                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
-                                const subData = availableQuestions.find(s => s.name === subjectName);
-                                let testQuestions = [];
-                                if (subData) {
-                                    const chapData = subData.chapters?.find(c => c.name === chapterName);
-                                    if (chapData) {
-                                        chapData.topics?.forEach(t => {
-                                            if (topicNamesArray.includes(t.name)) {
-                                                t.questions?.forEach(q => testQuestions.push({ ...q, topicName: t.name, chapterName: chapData.name, subjectName: subData.name }));
-                                            }
-                                        });
-                                    }
-                                }
-                                if (testQuestions.length === 0) {
-                                    safeAlert('No questions available to generate DPP for the selected topics.');
-                                    setPendingDPPConfig(null);
-                                    return;
-                                }
-                                testQuestions.sort(() => Math.random() - 0.5);
-                                testQuestions = testQuestions.slice(0, count);
-                                
-                                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
-                                const testTitleName = topicNamesArray.length === 1 ? topicNamesArray[0] : chapterName + ' (Weak Topics)';
-                                const newTest = {
-                                    id: 'test_' + Date.now(),
-                                    type: 'dpp',
-                                    date: new Date().toISOString(),
-                                    questions: testQuestions,
-                                    totalMarks: testQuestions.length * 4,
-                                    isNeetPattern: false,
-                                    name: 'Targeted DPP: ' + testTitleName + ' - ' + dateName,
-                                    config: { dppSubject: subjectName, dppChapter: chapterName, dppTopics: topicNamesArray, dppCount: count }
-                                };
-                                setPendingGeneratedDPP(newTest);
-                                setPendingDPPConfig(null);
-                            };
-
-                            const handleSaveDPP = () => {
-                                if (pendingGeneratedDPP) {
-                                    setGeneratedTestsHistory(prev => [pendingGeneratedDPP, ...prev]);
-                                    safeAlert(`Targeted DPP (${pendingGeneratedDPP.questions.length} Qs) Saved Successfully! Check your saved tests.`);
-                                }
-                                setPendingGeneratedDPP(null);
-                            };
-
-                            const handleStartDPP = () => {
-                                if (pendingGeneratedDPP) {
-                                    setGeneratedTestsHistory(prev => [pendingGeneratedDPP, ...prev]);
-                                    setPracticeAttempts({});
-                                    setPracticeVisited([]);
-                                    setPracticeReview([]);
-                                    setCurrentQuestionIndex(0);
-                                    setActiveGeneratedTest({ ...pendingGeneratedDPP, startTime: Date.now() });
-                                    setLoadedQuestions(pendingGeneratedDPP.questions);
-                                    setActivePracticeChapter({ name: pendingGeneratedDPP.name, isCustomTest: true });
-                                    setShowQuiz(true);
-                                    setGeneratedTestResult(null);
-                                    setShowScoreSummary(false);
-                                }
-                                setPendingGeneratedDPP(null);
-                            };
-
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-[80vh] flex items-center justify-center">
                                     <div className="bg-white dark:bg-gray-900 rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden">
@@ -9397,12 +9400,13 @@ const getStatus = (qId) => {
                                     {/* Main Question Area */}
                                     <div className="flex-1 space-y-6">
                                         <div className={`bg-white dark:bg-gray-900 border-2 rounded-2xl p-5 md:p-8 shadow-sm transition-colors ${isAns ? (isCorrect ? 'border-green-400' : 'border-red-400') : 'border-gray-200 dark:border-gray-700'}`}>
-                                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm">Q{analysisQuestionIndex + 1}</span>
-                                                    {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{q.subjectName}</span>}
+                                            <div className="flex justify-between items-start mb-6 border-b border-gray-100 dark:border-gray-800 pb-4 gap-4">
+                                                <div className="flex items-center gap-2 flex-wrap flex-1">
+                                                    <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm shrink-0">Q{analysisQuestionIndex + 1}</span>
+                                                    {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full shrink-0">{q.subjectName}</span>}
+                                                    {q.topicName && <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800 line-clamp-1" title={q.topicName}>{q.topicName}</span>}
                                                 </div>
-                                                <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                                <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner shrink-0 ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                                                     {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
                                                 </span>
                                             </div>
@@ -10341,33 +10345,30 @@ const PRACTICE_BATCHES = [
                 const perf = safeGetJSON('ataxy_practice_perf', null) || {};
 
                 // 1. Group Data into Subjects & Chapters
-                const getGroup = (subName) => {
-                    const n = subName.toLowerCase();
-                    if (n.includes('phy')) return 'Physics';
-                    if (n.includes('chem')) return 'Chemistry';
-                    if (n.includes('bio') || n.includes('bot') || n.includes('zoo')) return 'Biology';
-                    return 'Other';
-                };
-
                 let totalAttempted = 0;
                 let totalCorrect = 0;
 
-                const subjectStats = {
-                    'Physics': { attempted: 0, correct: 0, max: 180, colorClass: 'text-red-500' },
-                    'Chemistry': { attempted: 0, correct: 0, max: 180, colorClass: 'text-orange-500' },
-                    'Biology': { attempted: 0, correct: 0, max: 360, colorClass: 'text-green-500' }
-                };
+                const subjectStats = {};
                 const chapterStats = {};
 
                 qbankData.forEach(sub => {
-                    const group = getGroup(sub.name);
-                    if (group === 'Other') return;
-
+                    const group = sub.name;
+                    
                     sub.chapters?.forEach(chap => {
                         chap.topics?.forEach(top => top.questions?.forEach(q => {
                             if (perf[q.id] !== undefined) {
+                                if (!subjectStats[group]) {
+                                    let colorClass = 'text-blue-500';
+                                    if (group.toLowerCase().includes('phy')) colorClass = 'text-red-500';
+                                    if (group.toLowerCase().includes('chem')) colorClass = 'text-orange-500';
+                                    if (group.toLowerCase().includes('bot') || group.toLowerCase().includes('bio')) colorClass = 'text-green-500';
+                                    if (group.toLowerCase().includes('zoo')) colorClass = 'text-emerald-500';
+                                    if (group.toLowerCase().includes('math')) colorClass = 'text-purple-500';
+                                    
+                                    subjectStats[group] = { attempted: 0, correct: 0, colorClass };
+                                }
                                 if (!chapterStats[chap.name]) {
-                                    chapterStats[chap.name] = { subjectGroup: group, attempted: 0, correct: 0 };
+                                    chapterStats[chap.name] = { subjectGroup: group, subjectName: sub.name, attempted: 0, correct: 0 };
                                 }
                                 totalAttempted++;
                                 subjectStats[group].attempted++;
@@ -10382,17 +10383,14 @@ const PRACTICE_BATCHES = [
                     });
                 });
 
-                // 2. Compute Predicted Scores
-                const getPredicted = (group) => {
+                // 2. Compute Accuracy
+                const getAccuracy = (group) => {
                     const s = subjectStats[group];
-                    if (s.attempted === 0) return 0;
-                    return Math.round((s.correct / s.attempted) * s.max);
+                    if (!s || s.attempted === 0) return 0;
+                    return Math.round((s.correct / s.attempted) * 100);
                 };
 
-                const phyScore = getPredicted('Physics');
-                const chemScore = getPredicted('Chemistry');
-                const bioScore = getPredicted('Biology');
-                const totalPredicted = phyScore + chemScore + bioScore;
+                const overallAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
 
                 // 3. Compute Mock Metrics for premium feel
                 const accuracyRatio = totalAttempted > 0 ? (totalCorrect / totalAttempted) : 0;
@@ -10413,21 +10411,23 @@ const PRACTICE_BATCHES = [
 
                 const handleGenerateDPP = (chapterName) => {
                     try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); } catch (e) { }
-                    safeAlert(`Generating Custom DPP for: ${chapterName}...
-
-This feature will compile your weakest topics into a tailored test.`);
+                    const chapData = chapterStats[chapterName];
+                    if (chapData) {
+                        setShowAnalyticsModal(false);
+                        handleGenerateTargetedDPP(chapData.subjectName, chapterName, [], 20);
+                    }
                 };
 
                 // 5. Active Chapters for Table
                 const activeChapters = Object.keys(chapterStats)
-                    .filter(c => chapterStats[c].subjectGroup === activeAnalysisTab)
+                    .filter(c => activeAnalysisTab === 'All' || chapterStats[c].subjectGroup === activeAnalysisTab)
                     .map(c => ({ name: c, ...chapterStats[c] }))
                     .sort((a, b) => b.attempted - a.attempted); // Most attempted first
 
                 let chapterQuestions = [];
                 if (expandedAnalysisChapter) {
                     qbankData.forEach(sub => {
-                        if (getGroup(sub.name) !== activeAnalysisTab) return;
+                        if (activeAnalysisTab !== 'All' && sub.name !== activeAnalysisTab) return;
                         const chap = sub.chapters?.find(c => c.name === expandedAnalysisChapter);
                         if (chap) {
                             chap.topics?.forEach(top => top.questions?.forEach(q => {
@@ -10494,26 +10494,26 @@ This feature will compile your weakest topics into a tailored test.`);
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800/80 text-center relative overflow-hidden">
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
                                 <h3 className="font-black text-xl text-gray-900 dark:text-white mb-1 tracking-wide">
-                                    Predicted Score: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{totalPredicted}</span> <span className="text-sm text-gray-400">/ 720</span>
+                                    Overall Accuracy: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{overallAccuracy}%</span>
                                 </h3>
                                 <p className="text-[10px] text-gray-500 mb-6 uppercase tracking-widest font-semibold">Based on your practice accuracy</p>
 
-                                <div className="flex justify-around items-center">
-                                    <CircularRing score={phyScore} max={180} colorClass="text-red-500" label="Physics" />
-                                    <CircularRing score={chemScore} max={180} colorClass="text-orange-500" label="Chemistry" />
-                                    <CircularRing score={bioScore} max={360} colorClass="text-green-500" label="Biology" />
+                                <div className="flex justify-around items-center flex-wrap gap-4">
+                                    {Object.keys(subjectStats).map(group => (
+                                        <CircularRing key={group} score={getAccuracy(group)} max={100} colorClass={subjectStats[group].colorClass} label={group} />
+                                    ))}
                                 </div>
                             </div>
 
                             {/* SUBJECT TABS & CHAPTER-WISE TABLE */}
                             <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800/80 overflow-hidden flex flex-col">
                                 {/* Pill Tabs */}
-                                <div className="flex p-2 bg-gray-50 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800/80">
-                                    {['Physics', 'Chemistry', 'Biology'].map(tab => (
+                                <div className="flex p-2 bg-gray-50 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800/80 overflow-x-auto custom-scrollbar gap-2">
+                                    {['All', ...Object.keys(subjectStats)].map(tab => (
                                         <button
                                             key={tab}
                                             onClick={() => handleTabClick(tab)}
-                                            className={`flex-1 py-2.5 text-xs font-bold rounded-full transition-all duration-300 ${activeAnalysisTab === tab ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-gray-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-transparent'}`}
+                                            className={`flex-1 min-w-[80px] py-2.5 px-3 text-xs font-bold rounded-full transition-all duration-300 whitespace-nowrap ${activeAnalysisTab === tab ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-gray-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-transparent'}`}
                                         >
                                             {tab}
                                         </button>
