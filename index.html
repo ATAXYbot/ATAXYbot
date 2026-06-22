@@ -7288,6 +7288,7 @@ INSTRUCTIONS:
             const [historySearchQuery, setHistorySearchQuery] = useState('');
             const [syllabusTest, setSyllabusTest] = useState(null);
             const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0); 
+            const [analysisShowPalette, setAnalysisShowPalette] = useState(false); 
             const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, topics: { Physics: {}, Chemistry: {}, Botany: {}, Zoology: {} }, selectAllTopics: true, dppSubject: null, dppChapter: null, dppTopics: [], dppSelectAllTopics: false, dppCount: 10, testName: '' });
             const [recentlyGeneratedTest, setRecentlyGeneratedTest] = useState(null);
             const [generatedTestsHistory, setGeneratedTestsHistory] = useState(() => safeGetJSON('ataxy_generated_tests', []));
@@ -9387,6 +9388,7 @@ const getStatus = (qId) => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
+                                        <button onClick={() => setAnalysisShowPalette(true)} className="h-10 px-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold text-sm flex items-center gap-2 shadow-sm transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40 active:scale-95"><i className="fa-solid fa-grip"></i> <span className="hidden sm:inline">Palette</span></button>
                                         <button onClick={() => setAnalysisQuestionIndex(Math.max(0, analysisQuestionIndex - 1))} disabled={analysisQuestionIndex === 0} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-left"></i></button>
                                         <button onClick={() => setAnalysisQuestionIndex(Math.min(generatedTestResult.questions.length - 1, analysisQuestionIndex + 1))} disabled={analysisQuestionIndex === generatedTestResult.questions.length - 1} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-right"></i></button>
                                     </div>
@@ -9438,39 +9440,47 @@ const getStatus = (qId) => {
                                         </div>
                                     </div>
 
-                                    {/* Sidebar Question Palette */}
-                                    <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
-                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm sticky top-24">
-                                            <h3 className="font-black text-lg mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
-                                            <div className="grid grid-cols-5 gap-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                                                {generatedTestResult.questions.map((pq, pIdx) => {
-                                                    const pAnsIdx = (generatedTestResult.attempts || {})[pq.id];
-                                                    const pIsAns = pAnsIdx !== undefined;
-                                                    const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
-                                                    
-                                                    let btnClass = "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400";
-                                                    if (pIsCorrect) btnClass = "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300 font-bold shadow-sm";
-                                                    else if (pIsAns && !pIsCorrect) btnClass = "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-300 font-bold shadow-sm";
-                                                    
-                                                    if (pIdx === analysisQuestionIndex) {
-                                                        btnClass += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 transform scale-110 z-10";
-                                                    }
-
-                                                    return (
-                                                        <button key={pq.id} onClick={() => setAnalysisQuestionIndex(pIdx)} className={`w-10 h-10 rounded-lg border flex items-center justify-center text-xs transition-all ${btnClass}`}>
-                                                            {pIdx + 1}
-                                                        </button>
-                                                    );
-                                                })}
+                                </div>
+                                
+                                {/* Analysis Palette Slide-over Modal */}
+                                {analysisShowPalette && (
+                                    <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-center items-end animate-in fade-in" onClick={() => setAnalysisShowPalette(false)}>
+                                        <div className="bg-white dark:bg-gray-900 h-full w-[80vw] sm:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 dark:border-gray-800 transform transition-transform animate-in slide-in-from-right" onClick={e => e.stopPropagation()}>
+                                            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm z-10 shrink-0 bg-gray-50 dark:bg-gray-800/50">
+                                                <h3 className="font-black text-lg flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
+                                                <button onClick={() => setAnalysisShowPalette(false)} className="w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
                                             </div>
-                                            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                            <div className="p-4 flex-1 overflow-y-auto">
+                                                <div className="grid grid-cols-5 gap-2">
+                                                    {generatedTestResult.questions.map((pq, pIdx) => {
+                                                        const pAnsIdx = (generatedTestResult.attempts || {})[pq.id];
+                                                        const pIsAns = pAnsIdx !== undefined;
+                                                        const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
+                                                        
+                                                        let btnClass = "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400";
+                                                        if (pIsCorrect) btnClass = "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300 font-bold shadow-sm";
+                                                        else if (pIsAns && !pIsCorrect) btnClass = "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-300 font-bold shadow-sm";
+                                                        
+                                                        if (pIdx === analysisQuestionIndex) {
+                                                            btnClass += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 transform scale-110 z-10";
+                                                        }
+
+                                                        return (
+                                                            <button key={pq.id} onClick={() => { setAnalysisQuestionIndex(pIdx); setAnalysisShowPalette(false); }} className={`w-10 h-10 rounded-lg border flex items-center justify-center text-xs transition-all ${btnClass}`}>
+                                                                {pIdx + 1}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="p-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 bg-gray-50 dark:bg-gray-800/50 shrink-0">
                                                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-green-100 border border-green-500"></div> Correct</div>
                                                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-100 border border-red-500"></div> Incorrect</div>
                                                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200"></div> Skipped</div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         );
                     }
