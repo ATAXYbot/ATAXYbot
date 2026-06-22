@@ -1,0 +1,128 @@
+<div className="bg-white min-h-[100dvh] font-sans text-gray-800 flex flex-col fixed inset-0 z-[100] overflow-hidden">
+                                    <div className="bg-gray-100 border-b border-gray-300 px-4 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm shrink-0 gap-4">
+                                        <div className="flex items-center gap-4 relative w-full">
+                                            <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none hidden md:block">
+                                                <svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><path d="M0,100 L200,0 M50,100 L200,20 M100,100 L200,40" stroke="#000" strokeWidth="2" fill="none"/></svg>
+                                            </div>
+                                            <div className="w-[85px] h-[95px] bg-white border-2 border-gray-400 flex items-center justify-center overflow-hidden shrink-0">
+                                                {tgUser?.photo_url ? <img src={tgUser.photo_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-user text-5xl text-gray-500"></i>}
+                                            </div>
+                                            <div className="text-xs sm:text-[13px] grid grid-cols-[max-content_1fr] gap-x-2 gap-y-1">
+                                                <span className="text-gray-700">Candidate Name</span><span className="font-bold text-[#E85D04]">: {safeRenderText(tgUser?.first_name ? (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '')) : 'Student')}</span>
+                                                <span className="text-gray-700">Exam Name</span><span className="font-bold text-[#E85D04]">: {isNeet ? 'NEET' : 'JEE'}</span>
+                                                <span className="text-gray-700">Test Name</span><span className="font-bold text-[#E85D04]">: {activePracticeChapter.name}</span>
+                                                <span className="text-gray-700">Remaining Time</span><span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">: <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} /></span>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => { setConfirmClearScope({ type: 'chapter', data: activePracticeChapter }); }} className="text-red-500 text-sm font-bold hover:bg-red-50 px-3 py-1 rounded-sm transition-colors border border-red-200">Quit Test</button>
+                                    </div>
+
+                                    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                                        <div className="flex-1 flex flex-col border-r border-gray-300 relative bg-white min-w-0">
+                                            <div className="flex justify-between items-center bg-white border-b-2 border-gray-300 px-4 py-2 shrink-0">
+                                                <h2 className="text-lg font-bold text-gray-800">Question {safeQuestionIndex + 1}:</h2>
+                                                <i className="fa-solid fa-circle-down text-blue-600 text-xl"></i>
+                                            </div>
+                                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" data-qa-card>
+                                                <div className="text-black text-[15px] sm:text-[16px] leading-relaxed font-medium mb-6">
+                                                    <FormattedText text={currentQuestion?.question || currentQuestion?.text || currentQuestion?.question_text} />
+                                                    {currentQuestion.imageUrl && <div className="mt-4 max-w-full overflow-hidden rounded-md border border-gray-200"><img src={currentQuestion.imageUrl} className="max-w-full h-auto object-contain max-h-[400px]" alt="Question" /></div>}
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-0 mt-6 border-t border-l border-gray-300 w-full">
+                                                    {currentQuestion.options?.map((opt, oIdx) => {
+                                                        const isSelected = userAnsIdx === oIdx;
+                                                        return (
+                                                            <label key={oIdx} className={`flex border-b border-r border-gray-300 cursor-pointer bg-white ${isSelected ? 'bg-blue-50/20' : 'hover:bg-gray-50'}`}>
+                                                                <div className="w-[45px] shrink-0 flex items-center justify-center border-r border-gray-300 bg-white text-black font-semibold text-[14px] p-2 relative">
+                                                                    <input type="radio" name={'q_' + currentQuestion.id} checked={isSelected} onChange={() => {
+                                                                        setPracticeAttempts(prev => ({ ...prev, [currentQuestion.id]: oIdx }));
+                                                                        if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
+                                                                    }} className="absolute opacity-0 w-full h-full cursor-pointer" />
+                                                                    {oIdx + 1}.
+                                                                </div>
+                                                                <div className="flex-1 p-3 flex items-center bg-white text-black text-[15px]">
+                                                                    <FormattedText text={opt} />
+                                                                </div>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="border-t border-gray-300 bg-white p-3 shrink-0">
+                                                <div className="flex gap-1 mb-3">
+                                                    <button onClick={() => {
+                                                        if (practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => prev.filter(id => id !== currentQuestion?.id));
+                                                        handleNext();
+                                                    }} className="bg-[#5CB85C] hover:bg-[#4cae4c] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#4cae4c]">Save & Next</button>
+                                                    <button onClick={() => handleClear(currentQuestion?.id)} className="bg-white hover:bg-gray-100 text-black text-[12px] font-bold px-4 py-2 uppercase border border-gray-300">Clear</button>
+                                                    <button onClick={() => {
+                                                        if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
+                                                        handleNext();
+                                                    }} className="bg-[#F0AD4E] hover:bg-[#eea236] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#eea236]">Save & Mark For Review</button>
+                                                    <button onClick={() => {
+                                                        if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
+                                                        handleNext();
+                                                    }} className="bg-[#337AB7] hover:bg-[#286090] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#2e6da4]">Mark For Review & Next</button>
+                                                </div>
+                                            </div>
+                                            <div className="bg-gray-100 border-t border-gray-300 px-4 py-3 flex justify-between shrink-0">
+                                                <div className="flex gap-2">
+                                                    <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">&lt;&lt; BACK</button>
+                                                    <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
+                                                </div>
+                                                <button onClick={() => {
+                                                    let score = 0;
+                                                    let correctCnt = 0;
+                                                    displayedQuestions.forEach(q => {
+                                                        const ansIdx = attempts[q.id];
+                                                        if (ansIdx !== undefined) {
+                                                            const isCorr = ['A', 'B', 'C', 'D'][ansIdx] === q.correctOption;
+                                                            if (isCorr) { score += 4; correctCnt++; } else { score -= 1; }
+                                                        }
+                                                    });
+                                                    const finalResult = { ...activeGeneratedTest, score, accuracy: Math.round((correctCnt / displayedQuestions.length) * 100) || 0, attempts: { ...attempts } };
+                                                    setGeneratedTestsHistory(prev => [finalResult, ...prev]);
+                                                    setGeneratedTestResult(finalResult);
+                                                    setActiveGeneratedTest(null);
+                                                    setActivePracticeChapter(null); 
+                                                    setCustomGeneratorMode('history');
+                                                    safeAlert('Test Submitted Successfully! View your detailed analysis.');
+                                                }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-xs font-bold px-6 py-1.5 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full lg:w-[320px] bg-white flex flex-col shrink-0 lg:h-full max-h-[40vh] lg:max-h-none border-t lg:border-t-0 border-gray-300 overflow-hidden relative">
+                                            <div className="absolute -left-6 top-[20%] w-6 h-10 bg-black text-white flex items-center justify-center cursor-pointer rounded-l-md hidden lg:flex z-50">
+                                                <i className="fa-solid fa-chevron-right text-xs"></i>
+                                            </div>
+                                            <div className="p-3 m-2 bg-white border-2 border-dashed border-gray-500 grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] sm:text-[12px] text-gray-700 shrink-0 relative">
+                                                <div className="flex items-center gap-2"><StatusShape status="not_visited" num={cntNotVisited} /> <span>Not Visited</span></div>
+                                                <div className="flex items-center gap-2"><StatusShape status="not_answered" num={cntNotAnswered} /> <span>Not Answered</span></div>
+                                                <div className="flex items-center gap-2"><StatusShape status="answered" num={cntAnswered} /> <span>Answered</span></div>
+                                                <div className="flex items-center gap-2"><StatusShape status="marked" num={cntMarked} /> <span>Marked for Review</span></div>
+                                                <div className="flex items-start gap-2 col-span-2 mt-1">
+                                                    <div className="shrink-0"><StatusShape status="answered_marked" num={cntAnsMarked} /></div>
+                                                    <span className="leading-tight">Answered & Marked for Review (will be considered for evaluation)</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-[#5C7FA5] text-white font-bold px-3 py-1.5 text-xs uppercase shrink-0">Choose a Question</div>
+                                            <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white">
+                                                {displayedQuestions.map((q, idx) => {
+                                                    const status = getStatus(q.id);
+                                                    const isActive = idx === safeQuestionIndex;
+                                                    return (
+                                                        <button key={q.id} onClick={() => {
+                                                            if (!practiceVisited.includes(currentQuestion?.id)) setPracticeVisited(prev => [...prev, currentQuestion?.id]);
+                                                            setCurrentQuestionIndex(idx);
+                                                        }} className="flex justify-center cursor-pointer mb-1 mr-1">
+                                                            <StatusShape status={status} num={idx + 1} isActive={isActive} />
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        if (!showQui
