@@ -9038,7 +9038,7 @@ const getStatus = (qId) => {
                             const stats = generatedTestResult.stats || (() => {
                                 let c = 0, ic = 0, u = 0;
                                 generatedTestResult.questions.forEach(q => {
-                                    const ans = generatedTestResult.attempts[q.id];
+                                    const ans = (generatedTestResult.attempts || {})[q.id];
                                     if (ans !== undefined) {
                                         if (['A', 'B', 'C', 'D'][ans] === q.correctOption) c++;
                                         else ic++;
@@ -9104,7 +9104,7 @@ const getStatus = (qId) => {
                         }
 
                         const q = generatedTestResult.questions[analysisQuestionIndex];
-                        const userAnsIdx = generatedTestResult.attempts[q.id];
+                        const userAnsIdx = (generatedTestResult.attempts || {})[q.id];
                         const isAns = userAnsIdx !== undefined;
                         const isCorrect = isAns && ['A', 'B', 'C', 'D'][userAnsIdx] === q.correctOption;
 
@@ -9177,7 +9177,7 @@ const getStatus = (qId) => {
                                             <h3 className="font-black text-lg mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
                                             <div className="grid grid-cols-5 gap-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                                                 {generatedTestResult.questions.map((pq, pIdx) => {
-                                                    const pAnsIdx = generatedTestResult.attempts[pq.id];
+                                                    const pAnsIdx = (generatedTestResult.attempts || {})[pq.id];
                                                     const pIsAns = pAnsIdx !== undefined;
                                                     const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
                                                     
