@@ -9352,7 +9352,7 @@ const getStatus = (qId) => {
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="space-y-4">
+                                        <div className="space-y-4" key={historyFilter + '_' + historySortOrder + '_' + historySearchQuery}>
                                             {historyFiltered.length === 0 ? <p className="text-gray-500 text-center py-10">No tests found matching your criteria.</p> : historyFiltered.map(test => (
                                                 <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                                                     {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45">EXACT NEET</div>}
