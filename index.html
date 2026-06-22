@@ -6960,7 +6960,50 @@ INSTRUCTIONS:
         };
 
         // ==========================================
-        // 📱 GLOBAL STATUS BAR SPACER
+        // 📱 GLOBAL STATUS BAR SPACER        const OverallTestTimer = ({ activeGeneratedTest, onSubmit }) => {
+            const [timeLeft, setTimeLeft] = useState(() => {
+                if (!activeGeneratedTest) return 0;
+                if (activeGeneratedTest.type === 'full') return 180 * 60;
+                if (activeGeneratedTest.type === 'half') return 80 * 60;
+                return 0; // count up for DPP
+            });
+            const isCountdown = activeGeneratedTest?.type === 'full' || activeGeneratedTest?.type === 'half';
+
+            useEffect(() => {
+                if (!activeGeneratedTest) return;
+                const timer = setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (isCountdown) {
+                            if (prev <= 1) {
+                                clearInterval(timer);
+                                onSubmit();
+                                return 0;
+                            }
+                            return prev - 1;
+                        } else {
+                            return prev + 1;
+                        }
+                    });
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [activeGeneratedTest, onSubmit, isCountdown]);
+
+            const formatTime = (s) => {
+                const hrs = Math.floor(s / 3600);
+                const mins = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+                const secs = (s % 60).toString().padStart(2, '0');
+                if (hrs > 0) return `${hrs}:${mins}:${secs}`;
+                return `${mins}:${secs}`;
+            };
+
+            return (
+                <span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">
+                    <i className="fa-regular fa-clock"></i> {formatTime(timeLeft)}
+                </span>
+            );
+        };
+
+
         // ==========================================
         const GlobalStatusBar = ({ isVoiceRoom }) => {
             return (
@@ -7194,7 +7237,8 @@ INSTRUCTIONS:
             const [historySearchQuery, setHistorySearchQuery] = useState('');
             const [syllabusTest, setSyllabusTest] = useState(null);
             const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0); 
-            const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, dppSubject: null, dppChapter: null, dppTopics: [], dppCount: 10, testName: '' });
+            const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, topics: { Physics: {}, Chemistry: {}, Botany: {}, Zoology: {} }, selectAllTopics: true, dppSubject: null, dppChapter: null, dppTopics: [], dppSelectAllTopics: false, dppCount: 10, testName: '' });
+            const [recentlyGeneratedTest, setRecentlyGeneratedTest] = useState(null);
             const [generatedTestsHistory, setGeneratedTestsHistory] = useState(() => safeGetJSON('ataxy_generated_tests', []));
             const [activeGeneratedTest, setActiveGeneratedTest] = useState(null);
             const [generatedTestResult, setGeneratedTestResult] = useState(null);
@@ -8231,6 +8275,27 @@ const getStatus = (qId) => {
                                 if (safeQuestionIndex > 0) setCurrentQuestionIndex(safeQuestionIndex - 1);
                             };
 
+                            const handleTestSubmit = () => {
+                                let score = 0;
+                                let correctCnt = 0;
+                                displayedQuestions.forEach(q => {
+                                    const ansIdx = attempts[q.id];
+                                    if (ansIdx !== undefined) {
+                                        const isCorr = ['A', 'B', 'C', 'D'][ansIdx] === q.correctOption;
+                                        if (isCorr) { score += 4; correctCnt++; } else { score -= 1; }
+                                    }
+                                });
+                                const finalResult = { ...activeGeneratedTest, score, accuracy: Math.round((correctCnt / displayedQuestions.length) * 100) || 0, attempts: { ...attempts }, questions: displayedQuestions };
+                                setGeneratedTestsHistory(prev => [finalResult, ...prev.filter(t => t.id !== finalResult.id)]);
+                                setGeneratedTestResult(finalResult);
+                                setShowScoreSummary(true);
+                                setActiveGeneratedTest(null);
+                                setActivePracticeChapter(null); 
+                                setCustomGeneratorMode('history');
+                                setShowQuiz(false);
+                                safeAlert('Test Submitted Successfully! View your detailed analysis.');
+                            };
+
                             return (
                                 <div className="bg-white min-h-[100dvh] font-sans text-gray-800 flex flex-col fixed inset-0 z-[100] overflow-hidden">
                                     <div className="bg-gray-100 border-b border-gray-300 px-4 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm shrink-0 gap-4">
@@ -8245,7 +8310,8 @@ const getStatus = (qId) => {
                                                 <span className="text-gray-700">Candidate Name</span><span className="font-bold text-[#E85D04]">: {safeRenderText(tgUser?.first_name ? (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '')) : 'Student')}</span>
                                                 <span className="text-gray-700">Exam Name</span><span className="font-bold text-[#E85D04]">: {isNeet ? 'NEET' : 'JEE'}</span>
                                                 <span className="text-gray-700">Test Name</span><span className="font-bold text-[#E85D04]">: {activePracticeChapter.name}</span>
-                                                <span className="text-gray-700">Remaining Time</span><span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">: <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} /></span>
+                                                <span className="text-gray-700">{activeGeneratedTest?.type === 'dpp' ? 'Time Elapsed' : 'Remaining Time'}</span>
+                                                <OverallTestTimer activeGeneratedTest={activeGeneratedTest} onSubmit={handleTestSubmit} />
                                             </div>
                                         </div>
                                         <button onClick={() => { 
@@ -8338,24 +8404,9 @@ const getStatus = (qId) => {
                                                     <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
                                                 </div>
                                                 <button onClick={() => {
-                                                    let score = 0;
-                                                    let correctCnt = 0;
-                                                    displayedQuestions.forEach(q => {
-                                                        const ansIdx = attempts[q.id];
-                                                        if (ansIdx !== undefined) {
-                                                            const isCorr = ['A', 'B', 'C', 'D'][ansIdx] === q.correctOption;
-                                                            if (isCorr) { score += 4; correctCnt++; } else { score -= 1; }
-                                                        }
-                                                    });
-                                                    const finalResult = { ...activeGeneratedTest, score, accuracy: Math.round((correctCnt / displayedQuestions.length) * 100) || 0, attempts: { ...attempts }, questions: displayedQuestions };
-                                                    setGeneratedTestsHistory(prev => [finalResult, ...prev]);
-                                                    setGeneratedTestResult(finalResult);
-                                                    setShowScoreSummary(true);
-                                                    setActiveGeneratedTest(null);
-                                                    setActivePracticeChapter(null); 
-                                                    setCustomGeneratorMode('history');
-                                                    setShowQuiz(false);
-                                                    safeAlert('Test Submitted Successfully! View your detailed analysis.');
+                                                    if(window.confirm('Are you sure you want to submit your test?')) {
+                                                        handleTestSubmit();
+                                                    }
                                                 }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-xs font-bold px-6 py-1.5 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
                                             </div>
                                         </div>
@@ -9199,6 +9250,16 @@ const getStatus = (qId) => {
                                         // Shuffle and pick
                                         subQs.sort(() => Math.random() - 0.5);
                                         
+                                        // Topic filtering for full/half length
+                                        if (!customGenConfig.selectAllTopics) {
+                                            const selectedTopicsMap = customGenConfig.topics[subName] || {};
+                                            subQs = subQs.filter(q => {
+                                                const chapTopics = selectedTopicsMap[q.chapterName];
+                                                if (!chapTopics) return true; // if undefined, means all topics for this chapter
+                                                return chapTopics.includes(q.topicName);
+                                            });
+                                        }
+                                        
                                         if (type === 'full' && isNeet) {
                                             const subQsSelected = subQs.slice(0, 50);
                                             subQsSelected.forEach((q, idx) => {
@@ -9208,7 +9269,7 @@ const getStatus = (qId) => {
                                         } else if (type === 'full' && !isNeet) {
                                             testQuestions = [...testQuestions, ...subQs.slice(0, 45)];
                                         } else if (type === 'half') {
-                                            testQuestions = [...testQuestions, ...subQs.slice(0, 25)];
+                                            testQuestions = [...testQuestions, ...subQs.slice(0, 20)];
                                         }
                                     });
                                 } else if (type === 'dpp') {
@@ -9218,7 +9279,7 @@ const getStatus = (qId) => {
                                         if (chapData) {
                                             let subQs = [];
                                             chapData.topics?.forEach(t => {
-                                                if (customGenConfig.dppTopics.length === 0 || customGenConfig.dppTopics.includes(t.name)) {
+                                                if (customGenConfig.dppSelectAllTopics || customGenConfig.dppTopics.length === 0 || customGenConfig.dppTopics.includes(t.name)) {
                                                     t.questions?.forEach(q => subQs.push({ ...q, topicName: t.name, chapterName: chapData.name, subjectName: subData.name }));
                                                 }
                                             });
@@ -9254,14 +9315,21 @@ const getStatus = (qId) => {
                                 };
 
                                 // Launch Test
+                                setGeneratedTestsHistory(prev => [newTest, ...prev]);
+                                setRecentlyGeneratedTest(newTest);
+                                setCustomGeneratorMode('history');
+                            };
+
+                            const startGeneratedTest = (test) => {
                                 setPracticeAttempts({});
                                 setPracticeVisited([]);
                                 setPracticeReview([]);
                                 setCurrentQuestionIndex(0);
-                                setActiveGeneratedTest(newTest);
-                                setLoadedQuestions(testQuestions);
-                                setActivePracticeChapter({ name: finalTestName, isCustomTest: true });
+                                setActiveGeneratedTest({ ...test, startTime: Date.now() });
+                                setLoadedQuestions(test.questions);
+                                setActivePracticeChapter({ name: test.name, isCustomTest: true });
                                 setShowQuiz(true);
+                                setRecentlyGeneratedTest(null);
                             };
 
                             if (customGeneratorMode === 'history') {
@@ -9281,6 +9349,22 @@ const getStatus = (qId) => {
 
                                 return (
                                     <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                        {recentlyGeneratedTest && (
+                                            <div className="fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 animate-in fade-in">
+                                                <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md p-6 shadow-2xl text-center relative border border-gray-200 dark:border-gray-800">
+                                                    <button onClick={() => setRecentlyGeneratedTest(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                                                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                                                        <i className="fa-solid fa-check"></i>
+                                                    </div>
+                                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Test Generated!</h3>
+                                                    <p className="text-gray-500 mb-6">{recentlyGeneratedTest.name}</p>
+                                                    <div className="flex gap-3">
+                                                        <button onClick={() => setRecentlyGeneratedTest(null)} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Close</button>
+                                                        <button onClick={() => startGeneratedTest(recentlyGeneratedTest)} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-md transition-colors">Start Test CBT Mode</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="flex items-center gap-3 mb-6">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
@@ -9359,8 +9443,11 @@ const getStatus = (qId) => {
                                         <div className="space-y-4" key={historyFilter + '_' + historySortOrder + '_' + historySearchQuery}>
                                             {historyFiltered.length === 0 ? <p className="text-gray-500 text-center py-10">No tests found matching your criteria.</p> : historyFiltered.map(test => (
                                                 <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                                                    {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45">EXACT NEET</div>}
-                                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1 pr-10 truncate">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
+                                                    {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45 z-10">EXACT NEET</div>}
+                                                    <div className="flex justify-between items-start gap-2 mb-1">
+                                                        <h3 className="font-bold text-lg text-gray-900 dark:text-white pr-10 truncate flex-1">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
+                                                        <button onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete this test?')) setGeneratedTestsHistory(prev => prev.filter(t => t.id !== test.id)); }} className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-500 flex items-center justify-center shrink-0 transition-colors z-10 relative"><i className="fa-solid fa-trash"></i></button>
+                                                    </div>
                                                     <p className="text-xs font-semibold text-gray-500 mb-4 flex items-center gap-3">
                                                         <span className="flex items-center gap-1"><i className="fa-regular fa-calendar"></i> {new Date(test.date || parseInt(test.id.split('_')[1] || 0)).toLocaleDateString([], {day: 'numeric', month: 'short', year: 'numeric'})}</span>
                                                         <span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date || parseInt(test.id.split('_')[1] || 0)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
@@ -9382,17 +9469,7 @@ const getStatus = (qId) => {
                                                         )}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
-                                                        <button onClick={() => {
-                                                            // Reattempt logic
-                                                            setPracticeAttempts({});
-                                                            setPracticeVisited([]);
-                                                            setPracticeReview([]);
-                                                            setCurrentQuestionIndex(0);
-                                                            setActiveGeneratedTest(test);
-                                                            setLoadedQuestions(test.questions);
-                                                            setActivePracticeChapter({ name: test.name || "Reattempted Test", isCustomTest: true });
-                                                            setShowQuiz(true);
-                                                        }} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
+                                                        <button onClick={() => startGeneratedTest(test)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
                                                         <button onClick={() => {
                                                             setGeneratedTestResult(test);
                                                             setShowScoreSummary(true);
@@ -9421,6 +9498,14 @@ const getStatus = (qId) => {
                                             <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., My Target Sunday Test" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                                         </div>
                                         
+                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm mb-4">
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <input type="checkbox" checked={customGenConfig.selectAllTopics !== false} onChange={e => setCustomGenConfig(prev => ({...prev, selectAllTopics: e.target.checked}))} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                <span className="font-bold text-gray-800 dark:text-gray-200">Include All Topics by Default</span>
+                                            </label>
+                                            <p className="text-xs text-gray-500 mt-1 ml-8">Uncheck this if you want to select specific topics within each chapter.</p>
+                                        </div>
+
                                         <div className="space-y-4">
                                             {['Physics', 'Chemistry', 'Botany', 'Zoology'].map(sub => {
                                                 const subData = (activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData).find(s => s.name.toLowerCase().includes(sub.toLowerCase()));
@@ -9432,17 +9517,40 @@ const getStatus = (qId) => {
                                                             {subData.chapters?.map(c => {
                                                                 const isChecked = customGenConfig.subjects[sub].includes(c.name);
                                                                 return (
-                                                                    <label key={c.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
-                                                                        <input type="checkbox" checked={isChecked} onChange={(e) => {
-                                                                            setCustomGenConfig(prev => {
-                                                                                const newSub = e.target.checked 
-                                                                                    ? [...prev.subjects[sub], c.name]
-                                                                                    : prev.subjects[sub].filter(n => n !== c.name);
-                                                                                return { ...prev, subjects: { ...prev.subjects, [sub]: newSub } };
-                                                                            });
-                                                                        }} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{safeRenderText(c.name)}</span>
-                                                                    </label>
+                                                                    <div key={c.name} className="flex flex-col">
+                                                                        <label className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
+                                                                            <input type="checkbox" checked={isChecked} onChange={(e) => {
+                                                                                setCustomGenConfig(prev => {
+                                                                                    const newSub = e.target.checked 
+                                                                                        ? [...prev.subjects[sub], c.name]
+                                                                                        : prev.subjects[sub].filter(n => n !== c.name);
+                                                                                    return { ...prev, subjects: { ...prev.subjects, [sub]: newSub } };
+                                                                                });
+                                                                            }} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{safeRenderText(c.name)}</span>
+                                                                        </label>
+                                                                        {isChecked && !customGenConfig.selectAllTopics && c.topics?.length > 0 && (
+                                                                            <div className="ml-8 mt-1 space-y-1 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                                                                                <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">Select Topics</div>
+                                                                                {c.topics.map(t => {
+                                                                                    const tChecked = !customGenConfig.topics[sub]?.[c.name] || customGenConfig.topics[sub][c.name].includes(t.name);
+                                                                                    return (
+                                                                                        <label key={t.name} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                                                            <input type="checkbox" checked={tChecked} onChange={e => {
+                                                                                                setCustomGenConfig(prev => {
+                                                                                                    const subTopics = prev.topics[sub] || {};
+                                                                                                    const currentTopics = subTopics[c.name] || c.topics.map(x => x.name);
+                                                                                                    const newTopics = e.target.checked ? [...currentTopics, t.name] : currentTopics.filter(x => x !== t.name);
+                                                                                                    return { ...prev, topics: { ...prev.topics, [sub]: { ...subTopics, [c.name]: newTopics } } };
+                                                                                                });
+                                                                                            }} className="w-4 h-4 rounded text-blue-500" />
+                                                                                            <span className="text-[13px] text-gray-600 dark:text-gray-400">{safeRenderText(t.name)}</span>
+                                                                                        </label>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 );
                                                             })}
                                                         </div>
@@ -9492,8 +9600,14 @@ const getStatus = (qId) => {
 
                                             {chapData && (
                                                 <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
-                                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Topics (Optional)</label>
-                                                    <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Select Topics (Optional)</label>
+                                                        <label className="flex items-center gap-2 cursor-pointer text-xs">
+                                                            <input type="checkbox" checked={customGenConfig.dppSelectAllTopics} onChange={e => setCustomGenConfig(prev => ({...prev, dppSelectAllTopics: e.target.checked}))} className="w-4 h-4 rounded text-blue-500" />
+                                                            <span className="font-bold text-gray-600 dark:text-gray-400">All Topics</span>
+                                                        </label>
+                                                    </div>
+                                                    <div className={`max-h-40 overflow-y-auto space-y-2 pr-2 ${customGenConfig.dppSelectAllTopics ? 'opacity-50 pointer-events-none' : ''}`}>
                                                         {chapData.topics?.map(t => {
                                                             const isChecked = customGenConfig.dppTopics.includes(t.name);
                                                             return (
