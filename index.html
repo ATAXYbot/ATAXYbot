@@ -8329,7 +8329,7 @@ const getStatus = (qId) => {
                                     </div>
 
                                     <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-                                        <div className="flex-1 flex flex-col border-r border-gray-300 relative bg-white min-w-0">
+                                        <div className={`flex-1 flex-col border-r border-gray-300 relative bg-white min-w-0 ${practiceShowPalette ? 'hidden lg:flex' : 'flex'}`}>
                                             <div className="flex justify-between items-center bg-white border-b-2 border-gray-300 px-4 py-2 shrink-0">
                                                 <h2 className="text-lg font-bold text-gray-800">Question {safeQuestionIndex + 1}:</h2>
                                                 <i className="fa-solid fa-circle-down text-blue-600 text-xl"></i>
@@ -8381,39 +8381,44 @@ const getStatus = (qId) => {
                                                     })}
                                                 </div>
                                             </div>
-                                            <div className="border-t border-gray-300 bg-white p-3 shrink-0">
-                                                <div className="flex gap-1 mb-3">
+                                            <div className="border-t border-gray-300 bg-white p-2 sm:p-3 shrink-0">
+                                                <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 lg:gap-1">
                                                     <button onClick={() => {
                                                         if (practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => prev.filter(id => id !== currentQuestion?.id));
                                                         handleNext();
-                                                    }} className="bg-[#5CB85C] hover:bg-[#4cae4c] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#4cae4c]">Save & Next</button>
-                                                    <button onClick={() => handleClear(currentQuestion?.id)} className="bg-white hover:bg-gray-100 text-black text-[12px] font-bold px-4 py-2 uppercase border border-gray-300">Clear</button>
+                                                    }} className="bg-[#5CB85C] hover:bg-[#4cae4c] text-white text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-[#4cae4c] leading-tight text-center sm:text-left">Save & Next</button>
+                                                    <button onClick={() => handleClear(currentQuestion?.id)} className="bg-white hover:bg-gray-100 text-black text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-gray-300 leading-tight text-center sm:text-left">Clear</button>
                                                     <button onClick={() => {
                                                         if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
                                                         handleNext();
-                                                    }} className="bg-[#F0AD4E] hover:bg-[#eea236] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#eea236]">Save & Mark For Review</button>
+                                                    }} className="bg-[#F0AD4E] hover:bg-[#eea236] text-white text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-[#eea236] leading-tight text-center sm:text-left">Save & Mark Review</button>
                                                     <button onClick={() => {
                                                         if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
                                                         handleNext();
-                                                    }} className="bg-[#337AB7] hover:bg-[#286090] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#2e6da4]">Mark For Review & Next</button>
+                                                    }} className="bg-[#337AB7] hover:bg-[#286090] text-white text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-[#2e6da4] leading-tight text-center sm:text-left">Mark Review & Next</button>
                                                 </div>
                                             </div>
-                                            <div className="bg-gray-100 border-t border-gray-300 px-4 py-3 flex justify-between shrink-0">
-                                                <div className="flex gap-2">
-                                                    <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">&lt;&lt; BACK</button>
-                                                    <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
+                                            <div className="bg-gray-100 border-t border-gray-300 px-2 sm:px-4 py-2 sm:py-3 flex justify-between items-center shrink-0">
+                                                <div className="flex gap-1 sm:gap-2">
+                                                    <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] sm:text-[12px] font-bold px-2 sm:px-4 py-1.5 sm:py-2 shadow-sm disabled:opacity-50">&lt;&lt; BACK</button>
+                                                    <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] sm:text-[12px] font-bold px-2 sm:px-4 py-1.5 sm:py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
                                                 </div>
+                                                <button onClick={() => setPracticeShowPalette(true)} className="lg:hidden bg-gray-200 hover:bg-gray-300 text-gray-800 text-[11px] font-bold px-3 py-1.5 border border-gray-400 rounded-sm flex items-center gap-1 shadow-sm"><i className="fa-solid fa-grip"></i> Palette</button>
                                                 <button onClick={() => {
                                                     if(window.confirm('Are you sure you want to submit your test?')) {
                                                         handleTestSubmit();
                                                     }
-                                                }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-xs font-bold px-6 py-1.5 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
+                                                }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-[12px] font-bold px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
                                             </div>
                                         </div>
 
-                                        <div className="w-full lg:w-[320px] bg-white flex flex-col shrink-0 lg:h-full max-h-[40vh] lg:max-h-none border-t lg:border-t-0 border-gray-300 overflow-hidden relative">
-                                            <div className="absolute -left-6 top-[20%] w-6 h-10 bg-black text-white flex items-center justify-center cursor-pointer rounded-l-md hidden lg:flex z-50">
+                                        <div className={`w-full lg:w-[320px] bg-white flex-col shrink-0 lg:h-full lg:max-h-none border-t lg:border-t-0 border-gray-300 overflow-hidden relative ${practiceShowPalette ? 'flex absolute inset-0 z-50 h-full max-h-none' : 'hidden lg:flex'}`}>
+                                            <div className="absolute -left-6 top-[20%] w-6 h-10 bg-black text-white items-center justify-center cursor-pointer rounded-l-md hidden lg:flex z-50">
                                                 <i className="fa-solid fa-chevron-right text-xs"></i>
+                                            </div>
+                                            <div className="flex justify-between items-center p-3 bg-[#5C7FA5] text-white lg:hidden shrink-0">
+                                                <span className="font-bold text-xs uppercase">Question Palette</span>
+                                                <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30"><i className="fa-solid fa-xmark"></i></button>
                                             </div>
                                             <div className="p-3 m-2 bg-white border-2 border-dashed border-gray-500 grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] sm:text-[12px] text-gray-700 shrink-0 relative">
                                                 <div className="flex items-center gap-2"><StatusShape status="not_visited" num={cntNotVisited} /> <span>Not Visited</span></div>
@@ -8425,8 +8430,8 @@ const getStatus = (qId) => {
                                                     <span className="leading-tight">Answered & Marked for Review (will be considered for evaluation)</span>
                                                 </div>
                                             </div>
-                                            <div className="bg-[#5C7FA5] text-white font-bold px-3 py-1.5 text-xs uppercase shrink-0">Choose a Question</div>
-                                            <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white">
+                                            <div className="bg-[#5C7FA5] text-white font-bold px-3 py-1.5 text-xs uppercase shrink-0 hidden lg:block">Choose a Question</div>
+                                            <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white pb-10 lg:pb-3">
                                                 {displayedQuestions.map((q, idx) => {
                                                     const status = getStatus(q.id);
                                                     const isActive = idx === safeQuestionIndex;
@@ -8434,6 +8439,7 @@ const getStatus = (qId) => {
                                                         <div key={q.id} onClick={() => {
                                                             if (!practiceVisited.includes(currentQuestion?.id)) setPracticeVisited(prev => [...prev, currentQuestion?.id]);
                                                             setCurrentQuestionIndex(idx);
+                                                            setPracticeShowPalette(false);
                                                         }} className="flex justify-center cursor-pointer mb-1 mr-1">
                                                             <StatusShape status={status} num={idx + 1} isActive={isActive} />
                                                         </div>
