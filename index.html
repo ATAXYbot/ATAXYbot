@@ -8133,25 +8133,27 @@ const renderHomeView = () => {
                             const isAnswered = attempts[currentQuestion.id] !== undefined;
                             const userAnsIdx = attempts[currentQuestion.id];
 
-                            const StatusShape = ({ status, num }) => {
+                            const StatusShape = ({ status, num, isActive }) => {
+                                const activeStyle = isActive ? { filter: 'drop-shadow(0px 0px 4px rgba(0,0,0,0.5)) scale(1.05)', zIndex: 10, transition: 'all 0.2s' } : { transition: 'all 0.2s' };
+
                                 if (status === 'not_visited') {
                                     return (
-                                        <div className="w-[42px] h-[32px] text-black flex items-center justify-center font-normal text-[14px] bg-gradient-to-b from-[#ffffff] to-[#d5d5d5] rounded-[4px] relative shrink-0" style={{ boxShadow: 'inset 0 0 0 1px #888, inset 0 2px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                        <div className="w-[42px] h-[32px] text-black flex items-center justify-center font-normal text-[14px] bg-gradient-to-b from-[#ffffff] to-[#d5d5d5] rounded-[4px] relative shrink-0" style={{ boxShadow: 'inset 0 0 0 1px #888, inset 0 2px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)', ...activeStyle }}>
                                             <span className="relative z-10">{num}</span>
                                         </div>
                                     );
                                 }
                                 if (status === 'not_answered') {
                                     return (
-                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0">
+                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0" style={activeStyle}>
                                             <svg viewBox="0 0 42 32" className="absolute inset-0 w-full h-full z-0 block" style={{ filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.25))' }}>
                                               <defs>
                                                 <linearGradient id="orgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                  <stop offset="0%" stopColor="#f47814" />
-                                                  <stop offset="100%" stopColor="#d14e00" />
+                                                  <stop offset="0%" stopColor="#e35d0e" />
+                                                  <stop offset="100%" stopColor="#cc3f00" />
                                                 </linearGradient>
                                               </defs>
-                                              <polygon points="1,1 34,1 41,31 1,31" fill="url(#orgGrad)" stroke="#a33a00" strokeWidth="1" strokeLinejoin="round" />
+                                              <polygon points="1,1 41,6 41,26 1,31" fill="url(#orgGrad)" stroke="#a33a00" strokeWidth="1" strokeLinejoin="round" />
                                             </svg>
                                             <span className="relative z-10 text-white font-normal text-[14px]">{num}</span>
                                         </div>
@@ -8159,15 +8161,15 @@ const renderHomeView = () => {
                                 }
                                 if (status === 'answered') {
                                     return (
-                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0">
+                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0" style={activeStyle}>
                                             <svg viewBox="0 0 42 32" className="absolute inset-0 w-full h-full z-0 block" style={{ filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.25))' }}>
                                               <defs>
                                                 <linearGradient id="grnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                  <stop offset="0%" stopColor="#66c266" />
-                                                  <stop offset="100%" stopColor="#4ea04e" />
+                                                  <stop offset="0%" stopColor="#419b16" />
+                                                  <stop offset="100%" stopColor="#2c720c" />
                                                 </linearGradient>
                                               </defs>
-                                              <polygon points="8,1 41,1 41,31 1,31" fill="url(#grnGrad)" stroke="#2b752b" strokeWidth="1" strokeLinejoin="round" />
+                                              <polygon points="1,1 41,6 41,26 1,31" fill="url(#grnGrad)" stroke="#1a4d04" strokeWidth="1" strokeLinejoin="round" />
                                             </svg>
                                             <span className="relative z-10 text-white font-normal text-[14px]">{num}</span>
                                         </div>
@@ -8175,16 +8177,16 @@ const renderHomeView = () => {
                                 }
                                 if (status === 'marked') {
                                     return (
-                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)', ...activeStyle }}>
                                             <span className="relative z-10">{num}</span>
                                         </div>
                                     );
                                 }
                                 if (status === 'answered_marked') {
                                     return (
-                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)', ...activeStyle }}>
                                             <span className="relative z-10">{num}</span>
-                                            <div className="absolute bottom-[-2px] right-[-2px] w-3.5 h-3.5 rounded-full border border-white z-20 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #66c266 0%, #4ea04e 100%)', boxShadow: 'inset 0 0 0 1px #2b752b' }}>
+                                            <div className="absolute bottom-[-2px] right-[-2px] w-3.5 h-3.5 rounded-full border border-white z-20 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #419b16 0%, #2c720c 100%)', boxShadow: 'inset 0 0 0 1px #1a4d04' }}>
                                                 <i className="fa-solid fa-bars text-[6px] text-white transform scale-75"></i>
                                             </div>
                                         </div>
@@ -8193,7 +8195,8 @@ const renderHomeView = () => {
                                 return null;
                             };
 const getStatus = (qId) => {
-                                const visited = practiceVisited.includes(qId);
+                                const isCurrent = currentQuestion?.id === qId;
+                                const visited = practiceVisited.includes(qId) || isCurrent;
                                 const ans = attempts[qId] !== undefined;
                                 const marked = practiceReview.includes(qId);
                                 if (!visited && !ans && !marked) return 'not_visited';
@@ -8375,12 +8378,13 @@ const getStatus = (qId) => {
                                             <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white">
                                                 {displayedQuestions.map((q, idx) => {
                                                     const status = getStatus(q.id);
+                                                    const isActive = idx === safeQuestionIndex;
                                                     return (
                                                         <div key={q.id} onClick={() => {
                                                             if (!practiceVisited.includes(currentQuestion?.id)) setPracticeVisited(prev => [...prev, currentQuestion?.id]);
                                                             setCurrentQuestionIndex(idx);
                                                         }} className="flex justify-center cursor-pointer mb-1 mr-1">
-                                                            <StatusShape status={status} num={idx + 1} />
+                                                            <StatusShape status={status} num={idx + 1} isActive={isActive} />
                                                         </div>
                                                     );
                                                 })}
