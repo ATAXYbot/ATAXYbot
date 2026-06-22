@@ -9316,60 +9316,7 @@ const getStatus = (qId) => {
                                         </div>
                                     </div>
 
-                                    {/* Modal 1: Confirm Target Weakness Generation */}
-                                    {pendingDPPConfig && (
-                                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in p-4">
-                                            <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95">
-                                                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-3xl mx-auto mb-4">
-                                                    <i className="fa-solid fa-bullseye"></i>
-                                                </div>
-                                                <h3 className="text-xl font-black text-center text-gray-900 dark:text-white mb-2">Target Weakness</h3>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
-                                                    You are about to generate a targeted DPP focusing on your weak areas:
-                                                </p>
-                                                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
-                                                    <div className="text-xs font-bold text-gray-400 uppercase mb-1">Chapter</div>
-                                                    <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">{pendingDPPConfig.chapterName}</div>
-                                                    <div className="text-xs font-bold text-gray-400 uppercase mb-1">Topics</div>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {pendingDPPConfig.topicNamesArray.map((t, idx) => (
-                                                            <span key={idx} className="bg-white dark:bg-gray-700 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-3">
-                                                    <button onClick={() => setPendingDPPConfig(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95">Cancel</button>
-                                                    <button onClick={processGenerateDPP} className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-colors active:scale-95">Generate DPP</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
 
-                                    {/* Modal 2: DPP Generated Action */}
-                                    {pendingGeneratedDPP && (
-                                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in p-4">
-                                            <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95">
-                                                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center text-3xl mx-auto mb-4">
-                                                    <i className="fa-solid fa-check-circle"></i>
-                                                </div>
-                                                <h3 className="text-xl font-black text-center text-gray-900 dark:text-white mb-2">DPP Ready!</h3>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
-                                                    Successfully generated a {pendingGeneratedDPP.questions.length} questions DPP focusing on your weak topics.
-                                                </p>
-                                                <div className="flex flex-col gap-3">
-                                                    <button onClick={handleStartDPP} className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
-                                                        <i className="fa-solid fa-play"></i> Start Test Now
-                                                    </button>
-                                                    <button onClick={handleSaveDPP} className="w-full py-3 rounded-xl border-2 border-green-500 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-bold transition-colors active:scale-95 flex items-center justify-center gap-2">
-                                                        <i className="fa-solid fa-bookmark"></i> Save to My Tests
-                                                    </button>
-                                                    <button onClick={() => setPendingGeneratedDPP(null)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95 mt-2">
-                                                        Cancel & Discard
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             );
                         }
@@ -10368,7 +10315,7 @@ const PRACTICE_BATCHES = [
                                     subjectStats[group] = { attempted: 0, correct: 0, colorClass };
                                 }
                                 if (!chapterStats[chap.name]) {
-                                    chapterStats[chap.name] = { subjectGroup: group, subjectName: sub.name, attempted: 0, correct: 0 };
+                                    chapterStats[chap.name] = { subjectGroup: group, subjectName: sub.name, attempted: 0, correct: 0, weakTopics: new Set() };
                                 }
                                 totalAttempted++;
                                 subjectStats[group].attempted++;
@@ -10377,6 +10324,8 @@ const PRACTICE_BATCHES = [
                                     totalCorrect++;
                                     subjectStats[group].correct++;
                                     chapterStats[chap.name].correct++;
+                                } else {
+                                    chapterStats[chap.name].weakTopics.add(top.name);
                                 }
                             }
                         }));
@@ -10414,7 +10363,8 @@ const PRACTICE_BATCHES = [
                     const chapData = chapterStats[chapterName];
                     if (chapData) {
                         setShowAnalyticsModal(false);
-                        handleGenerateTargetedDPP(chapData.subjectName, chapterName, [], 20);
+                        const topicsToTarget = Array.from(chapData.weakTopics);
+                        handleGenerateTargetedDPP(chapData.subjectName, chapterName, topicsToTarget, 20);
                     }
                 };
 
@@ -10567,7 +10517,7 @@ const PRACTICE_BATCHES = [
                                                             </td>
                                                             <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                                 <button onClick={() => handleGenerateDPP(chap.name)} className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap border border-indigo-400/50">
-                                                                    GEN DPP
+                                                                    <i className="fa-solid fa-bullseye mr-1"></i> Target Weakness
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -10934,6 +10884,63 @@ const PRACTICE_BATCHES = [
                                             </div>
                                         </>
                                     )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modal 1: Confirm Target Weakness Generation */}
+                        {pendingDPPConfig && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in p-4">
+                                <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95">
+                                    <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                                        <i className="fa-solid fa-bullseye"></i>
+                                    </div>
+                                    <h3 className="text-xl font-black text-center text-gray-900 dark:text-white mb-2">Target Weakness</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                                        You are about to generate a targeted DPP focusing on your weak areas:
+                                    </p>
+                                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
+                                        <div className="text-xs font-bold text-gray-400 uppercase mb-1">Chapter</div>
+                                        <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">{pendingDPPConfig.chapterName}</div>
+                                        <div className="text-xs font-bold text-gray-400 uppercase mb-1">Topics</div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {pendingDPPConfig.topicNamesArray.length > 0 ? pendingDPPConfig.topicNamesArray.map((t, idx) => (
+                                                <span key={idx} className="bg-white dark:bg-gray-700 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t}</span>
+                                            )) : (
+                                                <span className="bg-white dark:bg-gray-700 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-[11px] font-semibold text-gray-700 dark:text-gray-300">Entire Chapter</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setPendingDPPConfig(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95">Cancel</button>
+                                        <button onClick={processGenerateDPP} className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-colors active:scale-95">Generate DPP</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modal 2: DPP Generated Action */}
+                        {pendingGeneratedDPP && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in p-4">
+                                <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95">
+                                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                                        <i className="fa-solid fa-check-circle"></i>
+                                    </div>
+                                    <h3 className="text-xl font-black text-center text-gray-900 dark:text-white mb-2">DPP Ready!</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                                        Successfully generated a {pendingGeneratedDPP.questions.length} questions DPP focusing on your weak topics.
+                                    </p>
+                                    <div className="flex flex-col gap-3">
+                                        <button onClick={handleStartDPP} className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            <i className="fa-solid fa-play"></i> Start Test Now
+                                        </button>
+                                        <button onClick={handleSaveDPP} className="w-full py-3 rounded-xl border-2 border-green-500 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-bold transition-colors active:scale-95 flex items-center justify-center gap-2">
+                                            <i className="fa-solid fa-bookmark"></i> Save to My Tests
+                                        </button>
+                                        <button onClick={() => setPendingGeneratedDPP(null)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95 mt-2">
+                                            Cancel & Discard
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
