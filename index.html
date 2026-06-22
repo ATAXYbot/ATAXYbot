@@ -8241,7 +8241,18 @@ const getStatus = (qId) => {
                                                 <span className="text-gray-700">Remaining Time</span><span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">: <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} /></span>
                                             </div>
                                         </div>
-                                        <button onClick={() => { setConfirmClearScope({ type: 'chapter', data: activePracticeChapter }); }} className="text-red-500 text-sm font-bold hover:bg-red-50 px-3 py-1 rounded-sm transition-colors border border-red-200">Quit Test</button>
+                                        <button onClick={() => { 
+    if (activePracticeChapter?.isCustomTest) {
+        if(window.confirm('Are you sure you want to quit this test? Your progress will not be saved.')) {
+            setShowQuiz(false);
+            setActivePracticeChapter(null);
+            setActiveGeneratedTest(null);
+            setCustomGeneratorMode('history');
+        }
+    } else {
+        setConfirmClearScope({ type: 'chapter', data: activePracticeChapter }); 
+    }
+}} className="text-red-500 text-sm font-bold hover:bg-red-50 px-3 py-1 rounded-sm transition-colors border border-red-200">Quit Test</button>
                                     </div>
 
                                     <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
