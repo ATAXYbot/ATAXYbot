@@ -8931,6 +8931,9 @@ const getStatus = (qId) => {
                                                 <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-amber-50 border border-amber-400 text-amber-700 rounded-md shadow-sm text-[10px]">2</div> Skipped</div>
                                                 <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-emerald-50 border border-emerald-500 text-emerald-600 rounded-md ring-1 ring-emerald-500/30 font-black shadow-sm text-[10px]">3</div> Correct Answer</div>
                                                 <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-rose-50 border border-rose-500 text-rose-600 rounded-md ring-1 ring-rose-500/30 font-black shadow-sm text-[10px]">4</div> Wrong Answer</div>
+                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] shadow-sm">5</div> Marked (Unanswered)</div>
+                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-white"></div></div> Marked (Correct)</div>
+                                                <div className="flex items-center gap-1.5 w-full"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-2 h-2 bg-rose-500 rounded-full ring-1 ring-white"></div></div> Marked (Wrong)</div>
                                             </div>
                                             <div className="p-4 flex-1 overflow-y-auto bg-gray-50">
                                                 <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
@@ -8956,7 +8959,7 @@ const getStatus = (qId) => {
                                                         return (
                                                             <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? `ring-2 ${themeRing} ring-offset-1` : ''}`}>
                                                                 {qIdx + 1}
-                                                                {isAns && isRev && <div className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-[#1e7e34] rounded-full ring-1 ring-white"></div>}
+                                                                {isAns && isRev && <div className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full ring-1 ring-white ${isCorrectAns ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>}
                                                             </button>
                                                         );
                                                     })}
