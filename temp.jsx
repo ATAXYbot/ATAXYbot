@@ -104,7 +104,9 @@
                             question_id: question_id,
                             selected_option: selected_option,
                             user_query: prompt,
-                            prompt_text: `${systemContext}\n\nStudent Doubt: ${prompt}`
+                            prompt_text: `${systemContext}
+
+Student Doubt: ${prompt}`
                         })
                     });
 
@@ -2233,7 +2235,7 @@
             );
         };
 
-        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange }) => {
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
             const currentUserPhoto = tgUser?.photo_url || "";
@@ -3442,15 +3444,35 @@
                         </div>
 
                         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
-                            {/* Hero Section */}
+                            {/* Official Room Section */}
                             <div className="px-6 py-6 relative overflow-hidden bg-gradient-to-b from-[#021A40] to-transparent shrink-0">
                                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[80px] opacity-20 animate-pulse"></div>
-                                <div className="relative z-10 flex items-center gap-4">
-                                    <AtaxyLogo className="w-16 h-16 rounded-full shadow-[0_0_25px_rgba(0,255,255,0.5)] border-2 border-[#00FFFF]/50" />
-                                    <div>
-                                        <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00FFFF] to-blue-400 drop-shadow-sm uppercase tracking-wider">Voice Lounge</h2>
-                                        <p className="text-blue-200/70 text-xs font-semibold mt-1">Join study sessions with crystal clear audio.</p>
+                                <div className="relative z-10 bg-gradient-to-r from-[#010B1C]/80 to-[#021A40]/80 p-5 rounded-2xl border border-[#00FFFF]/40 shadow-[0_0_20px_rgba(0,255,255,0.2)] backdrop-blur-md mb-2">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <AtaxyLogo className="w-14 h-14 rounded-full shadow-[0_0_15px_rgba(0,255,255,0.4)] border-2 border-[#00FFFF]/50 shrink-0" />
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <h2 className="text-[18px] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00FFFF] to-blue-400 uppercase tracking-wider leading-tight">ATAXY Official Room</h2>
+                                                <i className="fa-solid fa-circle-check text-[#00FFFF] text-sm" title="Official Room"></i>
+                                            </div>
+                                            <p className="text-[#A4DFE6] text-[10px] font-bold">Room ID: 2431 • Permanent Voice Lounge</p>
+                                        </div>
                                     </div>
+                                    <button onClick={async () => {
+                                        if (voiceState && voiceState.joinRoom) {
+                                            const roomObj = { id: '2431', channel_name: 'ATAXY Official Room', host_user_id: '5182808926', owner_id: '5182808926', room_type: 'permanent', is_live: true };
+                                            if (window.supabase) {
+                                                try { await window.supabase.from('voice_rooms').insert(roomObj); } catch(e) {}
+                                            }
+                                            voiceState.joinRoom(roomObj);
+                                        } else {
+                                            safeAlert("Voice service is unavailable.");
+                                        }
+                                    }} className="w-full bg-gradient-to-br from-[#00FFFF] to-blue-600 text-[#010714] py-3.5 rounded-xl font-black shadow-[0_5px_15px_rgba(0,255,255,0.3)] hover:shadow-[0_8px_20px_rgba(0,255,255,0.5)] hover:-translate-y-0.5 transition-all text-sm flex items-center justify-center gap-2 group relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                        <i className="fa-solid fa-satellite-dish text-lg"></i>
+                                        <span>JOIN OFFICIAL ROOM</span>
+                                    </button>
                                 </div>
 
                                 {roomError && (
@@ -3459,14 +3481,13 @@
                                     </div>
                                 )}
 
-                                <div className="w-full flex gap-3 mt-6">
-                                    <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} disabled={isCreating} className="flex-1 bg-gradient-to-br from-[#00FFFF] to-blue-600 text-[#010714] py-4 rounded-2xl font-black shadow-[0_8px_20px_rgba(0,255,255,0.3)] hover:shadow-[0_8px_25px_rgba(0,255,255,0.5)] hover:-translate-y-1 transition-all text-sm disabled:opacity-50 flex flex-col items-center justify-center gap-1 relative overflow-hidden group">
-                                        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                                        {isCreating ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-satellite-dish text-xl mb-0.5"></i>}
-                                        <span>CREATE ROOM</span>
+                                <div className="w-full flex gap-3 mt-4">
+                                    <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} disabled={isCreating} className="flex-1 bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/30 text-[#00FFFF] py-3 rounded-xl font-black shadow-md hover:border-[#00FFFF]/60 hover:-translate-y-0.5 transition-all text-xs disabled:opacity-50 flex flex-col items-center justify-center gap-1">
+                                        {isCreating ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <i className="fa-solid fa-plus text-lg"></i>}
+                                        <span>CREATE VOICE ROOM</span>
                                     </button>
-                                    <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-[#021A40] border-2 border-[#0AE0D0]/30 text-[#00FFFF] py-4 rounded-2xl font-black shadow-[0_8px_20px_rgba(0,0,0,0.4)] hover:bg-[#00FFFF]/10 hover:border-[#00FFFF]/60 hover:-translate-y-1 transition-all text-sm flex flex-col items-center justify-center gap-1">
-                                        <i className="fa-solid fa-hashtag text-xl mb-0.5"></i>
+                                    <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/30 text-[#00FFFF] py-3 rounded-xl font-black shadow-md hover:border-[#00FFFF]/60 hover:-translate-y-0.5 transition-all text-xs flex flex-col items-center justify-center gap-1">
+                                        <i className="fa-solid fa-hashtag text-lg"></i>
                                         <span>JOIN BY ID</span>
                                     </button>
                                 </div>
@@ -3580,36 +3601,19 @@
                                     <input type="text" value={vcCreateName} onChange={e => setVcCreateName(e.target.value)} placeholder={`${currentUserName}'s Room`} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
                                     <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
                                     <div className="flex gap-2 mb-4">
-                                        <button type="button" onClick={() => setVcCreateType('temporary')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${vcCreateType === 'temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Temporary</button>
-                                        <button type="button" onClick={() => setVcCreateType('advance')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${vcCreateType === 'advance' ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Advance</button>
+                                        <button type="button" className="flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]">Temporary</button>
                                     </div>
-                                    {vcCreateType === 'advance' && (
-                                        <div className="mb-4">
-                                            <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Profile Picture (Advance Only)</label>
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 overflow-hidden flex items-center justify-center shrink-0">
-                                                    {vcCreatePhoto ? <img src={vcCreatePhoto} className="w-full h-full object-cover" /> : <i className="fa-solid fa-image text-gray-500"></i>}
-                                                </div>
-                                                <input type="file" accept="image/*" onChange={(e) => {
-                                                    const f = e.target.files[0]; if (!f) return;
-                                                    const r = new FileReader(); r.onload = (ev) => {
-                                                        const img = new Image(); img.onload = () => {
-                                                            const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 400;
-                                                            if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
-                                                            c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
-                                                            setVcCreatePhoto(c.toDataURL('image/jpeg', 0.8));
-                                                        }; img.src = ev.target.result;
-                                                    }; r.readAsDataURL(f);
-                                                }} className="text-[10px] flex-1 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#00FFFF]/20 file:text-[#00FFFF] hover:file:bg-[#00FFFF]/30 cursor-pointer" />
-                                            </div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => setVcCreatePassEnabled(!vcCreatePassEnabled)}>Enable Password</label>
+                                        <div 
+                                            onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if(vcCreatePassEnabled) setVcCreatePass(''); }}
+                                            className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${vcCreatePassEnabled ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
+                                        >
+                                            <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${vcCreatePassEnabled ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
                                         </div>
-                                    )}
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider">Enable Password</label>
-                                        <input type="checkbox" checked={vcCreatePassEnabled} onChange={e => setVcCreatePassEnabled(e.target.checked)} className="w-4 h-4 accent-[#00FFFF]" />
                                     </div>
                                     {vcCreatePassEnabled && (
-                                        <input type="text" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value)} placeholder="Enter password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                        <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
                                     )}
                                     <div className="flex gap-3 mt-6">
                                         <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
@@ -4036,7 +4040,7 @@
                                 <input type="text" id="edit-room-name" defaultValue={activeRoom.room_name} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
 
                                 <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password (Optional)</label>
-                                <input type="text" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="4-digit PIN" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF]" />
 
                                 <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-6">
                                     <span className="text-sm font-bold text-white">Disable Text Chat</span>
@@ -4368,7 +4372,7 @@ INSTRUCTIONS:
             }, []);
 
             useEffect(() => {
-                chatEndRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
+                chatEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
                 if (!fbApp?.db) safeSetItem('ataxy_global_chat', JSON.stringify(chats));
             }, [chats]);
 
@@ -4522,7 +4526,6 @@ INSTRUCTIONS:
 
         const CreateRoomModal = ({ onClose, onCreate }) => {
             const [name, setName] = useState('');
-            const [type, setType] = useState('temporary');
             const [password, setPassword] = useState('');
             const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -4530,7 +4533,7 @@ INSTRUCTIONS:
                 e.preventDefault();
                 if (!name.trim()) return;
                 setIsSubmitting(true);
-                const success = await onCreate(name, type, password || null);
+                const success = await onCreate(name, 'temporary', password || null);
                 setIsSubmitting(false);
                 if (success !== false) {
                     onClose();
@@ -4549,14 +4552,21 @@ INSTRUCTIONS:
                             <div>
                                 <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
                                 <div className="flex gap-2">
-                                    <button type="button" onClick={() => setType('temporary')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${type === 'temporary' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Temporary</button>
-                                    <button type="button" onClick={() => setType('permanent')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${type === 'permanent' ? 'bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]' : 'bg-[#010B1C] border-gray-700 text-gray-400'}`}>Permanent</button>
+                                    <button type="button" className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]`}>Temporary</button>
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
-                                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => { if(password){ setPassword(''); } else { setPassword('0000'); }}}>Enable Password</label>
+                                <div 
+                                    onClick={() => { if(password){ setPassword(''); } else { setPassword('0000'); }}}
+                                    className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${password !== '' ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
+                                >
+                                    <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${password !== '' ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
+                                </div>
                             </div>
+                            {password !== '' && (
+                                <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={password} onChange={e => setPassword(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
+                            )}
                             <div className="flex gap-3 mt-6">
                                 <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
                                 <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Creating...' : 'Create Room'}</button>
@@ -5854,6 +5864,7 @@ INSTRUCTIONS:
             const [chatInput, setChatInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
             const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
 
             useEffect(() => {
                 const handleBackEvent = (e) => {
@@ -5877,7 +5888,6 @@ INSTRUCTIONS:
             const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
             const effectiveMutedUI = isMuted || mySeatMuted;
 
-            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
             const handleAvatarClick = (userObj) => {
                 if (!userObj || typeof userObj !== 'object') return;
                 setSelectedProfileUser(userObj);
@@ -6663,8 +6673,10 @@ INSTRUCTIONS:
                 else if (vcRoomActive && !vcRoomMinimized) {
                     window.dispatchEvent(new Event('minimize_vc_room'));
                 }
+                else if (activeQuestionType) setActiveQuestionType(null);
                 else if (activePracticeChapter) setActivePracticeChapter(null);
                 else if (activePracticeSubject) setActivePracticeSubject(null);
+                else if (activePracticeMode) setActivePracticeMode(null);
                 else if (activePracticeFile) setActivePracticeFile(null);
                 else if (activePracticeBatch) setActivePracticeBatch(null);
                 else if (currentTab !== 'home') setCurrentTab('home');
@@ -6674,8 +6686,10 @@ INSTRUCTIONS:
                 setShowAnalyticsModal(false);
                 setHistoryViewType(null);
                 setShowQuiz(false);
+                setActiveQuestionType(null);
                 setActivePracticeChapter(null);
                 setActivePracticeSubject(null);
+                setActivePracticeMode(null);
                 setActivePracticeFile(null);
                 setActivePracticeBatch(null);
                 setReturnPath(null);
@@ -6753,9 +6767,6 @@ INSTRUCTIONS:
                                 <FormattedText text={q.explanation} />
                             </div>
                         )}
-                        <div className="mb-4">
-                            <QuestionAIAssistant q={q} attemptIdx={attempt} />
-                        </div>
                         {questionNotes[q.id] && (
                             <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                                 <div className="flex justify-between items-center mb-2">
@@ -6779,9 +6790,11 @@ INSTRUCTIONS:
 
             const [currentTab, setCurrentTab] = useState('home');
             const [vcChatOpen, setVcChatOpen] = useState(false);
+            const [activePracticeBatch, setActivePracticeBatch] = useState(null);
+            const [activePracticeMode, setActivePracticeMode] = useState(null);
+            const [activeQuestionType, setActiveQuestionType] = useState(null);
             const [activePracticeSubject, setActivePracticeSubject] = useState(null);
             const [activePracticeChapter, setActivePracticeChapter] = useState(null);
-            const [activePracticeBatch, setActivePracticeBatch] = useState(null);
             const [activePracticeFile, setActivePracticeFile] = useState(null);
             const [practiceSelectedTopic, setPracticeSelectedTopic] = useState(null);
             const [showQuiz, setShowQuiz] = useState(false);
@@ -6789,6 +6802,22 @@ INSTRUCTIONS:
             const [practiceReview, setPracticeReview] = useState(() => safeGetJSON('ataxy_practice_review', null) || []);
             const [practiceVisited, setPracticeVisited] = useState(() => safeGetJSON('ataxy_practice_visited', null) || []);
             const [practiceShowPalette, setPracticeShowPalette] = useState(false);
+            const [practiceShowTopicModal, setPracticeShowTopicModal] = useState(false);
+            const [customGeneratorMode, setCustomGeneratorMode] = useState(null);
+            const [historyFilter, setHistoryFilter] = useState('all');
+            const [historySortOrder, setHistorySortOrder] = useState('newest');
+            const [historySearchQuery, setHistorySearchQuery] = useState('');
+            const [syllabusTest, setSyllabusTest] = useState(null);
+            const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0); 
+            const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, dppSubject: null, dppChapter: null, dppTopics: [], dppCount: 10, testName: '' });
+            const [generatedTestsHistory, setGeneratedTestsHistory] = useState(() => safeGetJSON('ataxy_generated_tests', []));
+            const [activeGeneratedTest, setActiveGeneratedTest] = useState(null);
+            const [generatedTestResult, setGeneratedTestResult] = useState(null);
+            const [showScoreSummary, setShowScoreSummary] = useState(false);
+
+            useEffect(() => {
+                setCloudData('ataxy_generated_tests', generatedTestsHistory);
+            }, [generatedTestsHistory]);
 
             const [bookmarks, setBookmarks] = useState(() => { const b = safeGetJSON('ataxy_bookmarks', null); return Array.isArray(b) ? b : []; });
             const [questionNotes, setQuestionNotes] = useState(() => safeGetJSON('ataxy_question_notes', null) || {});
@@ -6808,6 +6837,7 @@ INSTRUCTIONS:
             const [historyTopicFilter, setHistoryTopicFilter] = useState('');
             const [activeHistoryId, setActiveHistoryId] = useState(null);
             const [confirmClearScope, setConfirmClearScope] = useState(null);
+            const [pendingClearAction, setPendingClearAction] = useState(null);
 
             useEffect(() => {
                 if (historyViewType && activeHistoryId) {
@@ -6824,14 +6854,20 @@ INSTRUCTIONS:
             const [questionsLoading, setQuestionsLoading] = useState(false);
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-            const handleClearProgress = (scope) => {
+            const handleClearProgress = (scope, clearType = 'all') => {
+                let idsToRemove = [];
                 if (scope === 'all') {
-                    setPracticeAttempts({});
+                    if (clearType === 'attempts' || clearType === 'all') setPracticeAttempts({});
+                    if (clearType === 'bookmarks') setPracticeReview(practiceReview.map(r => ({ ...r, isBookmarked: false })));
+                    if (clearType === 'all') {
+                        setPracticeReview([]);
+                        setQuestionNotes({});
+                    }
                 } else {
-                    const newAttempts = { ...practiceAttempts };
-                    let idsToRemove = [];
-
-                    if (scope.type === 'subject') {
+                    if (scope.type === 'batch') {
+                        const batchData = scope.data.sourceTable ? (window.qbankDataByTable ? window.qbankDataByTable[scope.data.sourceTable] : []) : window.qbankData;
+                        if (batchData) batchData.forEach(s => s.chapters?.forEach(c => c.topics?.forEach(t => t.questions?.forEach(q => idsToRemove.push(q.id)))));
+                    } else if (scope.type === 'subject') {
                         scope.data.chapters?.forEach(c => c.topics?.forEach(t => t.questions?.forEach(q => idsToRemove.push(q.id))));
                     } else if (scope.type === 'chapter') {
                         scope.data.topics?.forEach(t => t.questions?.forEach(q => idsToRemove.push(q.id)));
@@ -6839,15 +6875,38 @@ INSTRUCTIONS:
                         scope.data.questions?.forEach(q => idsToRemove.push(q.id));
                     }
 
-                    idsToRemove.forEach(id => {
-                        delete newAttempts[id];
-                    });
-                    setPracticeAttempts(newAttempts);
+                    if (clearType === 'attempts' || clearType === 'all') {
+                        const newAttempts = { ...practiceAttempts };
+                        idsToRemove.forEach(id => delete newAttempts[id]);
+                        setPracticeAttempts(newAttempts);
+                    }
+                    
+                    if (clearType === 'bookmarks' || clearType === 'all') {
+                        let newReview = practiceReview.filter(r => {
+                            if (idsToRemove.includes(r.id)) {
+                                if (clearType === 'all') return false;
+                            }
+                            return true;
+                        });
+
+                        if (clearType === 'bookmarks') {
+                            newReview = newReview.map(r => {
+                                if (idsToRemove.includes(r.id)) return { ...r, isBookmarked: false };
+                                return r;
+                            });
+                        }
+                        setPracticeReview(newReview);
+                    }
+
+                    if (clearType === 'all') {
+                        const newNotes = { ...questionNotes };
+                        idsToRemove.forEach(id => delete newNotes[id]);
+                        setQuestionNotes(newNotes);
+                    }
                 }
                 setConfirmClearScope(null);
                 try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } catch (e) { }
             };
-
             // 📈 Analytics State (Local Storage Only)
             const [studyStreak, setStudyStreak] = useState(() => safeGetJSON('ataxy_streak', null) || { count: 1, lastDate: new Date().toDateString() });
             useEffect(() => {
@@ -7047,7 +7106,7 @@ INSTRUCTIONS:
                                         if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
                                         if (isNaN(correctIdx)) correctIdx = 0;
 
-                                        topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A', 'B', 'C', 'D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A' });
+                                        topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A', 'B', 'C', 'D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A', questionType: q.question_type || q.Question_Type || q.type || 'Main module (recommended)' });
                                     });
                                     if (topicNode.questions.length > 0) { chapterNode.topics.push(topicNode); }
                                 });
@@ -7098,7 +7157,8 @@ INSTRUCTIONS:
                                     correct: correctIdx,
                                     explanation: q.explanation || q.Explanation || 'No explanation',
                                     difficulty: q.difficulty || 'Medium',
-                                    ncert: true, accuracy: 'N/A'
+                                    ncert: true, accuracy: 'N/A',
+                                    questionType: q.question_type || q.Question_Type || q.type || 'Main module (recommended)'
                                 });
                             });
 
@@ -7156,6 +7216,7 @@ INSTRUCTIONS:
             }, []);
 
             useEffect(() => {
+                if (activePracticeChapter && activePracticeChapter.isCustomTest) return;
                 if (!activePracticeChapter) {
                     setLoadedQuestions([]);
                     setCurrentQuestionIndex(0);
@@ -7312,6 +7373,32 @@ const renderHomeView = () => {
                 const completionRate = totalTargets > 0 ? Math.round((completedTargets / totalTargets) * 100) : 0;
                 const last7Days = rawDaysData.slice(0, 7).reverse();
 
+                const taskClassBreakdown = { theory: 0, questions: 0, revision: 0, mock: 0 };
+                const theoryRegex = /theory|read|study|chapter|ncert|notes|video|lec/i;
+                const questionsRegex = /pyq|mcq|question|solve|dpp|practice|module|exercise/i;
+                const revisionRegex = /revise|revision|review|short/i;
+                const mockRegexClass = /mock|test|exam|paper/i;
+
+                rawDaysData.forEach(d => {
+                    d.dayTargets.forEach(t => {
+                        if (mockRegexClass.test(t.text)) taskClassBreakdown.mock++;
+                        else if (questionsRegex.test(t.text)) taskClassBreakdown.questions++;
+                        else if (revisionRegex.test(t.text)) taskClassBreakdown.revision++;
+                        else if (theoryRegex.test(t.text)) taskClassBreakdown.theory++;
+                        else taskClassBreakdown.theory++; // default to theory
+                    });
+                });
+
+                const calculateAIR = () => {
+                    if (totalTargets < 10) return "Keep Logging Data";
+                    const score = (weeklyRate * 0.5) + (monthlyRate * 0.3) + (completionRate * 0.2);
+                    if (score >= 90) return "AIR 1 - 500";
+                    if (score >= 80) return "AIR 500 - 5k";
+                    if (score >= 65) return "AIR 5k - 20k";
+                    if (score >= 50) return "AIR 20k - 50k";
+                    return "AIR > 50k";
+                };
+                const airPrediction = calculateAIR();
                 // Dominator Verdict
                 let verdict = "Log targets daily to unlock the Dominator's Verdict.";
                 let verdictColor = "text-gray-400";
@@ -7381,49 +7468,46 @@ const renderHomeView = () => {
                                 </form>
                             </div>
 
-                     <div onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-br from-gray-900 to-black dark:from-[#010714] dark:to-[#010B1C] rounded-3xl p-5 shadow-xl border border-gray-800 animate-pop-bounce delay-150 relative overflow-hidden cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(0,255,255,0.15)] transition-all duration-300 group">
-                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[80px] opacity-10 animate-pulse pointer-events-none group-hover:opacity-20 transition-opacity"></div>
+                     {/* Home Tab Target Analyzer Widget */}
+                     {(() => {
+                         const todayTotal = currentTargets.length;
+                         const todayDone = currentTargets.filter(t => t.done).length;
+                         const todayRate = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
                          
-                         <div className="flex justify-between items-center mb-5 relative z-10">
-                             <h3 className="font-black text-white text-lg flex items-center gap-2 tracking-wide"><i className="fa-solid fa-chart-pie text-[#00FFFF]"></i> Target Analyzer</h3>
-                             <div className={`bg-gradient-to-r ${consistencyColor} px-3 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-widest shadow-md`}>
-                                 {consistencyScore}
-                             </div>
-                         </div>
-                         
-                         <div className="grid grid-cols-3 gap-3 mb-5 relative z-10">
-                             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center justify-center text-center backdrop-blur-sm group-hover:bg-white/10 transition-colors">
-                                 <i className="fa-solid fa-bullseye text-[#A4DFE6] mb-1.5 text-lg"></i>
-                                 <span className="text-2xl font-black text-white leading-none">{totalTargets}</span>
-                                 <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Total Set</span>
-                             </div>
-                             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center justify-center text-center backdrop-blur-sm group-hover:bg-white/10 transition-colors">
-                                 <i className="fa-solid fa-check-double text-green-400 mb-1.5 text-lg"></i>
-                                 <span className="text-2xl font-black text-white leading-none">{completedTargets}</span>
-                                 <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Achieved</span>
-                             </div>
-                             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center justify-center text-center backdrop-blur-sm group-hover:bg-white/10 transition-colors">
-                                 <i className="fa-solid fa-fire text-orange-500 mb-1.5 text-lg"></i>
-                                 <span className="text-2xl font-black text-white leading-none">{productiveDays}</span>
-                                 <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Prod. Days</span>
-                             </div>
-                         </div>
-                         
-                         <div className="relative z-10">
-                             <div className="flex justify-between items-end mb-2">
-                                 <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">Completion Rate</span>
-                                 <span className="text-xl font-black text-[#00FFFF]">{completionRate}%</span>
-                             </div>
-                             <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden border border-gray-700 shadow-inner">
-                                 <div 
-                                     className="h-full bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] rounded-full transition-all duration-1000 ease-out relative"
-                                     style={{ width: `${completionRate}%` }}
-                                 >
-                                     <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
+                         return (
+                             <div onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-r from-gray-900 to-[#010714] dark:from-[#021633] dark:to-[#010B1C] rounded-2xl shadow-lg border border-[#0AE0D0]/20 animate-pop-bounce delay-150 relative overflow-hidden cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_20px_rgba(0,255,255,0.1)] transition-all duration-300 group flex flex-col">
+                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[70px] opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity"></div>
+                                 
+                                 <div className="flex items-center justify-between p-4 pb-3 relative z-10">
+                                     <div className="flex items-center gap-3">
+                                         <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 flex items-center justify-center border border-[#00FFFF]/20">
+                                             <i className="fa-solid fa-chart-pie text-[#00FFFF] text-lg"></i>
+                                         </div>
+                                         <div>
+                                             <h3 className="font-black text-white text-sm tracking-wide">Target Analyzer</h3>
+                                             <div className="flex items-center gap-2 mt-0.5">
+                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Today's Progress</span>
+                                                 <div className={`text-xs font-black px-1.5 rounded bg-black/50 ${todayRate >= 85 ? 'text-green-400' : todayRate >= 50 ? 'text-blue-400' : 'text-orange-400'}`}>{todayRate}%</div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div className="flex flex-col items-end">
+                                         <div className={`bg-gradient-to-r ${consistencyColor} px-2 py-0.5 rounded-sm text-white text-[9px] font-black uppercase tracking-widest shadow-md`}>
+                                             {consistencyScore}
+                                         </div>
+                                         <div className="text-[9px] font-mono text-gray-500 mt-1">{todayDone}/{todayTotal} Targets</div>
+                                     </div>
+                                 </div>
+                                 
+                                 {/* Full Width Progress Bar */}
+                                 <div className="w-full h-1.5 bg-gray-800 relative z-10 border-t border-[#0AE0D0]/10">
+                                     <div className="h-full bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] transition-all duration-1000 relative" style={{ width: `${todayRate}%` }}>
+                                         <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
+                                     </div>
                                  </div>
                              </div>
-                         </div>
-                     </div>
+                         );
+                     })()}
 
                      {/* Detailed Analyzer Modal */}
                      {showDetailedAnalyzer && ReactDOM.createPortal(
@@ -7463,7 +7547,7 @@ const renderHomeView = () => {
                                      </div>
 
                                      {/* Base Stats */}
-                                     <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4">
+                                     <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4 mb-4">
                                          <div className="text-center">
                                              <div className="text-xl font-black text-white">{totalTargets}</div>
                                              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Targets</div>
@@ -7471,6 +7555,39 @@ const renderHomeView = () => {
                                          <div className="text-center border-l border-[#0AE0D0]/20">
                                              <div className="text-xl font-black text-green-400">{completedTargets}</div>
                                              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Achieved</div>
+                                         </div>
+                                     </div>
+
+                                     {/* AIR 1 Predictor Component */}
+                                     <div className="border-t border-[#0AE0D0]/20 pt-5 mt-2 text-center relative">
+                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-transparent via-[#00FFFF] to-transparent"></div>
+                                         <div className="text-[9px] text-[#A4DFE6] font-bold uppercase tracking-widest mb-1"><i className="fa-solid fa-ranking-star"></i> AI Rank Predictor</div>
+                                         <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-[#00FFFF] to-blue-500 animate-pulse-soft">
+                                             {airPrediction}
+                                         </div>
+                                         <div className="text-[8px] text-gray-500 uppercase font-bold mt-1">Based on Weekly & Monthly Velocity</div>
+                                     </div>
+                                 </div>
+
+                                 {/* Task Classification Breakdown */}
+                                 <div className="bg-[#021633] rounded-3xl p-5 border border-[#0AE0D0]/20 shadow-lg mb-6 relative overflow-hidden">
+                                     <h3 className="text-[#00FFFF] font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-layer-group"></i> Task Classification</h3>
+                                     <div className="grid grid-cols-2 gap-3">
+                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-pink-500/20 text-center">
+                                             <div className="text-lg font-black text-pink-400">{taskClassBreakdown.theory}</div>
+                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Theory / Lec</div>
+                                         </div>
+                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-yellow-500/20 text-center">
+                                             <div className="text-lg font-black text-yellow-400">{taskClassBreakdown.questions}</div>
+                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">PYQ / Practice</div>
+                                         </div>
+                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-indigo-500/20 text-center">
+                                             <div className="text-lg font-black text-indigo-400">{taskClassBreakdown.revision}</div>
+                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Revision</div>
+                                         </div>
+                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-cyan-500/20 text-center">
+                                             <div className="text-lg font-black text-cyan-400">{taskClassBreakdown.mock}</div>
+                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mocks / Tests</div>
                                          </div>
                                      </div>
                                  </div>
@@ -7501,6 +7618,22 @@ const renderHomeView = () => {
                                              </div>
                                          ))}
                                          {last7Days.length === 0 && <div className="w-full text-center text-xs text-gray-500 flex items-center justify-center h-full">No recent data</div>}
+                                     </div>
+                                 </div>
+
+                                 {/* Time-Based Completion Rates */}
+                                 <div className="grid grid-cols-3 gap-3 mb-6">
+                                     <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-blue-500/20 flex flex-col justify-center text-center shadow-lg">
+                                         <span className="text-xl font-black text-blue-400">{dailyRate}%</span>
+                                         <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Daily</span>
+                                     </div>
+                                     <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-emerald-500/20 flex flex-col justify-center text-center shadow-lg">
+                                         <span className="text-xl font-black text-emerald-400">{weeklyRate}%</span>
+                                         <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Weekly</span>
+                                     </div>
+                                     <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-purple-500/20 flex flex-col justify-center text-center shadow-lg">
+                                         <span className="text-xl font-black text-purple-400">{monthlyRate}%</span>
+                                         <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Monthly</span>
                                      </div>
                                  </div>
 
@@ -7580,19 +7713,6 @@ const renderHomeView = () => {
                          </div>,
                          document.body
                      )}
-                            <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 px-1 mt-6 animate-pop-bounce delay-200">Study Modules</h3>
-                            <div className="grid grid-cols-2 gap-4 mb-6 animate-pop-bounce delay-300">
-                                <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_25px_rgba(0,166,81,0.4)] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
-                                    <i className="fa-solid fa-book-open text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
-                                    <h4 className="font-black text-white text-lg leading-tight">LN modules</h4>
-                                    <i className="fa-solid fa-leaf absolute -right-4 -bottom-4 text-6xl text-green-800/30"></i>
-                                </div>
-                                <div onClick={() => setCurrentTab('questions')} className="bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-lg shadow-gray-400/20 dark:shadow-none rounded-3xl p-5 aspect-square flex flex-col items-center justify-center text-center cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] transition-all duration-300 relative overflow-hidden group">
-                                    <i className="fa-solid fa-layer-group text-4xl text-white mb-3 group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-300"></i>
-                                    <h4 className="font-black text-white text-lg leading-tight">Bablu Dablu<br />modules</h4>
-                                    <i className="fa-solid fa-pen-nib absolute -right-4 -bottom-4 text-6xl text-white/5"></i>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 );
@@ -7601,52 +7721,348 @@ const renderHomeView = () => {
             // --- NEETPREP PRACTICE ENGINE ---
             const renderQuestionsView = () => {
                 try {
-                    if (activePracticeChapter) {
-                        if (!showQuiz) {
-                            const totalQs = activePracticeChapter.topics?.reduce((acc, t) => acc + (t.questions?.length || 0), 0) || 0;
+                    const isNeet = activePracticeBatch?.type === 'neet';
+                    const isJee = activePracticeBatch?.type === 'jee';
+                    const themeText = isNeet ? 'text-[#00418d]' : isJee ? 'text-[#0ea5e9]' : 'text-gray-800 dark:text-gray-200';
+                    const themeBg = isNeet ? 'bg-[#00418d]' : isJee ? 'bg-[#0f172a]' : 'bg-gray-800';
+                    const themeBorder = isNeet ? 'border-[#00418d]' : isJee ? 'border-[#0ea5e9]' : 'border-gray-800';
+                    const themeHoverBorder = isNeet ? 'hover:border-[#00418d] dark:hover:border-[#00418d]' : isJee ? 'hover:border-[#0ea5e9] dark:hover:border-[#0ea5e9]' : 'hover:border-gray-400 dark:hover:border-gray-500';
+                    const themeHoverText = isNeet ? 'group-hover:text-[#00418d]' : isJee ? 'group-hover:text-[#0ea5e9]' : 'group-hover:text-gray-600 dark:group-hover:text-gray-300';
+                    const themeGroupHoverBg = isNeet ? 'group-hover:bg-[#00418d]' : isJee ? 'group-hover:bg-[#0ea5e9]' : 'group-hover:bg-gray-700';
+                    const themeLightBg = isNeet ? 'bg-blue-50 dark:bg-blue-900/20' : isJee ? 'bg-slate-900 dark:bg-slate-900' : 'bg-gray-50 dark:bg-gray-900/20';
+                    const themeLightBorder = isNeet ? 'border-blue-200 dark:border-blue-800' : isJee ? 'border-slate-700 dark:border-slate-700' : 'border-gray-200 dark:border-gray-800';
+                    const themeRing = isNeet ? 'ring-[#00418d]' : isJee ? 'ring-[#0ea5e9]' : 'ring-gray-800';
+                    const themeIcon = isNeet ? 'fa-stethoscope' : isJee ? 'fa-microchip' : 'fa-book';
+                    const themeActiveBg = isNeet ? 'bg-[#003370]' : isJee ? 'bg-[#020617]' : 'bg-gray-900';
+
+                                        if (activePracticeChapter) {
+                        if (activePracticeChapter.isCustomTest) {
+                            const selectedTopic = practiceSelectedTopic; 
+                            let displayedQuestions = loadedQuestions; 
+                            
+                            if (!displayedQuestions || displayedQuestions.length === 0) return <div className="text-white text-center p-10">Loading test...</div>;
+
+                            const safeQuestionIndex = Math.min(currentQuestionIndex, Math.max(0, displayedQuestions.length - 1));
+                            const currentQuestion = displayedQuestions[safeQuestionIndex] || {};
+                            const attempts = practiceAttempts || {};
+                            const isAnswered = attempts[currentQuestion.id] !== undefined;
+                            const userAnsIdx = attempts[currentQuestion.id];
+
+                            const StatusShape = ({ status, num }) => {
+                                if (status === 'not_visited') {
+                                    return (
+                                        <div className="w-[42px] h-[32px] text-black flex items-center justify-center font-normal text-[14px] bg-gradient-to-b from-[#ffffff] to-[#d5d5d5] rounded-[4px] relative shrink-0" style={{ boxShadow: 'inset 0 0 0 1px #888, inset 0 2px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                            <span className="relative z-10">{num}</span>
+                                        </div>
+                                    );
+                                }
+                                if (status === 'not_answered') {
+                                    return (
+                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0">
+                                            <svg viewBox="0 0 42 32" className="absolute inset-0 w-full h-full z-0 block" style={{ filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.25))' }}>
+                                              <defs>
+                                                <linearGradient id="orgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                  <stop offset="0%" stopColor="#f47814" />
+                                                  <stop offset="100%" stopColor="#d14e00" />
+                                                </linearGradient>
+                                              </defs>
+                                              <polygon points="1,1 34,1 41,31 1,31" fill="url(#orgGrad)" stroke="#a33a00" strokeWidth="1" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="relative z-10 text-white font-normal text-[14px]">{num}</span>
+                                        </div>
+                                    );
+                                }
+                                if (status === 'answered') {
+                                    return (
+                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0">
+                                            <svg viewBox="0 0 42 32" className="absolute inset-0 w-full h-full z-0 block" style={{ filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.25))' }}>
+                                              <defs>
+                                                <linearGradient id="grnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                  <stop offset="0%" stopColor="#66c266" />
+                                                  <stop offset="100%" stopColor="#4ea04e" />
+                                                </linearGradient>
+                                              </defs>
+                                              <polygon points="8,1 41,1 41,31 1,31" fill="url(#grnGrad)" stroke="#2b752b" strokeWidth="1" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="relative z-10 text-white font-normal text-[14px]">{num}</span>
+                                        </div>
+                                    );
+                                }
+                                if (status === 'marked') {
+                                    return (
+                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                            <span className="relative z-10">{num}</span>
+                                        </div>
+                                    );
+                                }
+                                if (status === 'answered_marked') {
+                                    return (
+                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                            <span className="relative z-10">{num}</span>
+                                            <div className="absolute bottom-[-2px] right-[-2px] w-3.5 h-3.5 rounded-full border border-white z-20 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #66c266 0%, #4ea04e 100%)', boxShadow: 'inset 0 0 0 1px #2b752b' }}>
+                                                <i className="fa-solid fa-bars text-[6px] text-white transform scale-75"></i>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            };
+const getStatus = (qId) => {
+                                const visited = practiceVisited.includes(qId);
+                                const ans = attempts[qId] !== undefined;
+                                const marked = practiceReview.includes(qId);
+                                if (!visited && !ans && !marked) return 'not_visited';
+                                if (ans && !marked) return 'answered';
+                                if (visited && !ans && !marked) return 'not_answered';
+                                if (!ans && marked) return 'marked';
+                                if (ans && marked) return 'answered_marked';
+                                return 'not_visited';
+                            };
+                            
+                            let cntNotVisited = 0, cntNotAnswered = 0, cntAnswered = 0, cntMarked = 0, cntAnsMarked = 0;
+                            displayedQuestions.forEach(q => {
+                                const s = getStatus(q.id);
+                                if (s === 'not_visited') cntNotVisited++;
+                                if (s === 'not_answered') cntNotAnswered++;
+                                if (s === 'answered') cntAnswered++;
+                                if (s === 'marked') cntMarked++;
+                                if (s === 'answered_marked') cntAnsMarked++;
+                            });
+
+                            const handleClear = (qId) => {
+                                setPracticeAttempts(prev => { const next = { ...prev }; delete next[qId]; return next; });
+                            };
+
+                            const handleNext = () => {
+                                if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
+                                if (safeQuestionIndex < displayedQuestions.length - 1) setCurrentQuestionIndex(safeQuestionIndex + 1);
+                            };
+                            
+                            const handlePrevious = () => {
+                                if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
+                                if (safeQuestionIndex > 0) setCurrentQuestionIndex(safeQuestionIndex - 1);
+                            };
+
                             return (
-                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
-                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{safeRenderText(activePracticeChapter.name)}</h2>
+                                <div className="bg-white min-h-[100dvh] font-sans text-gray-800 flex flex-col fixed inset-0 z-[100] overflow-hidden">
+                                    <div className="bg-gray-100 border-b border-gray-300 px-4 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm shrink-0 gap-4">
+                                        <div className="flex items-center gap-4 relative w-full">
+                                            <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none hidden md:block">
+                                                <svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><path d="M0,100 L200,0 M50,100 L200,20 M100,100 L200,40" stroke="#000" strokeWidth="2" fill="none"/></svg>
+                                            </div>
+                                            <div className="w-[85px] h-[95px] bg-white border-2 border-gray-400 flex items-center justify-center overflow-hidden shrink-0">
+                                                {tgUser?.photo_url ? <img src={tgUser.photo_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-user text-5xl text-gray-500"></i>}
+                                            </div>
+                                            <div className="text-xs sm:text-[13px] grid grid-cols-[max-content_1fr] gap-x-2 gap-y-1">
+                                                <span className="text-gray-700">Candidate Name</span><span className="font-bold text-[#E85D04]">: {safeRenderText(tgUser?.first_name ? (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '')) : 'Student')}</span>
+                                                <span className="text-gray-700">Exam Name</span><span className="font-bold text-[#E85D04]">: {isNeet ? 'NEET' : 'JEE'}</span>
+                                                <span className="text-gray-700">Test Name</span><span className="font-bold text-[#E85D04]">: {activePracticeChapter.name}</span>
+                                                <span className="text-gray-700">Remaining Time</span><span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">: <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} /></span>
+                                            </div>
                                         </div>
-                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                        <button onClick={() => { 
+    if (activePracticeChapter?.isCustomTest) {
+        if(window.confirm('Are you sure you want to quit this test? Your progress will not be saved.')) {
+            setShowQuiz(false);
+            setActivePracticeChapter(null);
+            setActiveGeneratedTest(null);
+            setCustomGeneratorMode('history');
+        }
+    } else {
+        setConfirmClearScope({ type: 'chapter', data: activePracticeChapter }); 
+    }
+}} className="text-red-500 text-sm font-bold hover:bg-red-50 px-3 py-1 rounded-sm transition-colors border border-red-200">Quit Test</button>
                                     </div>
 
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5 mb-6 shadow-sm flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">Practice All Topics</h3>
-                                            <p className="text-blue-600 dark:text-blue-400 text-xs font-semibold mt-1">{totalQs} Questions Available</p>
-                                        </div>
-                                        <button
-                                            onClick={() => { if (totalQs > 0) { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }}
-                                            disabled={totalQs === 0}
-                                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors shrink-0 ${totalQs > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/30' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
-                                        >
-                                            <i className="fa-solid fa-play ml-1"></i>
-                                        </button>
-                                    </div>
-
-                                    <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Specific Topics</h3>
-
-                                    <div className="space-y-3">
-                                        {activePracticeChapter.topics?.map((top, i) => (
-                                            <div key={i} onClick={() => { if (top.questions?.length > 0) { setPracticeSelectedTopic(top.name); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm transition-all group ${top.questions?.length > 0 ? 'cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651]' : 'opacity-60'}`}>
-                                                <div className="flex-1 mr-4">
-                                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(top.name)}</h4>
-                                                    <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{top.questions?.length || 0} Qs</p>
+                                    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                                        <div className="flex-1 flex flex-col border-r border-gray-300 relative bg-white min-w-0">
+                                            <div className="flex justify-between items-center bg-white border-b-2 border-gray-300 px-4 py-2 shrink-0">
+                                                <h2 className="text-lg font-bold text-gray-800">Question {safeQuestionIndex + 1}:</h2>
+                                                <i className="fa-solid fa-circle-down text-blue-600 text-xl"></i>
+                                            </div>
+                                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" data-qa-card>
+                                                <div className="text-black text-[15px] sm:text-[16px] leading-relaxed font-medium mb-8">
+                                                    <FormattedText text={currentQuestion?.question || currentQuestion?.text || currentQuestion?.question_text} />
+                                                    {currentQuestion.imageUrl && <div className="mt-4 max-w-full overflow-hidden rounded-md border border-gray-200"><img src={currentQuestion.imageUrl} className="max-w-full h-auto object-contain max-h-[400px]" alt="Question" /></div>}
+                                                    
+                                                    {currentQuestion.options && currentQuestion.options.length > 0 && (
+                                                        <div className="mt-8 flex flex-col gap-5 text-[15px]">
+                                                            {currentQuestion.options.map((opt, oIdx) => (
+                                                                <div key={oIdx} className="flex gap-2">
+                                                                    <span className="font-semibold text-gray-700 shrink-0">{oIdx + 1}.</span>
+                                                                    <div><FormattedText text={opt} /></div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'topic', data: top }); }} className={`w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center shrink-0 ${top.questions?.length > 0 ? '' : 'hidden'}`} title="Clear Topic Progress">
-                                                        <i className="fa-solid fa-trash-can text-xs"></i>
-                                                    </button>
-                                                    <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 ${top.questions?.length > 0 ? 'group-hover:bg-[#00a651] group-hover:text-white' : ''} transition-colors flex items-center justify-center shrink-0`}>
-                                                        <i className="fa-solid fa-play ml-0.5 text-xs"></i>
-                                                    </div>
+                                                
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-auto w-full pt-8 pb-4 pl-2 pr-4">
+                                                    {(currentQuestion.options || [1, 2, 3, 4]).map((_, oIdx) => {
+                                                        const isSelected = userAnsIdx === oIdx;
+                                                        return (
+                                                            <div key={oIdx} className="flex items-center bg-white">
+                                                                <label className="flex items-center gap-3 cursor-pointer w-max">
+                                                                    <input type="radio" name={'q_' + currentQuestion.id} checked={isSelected} onChange={() => {
+                                                                        if (activeGeneratedTest?.isNeetPattern && currentQuestion.section === 'B') {
+                                                                            const attemptsObj = practiceAttempts || {};
+                                                                            let secBAttempts = 0;
+                                                                            displayedQuestions.forEach(q => {
+                                                                                if (q.subjectName === currentQuestion.subjectName && q.section === 'B' && attemptsObj[q.id] !== undefined) {
+                                                                                    secBAttempts++;
+                                                                                }
+                                                                            });
+                                                                            if (secBAttempts >= 10 && attemptsObj[currentQuestion.id] === undefined) {
+                                                                                safeAlert('You can only attempt a maximum of 10 questions in Section B.');
+                                                                                return;
+                                                                            }
+                                                                        }
+                                                                        setPracticeAttempts(prev => ({ ...prev, [currentQuestion.id]: oIdx }));
+                                                                        if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
+                                                                    }} className="w-[18px] h-[18px] cursor-pointer" />
+                                                                    <span className="font-normal text-gray-700 text-[15px] sm:text-[16px]">{oIdx + 1} )</span>
+                                                                </label>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
-                                        ))}
+                                            <div className="border-t border-gray-300 bg-white p-3 shrink-0">
+                                                <div className="flex gap-1 mb-3">
+                                                    <button onClick={() => {
+                                                        if (practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => prev.filter(id => id !== currentQuestion?.id));
+                                                        handleNext();
+                                                    }} className="bg-[#5CB85C] hover:bg-[#4cae4c] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#4cae4c]">Save & Next</button>
+                                                    <button onClick={() => handleClear(currentQuestion?.id)} className="bg-white hover:bg-gray-100 text-black text-[12px] font-bold px-4 py-2 uppercase border border-gray-300">Clear</button>
+                                                    <button onClick={() => {
+                                                        if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
+                                                        handleNext();
+                                                    }} className="bg-[#F0AD4E] hover:bg-[#eea236] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#eea236]">Save & Mark For Review</button>
+                                                    <button onClick={() => {
+                                                        if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
+                                                        handleNext();
+                                                    }} className="bg-[#337AB7] hover:bg-[#286090] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#2e6da4]">Mark For Review & Next</button>
+                                                </div>
+                                            </div>
+                                            <div className="bg-gray-100 border-t border-gray-300 px-4 py-3 flex justify-between shrink-0">
+                                                <div className="flex gap-2">
+                                                    <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">&lt;&lt; BACK</button>
+                                                    <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
+                                                </div>
+                                                <button onClick={() => {
+                                                    let score = 0;
+                                                    let correctCnt = 0;
+                                                    displayedQuestions.forEach(q => {
+                                                        const ansIdx = attempts[q.id];
+                                                        if (ansIdx !== undefined) {
+                                                            const isCorr = ['A', 'B', 'C', 'D'][ansIdx] === q.correctOption;
+                                                            if (isCorr) { score += 4; correctCnt++; } else { score -= 1; }
+                                                        }
+                                                    });
+                                                    const finalResult = { ...activeGeneratedTest, score, accuracy: Math.round((correctCnt / displayedQuestions.length) * 100) || 0, attempts: { ...attempts }, questions: displayedQuestions };
+                                                    setGeneratedTestsHistory(prev => [finalResult, ...prev]);
+                                                    setGeneratedTestResult(finalResult);
+                                                    setActiveGeneratedTest(null);
+                                                    setActivePracticeChapter(null); 
+                                                    setCustomGeneratorMode('history');
+                                                    safeAlert('Test Submitted Successfully! View your detailed analysis.');
+                                                }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-xs font-bold px-6 py-1.5 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full lg:w-[320px] bg-white flex flex-col shrink-0 lg:h-full max-h-[40vh] lg:max-h-none border-t lg:border-t-0 border-gray-300 overflow-hidden relative">
+                                            <div className="absolute -left-6 top-[20%] w-6 h-10 bg-black text-white flex items-center justify-center cursor-pointer rounded-l-md hidden lg:flex z-50">
+                                                <i className="fa-solid fa-chevron-right text-xs"></i>
+                                            </div>
+                                            <div className="p-3 m-2 bg-white border-2 border-dashed border-gray-500 grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] sm:text-[12px] text-gray-700 shrink-0 relative">
+                                                <div className="flex items-center gap-2"><StatusShape status="not_visited" num={cntNotVisited} /> <span>Not Visited</span></div>
+                                                <div className="flex items-center gap-2"><StatusShape status="not_answered" num={cntNotAnswered} /> <span>Not Answered</span></div>
+                                                <div className="flex items-center gap-2"><StatusShape status="answered" num={cntAnswered} /> <span>Answered</span></div>
+                                                <div className="flex items-center gap-2"><StatusShape status="marked" num={cntMarked} /> <span>Marked for Review</span></div>
+                                                <div className="flex items-start gap-2 col-span-2 mt-1">
+                                                    <div className="shrink-0"><StatusShape status="answered_marked" num={cntAnsMarked} /></div>
+                                                    <span className="leading-tight">Answered & Marked for Review (will be considered for evaluation)</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-[#5C7FA5] text-white font-bold px-3 py-1.5 text-xs uppercase shrink-0">Choose a Question</div>
+                                            <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white">
+                                                {displayedQuestions.map((q, idx) => {
+                                                    const status = getStatus(q.id);
+                                                    return (
+                                                        <div key={q.id} onClick={() => {
+                                                            if (!practiceVisited.includes(currentQuestion?.id)) setPracticeVisited(prev => [...prev, currentQuestion?.id]);
+                                                            setCurrentQuestionIndex(idx);
+                                                        }} className="flex justify-center cursor-pointer mb-1 mr-1">
+                                                            <StatusShape status={status} num={idx + 1} />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        if (!showQuiz) {
+                            const questionTypesSet = new Set();
+                            activePracticeChapter.topics?.forEach(t => t.questions?.forEach(q => questionTypesSet.add(q.questionType || 'Main module (recommended)')));
+                            const availableTypes = Array.from(questionTypesSet);
+                            if (!availableTypes.includes('All combined')) availableTypes.unshift('All combined');
+
+                            return (
+                                <div className={`pb-24 pt-4 px-5 animate-in fade-in min-h-screen relative overflow-hidden ${isNeet ? 'bg-[#001122]' : isJee ? 'bg-[#050B14]' : 'bg-[#0a0a0a]'}`}>
+                                    {/* Ambient background glows */}
+                                    <div className={`fixed top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 pointer-events-none ${isNeet ? 'bg-blue-600' : isJee ? 'bg-cyan-600' : 'bg-green-600'}`}></div>
+                                    <div className={`fixed bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px] opacity-20 pointer-events-none ${isNeet ? 'bg-teal-600' : isJee ? 'bg-purple-600' : 'bg-green-600'}`}></div>
+                                    <div className="flex justify-between items-center mb-6 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={handleBack} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-md shadow-inner active:scale-95 text-white/70 hover:text-white ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 hover:bg-cyan-800/50' : 'bg-white/10 border border-white/20 hover:bg-white/20'}`}><i className="fa-solid fa-arrow-left"></i></button>
+                                            <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight line-clamp-1">{safeRenderText(activePracticeChapter.name)}</h2>
+                                        </div>
+                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    </div>
+
+                                    <h3 className={`font-black text-xs uppercase tracking-widest mb-4 inline-block px-3 py-1.5 rounded-lg border backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] ${isNeet ? 'text-blue-300 bg-blue-900/40 border-blue-500/30' : isJee ? 'text-cyan-300 bg-cyan-900/40 border-cyan-500/30' : 'text-white bg-white/10 border-white/20'}`}>Select Question Type</h3>
+
+                                    <div className="space-y-3">
+                                        {availableTypes.map((type, i) => {
+                                            let qCount = 0;
+                                            if (type === 'All combined') {
+                                                activePracticeChapter.topics?.forEach(t => qCount += t.questions?.length || 0);
+                                            } else {
+                                                activePracticeChapter.topics?.forEach(t => t.questions?.forEach(q => {
+                                                    if ((q.questionType || 'Main module (recommended)') === type) qCount++;
+                                                }));
+                                            }
+
+                                            return (
+                                                <div key={i} onClick={() => { if (qCount > 0) { setActiveQuestionType(type); setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden ${qCount > 0 ? 'cursor-pointer hover:-translate-y-1 ' + (isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10') : 'opacity-50 grayscale'}`}>
+                                                    <div className="flex-1 mr-4">
+                                                        <h4 className={`font-black text-lg text-white transition-colors drop-shadow-sm ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-gray-300'}`}>{type}</h4>
+                                                        <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{qCount} Qs</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        {qCount > 0 && (
+                                                            <button onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                let questionsToClear = [];
+                                                                if (type === 'All combined') {
+                                                                    activePracticeChapter.topics?.forEach(t => t.questions?.forEach(q => questionsToClear.push(q)));
+                                                                } else {
+                                                                    activePracticeChapter.topics?.forEach(t => t.questions?.forEach(q => {
+                                                                        if ((q.questionType || 'Main module (recommended)') === type) questionsToClear.push(q);
+                                                                    }));
+                                                                }
+                                                                setConfirmClearScope({ type: 'topic', data: { name: type, questions: questionsToClear } }); 
+                                                            }} className="w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20 opacity-50 hover:opacity-100 group-hover:opacity-100" title="Clear Question Type Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                        )}
+                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${qCount > 0 ? 'bg-white/5 border border-white/10 text-white/50 group-hover:scale-110 ' + (isNeet ? 'group-hover:bg-blue-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] group-hover:border-blue-400' : isJee ? 'group-hover:bg-cyan-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] group-hover:border-cyan-400' : 'group-hover:bg-white group-hover:text-black') : 'bg-white/5 text-white/20 border border-white/5'}`}>
+                                                            <i className="fa-solid fa-play ml-0.5 text-xs"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );
@@ -7752,7 +8168,7 @@ const renderHomeView = () => {
 
                             <div className="pb-32 animate-pop-in relative min-h-screen bg-[#F3F4F6] text-gray-900 font-sans">
                                 {/* CBT Header */}
-                                <div className="px-4 py-3 flex items-center justify-between bg-[#00418d] text-white shadow-md relative z-20">
+                                <div className={`px-4 py-3 flex items-center justify-between ${themeBg} text-white shadow-md relative z-20`}>
                                     <div className="flex items-center gap-3 w-full">
                                         <button onClick={handleBack} className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center shrink-0 transition-colors"><i className="fa-solid fa-arrow-left"></i></button>
                                         <div className="flex-1 overflow-hidden">
@@ -7768,25 +8184,22 @@ const renderHomeView = () => {
                                 {/* Optional Filters & Topic Selector */}
                                 <div className="bg-white px-4 py-2 border-b border-gray-300 shadow-sm flex items-center justify-between z-10 relative">
                                     <div className="flex gap-2 items-center overflow-x-auto no-scrollbar flex-1 mr-2">
-                                        <select
-                                            value={practiceSelectedTopic || ""}
-                                            onChange={(e) => {
-                                                setPracticeSelectedTopic(e.target.value || null);
-                                                setCurrentQuestionIndex(0);
-                                            }}
-                                            className="border border-gray-300 rounded-sm text-xs font-semibold px-2 py-1.5 bg-gray-50 text-gray-800 outline-none hover:border-[#00418d] focus:border-[#00418d] max-w-[140px] md:max-w-[200px] shrink-0 cursor-pointer transition-colors"
+                                        <button 
+                                            onClick={() => setPracticeShowTopicModal(true)}
+                                            className={`flex items-center gap-2 border rounded-sm transition-all px-3 py-1.5 ${practiceSelectedTopic ? themeBorder + ' ' + themeLightBg : 'border-gray-300 bg-white hover:border-gray-400'}`}
                                         >
-                                            <option value="">All Topics</option>
-                                            {activePracticeChapter.topics?.map((top, i) => (
-                                                <option key={i} value={top.name}>{top.name}</option>
-                                            ))}
-                                        </select>
+                                            <i className={`fa-solid fa-filter text-[10px] ${practiceSelectedTopic ? themeText : 'text-gray-400'}`}></i>
+                                            <span className={`text-xs font-bold truncate max-w-[120px] md:max-w-[160px] ${practiceSelectedTopic ? themeText : 'text-gray-600'}`}>
+                                                {practiceSelectedTopic ? safeRenderText(practiceSelectedTopic) : 'All Topics'}
+                                            </span>
+                                            <i className={`fa-solid fa-chevron-down text-[10px] ${practiceSelectedTopic ? themeText : 'text-gray-400'}`}></i>
+                                        </button>
                                         <div className="h-4 w-px bg-gray-300 mx-1 shrink-0"></div>
-                                        <button onClick={() => { setQuestionFilter('all'); setCurrentQuestionIndex(0); }} className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>All Qs</button>
-                                        <button onClick={() => { setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Bookmarked</button>
-                                        <button onClick={() => { setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Incorrect</button>
+                                        <button onClick={() => { setQuestionFilter('all'); setCurrentQuestionIndex(0); }} className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>All Qs</button>
+                                        <button onClick={() => { setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Bookmarked</button>
+                                        <button onClick={() => { setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Incorrect</button>
                                     </div>
-                                    <button onClick={() => setPracticeShowPalette(true)} className="ml-2 bg-[#00418d] text-white px-3 py-1.5 rounded-sm text-xs font-bold shrink-0 shadow-sm active:scale-95 transition-transform"><i className="fa-solid fa-grip mr-1"></i> Palette</button>
+                                    <button onClick={() => setPracticeShowPalette(true)} className={`ml-2 ${themeBg} text-white px-3 py-1.5 rounded-sm text-xs font-bold shrink-0 shadow-sm active:scale-95 transition-transform`}><i className="fa-solid fa-grip mr-1"></i> Palette</button>
                                 </div>
 
                                 {/* Question Content */}
@@ -7796,7 +8209,7 @@ const renderHomeView = () => {
                                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
                                             <h3 className="font-bold text-gray-900 mb-2">No questions found</h3>
                                             <p className="text-sm text-gray-500 mb-4">Adjust your filters to see questions.</p>
-                                            <button onClick={() => { setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className="bg-[#00418d] text-white font-semibold text-sm px-4 py-2 rounded-sm mt-2 transition-colors hover:bg-blue-800">Clear Filters</button>
+                                            <button onClick={() => { setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className={`text-white font-semibold text-sm px-4 py-2 rounded-sm mt-2 transition-colors ${themeBg} ${themeHoverBorder}`}>Clear Filters</button>
                                         </div>
                                     ) : (
                                         <div className="bg-white border border-gray-300 shadow-md rounded-sm mt-2">
@@ -7805,14 +8218,13 @@ const renderHomeView = () => {
                                                     <div className="text-black text-[15px] md:text-base leading-relaxed font-medium">
                                                         <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
                                                     </div>
-                                                </div>
-                                                
-                                                {/* Enhanced Bookmark Button */}
-                                                <div className="flex justify-end gap-2 mb-4">
-                                                    <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
-                                                        <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i> 
-                                                        {bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}
-                                                    </button>
+                                                    {/* Enhanced Bookmark Button */}
+                                                    <div className="shrink-0">
+                                                        <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
+                                                            <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i> 
+                                                            <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 {currentQuestion.imageUrl && (
                                                     <div className="mb-6 rounded-sm overflow-hidden bg-white flex items-center justify-center border border-gray-200 p-2">
@@ -7843,7 +8255,7 @@ const renderHomeView = () => {
                                                             else if (isSelected) btnClass = "bg-[#c5221f] border-[#c5221f] text-white ring-2 ring-[#c5221f] ring-offset-2 z-10";
                                                             else btnClass = "bg-gray-100 border-gray-300 text-gray-400";
                                                         } else if (isSelected) {
-                                                            btnClass = "bg-[#00418d] border-[#00418d] text-white ring-2 ring-[#00418d] ring-offset-2 z-10";
+                                                            btnClass = `${themeBg} ${themeBorder} text-white ring-2 ${themeRing} ring-offset-2 z-10`;
                                                         }
                                                         return (
                                                             <button
@@ -7858,51 +8270,80 @@ const renderHomeView = () => {
                                                     }) : null}
                                                 </div>
 
-{/* White/Grey Personal Notes UI */}
-                                                        <div className="mt-6 mb-2">
-                                                            <div className="flex justify-between items-center mb-3">
-                                                                <h4 className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest flex items-center gap-2">
-                                                                    <i className="fa-solid fa-pen-nib text-blue-500"></i> My Personal Notes
+                                                        {/* Premium White/Grey Personal Notes UI */}
+                                                        <div className="mt-8 mb-4">
+                                                            <div className="flex justify-between items-center mb-4">
+                                                                <h4 className="text-[15px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2.5">
+                                                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shadow-inner shadow-blue-200/50">
+                                                                        <i className="fa-solid fa-pen-nib text-[#00418d] text-sm"></i>
+                                                                    </div>
+                                                                    My Personal Notes
                                                                 </h4>
-                                                                <button onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: !prev[currentQuestion.id] }))} className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-slate-200/40 border ${questionNotes[currentQuestion.id] || showNoteInput[currentQuestion.id] ? 'bg-gray-100 border-gray-300 text-gray-800 dark:bg-gray-800 dark:border-gray-600 dark:text-white' : 'bg-white border-slate-200/60 text-gray-600 hover:bg-slate-50/80 backdrop-blur-md dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800'} active:scale-95`}>
-                                                                    <i className={`fa-solid fa-pen-to-square ${questionNotes[currentQuestion.id] ? 'text-gray-800 dark:text-white' : ''}`}></i> 
-                                                                    {questionNotes[currentQuestion.id] ? 'Edit Note' : 'Add Note'}
-                                                                </button>
+                                                                {!(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
+                                                                    <button 
+                                                                        onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))} 
+                                                                        className="group relative px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-[#00418d] hover:border-blue-200 shadow-sm hover:shadow-md hover:shadow-blue-100 active:scale-95 overflow-hidden"
+                                                                    >
+                                                                        <div className="absolute inset-0 bg-blue-50/50 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                                                                        <i className="fa-solid fa-plus relative z-10 group-hover:rotate-90 transition-transform duration-300"></i> 
+                                                                        <span className="relative z-10">Add Note</span>
+                                                                    </button>
+                                                                )}
                                                             </div>
 
                                                             {(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
-                                                                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700/50 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2 relative overflow-hidden shadow-sm">
+                                                                <div className="bg-white border border-slate-200 p-5 rounded-3xl animate-in fade-in zoom-in-95 duration-300 ease-out relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
+                                                                    {/* Subtle Top Gradient Accent */}
+                                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00418d] via-blue-400 to-[#00a651] opacity-80"></div>
+                                                                    
                                                                     {(!showNoteInput[currentQuestion.id] && questionNotes[currentQuestion.id]) ? (
-                                                                        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl p-4 text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap font-medium leading-relaxed">
+                                                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-[15px] text-slate-700 mb-4 whitespace-pre-wrap font-medium leading-relaxed shadow-inner">
                                                                             {questionNotes[currentQuestion.id]}
                                                                         </div>
                                                                     ) : (
-                                                                        <textarea
-                                                                            className="w-full text-sm p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/80 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:focus:ring-gray-600 focus:border-blue-400 dark:focus:border-gray-500 transition-all min-h-[100px] resize-y placeholder-gray-400 dark:placeholder-gray-500 mb-3 relative z-10 font-medium"
-                                                                            placeholder="Type your personal notes here... (auto-saved)"
-                                                                            value={questionNotes[currentQuestion.id] || ''}
-                                                                            onChange={(e) => setQuestionNotes(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
-                                                                            autoFocus
-                                                                        ></textarea>
+                                                                        <div className="relative mb-4 group">
+                                                                            <textarea
+                                                                                className="w-full text-[15px] p-5 border-2 border-slate-100 rounded-2xl bg-white text-slate-800 focus:outline-none focus:border-[#00418d] focus:ring-4 focus:ring-[#00418d]/10 transition-all min-h-[120px] resize-y placeholder-slate-400 font-medium shadow-sm z-10 relative"
+                                                                                placeholder="Type your brilliant thoughts here... (auto-saved)"
+                                                                                value={questionNotes[currentQuestion.id] || ''}
+                                                                                onChange={(e) => setQuestionNotes(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
+                                                                                autoFocus
+                                                                            ></textarea>
+                                                                            {/* Glowing effect on focus */}
+                                                                            <div className="absolute inset-0 rounded-2xl bg-[#00418d] opacity-0 group-focus-within:opacity-[0.03] blur-xl transition-opacity duration-500 pointer-events-none"></div>
+                                                                        </div>
                                                                     )}
                                                                     
                                                                     <div className="flex justify-end gap-3 relative z-10">
                                                                         {questionNotes[currentQuestion.id] && (
-                                                                            <button onClick={() => {
-                                                                                const newNotes = { ...questionNotes };
-                                                                                delete newNotes[currentQuestion.id];
-                                                                                setQuestionNotes(newNotes);
-                                                                                setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }));
-                                                                            }} className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 active:scale-95">
+                                                                            <button 
+                                                                                onClick={() => {
+                                                                                    const newNotes = { ...questionNotes };
+                                                                                    delete newNotes[currentQuestion.id];
+                                                                                    setQuestionNotes(newNotes);
+                                                                                    setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }));
+                                                                                }} 
+                                                                                className="text-slate-500 hover:text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 border border-transparent hover:border-red-100"
+                                                                            >
                                                                                 <i className="fa-solid fa-trash-can"></i> Delete
                                                                             </button>
                                                                         )}
                                                                         
                                                                         {showNoteInput[currentQuestion.id] ? (
-                                                                            <button onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }))} className="bg-[#00418d] hover:bg-[#003370] dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 px-5 py-2 rounded-xl text-xs font-black transition-all shadow-sm flex items-center gap-1.5 active:scale-95">
-                                                                                <i className="fa-solid fa-check"></i> Save
+                                                                            <button 
+                                                                                onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }))} 
+                                                                                className="bg-[#00418d] hover:bg-[#003370] text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(0,65,141,0.39)] hover:shadow-[0_6px_20px_rgba(0,65,141,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
+                                                                            >
+                                                                                <i className="fa-solid fa-check"></i> Save Note
                                                                             </button>
-                                                                        ) : null}
+                                                                        ) : (
+                                                                            <button 
+                                                                                onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))} 
+                                                                                className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:shadow-[0_6px_20px_rgba(15,23,42,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
+                                                                            >
+                                                                                <i className="fa-solid fa-pen-to-square"></i> Edit Note
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             )}
@@ -7926,16 +8367,63 @@ const renderHomeView = () => {
                                                 )}
                                             </div>
                                         </div>
+                                            </div>
                                     )}
                                 </div>
 
                                 
 
+                                {/* Stunning Custom Topic Modal */}
+                                {practiceShowTopicModal && (
+                                    <div className="fixed inset-0 z-[99999] flex flex-col justify-end items-center sm:items-center sm:justify-center">
+                                        {/* Backdrop */}
+                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPracticeShowTopicModal(false)}></div>
+                                        
+                                        {/* Modal Body */}
+                                        <div className={`relative w-full sm:w-[400px] sm:rounded-3xl rounded-t-3xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-300 pb-safe`}>
+                                            {/* Header */}
+                                            <div className={`p-5 ${themeBg} text-white flex justify-between items-center shrink-0`}>
+                                                <h3 className="font-bold text-lg tracking-wide flex items-center gap-2"><i className="fa-solid fa-list-ul"></i> Select Topic</h3>
+                                                <button onClick={() => setPracticeShowTopicModal(false)} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-95"><i className="fa-solid fa-xmark"></i></button>
+                                            </div>
+                                            
+                                            {/* Scrollable List */}
+                                            <div className="p-2 overflow-y-auto max-h-[60vh] bg-gray-50 flex flex-col gap-1">
+                                                <button 
+                                                    onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setPracticeShowTopicModal(false); }}
+                                                    className={`p-4 rounded-xl flex items-center justify-between transition-all active:scale-98 ${!practiceSelectedTopic ? themeLightBg + ' ' + themeBorder + ' border shadow-sm' : 'bg-white border border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'}`}
+                                                >
+                                                    <span className={`font-bold ${!practiceSelectedTopic ? themeText : ''}`}>All Topics Combined</span>
+                                                    {!practiceSelectedTopic && <i className={`fa-solid fa-circle-check ${themeText} text-lg`}></i>}
+                                                </button>
+
+                                                {activePracticeChapter.topics?.map((top, i) => {
+                                                    const isSelected = practiceSelectedTopic === top.name;
+                                                    const qCount = top.questions?.length || 0;
+                                                    return (
+                                                        <button 
+                                                            key={i}
+                                                            onClick={() => { setPracticeSelectedTopic(top.name); setCurrentQuestionIndex(0); setPracticeShowTopicModal(false); }}
+                                                            className={`p-4 rounded-xl flex items-center justify-between transition-all active:scale-[0.98] ${isSelected ? themeLightBg + ' ' + themeBorder + ' border shadow-sm' : 'bg-white border border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'}`}
+                                                        >
+                                                            <div className="flex flex-col items-start text-left">
+                                                                <span className={`font-bold text-sm line-clamp-2 ${isSelected ? themeText : ''}`}>{safeRenderText(top.name)}</span>
+                                                                <span className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded-sm">{qCount} Qs</span>
+                                                            </div>
+                                                            {isSelected && <i className={`fa-solid fa-circle-check ${themeText} text-lg shrink-0 ml-3`}></i>}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
                                 {/* CBT Palette Slide-over Modal */}
                                 {showPalette && (
                                     <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-center items-end animate-in fade-in" onClick={() => setPracticeShowPalette(false)}>
                                         <div className="bg-[#f0f4f7] dark:bg-gray-900 h-full w-[80vw] sm:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 dark:border-gray-800 transform transition-transform animate-in slide-in-from-right" onClick={e => e.stopPropagation()}>
-                                            <div className="bg-[#00418d] text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0">
+                                            <div className={`${themeBg} text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0`}>
                                                 <h3 className="font-bold text-sm uppercase tracking-wider"><i className="fa-solid fa-grip mr-2"></i> Question Palette</h3>
                                                 <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 rounded-sm hover:bg-white/20 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
                                             </div>
@@ -7968,7 +8456,7 @@ const renderHomeView = () => {
                                                         }
 
                                                         return (
-                                                            <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? 'ring-2 ring-[#00418d] ring-offset-1' : ''}`}>
+                                                            <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? `ring-2 ${themeRing} ring-offset-1` : ''}`}>
                                                                 {qIdx + 1}
                                                                 {isAns && isRev && <div className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-[#1e7e34] rounded-full ring-1 ring-white"></div>}
                                                             </button>
@@ -8009,6 +8497,7 @@ const renderHomeView = () => {
                                 </div>
                             </>
                         );
+                    
                     }
 
                     if (activePracticeSubject) {
@@ -8016,21 +8505,24 @@ const renderHomeView = () => {
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
                                 <div className="flex justify-between items-center mb-6">
                                     <div className="flex items-center gap-3">
-                                        <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeSubject.name)}</h2>
+                                        <button onClick={handleBack} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-md shadow-inner active:scale-95 text-white/70 hover:text-white ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 hover:bg-cyan-800/50' : 'bg-white/10 border border-white/20 hover:bg-white/20'}`}><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeSubject.name)}</h2>
                                     </div>
-                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
                                 </div>
-                                <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Chapter Selection</h3>
+                                <h3 className={`font-black text-xs uppercase tracking-widest mb-4 inline-block px-3 py-1.5 rounded-lg border backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] ${isNeet ? 'text-blue-300 bg-blue-900/40 border-blue-500/30' : isJee ? 'text-cyan-300 bg-cyan-900/40 border-cyan-500/30' : 'text-white bg-white/10 border-white/20'}`}>Chapter Selection</h3>
                                 <div className="space-y-3">
                                     {activePracticeSubject.chapters && activePracticeSubject.chapters.length > 0 ? (
                                         activePracticeSubject.chapters.map((chap, i) => (
-                                            <div key={i} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
+                                            <div key={i} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden cursor-pointer hover:-translate-y-1 ${isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10'}`}>
                                                 <div>
-                                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(chap.name)}</h4>
-                                                    <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{chap.topics?.length || 0} Topics</p>
+                                                    <h4 className={`font-black text-lg text-white transition-colors drop-shadow-sm ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-gray-300'}`}>{safeRenderText(chap.name)}</h4>
+                                                    <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{chap.topics?.length || 0} Topics</p>
                                                 </div>
-                                                <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-[#00a651] transition-colors"></i>
+                                                <div className="flex items-center gap-4">
+                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'chapter', data: chap }); }} className="w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                    <i className={`fa-solid fa-chevron-right text-xl transition-all duration-300 opacity-50 group-hover:opacity-100 group-active:opacity-100 group-hover:translate-x-1 group-active:translate-x-1 ${isNeet ? 'text-blue-400' : isJee ? 'text-cyan-400' : 'text-white'}`}></i>
+                                                </div>
                                             </div>
                                         ))
                                     ) : (
@@ -8041,12 +8533,17 @@ const renderHomeView = () => {
                         );
                     }
 
-                    if (activePracticeFile) {
+                                        if (activePracticeMode === 'practice') {
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeFile.name)} Subjects</h2>
+                                <div className="flex justify-between items-center mb-6 relative z-10">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={handleBack} className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 text-white/70 hover:text-white hover:bg-white/20 flex items-center justify-center backdrop-blur-md shadow-inner transition-all active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{activePracticeBatch?.name || 'Practice Modules'}</h2>
+                                    </div>
+                                    {activePracticeBatch && (
+                                        <button onClick={() => setConfirmClearScope({ type: 'batch', data: activePracticeBatch })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Track Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    )}
                                 </div>
 
                                 {qbankError && (
@@ -8063,11 +8560,27 @@ const renderHomeView = () => {
                                         const activeData = activePracticeBatch && activePracticeBatch.sourceTable
                                             ? (qbankDataByTable[activePracticeBatch.sourceTable] || [])
                                             : qbankData;
+                                            
+                                        const getDynamicSubjectIcon = (name, fallback) => {
+                                            if (!name) return fallback || <i className="fa-solid fa-folder"></i>;
+                                            const lower = name.toLowerCase();
+                                            if (lower.includes('physic')) return <i className="fa-solid fa-atom"></i>;
+                                            if (lower.includes('chemist')) return <i className="fa-solid fa-flask-vial"></i>;
+                                            if (lower.includes('botan')) return <i className="fa-solid fa-leaf"></i>;
+                                            if (lower.includes('zoolog') || lower.includes('biolog')) return <i className="fa-solid fa-dna"></i>;
+                                            if (lower.includes('math')) return <i className="fa-solid fa-calculator"></i>;
+                                            if (lower.includes('computer') || lower.includes('code')) return <i className="fa-solid fa-laptop-code"></i>;
+                                            if (fallback === '📁' || fallback === '📂') return <i className="fa-solid fa-book"></i>;
+                                            return fallback || <i className="fa-solid fa-book"></i>;
+                                        };
+
                                         return activeData.length > 0 ? activeData.map(sub => (
-                                            <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center text-center group">
-                                                <span className="text-4xl mb-3 group-hover:-translate-y-1 transition-transform duration-300">{sub.icon}</span>
-                                                <h3 className="font-bold text-gray-800 dark:text-gray-200 mt-2 group-hover:text-[#00a651] transition-colors">{safeRenderText(sub.name)}</h3>
-                                                <p className="text-[10px] text-gray-500 mt-1">{sub.chapters?.length || 0} Chapters</p>
+                                            <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.3)] cursor-pointer active:scale-[0.98] transition-all duration-500 flex flex-col items-center justify-center text-center group relative overflow-hidden hover:-translate-y-2 active:-translate-y-2 ${isNeet ? 'hover:border-blue-500/50 active:border-blue-500/50 hover:bg-blue-900/30 active:bg-blue-900/30 hover:shadow-[0_20px_50px_rgba(0,65,141,0.5)] active:shadow-[0_20px_50px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 active:border-cyan-500/50 hover:bg-cyan-900/30 active:bg-cyan-900/30 hover:shadow-[0_20px_50px_rgba(6,182,212,0.4)] active:shadow-[0_20px_50px_rgba(6,182,212,0.4)]' : 'hover:border-white/30 active:border-white/30 hover:bg-white/10 active:bg-white/10'}`}>
+                                                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-4xl mb-4 z-10 transition-all duration-500 shadow-inner ${isNeet ? 'bg-blue-900/30 text-blue-200 border border-blue-500/20 group-hover:bg-blue-500/20 group-active:bg-blue-500/20 group-hover:border-blue-400/50 group-active:border-blue-400/50 group-hover:scale-110 group-active:scale-110 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] group-active:shadow-[0_0_30px_rgba(59,130,246,0.4)]' : isJee ? 'bg-cyan-900/30 text-cyan-200 border border-cyan-500/20 group-hover:bg-cyan-500/20 group-active:bg-cyan-500/20 group-hover:border-cyan-400/50 group-active:border-cyan-400/50 group-hover:scale-110 group-active:scale-110 group-hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] group-active:shadow-[0_0_30px_rgba(6,182,212,0.4)]' : 'bg-white/10 text-white border border-white/20 group-hover:scale-110 group-active:scale-110'}`}>{getDynamicSubjectIcon(sub.name, sub.icon)}</div>
+<i className={`fa-solid ${themeIcon} absolute -right-6 -bottom-6 text-[100px] text-white/5 transition-all duration-700 group-hover:rotate-12 group-active:rotate-12 group-hover:scale-110 group-active:scale-110 ${isNeet ? 'group-hover:text-blue-400/10 group-active:text-blue-400/10' : isJee ? 'group-hover:text-cyan-400/10 group-active:text-cyan-400/10' : ''}`}></i>
+                                                <h3 className={`font-black text-2xl text-white mt-2 z-10 transition-colors drop-shadow-md ${isNeet ? 'group-hover:text-blue-300 group-active:text-blue-300' : isJee ? 'group-hover:text-cyan-300 group-active:text-cyan-300' : 'group-hover:text-white group-active:text-white'}`}>{safeRenderText(sub.name)}</h3>
+                                                <p className={`text-[10px] font-black uppercase tracking-widest mt-2 z-10 transition-colors ${isNeet ? 'text-blue-200/50 group-hover:text-blue-200 group-active:text-blue-200' : isJee ? 'text-cyan-200/50 group-hover:text-cyan-200 group-active:text-cyan-200' : 'text-white/50 group-hover:text-white group-active:text-white'}`}>{sub.chapters?.length || 0} Chapters</p>
+                                                <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'subject', data: sub }); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
                                             </div>
                                         )) : (
                                             <p className="text-sm text-gray-500 text-center col-span-2 py-8">Loading subjects...</p>
@@ -8078,33 +8591,628 @@ const renderHomeView = () => {
                         );
                     }
 
+                    if (generatedTestResult) {
+                        if (showScoreSummary) {
+                            const stats = generatedTestResult.stats || (() => {
+                                let c = 0, ic = 0, u = 0;
+                                generatedTestResult.questions.forEach(q => {
+                                    const ans = generatedTestResult.attempts[q.id];
+                                    if (ans !== undefined) {
+                                        if (['A', 'B', 'C', 'D'][ans] === q.correctOption) c++;
+                                        else ic++;
+                                    } else { u++; }
+                                });
+                                return { correct: c, incorrect: ic, unattempted: u };
+                            })();
+
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-[80vh] flex items-center justify-center">
+                                    <div className="bg-white dark:bg-gray-900 rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-500 to-purple-600 opacity-20"></div>
+                                        <button onClick={() => { setShowScoreSummary(false); setGeneratedTestResult(null); }} className="absolute top-4 left-4 w-10 h-10 bg-white/50 dark:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-black transition-colors z-10"><i className="fa-solid fa-arrow-left"></i></button>
+                                        
+                                        <div className="relative z-10">
+                                            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg mb-6">
+                                                <i className="fa-solid fa-trophy text-4xl text-white"></i>
+                                            </div>
+                                            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Test Score</h2>
+                                            <p className="text-gray-500 font-bold mb-8">{generatedTestResult.name || 'Custom Test'}</p>
+                                            
+                                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 mb-8 border border-gray-100 dark:border-gray-800 shadow-inner">
+                                                <div className="flex justify-between items-end mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                                                    <div className="text-left">
+                                                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Score</div>
+                                                        <div className="text-4xl font-black text-gray-900 dark:text-white">{generatedTestResult.score || 0}</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Out of</div>
+                                                        <div className="text-xl font-bold text-gray-500">{generatedTestResult.totalMarks}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-green-500 mb-1"><i className="fa-solid fa-check-circle"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.correct}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Correct</div>
+                                                    </div>
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-red-500 mb-1"><i className="fa-solid fa-times-circle"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.incorrect}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Incorrect</div>
+                                                    </div>
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-blue-500 mb-1"><i className="fa-solid fa-pen-to-square"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.correct + stats.incorrect}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Attempted</div>
+                                                    </div>
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-gray-400 mb-1"><i className="fa-solid fa-minus-circle"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.unattempted}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Unattempted</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button onClick={() => setShowScoreSummary(false)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-black text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">Detailed Analysis <i className="fa-solid fa-arrow-right ml-2"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        const q = generatedTestResult.questions[analysisQuestionIndex];
+                        const userAnsIdx = generatedTestResult.attempts[q.id];
+                        const isAns = userAnsIdx !== undefined;
+                        const isCorrect = isAns && ['A', 'B', 'C', 'D'][userAnsIdx] === q.correctOption;
+
+                        return (
+                            <div className="pb-safe animate-in fade-in bg-gray-50 dark:bg-gray-950 min-h-screen flex flex-col">
+                                {/* Header */}
+                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setShowScoreSummary(true)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <div>
+                                            <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Test Analysis</h2>
+                                            <p className="text-xs text-gray-500 font-bold">{generatedTestResult.score} / {generatedTestResult.totalMarks} Marks ({generatedTestResult.accuracy}%)</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setAnalysisQuestionIndex(Math.max(0, analysisQuestionIndex - 1))} disabled={analysisQuestionIndex === 0} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-left"></i></button>
+                                        <button onClick={() => setAnalysisQuestionIndex(Math.min(generatedTestResult.questions.length - 1, analysisQuestionIndex + 1))} disabled={analysisQuestionIndex === generatedTestResult.questions.length - 1} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-right"></i></button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full p-4 gap-6">
+                                    {/* Main Question Area */}
+                                    <div className="flex-1 space-y-6">
+                                        <div className={`bg-white dark:bg-gray-900 border-2 rounded-2xl p-5 md:p-8 shadow-sm transition-colors ${isAns ? (isCorrect ? 'border-green-400' : 'border-red-400') : 'border-gray-200 dark:border-gray-700'}`}>
+                                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm">Q{analysisQuestionIndex + 1}</span>
+                                                    {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{q.subjectName}</span>}
+                                                </div>
+                                                <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                                    {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
+                                                </span>
+                                            </div>
+                                            <div className="text-gray-900 dark:text-gray-100 font-medium mb-8 text-lg md:text-xl leading-relaxed">
+                                                <FormattedText text={q.question || q.text || q.question_text} />
+                                                {q.imageUrl && <div className="mt-6 max-w-full overflow-hidden rounded-xl border border-gray-200 shadow-sm"><img src={q.imageUrl} className="max-w-full h-auto object-contain max-h-[400px]" alt="Question" /></div>}
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-3 mb-6">
+                                                {(q.options || []).map((opt, oIdx) => {
+                                                    const optLetter = ['A', 'B', 'C', 'D'][oIdx];
+                                                    const isSelected = userAnsIdx === oIdx;
+                                                    const isCorrectOpt = optLetter === q.correctOption;
+                                                    
+                                                    let optClass = "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300";
+                                                    if (isCorrectOpt) optClass = "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-800 dark:text-green-200 ring-2 ring-green-500/50 shadow-md transform scale-[1.01]";
+                                                    else if (isSelected && !isCorrectOpt) optClass = "bg-red-50 dark:bg-red-900/20 border-red-500 text-red-800 dark:text-red-200 ring-2 ring-red-500/50 shadow-md";
+                                                    
+                                                    return (
+                                                        <div key={oIdx} className={`border-2 p-4 rounded-xl text-base flex gap-4 transition-all ${optClass}`}>
+                                                            <span className="font-black w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shrink-0 shadow-sm text-sm">{optLetter}</span>
+                                                            <div className="pt-1"><FormattedText text={opt} /></div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {q.explanation && q.explanation.trim().toLowerCase() !== 'no explanation' && (
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 mb-6 shadow-sm">
+                                                    <span className="font-black text-blue-800 dark:text-blue-300 block mb-2 text-lg flex items-center gap-2"><i className="fa-solid fa-lightbulb text-yellow-500"></i> Explanation</span>
+                                                    <div className="text-base text-blue-900 dark:text-blue-100 leading-relaxed"><FormattedText text={q.explanation} /></div>
+                                                </div>
+                                            )}
+                                            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                                                <QuestionAIAssistant q={q} attemptIdx={userAnsIdx} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Sidebar Question Palette */}
+                                    <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
+                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm sticky top-24">
+                                            <h3 className="font-black text-lg mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
+                                            <div className="grid grid-cols-5 gap-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                                {generatedTestResult.questions.map((pq, pIdx) => {
+                                                    const pAnsIdx = generatedTestResult.attempts[pq.id];
+                                                    const pIsAns = pAnsIdx !== undefined;
+                                                    const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
+                                                    
+                                                    let btnClass = "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400";
+                                                    if (pIsCorrect) btnClass = "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300 font-bold shadow-sm";
+                                                    else if (pIsAns && !pIsCorrect) btnClass = "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-300 font-bold shadow-sm";
+                                                    
+                                                    if (pIdx === analysisQuestionIndex) {
+                                                        btnClass += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 transform scale-110 z-10";
+                                                    }
+
+                                                    return (
+                                                        <button key={pq.id} onClick={() => setAnalysisQuestionIndex(pIdx)} className={`w-10 h-10 rounded-lg border flex items-center justify-center text-xs transition-all ${btnClass}`}>
+                                                            {pIdx + 1}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-green-100 border border-green-500"></div> Correct</div>
+                                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-100 border border-red-500"></div> Incorrect</div>
+                                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200"></div> Skipped</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
                     if (activePracticeBatch) {
+                        if (activePracticeBatch.type === 'jee') {
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
+                                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch.name)}</h2>
+                                    </div>
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center -mt-20">
+                                        <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-4 animate-pulse-soft border border-blue-500/30">
+                                            <i className="fa-solid fa-rocket text-4xl text-blue-500 animate-pop-bounce delay-150"></i>
+                                        </div>
+                                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Coming Soon!</h3>
+                                        <p className="text-sm text-gray-500 max-w-[250px] mx-auto">We are working hard to bring you the best JEE questions. Stay tuned!</p>
+                                    </div>
+                                </div>
+                            );
+                        }
+                    
+                        if (activePracticeMode === 'custom') {
+                            const handleGenerateTest = (type) => {
+                                let testQuestions = [];
+                                let subjectsToGenerate = [];
+                                
+                                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
+
+                                if (type === 'full' || type === 'half') {
+                                    ['Physics', 'Chemistry', 'Botany', 'Zoology'].forEach(subName => {
+                                        const subData = availableQuestions.find(s => s.name.toLowerCase().includes(subName.toLowerCase()));
+                                        if (!subData) return;
+                                        
+                                        let subQs = [];
+                                        const selectedChapters = customGenConfig.subjects[subName];
+                                        
+                                        subData.chapters?.forEach(c => {
+                                            if (selectedChapters.length === 0 || selectedChapters.includes(c.name)) {
+                                                c.topics?.forEach(t => t.questions?.forEach(q => subQs.push({ ...q, topicName: t.name, chapterName: c.name, subjectName: subName })));
+                                            }
+                                        });
+                                        
+                                        // Shuffle and pick
+                                        subQs.sort(() => Math.random() - 0.5);
+                                        
+                                        if (type === 'full' && isNeet) {
+                                            const subQsSelected = subQs.slice(0, 50);
+                                            subQsSelected.forEach((q, idx) => {
+                                                q.section = idx < 35 ? 'A' : 'B';
+                                                testQuestions.push(q);
+                                            });
+                                        } else if (type === 'full' && !isNeet) {
+                                            testQuestions = [...testQuestions, ...subQs.slice(0, 45)];
+                                        } else if (type === 'half') {
+                                            testQuestions = [...testQuestions, ...subQs.slice(0, 25)];
+                                        }
+                                    });
+                                } else if (type === 'dpp') {
+                                    const subData = availableQuestions.find(s => s.name === customGenConfig.dppSubject);
+                                    if (subData) {
+                                        const chapData = subData.chapters?.find(c => c.name === customGenConfig.dppChapter);
+                                        if (chapData) {
+                                            let subQs = [];
+                                            chapData.topics?.forEach(t => {
+                                                if (customGenConfig.dppTopics.length === 0 || customGenConfig.dppTopics.includes(t.name)) {
+                                                    t.questions?.forEach(q => subQs.push({ ...q, topicName: t.name, chapterName: chapData.name, subjectName: subData.name }));
+                                                }
+                                            });
+                                            subQs.sort(() => Math.random() - 0.5);
+                                            testQuestions = subQs.slice(0, customGenConfig.dppCount);
+                                        }
+                                    }
+                                }
+
+                                if (testQuestions.length === 0) {
+                                    safeAlert('Not enough questions available for the selected criteria.');
+                                    return;
+                                }
+
+                                let tMarks = 0;
+                                if (type === 'full' && isNeet) tMarks = 720;
+                                else if (type === 'full' && !isNeet) tMarks = testQuestions.length * 4;
+                                else if (type === 'half') tMarks = testQuestions.length * 4;
+                                else tMarks = testQuestions.length * 4;
+
+                                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+                                const finalTestName = customGenConfig.testName && customGenConfig.testName.trim() !== '' ? customGenConfig.testName : ((type === 'full' ? 'Full Length Test' : type === 'half' ? 'Half Length Test' : 'Custom DPP') + ' - ' + dateName);
+
+                                const newTest = {
+                                    id: 'test_' + Date.now(),
+                                    type: type,
+                                    date: new Date().toISOString(),
+                                    questions: testQuestions,
+                                    totalMarks: tMarks,
+                                    isNeetPattern: type === 'full' && isNeet,
+                                    name: finalTestName,
+                                    config: customGenConfig
+                                };
+
+                                // Launch Test
+                                setPracticeAttempts({});
+                                setPracticeVisited([]);
+                                setPracticeReview([]);
+                                setCurrentQuestionIndex(0);
+                                setActiveGeneratedTest(newTest);
+                                setLoadedQuestions(testQuestions);
+                                setActivePracticeChapter({ name: finalTestName, isCustomTest: true });
+                                setShowQuiz(true);
+                            };
+
+                            if (customGeneratorMode === 'history') {
+                                return (
+                                    <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                            <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
+                                        </div>
+                                        {syllabusTest && (
+                                            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setSyllabusTest(null)}>
+                                                <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                                                    <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Test Syllabus</h3>
+                                                            <p className="text-xs text-gray-500 font-bold mt-1">{syllabusTest.name || 'Custom Test'}</p>
+                                                        </div>
+                                                        <button onClick={() => setSyllabusTest(null)} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                    </div>
+                                                    <div className="p-6 overflow-y-auto custom-scrollbar">
+                                                        {syllabusTest.type === 'dpp' ? (
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Subject</div>
+                                                                    <div className="font-bold text-gray-900 dark:text-white text-lg">{syllabusTest.config.dppSubject}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Chapter</div>
+                                                                    <div className="font-bold text-gray-900 dark:text-white">{syllabusTest.config.dppChapter}</div>
+                                                                </div>
+                                                                {syllabusTest.config.dppTopics?.length > 0 && (
+                                                                    <div>
+                                                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Selected Topics</div>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {syllabusTest.config.dppTopics.map((t, idx) => (
+                                                                                <span key={idx} className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-purple-200 dark:border-purple-800/50">{t}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-6">
+                                                                {Object.entries(syllabusTest.config?.subjects || {}).map(([sub, chaps]) => (
+                                                                    <div key={sub} className="bg-gray-50 dark:bg-gray-800/30 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                                                        <h4 className="font-black text-lg text-gray-900 dark:text-white mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div>{sub}</h4>
+                                                                        {chaps.length === 0 ? (
+                                                                            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-blue-200 dark:border-blue-800/50">All Chapters</span>
+                                                                        ) : (
+                                                                            <div className="flex flex-wrap gap-2">
+                                                                                {chaps.map((c, idx) => (
+                                                                                    <span key={idx} className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200 dark:border-gray-700">{c}</span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                                            <div className="flex-1 relative">
+                                                <i className="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                                <input type="text" value={historySearchQuery} onChange={e => setHistorySearchQuery(e.target.value)} placeholder="Search test name..." className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" />
+                                            </div>
+                                            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-inner shrink-0">
+                                                <button onClick={() => setHistorySortOrder('newest')} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${historySortOrder === 'newest' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'}`}>Newest</button>
+                                                <button onClick={() => setHistorySortOrder('oldest')} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${historySortOrder === 'oldest' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'}`}>Oldest</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
+                                            {['all', 'full', 'half', 'dpp'].map(f => (
+                                                <button key={f} onClick={() => setHistoryFilter(f)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${historyFilter === f ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'}`}>
+                                                    {f === 'all' ? 'All Tests' : f === 'full' ? 'Full Length' : f === 'half' ? 'Half Length' : 'DPPs'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-4">
+                                            {(() => {
+                                                let filtered = generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter);
+                                                if (historySearchQuery.trim()) {
+                                                    filtered = filtered.filter(t => t.name && t.name.toLowerCase().includes(historySearchQuery.toLowerCase()));
+                                                }
+                                                filtered.sort((a, b) => {
+                                                    const da = new Date(a.date).getTime();
+                                                    const db = new Date(b.date).getTime();
+                                                    return historySortOrder === 'newest' ? db - da : da - db;
+                                                });
+                                                if (filtered.length === 0) return <p className="text-gray-500 text-center py-10">No tests found matching your criteria.</p>;
+                                                return filtered.map(test => (
+                                                <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                                                    {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45">EXACT NEET</div>}
+                                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1 pr-10 truncate">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
+                                                    <p className="text-xs font-semibold text-gray-500 mb-4 flex items-center gap-3">
+                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-calendar"></i> {new Date(test.date).toLocaleDateString([], {day: 'numeric', month: 'short', year: 'numeric'})}</span>
+                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                    </p>
+                                                    <div className="flex gap-3 mb-5">
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
+                                                            <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Score</div>
+                                                            <div className="text-xl font-black text-gray-800 dark:text-gray-200">{test.score || 0} <span className="text-xs text-gray-400 font-bold">/ {test.totalMarks}</span></div>
+                                                        </div>
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
+                                                            <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Accuracy</div>
+                                                            <div className="text-xl font-black text-gray-800 dark:text-gray-200">{test.accuracy ? Math.round(test.accuracy) : 0}%</div>
+                                                        </div>
+                                                        {test.config && (
+                                                            <div onClick={() => setSyllabusTest(test)} className="bg-purple-50 dark:bg-purple-900/30 p-2 rounded-xl flex-1 text-center border border-purple-100 dark:border-purple-800 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors flex flex-col justify-center items-center">
+                                                                <i className="fa-solid fa-list text-purple-500 mb-1"></i>
+                                                                <div className="text-purple-600 dark:text-purple-300 text-[10px] font-bold uppercase tracking-widest">Syllabus</div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button onClick={() => {
+                                                            // Reattempt logic
+                                                            setPracticeAttempts({});
+                                                            setPracticeVisited([]);
+                                                            setPracticeReview([]);
+                                                            setCurrentQuestionIndex(0);
+                                                            setActiveGeneratedTest(test);
+                                                            setLoadedQuestions(test.questions);
+                                                            setActivePracticeChapter({ name: test.name || "Reattempted Test", isCustomTest: true });
+                                                            setShowQuiz(true);
+                                                        }} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
+                                                        <button onClick={() => {
+                                                            setGeneratedTestResult(test);
+                                                            setShowScoreSummary(true);
+                                                            setAnalysisQuestionIndex(0);
+                                                        }} className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-[0_4px_14px_rgba(59,130,246,0.4)] transition-colors text-sm">Analysis <i className="fa-solid fa-arrow-right ml-1"></i></button>
+                                                    </div>
+                                                </div>
+                                            ))})()}
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            if (customGeneratorMode === 'full' || customGeneratorMode === 'half') {
+                                return (
+                                    <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                            <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">{customGeneratorMode === 'full' ? 'Full Length Configuration' : 'Half Length Configuration'}</h2>
+                                        </div>
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                                            <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">Select specific chapters from each subject to build your custom test, or leave empty to include all chapters.</p>
+                                        </div>
+                                        <div className="mb-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Custom Test Name (Optional)</label>
+                                            <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., My Target Sunday Test" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            {['Physics', 'Chemistry', 'Botany', 'Zoology'].map(sub => {
+                                                const subData = (activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData).find(s => s.name.toLowerCase().includes(sub.toLowerCase()));
+                                                if (!subData) return null;
+                                                return (
+                                                    <div key={sub} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                                        <h3 className="font-bold text-lg mb-3 flex items-center gap-2"><i className="fa-solid fa-folder text-blue-500"></i> {sub}</h3>
+                                                        <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                                                            {subData.chapters?.map(c => {
+                                                                const isChecked = customGenConfig.subjects[sub].includes(c.name);
+                                                                return (
+                                                                    <label key={c.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
+                                                                        <input type="checkbox" checked={isChecked} onChange={(e) => {
+                                                                            setCustomGenConfig(prev => {
+                                                                                const newSub = e.target.checked 
+                                                                                    ? [...prev.subjects[sub], c.name]
+                                                                                    : prev.subjects[sub].filter(n => n !== c.name);
+                                                                                return { ...prev, subjects: { ...prev.subjects, [sub]: newSub } };
+                                                                            });
+                                                                        }} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{safeRenderText(c.name)}</span>
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <button onClick={() => handleGenerateTest(customGeneratorMode)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all mt-6 active:scale-95">Generate CBT Test</button>
+                                    </div>
+                                );
+                            }
+
+                            if (customGeneratorMode === 'dpp') {
+                                const availableSubjects = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
+                                const subData = availableSubjects.find(s => s.name === customGenConfig.dppSubject);
+                                const chapData = subData?.chapters?.find(c => c.name === customGenConfig.dppChapter);
+
+                                return (
+                                    <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                            <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Generate DPP</h2>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Custom DPP Name (Optional)</label>
+                                                <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., Physics Mechanics DPP" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500" />
+                                            </div>
+                                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Subject</label>
+                                                <select className="w-full p-3 rounded-xl border border-gray-300 bg-gray-50 outline-none" value={customGenConfig.dppSubject || ''} onChange={e => setCustomGenConfig(prev => ({...prev, dppSubject: e.target.value, dppChapter: null, dppTopics: []}))}>
+                                                    <option value="">-- Choose Subject --</option>
+                                                    {availableSubjects.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                                </select>
+                                            </div>
+
+                                            {subData && (
+                                                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Chapter</label>
+                                                    <select className="w-full p-3 rounded-xl border border-gray-300 bg-gray-50 outline-none" value={customGenConfig.dppChapter || ''} onChange={e => setCustomGenConfig(prev => ({...prev, dppChapter: e.target.value, dppTopics: []}))}>
+                                                        <option value="">-- Choose Chapter --</option>
+                                                        {subData.chapters?.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
+
+                                            {chapData && (
+                                                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Topics (Optional)</label>
+                                                    <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                                                        {chapData.topics?.map(t => {
+                                                            const isChecked = customGenConfig.dppTopics.includes(t.name);
+                                                            return (
+                                                                <label key={t.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
+                                                                    <input type="checkbox" checked={isChecked} onChange={(e) => {
+                                                                        setCustomGenConfig(prev => {
+                                                                            const newTopics = e.target.checked 
+                                                                                ? [...prev.dppTopics, t.name]
+                                                                                : prev.dppTopics.filter(n => n !== t.name);
+                                                                            return { ...prev, dppTopics: newTopics };
+                                                                        });
+                                                                    }} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{safeRenderText(t.name)}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Question Count</label>
+                                                <div className="flex gap-3">
+                                                    {[10, 20, 30].map(c => (
+                                                        <button key={c} onClick={() => setCustomGenConfig(prev => ({...prev, dppCount: c}))} className={`flex-1 py-3 rounded-xl font-bold border transition-all ${customGenConfig.dppCount === c ? 'bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500/30' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}>{c}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button disabled={!customGenConfig.dppChapter} onClick={() => handleGenerateTest('dpp')} className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all mt-6 active:scale-95 disabled:opacity-50 disabled:pointer-events-none">Generate DPP</button>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeMode(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Custom Generator</h2>
+                                    </div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-bold text-gray-500 uppercase tracking-widest text-xs">Create Setup</h3>
+                                        <button onClick={() => setCustomGeneratorMode('history')} className="text-blue-500 text-sm font-bold flex items-center gap-1 hover:text-blue-600"><i className="fa-solid fa-clock-rotate-left"></i> My Tests</button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div onClick={() => setCustomGeneratorMode('full')} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30 text-blue-600 group-hover:bg-blue-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]"><i className="fa-solid fa-file-contract"></i></div>
+                                            <div className="flex-1 relative z-10">
+                                                <h3 className="font-black text-xl text-gray-900 dark:text-white transition-colors drop-shadow-sm group-hover:text-blue-600 dark:group-hover:text-blue-300">Full Length Test</h3>
+                                                <p className="text-xs text-gray-500 font-bold mt-1">180 Qs • Exact CBT Replica</p>
+                                            </div>
+                                            <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                                        </div>
+                                        <div onClick={() => setCustomGeneratorMode('half')} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-cyan-500/50 hover:bg-cyan-50 dark:hover:bg-cyan-900/30">
+                                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-cyan-100 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-500/30 text-cyan-600 group-hover:bg-cyan-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(6,182,212,0.6)]"><i className="fa-solid fa-file-lines"></i></div>
+                                            <div className="flex-1 relative z-10">
+                                                <h3 className="font-black text-xl text-gray-900 dark:text-white transition-colors drop-shadow-sm group-hover:text-cyan-600 dark:group-hover:text-cyan-300">Half Length Test</h3>
+                                                <p className="text-xs text-gray-500 font-bold mt-1">80 Qs • Quick Practice</p>
+                                            </div>
+                                            <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-cyan-500 transition-colors"></i>
+                                        </div>
+                                        <div onClick={() => setCustomGeneratorMode('dpp')} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-purple-500/50 hover:bg-purple-50 dark:hover:bg-purple-900/30">
+                                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-500/30 text-purple-600 group-hover:bg-purple-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]"><i className="fa-solid fa-layer-group"></i></div>
+                                            <div className="flex-1 relative z-10">
+                                                <h3 className="font-black text-xl text-gray-900 dark:text-white transition-colors drop-shadow-sm group-hover:text-purple-600 dark:group-hover:text-purple-300">Generate DPP</h3>
+                                                <p className="text-xs text-gray-500 font-bold mt-1">10/20/30 Qs • Topic-wise Focus</p>
+                                            </div>
+                                            <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-purple-500 transition-colors"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
                                 <div className="flex items-center gap-3 mb-6">
-                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeBatch.name)}</h2>
+                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                    <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch.name)}</h2>
                                 </div>
                                 <div className="space-y-3">
-                                    {activePracticeBatch.files.map((file, i) => (
-                                        <div key={i} onClick={() => setActivePracticeFile(file)} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex items-center gap-4 shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
-                                            <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[#00a651] flex items-center justify-center text-lg"><i className="fa-solid fa-file-alt"></i></div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-base text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(file.name)}</h3>
-                                                <p className="text-xs text-gray-500">Practice Module</p>
-                                            </div>
-                                            <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-[#00a651] transition-colors"></i>
+                                    <div onClick={() => setActivePracticeMode('practice')} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 ${isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10'}`}>
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 text-blue-300 group-hover:bg-blue-500 group-hover:text-white group-hover:border-blue-400 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 text-cyan-300 group-hover:bg-cyan-500 group-hover:text-white group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.6)]' : 'bg-white/10 border border-white/20 text-white'}`}><i className="fa-solid fa-book-open"></i></div>
+                                        <div className="flex-1 relative z-10">
+                                            <h3 className={`font-black text-xl text-white transition-colors drop-shadow-md z-10 relative ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-white'}`}>Practice Modules</h3>
+                                            <p className="text-xs text-gray-400 font-bold mt-1">Chapter-wise structured practice</p>
                                         </div>
-                                    ))}
+                                        <i className={`fa-solid fa-chevron-right text-xl transition-all duration-300 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 ${isNeet ? 'text-blue-400' : isJee ? 'text-cyan-400' : 'text-white'}`}></i>
+                                    </div>
+                                    <div onClick={() => setActivePracticeMode('tests')} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-purple-500/50 hover:bg-purple-900/30 hover:shadow-[0_15px_40px_rgba(168,85,247,0.3)]`}>
+                                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-purple-900/30 border border-purple-500/30 text-purple-300 group-hover:bg-purple-500 group-hover:text-white group-hover:border-purple-400 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]"><i className="fa-solid fa-stopwatch"></i></div>
+                                        <div className="flex-1 relative z-10">
+                                            <h3 className="font-black text-xl text-white transition-colors drop-shadow-md group-hover:text-purple-300">Tests</h3>
+                                            <p className="text-xs text-gray-400 font-bold mt-1">Full-length & part syllabus tests</p>
+                                        </div>
+                                        <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-purple-500 transition-colors"></i>
+                                    </div>
+                                    <div onClick={() => setActivePracticeMode('custom')} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(59,130,246,0.3)]`}>
+                                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-blue-900/30 border border-blue-500/30 text-blue-300 group-hover:bg-blue-500 group-hover:text-white group-hover:border-blue-400 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]"><i className="fa-solid fa-wand-magic-sparkles"></i></div>
+                                        <div className="flex-1 relative z-10">
+                                            <h3 className="font-black text-xl text-white transition-colors drop-shadow-md group-hover:text-blue-300">Custom Generator</h3>
+                                            <p className="text-xs text-gray-400 font-bold mt-1">Create personalized practice sets</p>
+                                        </div>
+                                        <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                                    </div>
                                 </div>
                             </div>
                         );
                     }
 
-                    const PRACTICE_BATCHES = [
-                        { id: 'pb_allen', name: 'LN modules', type: 'ln', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] },
-                        { id: 'pb_pw', name: 'Bablu Dablu modules', type: 'pw', sourceTable: 'questions', files: [{ id: 'pf_dpp', name: 'DPP' }] },
-                        { id: 'pb_basic_math', name: 'Basic Math & Vectors', type: 'custom', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Module 1' }] }
+const PRACTICE_BATCHES = [
+                        { id: 'pb_neet_bank', name: 'NEET Bank', type: 'neet', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Basic Math' }] },
+                        { id: 'pb_jee_bank', name: 'JEE Bank', type: 'jee', sourceTable: 'coming_soon', files: [] },
+                        { id: 'pb_checking', name: 'Checking', type: 'checking', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] }
                     ];
 
                     return (
@@ -8116,15 +9224,117 @@ const renderHomeView = () => {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                {PRACTICE_BATCHES.map(batch => (
-                                    <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-6 rounded-3xl cursor-pointer hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 relative overflow-hidden ${batch.type === 'ln' ? 'bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] text-white' : 'bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)] text-white'}`}>
-                                        <div className="relative z-10">
-                                            <h3 className="text-xl font-black mb-1 text-white">{batch.name}</h3>
-                                            <p className={`text-xs font-medium ${batch.type === 'ln' ? 'text-green-100' : 'text-gray-400'}`}>{batch.files.length} Modules Available</p>
-                                        </div>
-                                        <i className={`fa-solid ${batch.type === 'ln' ? 'fa-book text-green-800/30' : 'fa-layer-group text-white/5'} absolute -right-4 -bottom-4 text-6xl`}></i>
-                                    </div>
-                                ))}
+                                {PRACTICE_BATCHES.map(batch => {
+                                    if (batch.type === 'neet') {
+                                        return (
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,65,141,0.5)] hover:shadow-[0_20px_50px_-10px_rgba(0,65,141,0.7)] hover:-translate-y-2 transition-all duration-500 ease-out">
+                                                {/* Gaming/Premium Blue Gradient Base */}
+                                                <div className="absolute inset-0 bg-gradient-to-br from-[#00418d] via-[#003370] to-[#001a3d] z-0"></div>
+                                                
+                                                {/* Animated Medical Patterns */}
+                                                <div className="absolute inset-0 opacity-[0.05] bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] mix-blend-overlay z-0"></div>
+                                                
+                                                {/* Glowing Orbs */}
+                                                <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-300/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-400/20 rounded-full blur-2xl group-hover:bg-teal-300/30 transition-all duration-700 z-0"></div>
+                                                
+                                                {/* Floating Medical Icons (Gaming Style) */}
+                                                <i className="fa-solid fa-stethoscope absolute -right-4 -bottom-4 text-[120px] text-white/5 group-hover:text-blue-400/10 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 z-10 drop-shadow-2xl"></i>
+                                                <i className="fa-solid fa-pills absolute top-6 right-24 text-3xl text-blue-300/10 group-hover:text-teal-300/20 group-hover:-translate-y-4 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-hospital absolute bottom-8 right-32 text-4xl text-blue-200/5 group-hover:text-blue-200/15 group-hover:-translate-x-4 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-staff-snake absolute top-1/2 right-12 -translate-y-1/2 text-6xl text-white/5 group-hover:text-blue-100/10 group-hover:scale-125 transition-all duration-1000 z-10"></i>
+
+                                                {/* Content */}
+                                                <div className="relative z-20 h-full flex flex-col justify-center px-8">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-white/20 transition-all duration-500">
+                                                            <i className="fa-solid fa-user-doctor text-2xl text-blue-100 group-hover:text-white group-hover:scale-110 transition-transform duration-500"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">NEET Bank</h3>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="px-2 py-0.5 rounded bg-blue-500/20 border border-blue-400/30 text-[10px] font-black text-blue-200 uppercase tracking-widest backdrop-blur-sm">Medical Track</span>
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.8)]"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    } else if (batch.type === 'jee') {
+                                        return (
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(15,23,42,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(6,182,212,0.4)] hover:-translate-y-2 transition-all duration-500 ease-out mt-4">
+                                                {/* Gaming/Premium Engineer Base */}
+                                                <div className="absolute inset-0 bg-[#0b0f19] z-0"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-transparent to-purple-900/40 z-0"></div>
+                                                
+                                                {/* Grid Pattern */}
+                                                <div className="absolute inset-0 opacity-[0.1] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] mix-blend-overlay z-0"></div>
+                                                
+                                                {/* Hacker/Cyberpunk Glows */}
+                                                <div className="absolute top-0 right-0 w-[200%] h-[200%] bg-[conic-gradient(from_90deg_at_50%_50%,#00000000_50%,#06b6d4_100%)] opacity-0 group-hover:opacity-10 group-hover:animate-spin-slow transition-opacity duration-1000 z-0 pointer-events-none"></div>
+                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-400/20 transition-all duration-700 z-0"></div>
+                                                
+                                                {/* Floating Engineer Icons (Gaming Style) */}
+                                                <i className="fa-solid fa-microchip absolute -right-6 -bottom-6 text-[130px] text-cyan-500/5 group-hover:text-cyan-400/15 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]"></i>
+                                                <i className="fa-solid fa-laptop-code absolute top-8 right-24 text-3xl text-cyan-300/10 group-hover:text-cyan-200/30 group-hover:-translate-y-3 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-compass-drafting absolute bottom-8 right-36 text-4xl text-purple-400/10 group-hover:text-purple-300/30 group-hover:rotate-12 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-ruler-combined absolute top-1/2 right-12 -translate-y-1/2 text-5xl text-white/5 group-hover:text-cyan-100/20 group-hover:scale-110 transition-all duration-1000 z-10"></i>
+
+                                                {/* Content */}
+                                                <div className="relative z-20 h-full flex flex-col justify-center px-8">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-14 h-14 rounded-2xl bg-[#1e293b] border border-cyan-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(6,182,212,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-hover:border-cyan-400 transition-all duration-500">
+                                                            <i className="fa-solid fa-helmet-safety text-2xl text-cyan-500 group-hover:text-cyan-300 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">JEE Bank</h3>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="px-2 py-0.5 rounded bg-cyan-900/40 border border-cyan-500/40 text-[10px] font-black text-cyan-400 uppercase tracking-widest backdrop-blur-sm">Engineer Track</span>
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(6,182,212,1)]"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    } else {
+                                        return (
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[100px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] hover:-translate-y-2 transition-all duration-500 ease-out mt-4">
+                                                {/* Hacker/Laboratory Base */}
+                                                <div className="absolute inset-0 bg-[#050505] z-0"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 via-transparent to-black z-0"></div>
+                                                
+                                                {/* Matrix Pattern */}
+                                                <div className="absolute inset-0 opacity-[0.15] bg-[url('https://www.transparenttextures.com/patterns/binary-code.png')] mix-blend-overlay z-0"></div>
+                                                
+                                                {/* Acid/Radioactive Glows */}
+                                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/20 rounded-full blur-3xl group-hover:bg-green-400/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-400/20 transition-all duration-700 z-0"></div>
+                                                
+                                                {/* Floating Laboratory Icons (Gaming Style) */}
+                                                <i className="fa-solid fa-vial-virus absolute -right-4 -bottom-8 text-[100px] text-green-500/5 group-hover:text-green-400/20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]"></i>
+                                                <i className="fa-solid fa-microscope absolute top-4 right-32 text-3xl text-purple-400/10 group-hover:text-purple-300/30 group-hover:-translate-y-2 transition-all duration-1000 z-10"></i>
+
+                                                {/* Content */}
+                                                <div className="relative z-20 h-full flex flex-col justify-center px-8">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-2xl bg-[#0f172a] border border-green-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(34,197,94,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-hover:border-green-400 transition-all duration-500">
+                                                            <i className="fa-solid fa-flask text-2xl text-green-500 group-hover:text-green-300 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-2xl font-black text-white tracking-tight drop-shadow-md">{batch.name}</h3>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="px-2 py-0.5 rounded bg-green-900/40 border border-green-500/40 text-[9px] font-black text-green-400 uppercase tracking-widest backdrop-blur-sm">Standard Track</span>
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,1)]"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                })}
                             </div>
                         </div>
                     );
@@ -8372,7 +9582,9 @@ const renderHomeView = () => {
 
                 const handleGenerateDPP = (chapterName) => {
                     try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); } catch (e) { }
-                    safeAlert(`Generating Custom DPP for: ${chapterName}...\n\nThis feature will compile your weakest topics into a tailored test.`);
+                    safeAlert(`Generating Custom DPP for: ${chapterName}...
+
+This feature will compile your weakest topics into a tailored test.`);
                 };
 
                 // 5. Active Chapters for Table
@@ -8807,12 +10019,12 @@ const renderHomeView = () => {
                         {showTopNav && <TopNavBar />}
 
                         <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : ''}`}>
-                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} />
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
                                     {currentTab === 'ai' && <AIMentorView />}
-                                    {currentTab === 'voice' && <VoiceRoomsTab tgUser={tgUser} voiceState={voiceState} />}
+                                    {/* Voice Room Tab logic moved to VC Official Room */}
                                     {currentTab === 'questions' && renderQuestionsView()}
                                     {currentTab === 'profile' && renderProfileView()}
 
@@ -8823,7 +10035,7 @@ const renderHomeView = () => {
                                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
                                         <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)]">
                                             <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('voice'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'voice' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-satellite-dish text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Voice</span></button>
+
                                             <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">VC</span></button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
@@ -8846,19 +10058,52 @@ const renderHomeView = () => {
 
                         {/* Clear Progress Confirmation Modal */}
                         {confirmClearScope && (
-                            <div className="fixed inset-0 bg-black/60 z-[999999] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setConfirmClearScope(null)}>
-                                <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
-                                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full mx-auto flex items-center justify-center text-3xl mb-4">
-                                        <i className="fa-solid fa-triangle-exclamation"></i>
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 animate-in fade-in" onClick={() => { setConfirmClearScope(null); setPendingClearAction(null); }}>
+                                <div className="bg-[#0b0f19] border border-cyan-900/30 rounded-[2rem] p-6 w-full max-w-sm text-center shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden relative" onClick={e => e.stopPropagation()}>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-red-900/10 pointer-events-none"></div>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                                    
+                                    <div className="w-16 h-16 bg-red-900/30 text-red-500 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 border border-red-500/30 shadow-inner relative z-10">
+                                        <i className="fa-solid fa-dumpster-fire"></i>
                                     </div>
-                                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Are you sure?</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                                        Are you sure you want to clear {confirmClearScope === 'all' ? 'all' : 'these'} attempted questions? It will delete your data and analysis whatever you attempted.
-                                    </p>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setConfirmClearScope(null)} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold rounded-xl transition-colors">No</button>
-                                        <button onClick={() => handleClearProgress(confirmClearScope)} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/30">Yes, Clear</button>
-                                    </div>
+                                    
+                                    {!pendingClearAction ? (
+                                        <>
+                                            <h3 className="text-2xl font-black text-white mb-2 relative z-10 drop-shadow-md">Clear Data</h3>
+                                            <p className="text-xs text-gray-400 mb-6 font-bold relative z-10">
+                                                Select what you want to delete for {confirmClearScope === 'all' ? 'everything' : confirmClearScope.type === 'batch' ? 'this track' : 'this ' + confirmClearScope.type}.
+                                            </p>
+                                            
+                                            <div className="space-y-3 relative z-10">
+                                                <button onClick={() => setPendingClearAction('attempts')} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-white font-bold rounded-xl transition-colors flex items-center justify-between px-4 group">
+                                                    <span><i className="fa-solid fa-rotate-left mr-2 text-cyan-400 group-hover:scale-110 transition-transform"></i> Clear Attempts</span>
+                                                    <i className="fa-solid fa-chevron-right text-gray-600 text-xs"></i>
+                                                </button>
+                                                <button onClick={() => setPendingClearAction('bookmarks')} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-white font-bold rounded-xl transition-colors flex items-center justify-between px-4 group">
+                                                    <span><i className="fa-solid fa-bookmark mr-2 text-yellow-400 group-hover:scale-110 transition-transform"></i> Clear Bookmarks</span>
+                                                    <i className="fa-solid fa-chevron-right text-gray-600 text-xs"></i>
+                                                </button>
+                                                <button onClick={() => setPendingClearAction('all')} className="w-full py-3 bg-red-900/30 hover:bg-red-500 border border-red-500/30 hover:border-red-400 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] flex items-center justify-between px-4 group">
+                                                    <span><i className="fa-solid fa-trash-can mr-2 group-hover:scale-110 transition-transform"></i> Delete All Data</span>
+                                                    <i className="fa-solid fa-chevron-right text-white/50 text-xs"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <button onClick={() => { setConfirmClearScope(null); setPendingClearAction(null); }} className="w-full mt-4 py-3 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-bold rounded-xl transition-colors relative z-10">Cancel</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <h3 className="text-2xl font-black text-white mb-2 relative z-10 drop-shadow-md">Are you absolutely sure?</h3>
+                                            <p className="text-sm text-red-300 mb-6 font-bold relative z-10">
+                                                This will {pendingClearAction === 'attempts' ? 'clear all attempt history' : pendingClearAction === 'bookmarks' ? 'remove all bookmarks' : 'permanently delete all data'} for {confirmClearScope === 'all' ? 'everything' : confirmClearScope.type === 'batch' ? 'this track' : 'this ' + confirmClearScope.type}. This action cannot be undone!
+                                            </p>
+                                            
+                                            <div className="flex gap-3 relative z-10">
+                                                <button onClick={() => setPendingClearAction(null)} className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">Go Back</button>
+                                                <button onClick={() => { handleClearProgress(confirmClearScope, pendingClearAction); setPendingClearAction(null); }} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)]">Yes, {pendingClearAction === 'attempts' ? 'Clear' : pendingClearAction === 'bookmarks' ? 'Clear' : 'Delete'}</button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}

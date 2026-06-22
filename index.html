@@ -7190,11 +7190,15 @@ INSTRUCTIONS:
             const [practiceShowTopicModal, setPracticeShowTopicModal] = useState(false);
             const [customGeneratorMode, setCustomGeneratorMode] = useState(null);
             const [historyFilter, setHistoryFilter] = useState('all');
+            const [historySortOrder, setHistorySortOrder] = useState('newest');
+            const [historySearchQuery, setHistorySearchQuery] = useState('');
+            const [syllabusTest, setSyllabusTest] = useState(null);
             const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0); 
             const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, dppSubject: null, dppChapter: null, dppTopics: [], dppCount: 10, testName: '' });
             const [generatedTestsHistory, setGeneratedTestsHistory] = useState(() => safeGetJSON('ataxy_generated_tests', []));
             const [activeGeneratedTest, setActiveGeneratedTest] = useState(null);
             const [generatedTestResult, setGeneratedTestResult] = useState(null);
+            const [showScoreSummary, setShowScoreSummary] = useState(false);
 
             useEffect(() => {
                 setCloudData('ataxy_generated_tests', generatedTestsHistory);
@@ -8973,6 +8977,75 @@ const getStatus = (qId) => {
                     }
 
                     if (generatedTestResult) {
+                        if (showScoreSummary) {
+                            const stats = generatedTestResult.stats || (() => {
+                                let c = 0, ic = 0, u = 0;
+                                generatedTestResult.questions.forEach(q => {
+                                    const ans = generatedTestResult.attempts[q.id];
+                                    if (ans !== undefined) {
+                                        if (['A', 'B', 'C', 'D'][ans] === q.correctOption) c++;
+                                        else ic++;
+                                    } else { u++; }
+                                });
+                                return { correct: c, incorrect: ic, unattempted: u };
+                            })();
+
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-[80vh] flex items-center justify-center">
+                                    <div className="bg-white dark:bg-gray-900 rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-500 to-purple-600 opacity-20"></div>
+                                        <button onClick={() => { setShowScoreSummary(false); setGeneratedTestResult(null); }} className="absolute top-4 left-4 w-10 h-10 bg-white/50 dark:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-black transition-colors z-10"><i className="fa-solid fa-arrow-left"></i></button>
+                                        
+                                        <div className="relative z-10">
+                                            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg mb-6">
+                                                <i className="fa-solid fa-trophy text-4xl text-white"></i>
+                                            </div>
+                                            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Test Score</h2>
+                                            <p className="text-gray-500 font-bold mb-8">{generatedTestResult.name || 'Custom Test'}</p>
+                                            
+                                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 mb-8 border border-gray-100 dark:border-gray-800 shadow-inner">
+                                                <div className="flex justify-between items-end mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+                                                    <div className="text-left">
+                                                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Score</div>
+                                                        <div className="text-4xl font-black text-gray-900 dark:text-white">{generatedTestResult.score || 0}</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Out of</div>
+                                                        <div className="text-xl font-bold text-gray-500">{generatedTestResult.totalMarks}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-green-500 mb-1"><i className="fa-solid fa-check-circle"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.correct}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Correct</div>
+                                                    </div>
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-red-500 mb-1"><i className="fa-solid fa-times-circle"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.incorrect}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Incorrect</div>
+                                                    </div>
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-blue-500 mb-1"><i className="fa-solid fa-pen-to-square"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.correct + stats.incorrect}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Attempted</div>
+                                                    </div>
+                                                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                                        <div className="text-gray-400 mb-1"><i className="fa-solid fa-minus-circle"></i></div>
+                                                        <div className="text-xl font-black text-gray-800 dark:text-gray-200">{stats.unattempted}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Unattempted</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button onClick={() => setShowScoreSummary(false)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-black text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">Detailed Analysis <i className="fa-solid fa-arrow-right ml-2"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+
                         const q = generatedTestResult.questions[analysisQuestionIndex];
                         const userAnsIdx = generatedTestResult.attempts[q.id];
                         const isAns = userAnsIdx !== undefined;
@@ -8983,7 +9056,7 @@ const getStatus = (qId) => {
                                 {/* Header */}
                                 <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between shadow-sm">
                                     <div className="flex items-center gap-3">
-                                        <button onClick={() => setGeneratedTestResult(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <button onClick={() => setShowScoreSummary(true)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
                                         <div>
                                             <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Test Analysis</h2>
                                             <p className="text-xs text-gray-500 font-bold">{generatedTestResult.score} / {generatedTestResult.totalMarks} Marks ({generatedTestResult.accuracy}%)</p>
@@ -9160,13 +9233,18 @@ const getStatus = (qId) => {
                                 else if (type === 'half') tMarks = testQuestions.length * 4;
                                 else tMarks = testQuestions.length * 4;
 
+                                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+                                const finalTestName = customGenConfig.testName && customGenConfig.testName.trim() !== '' ? customGenConfig.testName : ((type === 'full' ? 'Full Length Test' : type === 'half' ? 'Half Length Test' : 'Custom DPP') + ' - ' + dateName);
+
                                 const newTest = {
                                     id: 'test_' + Date.now(),
                                     type: type,
                                     date: new Date().toISOString(),
                                     questions: testQuestions,
                                     totalMarks: tMarks,
-                                    isNeetPattern: type === 'full' && isNeet
+                                    isNeetPattern: type === 'full' && isNeet,
+                                    name: finalTestName,
+                                    config: customGenConfig
                                 };
 
                                 // Launch Test
@@ -9176,8 +9254,6 @@ const getStatus = (qId) => {
                                 setCurrentQuestionIndex(0);
                                 setActiveGeneratedTest(newTest);
                                 setLoadedQuestions(testQuestions);
-                                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
-                                const finalTestName = customGenConfig.testName && customGenConfig.testName.trim() !== '' ? customGenConfig.testName : ((type === 'full' ? 'Full Length Test' : type === 'half' ? 'Half Length Test' : 'Custom DPP') + ' - ' + dateName);
                                 setActivePracticeChapter({ name: finalTestName, isCustomTest: true });
                                 setShowQuiz(true);
                             };
@@ -9189,6 +9265,70 @@ const getStatus = (qId) => {
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
                                         </div>
+                                        {syllabusTest && (
+                                            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setSyllabusTest(null)}>
+                                                <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                                                    <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Test Syllabus</h3>
+                                                            <p className="text-xs text-gray-500 font-bold mt-1">{syllabusTest.name || 'Custom Test'}</p>
+                                                        </div>
+                                                        <button onClick={() => setSyllabusTest(null)} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300 transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                                                    </div>
+                                                    <div className="p-6 overflow-y-auto custom-scrollbar">
+                                                        {syllabusTest.type === 'dpp' ? (
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Subject</div>
+                                                                    <div className="font-bold text-gray-900 dark:text-white text-lg">{syllabusTest.config.dppSubject}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Chapter</div>
+                                                                    <div className="font-bold text-gray-900 dark:text-white">{syllabusTest.config.dppChapter}</div>
+                                                                </div>
+                                                                {syllabusTest.config.dppTopics?.length > 0 && (
+                                                                    <div>
+                                                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Selected Topics</div>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {syllabusTest.config.dppTopics.map((t, idx) => (
+                                                                                <span key={idx} className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-purple-200 dark:border-purple-800/50">{t}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-6">
+                                                                {Object.entries(syllabusTest.config?.subjects || {}).map(([sub, chaps]) => (
+                                                                    <div key={sub} className="bg-gray-50 dark:bg-gray-800/30 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                                                        <h4 className="font-black text-lg text-gray-900 dark:text-white mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div>{sub}</h4>
+                                                                        {chaps.length === 0 ? (
+                                                                            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-blue-200 dark:border-blue-800/50">All Chapters</span>
+                                                                        ) : (
+                                                                            <div className="flex flex-wrap gap-2">
+                                                                                {chaps.map((c, idx) => (
+                                                                                    <span key={idx} className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200 dark:border-gray-700">{c}</span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                                            <div className="flex-1 relative">
+                                                <i className="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                                <input type="text" value={historySearchQuery} onChange={e => setHistorySearchQuery(e.target.value)} placeholder="Search test name..." className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" />
+                                            </div>
+                                            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-inner shrink-0">
+                                                <button onClick={() => setHistorySortOrder('newest')} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${historySortOrder === 'newest' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'}`}>Newest</button>
+                                                <button onClick={() => setHistorySortOrder('oldest')} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${historySortOrder === 'oldest' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500'}`}>Oldest</button>
+                                            </div>
+                                        </div>
                                         <div className="flex overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
                                             {['all', 'full', 'half', 'dpp'].map(f => (
                                                 <button key={f} onClick={() => setHistoryFilter(f)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${historyFilter === f ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'}`}>
@@ -9197,9 +9337,18 @@ const getStatus = (qId) => {
                                             ))}
                                         </div>
                                         <div className="space-y-4">
-                                            {generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter).length === 0 ? (
-                                                <p className="text-gray-500 text-center py-10">No tests found in this category.</p>
-                                            ) : generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter).map(test => (
+                                            {(() => {
+                                                let filtered = generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter);
+                                                if (historySearchQuery.trim()) {
+                                                    filtered = filtered.filter(t => t.name && t.name.toLowerCase().includes(historySearchQuery.toLowerCase()));
+                                                }
+                                                filtered.sort((a, b) => {
+                                                    const da = new Date(a.date).getTime();
+                                                    const db = new Date(b.date).getTime();
+                                                    return historySortOrder === 'newest' ? db - da : da - db;
+                                                });
+                                                if (filtered.length === 0) return <p className="text-gray-500 text-center py-10">No tests found matching your criteria.</p>;
+                                                return filtered.map(test => (
                                                 <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                                                     {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45">EXACT NEET</div>}
                                                     <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1 pr-10 truncate">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
@@ -9208,14 +9357,20 @@ const getStatus = (qId) => {
                                                         <span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                                     </p>
                                                     <div className="flex gap-3 mb-5">
-                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
-                                                            <p className="text-2xl font-black text-blue-600">{test.score} <span className="text-sm font-normal text-gray-400">/ {test.totalMarks}</span></p>
-                                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Score</p>
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
+                                                            <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Score</div>
+                                                            <div className="text-xl font-black text-gray-800 dark:text-gray-200">{test.score || 0} <span className="text-xs text-gray-400 font-bold">/ {test.totalMarks}</span></div>
                                                         </div>
-                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
-                                                            <p className="text-2xl font-black text-green-600">{test.accuracy}%</p>
-                                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Accuracy</p>
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
+                                                            <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Accuracy</div>
+                                                            <div className="text-xl font-black text-gray-800 dark:text-gray-200">{test.accuracy ? Math.round(test.accuracy) : 0}%</div>
                                                         </div>
+                                                        {test.config && (
+                                                            <div onClick={() => setSyllabusTest(test)} className="bg-purple-50 dark:bg-purple-900/30 p-2 rounded-xl flex-1 text-center border border-purple-100 dark:border-purple-800 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors flex flex-col justify-center items-center">
+                                                                <i className="fa-solid fa-list text-purple-500 mb-1"></i>
+                                                                <div className="text-purple-600 dark:text-purple-300 text-[10px] font-bold uppercase tracking-widest">Syllabus</div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <button onClick={() => {
@@ -9231,11 +9386,12 @@ const getStatus = (qId) => {
                                                         }} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
                                                         <button onClick={() => {
                                                             setGeneratedTestResult(test);
+                                                            setShowScoreSummary(true);
                                                             setAnalysisQuestionIndex(0);
                                                         }} className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-[0_4px_14px_rgba(59,130,246,0.4)] transition-colors text-sm">Analysis <i className="fa-solid fa-arrow-right ml-1"></i></button>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            ))})()}
                                         </div>
                                     </div>
                                 );
@@ -9253,7 +9409,7 @@ const getStatus = (qId) => {
                                         </div>
                                         <div className="mb-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Custom Test Name (Optional)</label>
-                                            <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., My Target Sunday Test" className="w-full p-3 rounded-xl border border-gray-300 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500" />
+                                            <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., My Target Sunday Test" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                                         </div>
                                         
                                         <div className="space-y-4">
@@ -9305,7 +9461,7 @@ const getStatus = (qId) => {
                                         <div className="space-y-4">
                                             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Custom DPP Name (Optional)</label>
-                                                <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., Physics Mechanics DPP" className="w-full p-3 rounded-xl border border-gray-300 bg-gray-50 outline-none focus:ring-2 focus:ring-purple-500" />
+                                                <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., Physics Mechanics DPP" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500" />
                                             </div>
                                             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Subject</label>
