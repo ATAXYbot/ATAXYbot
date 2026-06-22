@@ -7188,7 +7188,9 @@ INSTRUCTIONS:
             const [practiceVisited, setPracticeVisited] = useState(() => safeGetJSON('ataxy_practice_visited', null) || []);
             const [practiceShowPalette, setPracticeShowPalette] = useState(false);
             const [practiceShowTopicModal, setPracticeShowTopicModal] = useState(false);
-            const [customGeneratorMode, setCustomGeneratorMode] = useState(null); 
+            const [customGeneratorMode, setCustomGeneratorMode] = useState(null);
+            const [historyFilter, setHistoryFilter] = useState('all');
+            const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0); 
             const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, dppSubject: null, dppChapter: null, dppTopics: [], dppCount: 10, testName: '' });
             const [generatedTestsHistory, setGeneratedTestsHistory] = useState(() => safeGetJSON('ataxy_generated_tests', []));
             const [activeGeneratedTest, setActiveGeneratedTest] = useState(null);
@@ -8272,6 +8274,19 @@ const getStatus = (qId) => {
                                                             <div key={oIdx} className="flex items-center bg-white">
                                                                 <label className="flex items-center gap-3 cursor-pointer w-max">
                                                                     <input type="radio" name={'q_' + currentQuestion.id} checked={isSelected} onChange={() => {
+                                                                        if (activeGeneratedTest?.isNeetPattern && currentQuestion.section === 'B') {
+                                                                            const attemptsObj = practiceAttempts || {};
+                                                                            let secBAttempts = 0;
+                                                                            displayedQuestions.forEach(q => {
+                                                                                if (q.subjectName === currentQuestion.subjectName && q.section === 'B' && attemptsObj[q.id] !== undefined) {
+                                                                                    secBAttempts++;
+                                                                                }
+                                                                            });
+                                                                            if (secBAttempts >= 10 && attemptsObj[currentQuestion.id] === undefined) {
+                                                                                safeAlert('You can only attempt a maximum of 10 questions in Section B.');
+                                                                                return;
+                                                                            }
+                                                                        }
                                                                         setPracticeAttempts(prev => ({ ...prev, [currentQuestion.id]: oIdx }));
                                                                         if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
                                                                     }} className="w-[18px] h-[18px] cursor-pointer" />
@@ -8947,99 +8962,104 @@ const getStatus = (qId) => {
                     }
 
                     if (generatedTestResult) {
+                        const q = generatedTestResult.questions[analysisQuestionIndex];
+                        const userAnsIdx = generatedTestResult.attempts[q.id];
+                        const isAns = userAnsIdx !== undefined;
+                        const isCorrect = isAns && ['A', 'B', 'C', 'D'][userAnsIdx] === q.correctOption;
+
                         return (
-                            <div className="pb-safe animate-in fade-in bg-gray-50 dark:bg-gray-950 min-h-screen">
+                            <div className="pb-safe animate-in fade-in bg-gray-50 dark:bg-gray-950 min-h-screen flex flex-col">
                                 {/* Header */}
-                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between">
+                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between shadow-sm">
                                     <div className="flex items-center gap-3">
-                                        <button onClick={() => setGeneratedTestResult(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <h2 className="text-xl font-black text-gray-900 dark:text-white">Test Analysis</h2>
+                                        <button onClick={() => setGeneratedTestResult(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <div>
+                                            <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Test Analysis</h2>
+                                            <p className="text-xs text-gray-500 font-bold">{generatedTestResult.score} / {generatedTestResult.totalMarks} Marks ({generatedTestResult.accuracy}%)</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setAnalysisQuestionIndex(Math.max(0, analysisQuestionIndex - 1))} disabled={analysisQuestionIndex === 0} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-left"></i></button>
+                                        <button onClick={() => setAnalysisQuestionIndex(Math.min(generatedTestResult.questions.length - 1, analysisQuestionIndex + 1))} disabled={analysisQuestionIndex === generatedTestResult.questions.length - 1} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-right"></i></button>
                                     </div>
                                 </div>
-                                <div className="p-5 max-w-4xl mx-auto space-y-6">
-                                    {/* Stats Card */}
-                                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
-                                        <i className="fa-solid fa-chart-pie absolute -right-4 -bottom-4 text-[120px] text-white/10 rotate-12"></i>
-                                        <h3 className="text-xl font-black mb-6 relative z-10">{generatedTestResult.type === 'full' ? 'Full Length' : generatedTestResult.type === 'half' ? 'Half Length' : 'Custom DPP'} Result</h3>
-                                        <div className="flex gap-4 relative z-10">
-                                            <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/20">
-                                                <p className="text-[10px] uppercase tracking-widest text-blue-200 font-bold mb-1">Total Score</p>
-                                                <p className="text-3xl font-black">{generatedTestResult.score} <span className="text-sm font-normal opacity-70">/ {generatedTestResult.totalMarks}</span></p>
+                                <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full p-4 gap-6">
+                                    {/* Main Question Area */}
+                                    <div className="flex-1 space-y-6">
+                                        <div className={`bg-white dark:bg-gray-900 border-2 rounded-2xl p-5 md:p-8 shadow-sm transition-colors ${isAns ? (isCorrect ? 'border-green-400' : 'border-red-400') : 'border-gray-200 dark:border-gray-700'}`}>
+                                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm">Q{analysisQuestionIndex + 1}</span>
+                                                    {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{q.subjectName}</span>}
+                                                </div>
+                                                <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                                    {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
+                                                </span>
                                             </div>
-                                            <div className="flex-1 bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/20">
-                                                <p className="text-[10px] uppercase tracking-widest text-blue-200 font-bold mb-1">Accuracy</p>
-                                                <p className="text-3xl font-black">{generatedTestResult.accuracy}%</p>
+                                            <div className="text-gray-900 dark:text-gray-100 font-medium mb-8 text-lg md:text-xl leading-relaxed">
+                                                <FormattedText text={q.question || q.text || q.question_text} />
+                                                {q.imageUrl && <div className="mt-6 max-w-full overflow-hidden rounded-xl border border-gray-200 shadow-sm"><img src={q.imageUrl} className="max-w-full h-auto object-contain max-h-[400px]" alt="Question" /></div>}
                                             </div>
-                                        </div>
-                                        
-                                        {/* Detailed Metrics */}
-                                        <div className="grid grid-cols-3 gap-2 mt-4 relative z-10">
-                                            <div className="bg-green-500/20 rounded-xl p-3 border border-green-400/30 text-center">
-                                                <p className="text-xs text-green-100 font-bold mb-1">Correct</p>
-                                                <p className="text-xl font-black text-green-50">{generatedTestResult.questions.filter(q => generatedTestResult.attempts[q.id] !== undefined && ['A','B','C','D'][generatedTestResult.attempts[q.id]] === q.correctOption).length}</p>
+                                            <div className="grid grid-cols-1 gap-3 mb-6">
+                                                {(q.options || []).map((opt, oIdx) => {
+                                                    const optLetter = ['A', 'B', 'C', 'D'][oIdx];
+                                                    const isSelected = userAnsIdx === oIdx;
+                                                    const isCorrectOpt = optLetter === q.correctOption;
+                                                    
+                                                    let optClass = "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300";
+                                                    if (isCorrectOpt) optClass = "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-800 dark:text-green-200 ring-2 ring-green-500/50 shadow-md transform scale-[1.01]";
+                                                    else if (isSelected && !isCorrectOpt) optClass = "bg-red-50 dark:bg-red-900/20 border-red-500 text-red-800 dark:text-red-200 ring-2 ring-red-500/50 shadow-md";
+                                                    
+                                                    return (
+                                                        <div key={oIdx} className={`border-2 p-4 rounded-xl text-base flex gap-4 transition-all ${optClass}`}>
+                                                            <span className="font-black w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shrink-0 shadow-sm text-sm">{optLetter}</span>
+                                                            <div className="pt-1"><FormattedText text={opt} /></div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
-                                            <div className="bg-red-500/20 rounded-xl p-3 border border-red-400/30 text-center">
-                                                <p className="text-xs text-red-100 font-bold mb-1">Incorrect</p>
-                                                <p className="text-xl font-black text-red-50">{generatedTestResult.questions.filter(q => generatedTestResult.attempts[q.id] !== undefined && ['A','B','C','D'][generatedTestResult.attempts[q.id]] !== q.correctOption).length}</p>
-                                            </div>
-                                            <div className="bg-white/10 rounded-xl p-3 border border-white/20 text-center">
-                                                <p className="text-xs text-gray-200 font-bold mb-1">Skipped</p>
-                                                <p className="text-xl font-black text-white">{generatedTestResult.questions.filter(q => generatedTestResult.attempts[q.id] === undefined).length}</p>
+                                            {q.explanation && q.explanation.trim().toLowerCase() !== 'no explanation' && (
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 mb-6 shadow-sm">
+                                                    <span className="font-black text-blue-800 dark:text-blue-300 block mb-2 text-lg flex items-center gap-2"><i className="fa-solid fa-lightbulb text-yellow-500"></i> Explanation</span>
+                                                    <div className="text-base text-blue-900 dark:text-blue-100 leading-relaxed"><FormattedText text={q.explanation} /></div>
+                                                </div>
+                                            )}
+                                            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                                                <QuestionAIAssistant q={q} attemptIdx={userAnsIdx} />
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    {/* Detailed Questions */}
-                                    <div>
-                                        <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4"><i className="fa-solid fa-list-check text-blue-500 mr-2"></i> Question Breakdown</h3>
-                                        <div className="space-y-4">
-                                            {generatedTestResult.questions.map((q, idx) => {
-                                                const userAnsIdx = generatedTestResult.attempts[q.id];
-                                                const isAns = userAnsIdx !== undefined;
-                                                const isCorrect = isAns && ['A', 'B', 'C', 'D'][userAnsIdx] === q.correctOption;
-                                                
-                                                return (
-                                                    <div key={q.id} className={`bg-white dark:bg-gray-900 border rounded-2xl p-5 shadow-sm ${isAns ? (isCorrect ? 'border-green-300' : 'border-red-300') : 'border-gray-200'}`}>
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <span className="font-bold text-gray-500">Q{idx + 1}.</span>
-                                                            <span className={`text-xs font-bold px-2 py-1 rounded-md ${isAns ? (isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') : 'bg-gray-100 text-gray-600'}`}>
-                                                                {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-gray-900 dark:text-gray-100 font-medium mb-4">
-                                                            <FormattedText text={q.question || q.text || q.question_text} />
-                                                            {q.imageUrl && <div className="mt-4 max-w-full overflow-hidden rounded-md border border-gray-200"><img src={q.imageUrl} className="max-w-full h-auto object-contain max-h-[300px]" alt="Question" /></div>}
-                                                        </div>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                                                            {(q.options || []).map((opt, oIdx) => {
-                                                                const optLetter = ['A', 'B', 'C', 'D'][oIdx];
-                                                                const isSelected = userAnsIdx === oIdx;
-                                                                const isCorrectOpt = optLetter === q.correctOption;
-                                                                
-                                                                let optClass = "bg-gray-50 border-gray-200 text-gray-700";
-                                                                if (isCorrectOpt) optClass = "bg-green-50 border-green-500 text-green-700 ring-1 ring-green-500";
-                                                                else if (isSelected && !isCorrectOpt) optClass = "bg-red-50 border-red-500 text-red-700 ring-1 ring-red-500";
-                                                                
-                                                                return (
-                                                                    <div key={oIdx} className={`border p-3 rounded-xl text-sm flex gap-3 ${optClass}`}>
-                                                                        <span className="font-bold">{optLetter}.</span>
-                                                                        <div><FormattedText text={opt} /></div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        {q.explanation && q.explanation.trim().toLowerCase() !== 'no explanation' && (
-                                                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-4">
-                                                                <span className="font-bold text-blue-800 dark:text-blue-300 block mb-1">Explanation:</span>
-                                                                <div className="text-sm text-blue-900 dark:text-blue-100"><FormattedText text={q.explanation} /></div>
-                                                            </div>
-                                                        )}
-                                                        <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                                                            <QuestionAIAssistant q={q} attemptIdx={userAnsIdx} />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+
+                                    {/* Sidebar Question Palette */}
+                                    <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
+                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm sticky top-24">
+                                            <h3 className="font-black text-lg mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
+                                            <div className="grid grid-cols-5 gap-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                                {generatedTestResult.questions.map((pq, pIdx) => {
+                                                    const pAnsIdx = generatedTestResult.attempts[pq.id];
+                                                    const pIsAns = pAnsIdx !== undefined;
+                                                    const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
+                                                    
+                                                    let btnClass = "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400";
+                                                    if (pIsCorrect) btnClass = "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300 font-bold shadow-sm";
+                                                    else if (pIsAns && !pIsCorrect) btnClass = "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-300 font-bold shadow-sm";
+                                                    
+                                                    if (pIdx === analysisQuestionIndex) {
+                                                        btnClass += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 transform scale-110 z-10";
+                                                    }
+
+                                                    return (
+                                                        <button key={pq.id} onClick={() => setAnalysisQuestionIndex(pIdx)} className={`w-10 h-10 rounded-lg border flex items-center justify-center text-xs transition-all ${btnClass}`}>
+                                                            {pIdx + 1}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-green-100 border border-green-500"></div> Correct</div>
+                                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-100 border border-red-500"></div> Incorrect</div>
+                                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200"></div> Skipped</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -9073,9 +9093,6 @@ const getStatus = (qId) => {
                                 const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
 
                                 if (type === 'full' || type === 'half') {
-                                    const totalQ = type === 'full' ? 180 : 80;
-                                    const qPerSub = totalQ / 4;
-                                    
                                     ['Physics', 'Chemistry', 'Botany', 'Zoology'].forEach(subName => {
                                         const subData = availableQuestions.find(s => s.name.toLowerCase().includes(subName.toLowerCase()));
                                         if (!subData) return;
@@ -9091,7 +9108,18 @@ const getStatus = (qId) => {
                                         
                                         // Shuffle and pick
                                         subQs.sort(() => Math.random() - 0.5);
-                                        testQuestions = [...testQuestions, ...subQs.slice(0, qPerSub)];
+                                        
+                                        if (type === 'full' && isNeet) {
+                                            const subQsSelected = subQs.slice(0, 50);
+                                            subQsSelected.forEach((q, idx) => {
+                                                q.section = idx < 35 ? 'A' : 'B';
+                                                testQuestions.push(q);
+                                            });
+                                        } else if (type === 'full' && !isNeet) {
+                                            testQuestions = [...testQuestions, ...subQs.slice(0, 45)];
+                                        } else if (type === 'half') {
+                                            testQuestions = [...testQuestions, ...subQs.slice(0, 25)];
+                                        }
                                     });
                                 } else if (type === 'dpp') {
                                     const subData = availableQuestions.find(s => s.name === customGenConfig.dppSubject);
@@ -9115,12 +9143,19 @@ const getStatus = (qId) => {
                                     return;
                                 }
 
+                                let tMarks = 0;
+                                if (type === 'full' && isNeet) tMarks = 720;
+                                else if (type === 'full' && !isNeet) tMarks = testQuestions.length * 4;
+                                else if (type === 'half') tMarks = testQuestions.length * 4;
+                                else tMarks = testQuestions.length * 4;
+
                                 const newTest = {
                                     id: 'test_' + Date.now(),
                                     type: type,
                                     date: new Date().toISOString(),
                                     questions: testQuestions,
-                                    totalMarks: testQuestions.length * 4
+                                    totalMarks: tMarks,
+                                    isNeetPattern: type === 'full' && isNeet
                                 };
 
                                 // Launch Test
@@ -9143,26 +9178,51 @@ const getStatus = (qId) => {
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
                                         </div>
+                                        <div className="flex overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
+                                            {['all', 'full', 'half', 'dpp'].map(f => (
+                                                <button key={f} onClick={() => setHistoryFilter(f)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${historyFilter === f ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'}`}>
+                                                    {f === 'all' ? 'All Tests' : f === 'full' ? 'Full Length' : f === 'half' ? 'Half Length' : 'DPPs'}
+                                                </button>
+                                            ))}
+                                        </div>
                                         <div className="space-y-4">
-                                            {generatedTestsHistory.length === 0 ? (
-                                                <p className="text-gray-500 text-center py-10">No tests generated yet.</p>
-                                            ) : generatedTestsHistory.map(test => (
-                                                <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
-                                                    <h3 className="font-bold text-lg">{test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'DPP'}</h3>
-                                                    <p className="text-xs font-semibold text-gray-500 mb-3 flex items-center gap-2"><span className="flex items-center gap-1"><i className="fa-regular fa-calendar"></i> {new Date(test.date).toLocaleDateString()}</span><span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date).toLocaleTimeString()}</span></p>
-                                                    <div className="flex gap-4 mb-4">
-                                                        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex-1 text-center">
-                                                            <p className="text-xl font-black text-blue-600">{test.score} / {test.totalMarks}</p>
-                                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest">Score</p>
+                                            {generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter).length === 0 ? (
+                                                <p className="text-gray-500 text-center py-10">No tests found in this category.</p>
+                                            ) : generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter).map(test => (
+                                                <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                                                    {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45">EXACT NEET</div>}
+                                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1 pr-10 truncate">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
+                                                    <p className="text-xs font-semibold text-gray-500 mb-4 flex items-center gap-3">
+                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-calendar"></i> {new Date(test.date).toLocaleDateString([], {day: 'numeric', month: 'short', year: 'numeric'})}</span>
+                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                    </p>
+                                                    <div className="flex gap-3 mb-5">
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
+                                                            <p className="text-2xl font-black text-blue-600">{test.score} <span className="text-sm font-normal text-gray-400">/ {test.totalMarks}</span></p>
+                                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Score</p>
                                                         </div>
-                                                        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex-1 text-center">
-                                                            <p className="text-xl font-black text-green-600">{test.accuracy}%</p>
-                                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest">Accuracy</p>
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
+                                                            <p className="text-2xl font-black text-green-600">{test.accuracy}%</p>
+                                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Accuracy</p>
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => {
-                                                        setGeneratedTestResult(test);
-                                                    }} className="w-full py-2 bg-blue-500 text-white rounded-xl font-bold shadow-sm hover:bg-blue-600 transition-colors">View Detailed Analysis</button>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button onClick={() => {
+                                                            // Reattempt logic
+                                                            setPracticeAttempts({});
+                                                            setPracticeVisited([]);
+                                                            setPracticeReview([]);
+                                                            setCurrentQuestionIndex(0);
+                                                            setActiveGeneratedTest(test);
+                                                            setLoadedQuestions(test.questions);
+                                                            setActivePracticeChapter({ name: test.name || "Reattempted Test", isCustomTest: true });
+                                                            setShowQuiz(true);
+                                                        }} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
+                                                        <button onClick={() => {
+                                                            setGeneratedTestResult(test);
+                                                            setAnalysisQuestionIndex(0);
+                                                        }} className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-[0_4px_14px_rgba(59,130,246,0.4)] transition-colors text-sm">Analysis <i className="fa-solid fa-arrow-right ml-1"></i></button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
