@@ -7216,11 +7216,12 @@ INSTRUCTIONS:
                                     if (section) setActiveSatheeSection(section);
                                 }
                                 if (returnBatchId) {
-                                    const batchesList = SATHEE_DATA.batches[returnSectionId ? returnSectionId : exam.id] || SATHEE_DATA.batches['default'];
-                                    if (batchesList) {
-                                        const batch = batchesList.find(b => b.id === returnBatchId);
-                                        if (batch) setActiveSatheeBatch(batch);
+                                    let foundBatch = null;
+                                    for (const key in SATHEE_DATA.batches) {
+                                        const b = SATHEE_DATA.batches[key].find(x => x.id === returnBatchId);
+                                        if (b) { foundBatch = b; break; }
                                     }
+                                    if (foundBatch) setActiveSatheeBatch(foundBatch);
                                 }
                             }
                         }
