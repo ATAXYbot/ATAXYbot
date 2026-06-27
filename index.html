@@ -9693,7 +9693,6 @@ INSTRUCTIONS:
                                                     const ref = batch.course_reference || 'ssc-mts-crash-course';
                                                     const lang = batch.language || 'he';
                                                     const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'ssc';
-                                                    if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
                                                     history.pushState({ ataxy_nav: true }, '', location.href);
                                                     window.open(`https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`, '_self');
                                                 }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
@@ -9713,7 +9712,6 @@ INSTRUCTIONS:
                                                 <div key={subject.id} onClick={() => {
                                                     if (subject.url) {
                                                         sessionStorage.setItem('ataxy_return_batch', activeSatheeBatch.id);
-                                                        if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
                                                         history.pushState({ ataxy_nav: true }, '', location.href);
                                                         
                                                         let finalUrl = subject.url;
