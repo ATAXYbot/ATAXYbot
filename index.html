@@ -9671,7 +9671,13 @@ INSTRUCTIONS:
                                                     const ref = batch.course_reference || 'ssc-mts-crash-course';
                                                     const lang = batch.language || 'he';
                                                     const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'ssc';
-                                                    window.open(`https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`, '_self');
+                                                    const finalUrl = `https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
+                                                    
+                                                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+                                                        window.Telegram.WebApp.openLink(finalUrl);
+                                                    } else {
+                                                        window.open(finalUrl, '_blank');
+                                                    }
                                                 }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
                                                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
                                                         <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white`}></i>
@@ -9688,7 +9694,11 @@ INSTRUCTIONS:
                                             {SATHEE_DATA.subjects[activeSatheeBatch.id].map(subject => (
                                                 <div key={subject.id} onClick={() => {
                                                     if (subject.url) {
-                                                        window.open(subject.url, '_self');
+                                                        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+                                                            window.Telegram.WebApp.openLink(subject.url);
+                                                        } else {
+                                                            window.open(subject.url, '_blank');
+                                                        }
                                                     } else {
                                                         safeAlert('Subject selected: ' + subject.name + '. Content coming soon!');
                                                     }
