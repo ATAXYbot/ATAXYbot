@@ -454,9 +454,9 @@
                     { id: 'sub_math_jee', name: 'Mathematics', icon: 'fa-square-root-variable' }
                 ],
                 'b_cuet_ug': [
-                    { id: 'sub_cuet_bio', name: 'Biology', icon: 'fa-dna', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=biology-ug#' },
-                    { id: 'sub_cuet_cs', name: 'Computer Science', icon: 'fa-laptop-code', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=computer-science-ug#' },
-                    { id: 'sub_cuet_chem', name: 'Chemistry', icon: 'fa-flask', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=chemistry-ug#' },
+                    { id: 'sub_cuet_bio', name: 'Biology', icon: 'fa-dna', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=biology-ug&exam=cuet&examType=cuet&exam_type=cuet#' },
+                    { id: 'sub_cuet_cs', name: 'Computer Science', icon: 'fa-laptop-code', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=computer-science-ug&exam=cuet&examType=cuet&exam_type=cuet#' },
+                    { id: 'sub_cuet_chem', name: 'Chemistry', icon: 'fa-flask', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=chemistry-ug&exam=cuet&examType=cuet&exam_type=cuet#' },
                     { id: 'sub_cuet_maths', name: 'Mathematics', icon: 'fa-calculator' },
                     { id: 'sub_cuet_phy', name: 'Physics', icon: 'fa-atom' },
                     { id: 'sub_cuet_psych', name: 'Psychology', icon: 'fa-brain' },
@@ -9667,10 +9667,11 @@ INSTRUCTIONS:
                                                         return;
                                                     }
 
-                                                    // Immediately redirect to SATHEE courseView menu
+                                                    // Immediately redirect to SATHEE courseView menu with forced exam parameters
                                                     const ref = batch.course_reference || 'ssc-mts-crash-course';
                                                     const lang = batch.language || 'he';
-                                                    window.open(`https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}#`, '_self');
+                                                    const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'ssc';
+                                                    window.open(`https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`, '_self');
                                                 }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
                                                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
                                                         <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white`}></i>
