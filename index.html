@@ -9960,7 +9960,7 @@ INSTRUCTIONS:
                                     )}
 
                                     {activeSatheeExam && (!SATHEE_DATA.sections || !SATHEE_DATA.sections[activeSatheeExam.id] || activeSatheeSection) && !activeSatheeBatch && (
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
                                             {(SATHEE_DATA.batches[activeSatheeSection ? activeSatheeSection.id : activeSatheeExam.id] || SATHEE_DATA.batches['default']).map(batch => (
                                                 <div key={batch.id} onClick={() => {
                                                     // Save state so we can restore it when user clicks 'Back'
