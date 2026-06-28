@@ -7217,7 +7217,7 @@ INSTRUCTIONS:
             const [msg, setMsg] = useState('');
             const [isTyping, setIsTyping] = useState(false);
             const [chats, setChats] = useState([
-                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, a mentor to help all the students. I can help you solve Physics, Chemistry, and Biology doubts. Ask me anything!" }
+                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your perfectly intelligent AI mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" }
             ]);
             const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
             const chatEndRef = useRef(null);
@@ -7237,45 +7237,15 @@ INSTRUCTIONS:
                 setMsg('');
                 setIsTyping(true);
 
-                let success = false;
-                let attempts = 0;
-                const maxAttempts = 6; // Queue up to 6 times (1 minute)
-                let finalResponse = "Connection error with ATAXY Mentor.";
-                let finalAudio = null;
+                const systemContext = `You are ATAXY, a highly intelligent and capable AI mentor. Your goal is to help the user with absolutely anything they need perfectly and intelligently. You are an expert in all subjects, life advice, general knowledge, and any task requested. Be engaging, extremely helpful, and provide detailed, accurate, and perfect responses.`;
 
-                while (attempts < maxAttempts && !success) {
-                    try {
-                        const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
-                        const res = await fetch(proxyUrl, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ query_text: userMsg })
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            finalResponse = data.text_response || "Sorry, I couldn't process that.";
-                            finalAudio = data.audio_base64;
-                            success = true;
-                        } else {
-                            const errorData = await res.json().catch(() => ({}));
-                            if (res.status === 500 || res.status === 400) {
-                                finalResponse = `Server Error: ${errorData.error || res.statusText}`;
-                                success = true; // Stop retrying on hard errors
-                            }
-                        }
-                    } catch (err) {
-                        console.warn(`Chat attempt ${attempts + 1} failed. Retrying...`);
-                    }
-                    if (!success) {
-                        attempts++;
-                        if (attempts < maxAttempts) await new Promise(r => setTimeout(r, 10000));
-                    }
+                try {
+                    const aiReply = await fetchGeminiSecure(userMsg, chats, systemContext);
+                    setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiReply.explanation, audio: aiReply.audio }]);
+                } catch (err) {
+                    setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: "I am currently receiving a very high volume of requests. Please try again in a minute!", audio: null }]);
                 }
-
-                if (!success) finalResponse = "I am currently receiving a very high volume of requests. Please try again in a minute!";
-
-                setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: finalResponse, audio: finalAudio }]);
-
+                
                 setIsTyping(false);
             };
 
@@ -7600,7 +7570,52 @@ INSTRUCTIONS:
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
 
-            
+            const [isChatOpen, setIsChatOpen] = useState(false);
+            const [chatInput, setChatInput] = useState('');
+            const [isAiTyping, setIsAiTyping] = useState(false);
+
+            const handleChatSubmit = async (e) => {
+                e.preventDefault();
+                if (!chatInput.trim() || isAiTyping) return;
+                
+                const userQuery = chatInput;
+                setChatInput('');
+                setIsChatOpen(false);
+                setPartnerMessage({ type: 'chatter', text: userQuery });
+                setEmotion('listening');
+                setIsAiTyping(true);
+                
+                try {
+                    const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
+                    const systemContext = `You are ATAXY, an intelligent, energetic, and helpful AI study partner. Your physical avatar is a 3D character on the user's screen. Keep your answers extremely concise (max 2-3 short sentences) because they appear in a small speech bubble above your head. Be encouraging and helpful.`;
+                    const res = await fetch(proxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: userQuery,
+                            history: [],
+                            system: systemContext,
+                            model: "gemini-3.1-flash-lite",
+                            question_id: 'ataxy_npc_chat'
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (data && data.response) {
+                        setEmotion('talking');
+                        setPartnerMessage({ type: 'chatter', text: data.response });
+                    } else {
+                        setEmotion('confused');
+                        setPartnerMessage({ type: 'chatter', text: "Hmm, my brain is feeling a bit foggy. Try asking again?" });
+                    }
+                } catch (err) {
+                    console.error("NPC Chat Error", err);
+                    setEmotion('angry');
+                    setPartnerMessage({ type: 'chatter', text: "Connection error! I couldn't reach my brain servers!" });
+                } finally {
+                    setIsAiTyping(false);
+                }
+            };
 
             // Three.js Initialization
             useEffect(() => {
@@ -8245,14 +8260,38 @@ INSTRUCTIONS:
                             }}
                             onClick={(e) => { 
                                 e.stopPropagation(); 
-                                setEmotion('happy'); 
-                                physicsRef.current.vy = -12; 
-                                physicsRef.current.isGrounded = false; 
-                                setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
-                                playSyntheticSound('boing'); 
+                                if (!isChatOpen) {
+                                    setIsChatOpen(true);
+                                    setEmotion('listening');
+                                    setPartnerMessage({ type: 'chatter', text: "Hey! What's on your mind? Type below!" });
+                                } else {
+                                    setIsChatOpen(false);
+                                    setEmotion('happy'); 
+                                    physicsRef.current.vy = -12; 
+                                    physicsRef.current.isGrounded = false; 
+                                    setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
+                                    playSyntheticSound('boing'); 
+                                }
                             }}
                         >
                             <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
+                        </div>
+                        
+                        {/* AI Chat Input Widget */}
+                        <div className={`absolute bottom-[30px] left-1/2 -translate-x-1/2 z-30 transition-all duration-300 ${isChatOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                            <form onSubmit={handleChatSubmit} className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 w-[260px]" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ask me anything..." 
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    className="flex-1 bg-transparent border-none outline-none text-sm px-3 text-gray-800 dark:text-gray-200 placeholder-gray-400"
+                                    disabled={isAiTyping}
+                                />
+                                <button type="submit" disabled={isAiTyping || !chatInput.trim()} className="bg-ataxy-accent-primary text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-opacity-90 disabled:opacity-50 transition-colors cursor-pointer z-40 relative">
+                                    {isAiTyping ? <i className="fa-solid fa-spinner fa-spin text-xs"></i> : <i className="fa-solid fa-paper-plane text-xs"></i>}
+                                </button>
+                            </form>
                         </div>
                         
                         {availableAnims.length > 0 && (
