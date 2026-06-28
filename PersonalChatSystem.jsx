@@ -118,7 +118,7 @@ export const PersonalChatSystem = ({ tgId, sendPrivateDM, acceptFriendRequest, d
         <div className="flex-1 overflow-y-auto pb-20 p-4">
             {pending.length > 0 && (
                 <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl">
-                    <h4 className="text-yellow-400 font-bold mb-3 flex items-center gap-2"><i className="fa-solid fa-bell"></i> Friend Requests</h4>
+                    <h4 className="text-yellow-400 font-bold mb-3 flex items-center gap-2"><i className="fa-solid fa-user-plus"></i> Friend Requests</h4>
                     {pending.map(uid => (
                         <div key={uid} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 mb-2 shadow-sm">
                             <span className="text-white font-bold text-sm">User {String(uid).substring(0,8)}</span>
