@@ -424,17 +424,161 @@
                     { id: 'b_neet_lakshya', name: 'Lakshya NEET (Hindi)', medium: 'Hindi Medium', icon: 'fa-star-of-life', color: 'pink' }
                 ],
                 'sec_ssc_cgl': [
-                    { id: 'b_ssc_cgl_rec_en', name: 'SSC CGL 2026 RECORDED COURSE', medium: 'English', icon: 'fa-video', color: 'green', course_reference: 'ssc-cgl-recorded-course-new-en', language: 'en' },
-                    { id: 'b_ssc_cgl_rec_hi', name: 'SSC CGL 2026 RECORDED COURSE', medium: 'Hinglish', icon: 'fa-video', color: 'emerald', course_reference: 'ssc-cgl-recorded-course-new-hi' }
+                    { 
+                        id: 'b_ssc_cgl_rec_en', 
+                        name: 'SSC CGL 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Unlock your full potential with comprehensive lectures.',
+                        subtitleIcon: 'fa-book-open',
+                        languageStr: 'English', 
+                        totalVideos: '208',
+                        isCustomUI: true,
+                        course_reference: 'ssc-cgl-recorded-course-new-en', 
+                        language: 'en' 
+                    },
+                    { 
+                        id: 'b_ssc_cgl_rec_hi', 
+                        name: 'SSC CGL 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Build a strong foundation for SSC CGL success.',
+                        subtitleIcon: 'fa-book-open',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '125',
+                        isCustomUI: true,
+                        course_reference: 'ssc-cgl-recorded-course-new-hi' 
+                    }
                 ],
                 'sec_ssc_mts': [
-                    { id: 'b_ssc_mts_crash_en', name: 'SSC MTS 2026 CRASH COURSE', medium: 'Hinglish', icon: 'fa-rocket', color: 'teal', course_reference: 'ssc-mts-crash-course' },
-                    { id: 'b_ssc_mts_rec_hi', name: 'SSC MTS 2026 RECORDED COURSE', medium: 'Hinglish', icon: 'fa-video', color: 'blue', course_reference: 'ssc-mts-recorded-course-new-hi' },
-                    { id: 'b_ssc_mts_rec_en', name: 'SSC MTS 2026 RECORDED COURSE', medium: 'English', icon: 'fa-video', color: 'indigo', course_reference: 'ssc-mts-recorded-course-new-en', language: 'en' }
+                    { 
+                        id: 'b_ssc_mts_crash_en', 
+                        name: 'SSC MTS 2026 CRASH COURSE', 
+                        highlight: 'CRASH COURSE',
+                        subtitle: 'Last-minute prep? Our SSC MTS Crash Course is your secret weapon for success!',
+                        subtitleIcon: 'fa-bolt',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '180',
+                        isCustomUI: true,
+                        course_reference: 'ssc-mts-crash-course' 
+                    },
+                    { 
+                        id: 'b_ssc_mts_rec_hi', 
+                        name: 'SSC MTS 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Master SSC MTS concepts at your own pace with detailed recorded lectures.',
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '468',
+                        isCustomUI: true,
+                        course_reference: 'ssc-mts-recorded-course-new-hi' 
+                    },
+                    { 
+                        id: 'b_ssc_mts_rec_en', 
+                        name: 'SSC MTS 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Understand all topics clearly. SSC MTS Recorded Lectures in English.',
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '484',
+                        isCustomUI: true,
+                        course_reference: 'ssc-mts-recorded-course-new-en', 
+                        language: 'en' 
+                    }
                 ],
                 'exam_cuet': [
-                    { id: 'b_cuet_ug', name: 'Subject Course (UG)', medium: 'English', icon: 'fa-user-graduate', color: 'purple' },
-                    { id: 'b_cuet_pg', name: 'Subject Course (PG)', medium: 'English', icon: 'fa-user-graduate', color: 'pink' }
+                    { 
+                        id: 'b_cuet_ug', 
+                        name: 'CUET Subject Course (UG)', 
+                        highlight: 'Subject Course (UG)',
+                        subtitle: 'Comprehensive preparation for UG programs',
+                        subtitleIcon: 'fa-user-graduate',
+                        languageStr: 'English', 
+                        totalVideos: '350+',
+                        isCustomUI: true,
+                        course_reference: 'cuet-ug'
+                    },
+                    { 
+                        id: 'b_cuet_pg', 
+                        name: 'CUET Subject Course (PG)', 
+                        highlight: 'Subject Course (PG)',
+                        subtitle: 'Advanced preparation for PG programs',
+                        subtitleIcon: 'fa-user-graduate',
+                        languageStr: 'English', 
+                        totalVideos: '250+',
+                        isCustomUI: true,
+                        course_reference: 'cuet-pg'
+                    }
+                ],
+                'exam_clat': [
+                    { 
+                        id: 'b_clat_2025_complete', 
+                        name: 'SATHEE CLAT UG 2025', 
+                        highlight: 'CLAT UG 2025',
+                        subtitle: 'Complete Course', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'English', 
+                        totalVideos: '190+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course&language=en#' 
+                    },
+                    { 
+                        id: 'b_clat_2025_master_en', 
+                        name: 'SATHEE CLAT UG 2025', 
+                        highlight: 'CLAT UG 2025',
+                        subtitle: 'Master Course (English)', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'English', 
+                        totalVideos: '500+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-en&language=en#' 
+                    },
+                    { 
+                        id: 'b_clat_2025_master_hi', 
+                        name: 'SATHEE CLAT UG 2025', 
+                        highlight: 'CLAT UG 2025',
+                        subtitle: 'Master Course (Hinglish)', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '70+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-hi&language=he#' 
+                    },
+                    { 
+                        id: 'b_clat_2026_master', 
+                        name: 'SATHEE CLAT UG 2026', 
+                        highlight: 'CLAT UG 2026',
+                        subtitle: 'Master Course CLAT (UG)', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'English', 
+                        totalVideos: '200+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=2026-master-course-clat-ug-english&language=en#' 
+                    }
+                ],
+                'exam_rrb': [
+                    { 
+                        id: 'b_rrb_crash_he', 
+                        name: 'SATHEE RRB GROUP D', 
+                        highlight: 'RRB GROUP D',
+                        subtitle: 'Recorded Course', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '188', 
+                        isCustomUI: true,
+                        course_reference: 'rrb-crash-course',
+                        language: 'he'
+                    },
+                    { 
+                        id: 'b_rrb_master_en', 
+                        name: 'SATHEE RRB GROUP D', 
+                        highlight: 'RRB GROUP D',
+                        subtitle: 'Recorded Course', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '180+', 
+                        isCustomUI: true,
+                        course_reference: '2026-master-course-rrb-group-d-english',
+                        language: 'en'
+                    }
                 ],
                 'default': [
                     { id: 'b_def_1', name: 'Foundation Batch', medium: 'English Medium', icon: 'fa-book', color: 'blue' },
@@ -9743,24 +9887,77 @@ INSTRUCTIONS:
                                                     const ref = batch.course_reference || 'ssc-mts-crash-course';
                                                     const lang = batch.language || 'he';
                                                     const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'ssc';
-                                                    const finalUrl = `https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
+                                                    const finalUrl = batch.direct_link ? batch.direct_link : `https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
 
                                                     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.Telegram?.WebApp?.platform !== 'tdesktop' && window.Telegram?.WebApp?.platform !== 'macos' && window.Telegram?.WebApp?.platform !== 'web');
 
                                                     if (isMobile && window.Telegram?.WebApp?.openLink) {
-                                                        const pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${ref}&language=${lang}&examType=${examParam}&exam_type=${examParam}`);
+                                                        let pathParam;
+                                                        if (batch.direct_link) {
+                                                            pathParam = encodeURIComponent(batch.direct_link.split('sathee.iitk.ac.in')[1]?.replace('#', '') || '');
+                                                        } else {
+                                                            pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${ref}&language=${lang}&examType=${examParam}&exam_type=${examParam}`);
+                                                        }
                                                         const loginUrl = `https://sathee.iitk.ac.in/login?path=${pathParam}&exam=${examParam}`;
                                                         window.Telegram.WebApp.openLink(loginUrl, { try_instant_view: true, try_browser: 'inapp' });
                                                     } else {
                                                         if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
                                                         window.open(finalUrl, '_self');
                                                     }
-                                                }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
-                                                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
-                                                        <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white`}></i>
-                                                    </div>
-                                                    <h3 className={`font-black text-sm sm:text-base text-white group-hover:text-${batch.color}-300 transition-colors leading-tight`}>{batch.name}</h3>
-                                                    <span className={`inline-block px-2 py-0.5 rounded bg-${batch.color}-500/20 border border-${batch.color}-500/30 text-[10px] font-bold text-${batch.color}-200 mt-auto`}>{batch.medium}</span>
+                                                }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
+                                                    {batch.isCustomUI ? (
+                                                        <>
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-40 group-hover:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                            <div className="relative h-full flex flex-col bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-5 border border-white/10">
+                                                                <div className="flex justify-between items-start mb-5">
+                                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 transition-colors shrink-0 shadow-inner">
+                                                                        <i className={`fa-solid ${activeSatheeExam?.icon || 'fa-award'} text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 text-2xl drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]`}></i>
+                                                                    </div>
+                                                                    <div className="flex flex-col items-end space-y-2 mt-0.5">
+                                                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-medium text-gray-300 backdrop-blur-md shadow-sm">
+                                                                            <i className="fa-solid fa-language text-blue-400"></i>
+                                                                            {batch.languageStr}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-medium text-gray-300 backdrop-blur-md shadow-sm">
+                                                                            <i className="fa-solid fa-clapperboard text-purple-400"></i>
+                                                                            {batch.totalVideos} Videos
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div className="mt-auto">
+                                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                                        <span className="font-black text-white text-base tracking-wide uppercase drop-shadow-md">
+                                                                            {batch.name.replace(batch.highlight, '').trim()}
+                                                                        </span>
+                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border border-white/20">
+                                                                            {batch.highlight}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-2 text-[11px] font-semibold text-gray-400">
+                                                                        <i className={`fa-solid ${batch.subtitleIcon} text-purple-400/80 mt-[2px]`}></i>
+                                                                        <span className="line-clamp-3 leading-tight">{batch.subtitle}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="mt-5">
+                                                                    <button className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300">
+                                                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
+                                                                        <i className="fa-solid fa-play text-blue-400 group-hover/btn:scale-110 transition-transform"></i>
+                                                                        <span className="group-hover/btn:text-blue-100 transition-colors relative z-10">Start Learning</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
+                                                                <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white`}></i>
+                                                            </div>
+                                                            <h3 className={`font-black text-sm sm:text-base text-white group-hover:text-${batch.color}-300 transition-colors leading-tight`}>{batch.name}</h3>
+                                                            <span className={`inline-block px-2 py-0.5 rounded bg-${batch.color}-500/20 border border-${batch.color}-500/30 text-[10px] font-bold text-${batch.color}-200 mt-auto`}>{batch.medium}</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
