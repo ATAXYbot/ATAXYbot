@@ -10704,6 +10704,8 @@ INSTRUCTIONS:
                                     if (batch.type === 'neet') {
                                         return (
                                             <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,65,141,0.5)] hover:shadow-[0_20px_50px_-10px_rgba(0,65,141,0.7)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out">
+                                                {/* Shimmer Effect */}
+                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none z-[100]"></div>
                                                 {/* Gaming/Premium Blue Gradient Base */}
                                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00418d] via-[#003370] to-[#001a3d] z-0"></div>
 
@@ -10740,6 +10742,8 @@ INSTRUCTIONS:
                                     } else if (batch.type === 'jee') {
                                         return (
                                             <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(15,23,42,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(6,182,212,0.4)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out mt-4">
+                                                {/* Shimmer Effect */}
+                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none z-[100]"></div>
                                                 {/* Gaming/Premium Engineer Base */}
                                                 <div className="absolute inset-0 bg-[#0b0f19] z-0"></div>
                                                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-transparent to-purple-900/40 z-0"></div>
@@ -11522,7 +11526,10 @@ INSTRUCTIONS:
                                             <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
                                             
                                             <button onClick={() => { resetDeepState(); setCurrentTab('chats'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chats' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Chats</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Practice</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 relative overflow-hidden rounded-xl ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}>
+                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none rounded-xl"></div>
+                                                <i className="fa-solid fa-layer-group text-[20px] relative z-10"></i><span className="text-[10px] font-bold uppercase tracking-wider relative z-10">Practice</span>
+                                            </button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
                                         </div>
                                     )}
