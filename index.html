@@ -7528,41 +7528,369 @@ INSTRUCTIONS:
             { id: 'mia_cheer', name: 'Mia (Cheerleader)', icon: 'fa-wand-magic-sparkles', color: 'text-fuchsia-400', vibe: 'energetic' }
         ];
 
-        const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage }) => {
-            const [visible, setVisible] = useState(false);
+        const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage, currentTab, showQuiz }) => {
+            const widgetRef = useRef(null);
+            const physicsRef = useRef({
+                x: 100,
+                y: -200, 
+                vx: 0,
+                vy: 0,
+                isGrounded: false,
+                state: 'falling',
+                facing: 1,
+                lastJump: Date.now(),
+                walkTimer: Date.now(),
+                walkDir: 1
+            });
             
+            const [emotion, setEmotion] = useState('idle'); 
+            const [visible, setVisible] = useState(false);
+            const [renderState, setRenderState] = useState('falling');
+            const [facing, setFacing] = useState(1); 
+
+            const [isGiant, setIsGiant] = useState(false);
+
             useEffect(() => {
                 if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
                     setVisible(true);
+                    
+                    const isImportant = partnerMessage.type === 'missed_target' || partnerMessage.type === 'reminder' || partnerMessage.requireAcknowledge;
+                    setIsGiant(isImportant);
+                    
+                    setEmotion(partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking'));
+                    
+                    if (isImportant) return; // Wait for Got It button
+                    
                     const t = setTimeout(() => {
                         setVisible(false);
-                        setTimeout(() => setPartnerMessage(null), 500); 
-                    }, 6000); 
+                        setIsGiant(false);
+                        setTimeout(() => {
+                            setPartnerMessage(null);
+                            setEmotion('idle');
+                        }, 500); 
+                    }, Math.max(6000, partnerMessage.text.length * 70)); 
                     return () => clearTimeout(t);
                 }
             }, [partnerMessage, partnerConfig]);
 
-            if (!partnerConfig.enabled || partnerConfig.character === 'none' || !partnerMessage) return null;
+            // Chatter Engine
+            useEffect(() => {
+                if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
+                
+                const chatterPhrases = {
+                    'mia_cheer': ["You're doing amazing!", "Keep that energy up!", "Woohoo, let's crush these exams!", "Remember to take deep breaths!"],
+                    'prof_oak': ["Consistency is the key to mastery.", "Patience, young scholar.", "A focused mind achieves great things.", "Review your mistakes carefully."],
+                    'chief_commander': ["No slacking! Back to work!", "Discipline equals success!", "Focus! Don't let me catch you dozing!", "Push harder! You can do this!"],
+                    'serena_health': ["Don't forget to drink water!", "Sit up straight, posture matters!", "Take a quick stretch break soon.", "Your health is just as important as your studies."]
+                };
+                
+                const chatterInterval = setInterval(() => {
+                    // Only chatter if visible, grounded, and not already talking
+                    const p = physicsRef.current;
+                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.6) {
+                        const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
+                        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                        setPartnerMessage({ type: 'chatter', text: randomPhrase });
+                    }
+                }, 15000); 
+
+                return () => clearInterval(chatterInterval);
+            }, [partnerConfig, emotion, setPartnerMessage]);
+            useEffect(() => {
+                if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
+                
+                let animationFrameId;
+
+                const loop = () => {
+                    if (currentTab === 'questions' && showQuiz && !visible) {
+                        if (widgetRef.current) widgetRef.current.style.opacity = '0';
+                        animationFrameId = requestAnimationFrame(loop);
+                        return;
+                    } else {
+                        if (widgetRef.current) widgetRef.current.style.opacity = '1';
+                    }
+
+                    const p = physicsRef.current;
+                    const now = Date.now();
+                    
+                    if (isGiant) {
+                        // Giant Announcement Mode Override
+                        p.x = window.innerWidth / 2;
+                        p.y = window.innerHeight / 2 + 100;
+                        p.vx = 0;
+                        p.vy = 0;
+                        p.isGrounded = true;
+                        p.state = 'idle';
+                        p.facing = 1;
+                    } else {
+                        p.vy += 0.6; // Gravity
+                        if (p.vy > 20) p.vy = 20;
+                        
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 30) { p.x = 30; p.vx = 0; p.walkDir = 1; }
+                        if (p.x > window.innerWidth - 30) { p.x = window.innerWidth - 30; p.vx = 0; p.walkDir = -1; }
+
+                        p.isGrounded = false;
+                        
+                        if (p.vy >= 0) {
+                            const platforms = document.querySelectorAll('.partner-platform');
+                            let landed = false;
+                            
+                            for (let i = 0; i < platforms.length; i++) {
+                                const rect = platforms[i].getBoundingClientRect();
+                                if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
+                                    if (p.x > rect.left && p.x < rect.right) {
+                                        p.y = rect.top;
+                                        p.vy = 0;
+                                        p.isGrounded = true;
+                                        landed = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!landed && p.y >= window.innerHeight - 80) {
+                                p.y = window.innerHeight - 80;
+                                p.vy = 0;
+                                p.isGrounded = true;
+                            }
+                        }
+
+                        if (p.isGrounded && !visible) {
+                            if (now - p.lastJump > 6000 && Math.random() < 0.01) {
+                                p.vy = -16; 
+                                p.isGrounded = false;
+                                p.lastJump = now;
+                                p.state = 'jumping';
+                            } else {
+                                if (now - p.walkTimer > 2000) {
+                                    if (Math.random() > 0.5) {
+                                        p.vx = 0;
+                                        p.state = 'idle';
+                                        if (Math.random() > 0.5) setEmotion('thinking');
+                                        else setEmotion('idle');
+                                    } else {
+                                        p.walkDir = Math.random() > 0.5 ? 1 : -1;
+                                        p.vx = p.walkDir * 1.5; 
+                                        p.state = 'walking';
+                                        setEmotion('idle');
+                                    }
+                                    p.walkTimer = now;
+                                }
+                            }
+                        } else if (p.isGrounded && visible) {
+                            p.vx = 0;
+                            p.state = 'idle';
+                        } else {
+                            if (p.vy < -2) p.state = 'climbing'; 
+                            else p.state = 'jumping';
+                            p.vx = p.vx * 0.99; 
+                        }
+
+                        if (p.vx > 0.1) p.facing = 1;
+                        else if (p.vx < -0.1) p.facing = -1;
+                    }
+
+                    if (widgetRef.current) {
+                        widgetRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
+                    }
+
+                    setRenderState(prev => prev !== p.state ? p.state : prev);
+                    setFacing(prev => prev !== p.facing ? p.facing : prev);
+                    
+                    animationFrameId = requestAnimationFrame(loop);
+                };
+
+                animationFrameId = requestAnimationFrame(loop);
+                return () => cancelAnimationFrame(animationFrameId);
+            }, [partnerConfig, currentTab, visible, showQuiz]);
+
+            if (!partnerConfig.enabled || partnerConfig.character === 'none') return null;
 
             const partnerDef = STUDY_PARTNERS.find(p => p.id === partnerConfig.character) || STUDY_PARTNERS[1];
+            const isHidden = (currentTab === 'questions' && showQuiz) && !visible; 
+
+            let isFemale = partnerConfig.character.includes('serena') || partnerConfig.character.includes('mia');
+            let skinColor = "#fcd5ce";
+            let shirtColor = partnerDef.color.includes('rose') ? '#fb7185' : partnerDef.color.includes('amber') ? '#fbbf24' : partnerDef.color.includes('fuchsia') ? '#e879f9' : '#94a3b8';
+            let pantsColor = isFemale ? "#f1f5f9" : "#334155"; 
+            let hairColor = isFemale ? "#78350f" : "#1e293b"; 
+            
+            let faceText = "(^‿^)";
+            if (emotion === 'angry') { faceText = "(>_<)"; }
+            else if (emotion === 'talking') { faceText = "(^o^)"; }
+            else if (emotion === 'thinking' || emotion === 'writing') { faceText = "(-_-)"; }
+            else if (emotion === 'idle') { faceText = "(•‿•)"; }
+
+            const getAnimation = (part) => {
+                if (renderState === 'climbing') {
+                    if (part === 'armL') return 'proceduralClimbArmL 0.3s infinite alternate';
+                    if (part === 'armR') return 'proceduralClimbArmR 0.3s infinite alternate';
+                    if (part === 'legL') return 'proceduralClimbLeg 0.2s infinite alternate';
+                    if (part === 'legR') return 'proceduralClimbLeg 0.2s infinite alternate-reverse';
+                    return 'none';
+                }
+                if (renderState === 'walking') {
+                    if (part === 'armL') return 'proceduralLegR 0.5s infinite linear';
+                    if (part === 'armR') return 'proceduralLegL 0.5s infinite linear';
+                    if (part === 'legL') return 'proceduralLegL 0.5s infinite linear';
+                    if (part === 'legR') return 'proceduralLegR 0.5s infinite linear';
+                    if (part === 'body') return 'proceduralWalk 0.5s infinite linear';
+                }
+                if (renderState === 'jumping') {
+                    if (part === 'armL') return 'proceduralClimbArmL 1s forwards';
+                    if (part === 'armR') return 'proceduralClimbArmR 1s forwards';
+                    if (part === 'legL') return 'proceduralLegL 1s forwards';
+                }
+                if (emotion === 'happy' || emotion === 'talking') {
+                    if (part === 'armL') return 'proceduralTalk 1s infinite alternate ease-in-out';
+                    if (part === 'armR') return 'proceduralTalk 0.5s infinite alternate ease-in-out';
+                    if (part === 'body' && emotion === 'happy') return 'animate-bounce';
+                }
+                if (emotion === 'writing') {
+                    if (part === 'armR') return 'proceduralWrite 0.2s infinite alternate';
+                    if (part === 'armL') return 'proceduralTalk 1s infinite alternate';
+                    if (part === 'body') return 'animate-pulse';
+                }
+                return 'none';
+            };
 
             return (
-                <div className={`fixed z-[10000] bottom-24 right-4 max-w-[280px] transition-all duration-500 ease-out ${visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95 pointer-events-none'}`}>
-                    <div className="relative flex flex-col items-end">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-br-sm p-4 shadow-xl border border-gray-100 dark:border-gray-700 mb-2 relative animate-pop-bounce">
-                            <p className="text-sm text-gray-800 dark:text-gray-200 font-medium leading-relaxed">{partnerMessage.text}</p>
-                            <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
+                <div 
+                    ref={widgetRef}
+                    className={`fixed z-[10000] top-0 left-0 pointer-events-none transition-opacity duration-300`}
+                >
+                    <style>{`
+                        @keyframes proceduralWalk {
+                            0% { transform: translateY(0) rotate(0deg); }
+                            25% { transform: translateY(-3px) rotate(3deg); }
+                            50% { transform: translateY(0) rotate(0deg); }
+                            75% { transform: translateY(-3px) rotate(-3deg); }
+                            100% { transform: translateY(0) rotate(0deg); }
+                        }
+                        @keyframes proceduralLegL {
+                            0% { transform: rotate(0deg); }
+                            25% { transform: rotate(40deg); }
+                            50% { transform: rotate(0deg); }
+                            75% { transform: rotate(-40deg); }
+                            100% { transform: rotate(0deg); }
+                        }
+                        @keyframes proceduralLegR {
+                            0% { transform: rotate(0deg); }
+                            25% { transform: rotate(-40deg); }
+                            50% { transform: rotate(0deg); }
+                            75% { transform: rotate(40deg); }
+                            100% { transform: rotate(0deg); }
+                        }
+                        @keyframes proceduralClimbArmL {
+                            0% { transform: rotate(150deg); }
+                            100% { transform: rotate(180deg) translateY(-5px); }
+                        }
+                        @keyframes proceduralClimbArmR {
+                            0% { transform: rotate(-150deg); }
+                            100% { transform: rotate(-180deg) translateY(-5px); }
+                        }
+                        @keyframes proceduralClimbLeg {
+                            0% { transform: rotate(20deg) translateY(0); }
+                            100% { transform: rotate(-20deg) translateY(-5px); }
+                        }
+                        @keyframes proceduralWrite {
+                            0% { transform: rotate(0deg) translate(0, 0); }
+                            100% { transform: rotate(-30deg) translate(-5px, 5px); }
+                        }
+                        @keyframes proceduralTalk {
+                            0% { transform: rotate(0deg); }
+                            25% { transform: rotate(30deg); }
+                            50% { transform: rotate(10deg); }
+                            75% { transform: rotate(40deg); }
+                            100% { transform: rotate(0deg); }
+                        }
+                    `}</style>
+                    <div 
+                        className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%]`} 
+                        style={{ zIndex: isGiant ? 10050 : 10 }}
+                    >
+                        {isGiant && (
+                            <button className="absolute top-[120%] bg-blue-600 text-white font-black text-xl py-3 px-8 rounded-full shadow-2xl hover:bg-blue-700 animate-bounce pointer-events-auto" onClick={(e) => {
+                                e.stopPropagation();
+                                setIsGiant(false);
+                                setVisible(false);
+                                setPartnerMessage(null);
+                                setEmotion('idle');
+                            }}>
+                                Got it!
+                            </button>
+                        )}
+                        <div className={`absolute bottom-[100px] ${isGiant ? 'min-w-[300px] max-w-[400px] text-lg' : 'min-w-[200px] max-w-[280px] text-sm'} bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                            <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
+                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                         </div>
                         
-                        <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur rounded-full pl-2 pr-4 py-1.5 border border-white/10 shadow-lg">
-                            <div className={`w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border-2 border-slate-600 shadow-inner ${partnerDef.color}`}>
-                                <i className={`fa-solid ${partnerDef.icon} text-lg`}></i>
+                        <div 
+                            className="relative flex flex-col items-center drop-shadow-xl transition-transform duration-500" 
+                            style={{ 
+                                animation: getAnimation('body'),
+                                transform: `scaleX(${facing}) ${isGiant ? 'scale(3)' : 'scale(1)'}`,
+                                transformOrigin: 'bottom center'
+                            }}
+                        >
+                            {/* Head */}
+                            <div className="w-[45px] h-[45px] rounded-[18px] shadow-sm flex items-center justify-center relative z-20 border border-black/10 cursor-pointer hover:scale-110 transition-transform" 
+                                style={{ backgroundColor: skinColor }}
+                                onClick={(e) => { e.stopPropagation(); setEmotion('angry'); setPartnerMessage({type:'chatter', text:'Ouch! Watch the head!'}); }}
+                            >
+                                <div className="text-black font-black text-sm tracking-tighter relative z-20" style={{ transform: `scaleX(${facing})` }}>{faceText}</div>
+                                {isFemale ? (
+                                    <>
+                                        <div className="absolute top-[-4px] w-full h-[22px] rounded-t-[18px] rounded-b-[10px] opacity-95 z-10" style={{ backgroundColor: hairColor }}></div>
+                                        <div className="absolute top-[5px] right-[-12px] w-[18px] h-[35px] rounded-full opacity-95 z-0 transform rotate-[15deg]" style={{ backgroundColor: hairColor }}></div>
+                                    </>
+                                ) : (
+                                    <div className="absolute top-[-2px] w-[90%] h-[15px] rounded-t-[18px] rounded-b-[5px] opacity-95 z-10" style={{ backgroundColor: hairColor }}></div>
+                                )}
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-bold text-white leading-tight">{partnerDef.name.split(' ')[0]}</span>
-                                <span className="text-[9px] text-gray-400 font-mono tracking-widest uppercase">{partnerDef.vibe.split(' ')[0]}</span>
+                            
+                            {/* Body & Arms */}
+                            <div className="relative w-[28px] h-[35px] mt-[-4px] z-10 shadow-inner cursor-pointer hover:scale-110 transition-transform" 
+                                style={{ backgroundColor: shirtColor, borderRadius: isFemale ? '12px 12px 18px 18px' : '12px' }}
+                                onClick={(e) => { e.stopPropagation(); setEmotion('happy'); physicsRef.current.vy = -12; physicsRef.current.isGrounded = false; setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); }}
+                            >
+                                <div className="absolute top-[4px] left-[-12px] w-[12px] h-[26px] origin-top-right rounded-full shadow-sm" 
+                                    style={{ 
+                                        backgroundColor: skinColor, 
+                                        borderTop: `12px solid ${shirtColor}`,
+                                        animation: getAnimation('armL') 
+                                    }}>
+                                </div>
+                                <div className="absolute top-[4px] right-[-12px] w-[12px] h-[26px] origin-top-left rounded-full shadow-sm" 
+                                    style={{ 
+                                        backgroundColor: skinColor, 
+                                        borderTop: `12px solid ${shirtColor}`,
+                                        animation: getAnimation('armR') 
+                                    }}>
+                                </div>
+                            </div>
+
+                            {/* Legs */}
+                            <div className="flex gap-[4px] mt-[-8px] z-0 relative cursor-pointer hover:scale-110 transition-transform"
+                                onClick={(e) => { e.stopPropagation(); setEmotion('angry'); physicsRef.current.vx = facing * 5; physicsRef.current.vy = -5; physicsRef.current.isGrounded = false; setPartnerMessage({type:'chatter', text:'Woah, tripped me!'}); }}
+                            >
+                                <div className="w-[11px] h-[30px] rounded-b-full origin-top shadow-sm border border-black/10" 
+                                    style={{ backgroundColor: pantsColor, animation: getAnimation('legL') }}>
+                                </div>
+                                <div className="w-[11px] h-[30px] rounded-b-full origin-top shadow-sm border border-black/10" 
+                                    style={{ backgroundColor: pantsColor, animation: getAnimation('legR') }}>
+                                </div>
                             </div>
                         </div>
+                        
+                        {!isGiant && (
+                            <div className="absolute top-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap shadow-lg z-50" style={{ transform: 'translateX(-50%)', left: '50%' }}>
+                                {partnerDef.name.split(' ')[0]} <span className="text-gray-400 capitalize ml-1">({emotion})</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -8049,7 +8377,8 @@ INSTRUCTIONS:
             const [selectedDate, setSelectedDate] = useState(getTodayStr());
             const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', null) || {});
             const [newTarget, setNewTarget] = useState("");
-            const [newTargetTime, setNewTargetTime] = useState(""); // Time slot like "15:00"
+            const [newTargetStartTime, setNewTargetStartTime] = useState(""); // e.g. "15:00"
+            const [newTargetEndTime, setNewTargetEndTime] = useState(""); // e.g. "16:00"
             const [showDetailedAnalyzer, setShowDetailedAnalyzer] = useState(false);
 
             // Global Timer State
@@ -8096,11 +8425,11 @@ INSTRUCTIONS:
 
                     let foundMissed = false;
                     for (const t of todayTargets) {
-                        if (!t.done && t.timeSlot && t.timeSlot < currentTime) {
+                        if (!t.done && t.endTime && t.endTime < currentTime) {
                             // Only nag if we haven't nagged in the last 15 minutes to avoid spam
                             const lastNag = studyPartnerState.lastNagTime || 0;
                             if (Date.now() - lastNag > 15 * 60 * 1000) {
-                                setPartnerMessage({ text: `Hey! You missed your target "${t.text}" scheduled for ${t.timeSlot}. Let's get back on track!`, type: 'missed_target', id: Date.now() });
+                                setPartnerMessage({ text: `WHY ARE YOU LATE?! Your target "${t.text}" is not completed yet! Get to work!`, type: 'missed_target', requireAcknowledge: true, id: Date.now() });
                                 setStudyPartnerState(prev => ({ ...prev, lastNagTime: Date.now() }));
                                 foundMissed = true;
                                 break;
@@ -8119,6 +8448,19 @@ INSTRUCTIONS:
 
                 return () => clearInterval(checkInterval);
             }, [studyPartnerConfig, targetsData, studyPartnerState.lastNagTime, studyPartnerState.lastWaterTime]);
+
+            // Mount Greeting
+            useEffect(() => {
+                if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none' || !studyPartnerConfig.hasSeenOnboarding) return;
+                const hour = new Date().getHours();
+                let greeting = "Good morning";
+                if (hour >= 12 && hour < 17) greeting = "Good afternoon";
+                else if (hour >= 17) greeting = "Good evening";
+                
+                setTimeout(() => {
+                    setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
+                }, 2000);
+            }, []);
             useEffect(() => {
                 const tg = window.Telegram?.WebApp;
                 if (tg) {
@@ -8467,7 +8809,23 @@ INSTRUCTIONS:
                 const currentTargets = targetsData[selectedDate] || [];
                 const toggleTarget = (id) => { const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); setTargetsData({ ...targetsData, [selectedDate]: u }); };
                 const removeTarget = (id) => { const u = currentTargets.filter(t => t.id !== id); setTargetsData({ ...targetsData, [selectedDate]: u }); };
-                const addTarget = (e) => { e.preventDefault(); if (!newTarget.trim()) return; const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false, timeSlot: newTargetTime }]; setTargetsData({ ...targetsData, [selectedDate]: u }); setNewTarget(""); setNewTargetTime(""); };
+                const addTarget = (e) => { 
+                    e.preventDefault(); 
+                    if (!newTarget.trim()) return; 
+                    const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false, startTime: newTargetStartTime, endTime: newTargetEndTime }]; 
+                    setTargetsData({ ...targetsData, [selectedDate]: u }); 
+                    
+                    const timeStr = newTargetStartTime ? `at ${newTargetStartTime}` : 'for today';
+                    setPartnerMessage({ 
+                        type: 'added_target', 
+                        text: `I have noted "${newTarget}" ${timeStr}. Come back on time!`,
+                        requireAcknowledge: true 
+                    });
+                    
+                    setNewTarget(""); 
+                    setNewTargetStartTime(""); 
+                    setNewTargetEndTime(""); 
+                };
 
                 // --- DEEP TARGET ANALYZER LOGIC ---
                 let totalTargets = 0;
@@ -8641,7 +8999,7 @@ INSTRUCTIONS:
                                 </div>
                             </div>
                             
-                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100">
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100 partner-platform">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
                                     <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
@@ -8662,7 +9020,7 @@ INSTRUCTIONS:
                                                             <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 border-blue-400"></div>
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t.text}</span>
-                                                                {t.timeSlot && <span className="text-[10px] text-blue-500 dark:text-blue-400 font-black tracking-wider"><i className="fa-regular fa-clock mr-1"></i>{t.timeSlot}</span>}
+                                                                {(t.startTime || t.endTime) && <span className="text-[10px] text-blue-500 dark:text-blue-400 font-black tracking-wider"><i className="fa-regular fa-clock mr-1"></i>{t.startTime || '?'} - {t.endTime || '?'}</span>}
                                                             </div>
                                                         </div>
                                                         <div className="relative z-10 flex items-center gap-1">
@@ -8680,7 +9038,7 @@ INSTRUCTIONS:
                                                             <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 bg-green-500 border-green-500"><i className="fa-solid fa-check text-white text-xs animate-pop-in"></i></div>
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm font-medium line-through text-gray-500 dark:text-gray-400">{t.text}</span>
-                                                                {t.timeSlot && <span className="text-[10px] line-through text-gray-500/70"><i className="fa-regular fa-clock mr-1"></i>{t.timeSlot}</span>}
+                                                                {(t.startTime || t.endTime) && <span className="text-[10px] line-through text-gray-500/70"><i className="fa-regular fa-clock mr-1"></i>{t.startTime || '?'} - {t.endTime || '?'}</span>}
                                                             </div>
                                                         </div>
                                                         <button onClick={() => removeTarget(t.id)} className="w-8 h-8 rounded-full text-red-500/50 hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0"><i className="fa-solid fa-trash text-xs"></i></button>
@@ -8693,7 +9051,11 @@ INSTRUCTIONS:
                                 <form onSubmit={addTarget} className="flex flex-col sm:flex-row gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
                                     <div className="flex-1 flex gap-2">
                                         <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
-                                        <input type="time" value={newTargetTime} onChange={(e) => setNewTargetTime(e.target.value)} className="w-24 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-3 text-sm focus:outline-none focus:border-blue-500 transition-all dark:text-white" />
+                                        <div className="flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-900 transition-all">
+                                            <input type="time" value={newTargetStartTime} onChange={(e) => setNewTargetStartTime(e.target.value)} className="w-20 bg-transparent px-2 py-3 text-xs focus:outline-none dark:text-white text-center" title="Start Time" />
+                                            <div className="flex items-center text-gray-400 text-xs px-1">-</div>
+                                            <input type="time" value={newTargetEndTime} onChange={(e) => setNewTargetEndTime(e.target.value)} className="w-20 bg-transparent px-2 py-3 text-xs focus:outline-none dark:text-white text-center" title="End Time" />
+                                        </div>
                                     </div>
                                     <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-full sm:w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md shrink-0"><i className="fa-solid fa-plus"></i></button>
                                 </form>
@@ -11677,7 +12039,7 @@ INSTRUCTIONS:
                             </div>
 
                             {/* Detailed Analytics Block */}
-                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group">
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group partner-platform">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors"></div>
                                 <h4 className="font-black text-gray-900 dark:text-white text-lg mb-5 flex items-center gap-2"><i className="fa-solid fa-microscope text-purple-500"></i> Subject Mastery</h4>
 
@@ -11745,7 +12107,7 @@ INSTRUCTIONS:
             return (
                 <VoiceRoomErrorBoundary>
                     <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
-                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} />
+                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} currentTab={currentTab} showQuiz={showQuiz} />
                     <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
