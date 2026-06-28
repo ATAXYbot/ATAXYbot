@@ -9859,11 +9859,18 @@ INSTRUCTIONS:
                                     {activeSatheeExam && !activeSatheeSection && SATHEE_DATA.sections && SATHEE_DATA.sections[activeSatheeExam.id] && (
                                         <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
                                             {SATHEE_DATA.sections[activeSatheeExam.id].map(section => (
-                                                <div key={section.id} onClick={() => setActiveSatheeSection(section)} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-blue-500/50 hover:bg-blue-900/20 hover:shadow-[0_15px_40px_rgba(59,130,246,0.3)]">
-                                                    <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-blue-500/20 group-hover:border-blue-400/50 transition-all duration-300">
-                                                        <i className={`fa-solid ${section.icon} text-3xl text-gray-300 group-hover:text-blue-400 group-hover:scale-110 transition-all duration-300`}></i>
+                                                <div key={section.id} onClick={() => setActiveSatheeSection(section)} className="relative group overflow-hidden rounded-[1.5rem] p-[1px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-center">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                    <div className="relative h-full flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-6 border border-white/10 gap-3">
+                                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shadow-inner">
+                                                            <i className={`fa-solid ${section.icon} text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 text-3xl drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
+                                                        </div>
+                                                        <h3 className="font-black text-xl text-white tracking-wide uppercase drop-shadow-md group-hover:text-transparent group-active:text-transparent group-hover:bg-clip-text group-active:bg-clip-text group-hover:bg-gradient-to-r group-active:bg-gradient-to-r group-hover:from-blue-300 group-active:from-blue-300 group-hover:to-purple-300 group-active:to-purple-300 transition-all">{section.name}</h3>
+                                                        <div className="flex items-center gap-2 mt-1 opacity-100 lg:opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
+                                                            <span className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Explore</span>
+                                                            <i className="fa-solid fa-arrow-right text-blue-300 text-[10px] translate-x-0 lg:translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
+                                                        </div>
                                                     </div>
-                                                    <h3 className="font-black text-lg text-white text-center group-hover:text-blue-300">{section.name}</h3>
                                                 </div>
                                             ))}
                                         </div>
@@ -9904,14 +9911,14 @@ INSTRUCTIONS:
                                                         if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
                                                         window.open(finalUrl, '_self');
                                                     }
-                                                }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
+                                                }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
                                                     {batch.isCustomUI ? (
                                                         <>
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-40 group-hover:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-50 lg:opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
                                                             <div className="relative h-full flex flex-col bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-5 border border-white/10">
                                                                 <div className="flex justify-between items-start mb-5">
-                                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 transition-colors shrink-0 shadow-inner">
-                                                                        <i className={`fa-solid ${activeSatheeExam?.icon || 'fa-award'} text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 text-2xl drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]`}></i>
+                                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shrink-0 shadow-inner">
+                                                                        <i className={`fa-solid ${activeSatheeExam?.icon || 'fa-award'} text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 text-2xl drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
                                                                     </div>
                                                                     <div className="flex flex-col items-end space-y-2 mt-0.5">
                                                                         <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-medium text-gray-300 backdrop-blur-md shadow-sm">
@@ -9941,10 +9948,10 @@ INSTRUCTIONS:
                                                                 </div>
 
                                                                 <div className="mt-5">
-                                                                    <button className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300">
-                                                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
-                                                                        <i className="fa-solid fa-play text-blue-400 group-hover/btn:scale-110 transition-transform"></i>
-                                                                        <span className="group-hover/btn:text-blue-100 transition-colors relative z-10">Start Learning</span>
+                                                                    <button className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.98] active:brightness-110 active:border-white/30 transition-all duration-300">
+                                                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] group-active/btn:translate-x-[100%] transition-transform duration-700"></div>
+                                                                        <i className="fa-solid fa-play text-blue-400 group-hover/btn:scale-110 group-active/btn:scale-110 transition-transform"></i>
+                                                                        <span className="group-hover/btn:text-blue-100 group-active/btn:text-blue-100 transition-colors relative z-10">Start Learning</span>
                                                                     </button>
                                                                 </div>
                                                             </div>
