@@ -1,5 +1,8 @@
 
-        window.addEventListener('error', function(e) {
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        window.addEventListener('error', function (e) {
             const errDiv = document.createElement('div');
             errDiv.style.color = 'red';
             errDiv.style.backgroundColor = 'white';
@@ -13,6 +16,392 @@
         });
 
         const { useState, useRef, useEffect, useMemo } = React;
+
+        const SATHEE_DATA = {
+            exams: [
+                { id: 'exam_ssc', name: 'SSC', icon: 'fa-building-columns' },
+                { id: 'exam_cuet', name: 'CUET', icon: 'fa-graduation-cap' },
+                { id: 'exam_clat', name: 'CLAT', icon: 'fa-scale-balanced' },
+                { id: 'exam_icar', name: 'ICAR', icon: 'fa-seedling' },
+                { id: 'exam_rrb', name: 'RRB', icon: 'fa-train' },
+                { id: 'exam_ibps', name: 'IBPS', icon: 'fa-piggy-bank' }
+            ],
+            sections: {
+                'exam_ssc': [
+                    { id: 'sec_ssc_mts', name: 'MTS', icon: 'fa-briefcase', color: 'teal' },
+                    { id: 'sec_ssc_cgl', name: 'CGL', icon: 'fa-bullseye', color: 'green' }
+                ]
+            },
+            batches: {
+                'exam_jee': [
+                    { id: 'b_jee_vishwas', name: 'Vishwas JEE 2024', medium: 'English Medium', icon: 'fa-rocket', color: 'blue' },
+                    { id: 'b_jee_prayas', name: 'Prayas JEE (Hindi)', medium: 'Hindi Medium', icon: 'fa-fire', color: 'orange' }
+                ],
+                'exam_neet': [
+                    { id: 'b_neet_sankalp', name: 'Sankalp NEET', medium: 'English Medium', icon: 'fa-heart-pulse', color: 'red' },
+                    { id: 'b_neet_lakshya', name: 'Lakshya NEET (Hindi)', medium: 'Hindi Medium', icon: 'fa-star-of-life', color: 'pink' }
+                ],
+                'sec_ssc_cgl': [
+                    { 
+                        id: 'b_ssc_cgl_rec_en', 
+                        name: 'SSC CGL 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Unlock your full potential with comprehensive lectures.',
+                        subtitleIcon: 'fa-book-open',
+                        languageStr: 'English', 
+                        totalVideos: '208',
+                        isCustomUI: true,
+                        course_reference: 'ssc-cgl-recorded-course-new-en', 
+                        language: 'en' 
+                    },
+                    { 
+                        id: 'b_ssc_cgl_rec_hi', 
+                        name: 'SSC CGL 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Build a strong foundation for SSC CGL success.',
+                        subtitleIcon: 'fa-book-open',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '125',
+                        isCustomUI: true,
+                        course_reference: 'ssc-cgl-recorded-course-new-hi' 
+                    }
+                ],
+                'sec_ssc_mts': [
+                    { 
+                        id: 'b_ssc_mts_crash_en', 
+                        name: 'SSC MTS 2026 CRASH COURSE', 
+                        highlight: 'CRASH COURSE',
+                        subtitle: 'Last-minute prep? Our SSC MTS Crash Course is your secret weapon for success!',
+                        subtitleIcon: 'fa-bolt',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '180',
+                        isCustomUI: true,
+                        course_reference: 'ssc-mts-crash-course' 
+                    },
+                    { 
+                        id: 'b_ssc_mts_rec_hi', 
+                        name: 'SSC MTS 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Master SSC MTS concepts at your own pace with detailed recorded lectures.',
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '468',
+                        isCustomUI: true,
+                        course_reference: 'ssc-mts-recorded-course-new-hi' 
+                    },
+                    { 
+                        id: 'b_ssc_mts_rec_en', 
+                        name: 'SSC MTS 2026 RECORDED COURSE', 
+                        highlight: 'RECORDED COURSE',
+                        subtitle: 'Understand all topics clearly. SSC MTS Recorded Lectures in English.',
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '484',
+                        isCustomUI: true,
+                        course_reference: 'ssc-mts-recorded-course-new-en', 
+                        language: 'en' 
+                    }
+                ],
+                'exam_cuet': [
+                    { 
+                        id: 'b_cuet_ug', 
+                        name: 'CUET Subject Course (UG)', 
+                        highlight: 'Subject Course (UG)',
+                        subtitle: 'Comprehensive preparation for UG programs',
+                        subtitleIcon: 'fa-user-graduate',
+                        languageStr: 'English', 
+                        totalVideos: '350+',
+                        isCustomUI: true,
+                        course_reference: 'cuet-ug'
+                    },
+                    { 
+                        id: 'b_cuet_pg', 
+                        name: 'CUET Subject Course (PG)', 
+                        highlight: 'Subject Course (PG)',
+                        subtitle: 'Advanced preparation for PG programs',
+                        subtitleIcon: 'fa-user-graduate',
+                        languageStr: 'English', 
+                        totalVideos: '250+',
+                        isCustomUI: true,
+                        course_reference: 'cuet-pg'
+                    }
+                ],
+                'exam_clat': [
+                    { 
+                        id: 'b_clat_2025_complete', 
+                        name: 'SATHEE CLAT UG 2025', 
+                        highlight: 'CLAT UG 2025',
+                        subtitle: 'Complete Course', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'English', 
+                        totalVideos: '190+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course&language=en#' 
+                    },
+                    { 
+                        id: 'b_clat_2025_master_en', 
+                        name: 'SATHEE CLAT UG 2025', 
+                        highlight: 'CLAT UG 2025',
+                        subtitle: 'Master Course (English)', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'English', 
+                        totalVideos: '500+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-en&language=en#' 
+                    },
+                    { 
+                        id: 'b_clat_2025_master_hi', 
+                        name: 'SATHEE CLAT UG 2025', 
+                        highlight: 'CLAT UG 2025',
+                        subtitle: 'Master Course (Hinglish)', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '70+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-hi&language=he#' 
+                    },
+                    { 
+                        id: 'b_clat_2026_master', 
+                        name: 'SATHEE CLAT UG 2026', 
+                        highlight: 'CLAT UG 2026',
+                        subtitle: 'Master Course CLAT (UG)', 
+                        subtitleIcon: 'fa-graduation-cap',
+                        languageStr: 'English', 
+                        totalVideos: '200+', 
+                        isCustomUI: true,
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=2026-master-course-clat-ug-english&language=en#' 
+                    }
+                ],
+                'exam_rrb': [
+                    { 
+                        id: 'b_rrb_crash_he', 
+                        name: 'SATHEE RRB GROUP D', 
+                        highlight: 'RRB GROUP D',
+                        subtitle: 'Recorded Course', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '188', 
+                        isCustomUI: true,
+                        course_reference: 'rrb-crash-course',
+                        language: 'he'
+                    },
+                    { 
+                        id: 'b_rrb_master_en', 
+                        name: 'SATHEE RRB GROUP D', 
+                        highlight: 'RRB GROUP D',
+                        subtitle: 'Recorded Course', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '180+', 
+                        isCustomUI: true,
+                        course_reference: '2026-master-course-rrb-group-d-english',
+                        language: 'en'
+                    }
+                ],
+                'exam_icar': [
+                    { 
+                        id: 'b_icar_en_669', 
+                        name: 'SATHEE ICAR AIEEA(UG)', 
+                        highlight: 'ICAR AIEEA(UG)',
+                        subtitle: 'Recorded Course English', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '669', 
+                        isCustomUI: true,
+                        course_reference: 'sathee-icar-aieea-recorded-course-en',
+                        language: 'en'
+                    },
+                    { 
+                        id: 'b_icar_en_465', 
+                        name: 'SATHEE ICAR AIEEA(UG)', 
+                        highlight: 'ICAR AIEEA(UG)',
+                        subtitle: 'Recorded Course', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '465', 
+                        isCustomUI: true,
+                        course_reference: 'sathee-icar-aieea-ug-recorded-course',
+                        language: 'en'
+                    },
+                    { 
+                        id: 'b_icar_hi_209', 
+                        name: 'SATHEE ICAR AIEEA(UG)', 
+                        highlight: 'ICAR AIEEA(UG)',
+                        subtitle: 'Recorded Course Hinglish', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '209', 
+                        isCustomUI: true,
+                        course_reference: 'sathee-icar-aieea-recorded-course-hi',
+                        language: 'he'
+                    }
+                ],
+                'exam_ibps': [
+                    { 
+                        id: 'b_ibps_en_375', 
+                        name: 'SATHEE IBPS CSA', 
+                        highlight: 'IBPS CSA',
+                        subtitle: 'Master Course in English', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '375', 
+                        isCustomUI: true,
+                        course_reference: 'sathee-ibps-master-course-english',
+                        language: 'en'
+                    },
+                    { 
+                        id: 'b_ibps_he_255', 
+                        name: 'SATHEE IBPS CSA', 
+                        highlight: 'IBPS CSA',
+                        subtitle: 'Master Course in Hinglish', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'Hinglish', 
+                        totalVideos: '255', 
+                        isCustomUI: true,
+                        course_reference: 'sathee-ibps-master-course-hindi',
+                        language: 'he'
+                    },
+                    { 
+                        id: 'b_ibps_en_276', 
+                        name: 'SATHEE IBPS CSA', 
+                        highlight: 'IBPS CSA',
+                        subtitle: 'Recorded Course', 
+                        subtitleIcon: 'fa-video',
+                        languageStr: 'English', 
+                        totalVideos: '276', 
+                        isCustomUI: true,
+                        course_reference: 'sathee-ibps-clerk-recorded-course',
+                        language: 'en'
+                    }
+                ],
+                'default': [
+                    { id: 'b_def_1', name: 'Foundation Batch', medium: 'English Medium', icon: 'fa-book', color: 'blue' },
+                    { id: 'b_def_2', name: 'Target Batch', medium: 'Hindi Medium', icon: 'fa-target', color: 'red' }
+                ]
+            },
+            subjects: {
+                'b_ssc_cgl': [
+                    { id: 'sub_maths', name: 'Quantitative Aptitude', icon: 'fa-calculator' },
+                    { id: 'sub_reasoning', name: 'General Intelligence', icon: 'fa-brain' },
+                    { id: 'sub_english', name: 'English Language', icon: 'fa-spell-check' },
+                    { id: 'sub_ga', name: 'General Awareness', icon: 'fa-globe' }
+                ],
+                'b_jee_vishwas': [
+                    { id: 'sub_phy', name: 'Physics', icon: 'fa-atom' },
+                    { id: 'sub_chem', name: 'Chemistry', icon: 'fa-flask' },
+                    { id: 'sub_math_jee', name: 'Mathematics', icon: 'fa-square-root-variable' }
+                ],
+                'b_cuet_ug': [
+                    { id: 'sub_cuet_bio', name: 'Biology', icon: 'fa-dna', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=biology-ug&exam=cuet&examType=cuet&exam_type=cuet#' },
+                    { id: 'sub_cuet_cs', name: 'Computer Science', icon: 'fa-laptop-code', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=computer-science-ug&exam=cuet&examType=cuet&exam_type=cuet#' },
+                    { id: 'sub_cuet_chem', name: 'Chemistry', icon: 'fa-flask', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=chemistry-ug&exam=cuet&examType=cuet&exam_type=cuet#' },
+                    { id: 'sub_cuet_maths', name: 'Mathematics', icon: 'fa-calculator', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=mathematics-ug#' },
+                    { id: 'sub_cuet_phy', name: 'Physics', icon: 'fa-atom', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=physics-ug#' },
+                    { id: 'sub_cuet_psych', name: 'Psychology', icon: 'fa-brain', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=psychology-ug#' },
+                    { id: 'sub_cuet_tourism', name: 'Tourism', icon: 'fa-plane', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=tourism-ug#' },
+                    { id: 'sub_cuet_fashion', name: 'Fashion Studies', icon: 'fa-shirt', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=fashion-studies-ug#' },
+                    { id: 'sub_cuet_agri', name: 'Agriculture', icon: 'fa-seedling', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=agriculture-ug#' },
+                    { id: 'sub_cuet_anthro', name: 'Anthropology', icon: 'fa-users' },
+                    { id: 'sub_cuet_mass_comm', name: 'Mass Communication', icon: 'fa-tower-broadcast', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=mass-communication-ug#' },
+                    { id: 'sub_cuet_account', name: 'Accountancy', icon: 'fa-file-invoice-dollar', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=accountancy-ug#' },
+                    { id: 'sub_cuet_business', name: 'Business Studies', icon: 'fa-briefcase', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=business-studies-ug#' },
+                    { id: 'sub_cuet_pol_sci', name: 'Political Science', icon: 'fa-landmark', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=political-science-ug#' },
+                    { id: 'sub_cuet_geo', name: 'Geography', icon: 'fa-globe', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=geography-ug#' },
+                    { id: 'sub_cuet_history', name: 'History', icon: 'fa-monument', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=history-ug#' },
+                    { id: 'sub_cuet_legal', name: 'Legal Studies', icon: 'fa-scale-balanced', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=legal-studies-ug#' },
+                    { id: 'sub_cuet_teaching', name: 'Teaching Aptitude', icon: 'fa-chalkboard-user', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=teaching-aptitude-ug#' },
+                    { id: 'sub_cuet_econ', name: 'Economics', icon: 'fa-chart-line', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=economics-ug#' },
+                    { id: 'sub_cuet_env', name: 'Environmental Studies', icon: 'fa-leaf', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=environment-studies-ug#' },
+                    { id: 'sub_cuet_socio', name: 'Sociology', icon: 'fa-people-group', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sociology-ug#' }
+                ],
+                'b_cuet_pg': [
+                    { id: 'sub_cuet_pg_agro', name: 'Agro Forestry', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=agroforestry-pg#' },
+                    { id: 'sub_cuet_pg_bio', name: 'Biochemistry' },
+                    { id: 'sub_cuet_pg_bot', name: 'Botany' },
+                    { id: 'sub_cuet_pg_chem', name: 'Chemistry', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=chemistry-pg#' },
+                    { id: 'sub_cuet_pg_com', name: 'Commerce' },
+                    { id: 'sub_cuet_pg_legal', name: 'Legal Studies', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=legal-studies-pg#' },
+                    { id: 'sub_cuet_pg_ling', name: 'Linguistics', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=linguistics-pg#' },
+                    { id: 'sub_cuet_pg_math', name: 'Mathematics', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=mathematics-pg#' },
+                    { id: 'sub_cuet_pg_phys', name: 'Physics', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=physics-pg#' },
+                    { id: 'sub_cuet_pg_pbt', name: 'Plant Biotechnology' },
+                    { id: 'sub_cuet_pg_pol', name: 'Political Science', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=political-science-pg#' },
+                    { id: 'sub_cuet_pg_zoo', name: 'Zoology', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=zoology-pg#' },
+                    { id: 'sub_cuet_pg_earth', name: 'Earth Science', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=earth-science-pg#' },
+                    { id: 'sub_cuet_pg_cs', name: 'Computer Science', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=computer-science-pg#' },
+                    { id: 'sub_cuet_pg_hort', name: 'Horticulture', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=horticulture-pg#' },
+                    { id: 'sub_cuet_pg_hist', name: 'History', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=history-pg#' },
+                    { id: 'sub_cuet_pg_fre', name: 'French', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=french-pg#' },
+                    { id: 'sub_cuet_pg_foren', name: 'Forensic Science', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=forensic-science-pg#' },
+                    { id: 'sub_cuet_pg_stat', name: 'Statistics', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=statistics-pg#' },
+                    { id: 'sub_cuet_pg_arch', name: 'Architecture and Planning', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=architecture-and-planning-pg#' },
+                    { id: 'sub_cuet_pg_aihc', name: 'Ancient Indian History, Culture & Architecture', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=ancient-indian-history-culture-architecture-pg#' },
+                    { id: 'sub_cuet_pg_life', name: 'Life Sciences', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=life-sciences-pg#' },
+                    { id: 'sub_cuet_pg_microbio', name: 'Applied Microbiology' },
+                    { id: 'sub_cuet_pg_soc', name: 'Sociology', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sociology-ug#' }
+                ],
+                'default': [
+                    { id: 'sub_def_1', name: 'Paper 1: Core', icon: 'fa-book' },
+                    { id: 'sub_def_2', name: 'Paper 2: Aptitude', icon: 'fa-brain' }
+                ]
+            },
+            courses: {
+                'sub_cuet_pg_bio': [
+                    { id: 'crs_bio1', name: 'Biochemistry 1', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=biochemistry-pg#' },
+                    { id: 'crs_bio2', name: 'Biochemistry 2', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=biochemistry-pg-2&language=en#' }
+                ],
+                'sub_cuet_pg_bot': [
+                    { id: 'crs_bot1', name: 'Botany 1', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=botany-pg#' },
+                    { id: 'crs_bot2', name: 'Botany 2', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=botany-pg-2&language=en#' }
+                ],
+                'sub_cuet_pg_com': [
+                    { id: 'crs_com1', name: 'Commerce 1', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=commerce-pg#' },
+                    { id: 'crs_com2', name: 'Commerce 2', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=commerce-pg-2&language=en#' }
+                ],
+                'sub_cuet_pg_pbt': [
+                    { id: 'crs_pbt1', name: 'Plant Biotechnology 1', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=plant-biotechnology-pg#' },
+                    { id: 'crs_pbt2', name: 'Plant Biotechnology 2', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=plant-biotechnology-pg-2&language=en#' }
+                ],
+                'sub_cuet_anthro': [
+                    { id: 'crs_anthro1', name: 'Anthropology 1', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=anthropology-ug#' },
+                    { id: 'crs_anthro2', name: 'Anthropology 2', url: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=anthropology-ug-course-2#' }
+                ]
+            },
+            chapters: {
+                'sub_maths': [
+                    { id: 'chap_num', name: 'Number System' },
+                    { id: 'chap_pct', name: 'Percentages' },
+                    { id: 'chap_alg', name: 'Algebra' },
+                    { id: 'chap_geo', name: 'Geometry' },
+                    { id: 'chap_trig', name: 'Trigonometry' }
+                ],
+                'sub_phy': [
+                    { id: 'chap_kin', name: 'Kinematics' },
+                    { id: 'chap_nl', name: 'Newton Laws of Motion' },
+                    { id: 'chap_we', name: 'Work & Energy' }
+                ],
+                'default': [
+                    { id: 'chap_d_1', name: 'Chapter 1: Basics' },
+                    { id: 'chap_d_2', name: 'Chapter 2: Intermediate Concepts' },
+                    { id: 'chap_d_3', name: 'Chapter 3: Advanced Applications' }
+                ]
+            },
+            content: {
+                'chap_num': [
+                    { id: 'lec_1', type: 'video', name: 'Optics & Polarisation of Light', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_12/optics-polarisation-of-light-by-prof-m-r-shenoy/' },
+                    { id: 'lec_2', type: 'video', name: 'Work & Energy Theorem', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_11/work-energy-theorem-and-concept-of-potential-energy-by-prof-sanjeev-sanghi/' },
+                    { id: 'lec_3', type: 'video', name: 'LCR Circuits & Alternating Currents', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_12/lcr-circuit-graphical-solution-alternating-currents-lecture-13-by-prof-dipan-k-ghosh/' },
+                    { id: 'dpp_1', type: 'dpp', name: 'Optics DPP', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_12/optics-polarisation-of-light-by-prof-m-r-shenoy/' },
+                    { id: 'dpp_2', type: 'dpp', name: 'Work Energy DPP', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_11/work-energy-theorem-and-concept-of-potential-energy-by-prof-sanjeev-sanghi/' }
+                ],
+                'default': [
+                    { id: 'lec_def1', type: 'video', name: 'Accuracy and Precision of Measuring Instruments', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_11/accuracy-and-precision-of-measuring-instruments-by-prof-sanjeev-sanghi/' },
+                    { id: 'lec_def2', type: 'video', name: 'Energy Stored in Capacitors', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_12/energy-stored-in-capacitors-field-in-dielectrics-gausss-law-in-dielectrics-by-prof-k-thyagarajan/' },
+                    { id: 'dpp_def1', type: 'dpp', name: 'Measurements DPP', url: 'https://sathee.iitk.ac.in/sathee-jee/jee/physics_11/accuracy-and-precision-of-measuring-instruments-by-prof-sanjeev-sanghi/' }
+                ]
+            }
+        };
+
 
         const BACKEND_URL = 'https://neet-prep-backend.onrender.com';
 
@@ -86,6 +475,18 @@
                         if (confirm(msg)) callback();
                     }
                 } catch (e) { if (confirm(msg)) callback(); }
+            }
+        };
+
+        const safeOpenLink = (url) => {
+            try {
+                if (window.Telegram?.WebApp?.openLink) {
+                    window.Telegram.WebApp.openLink(url);
+                } else {
+                    window.open(url, '_blank');
+                }
+            } catch (e) {
+                window.open(url, '_blank');
             }
         };
 
@@ -282,11 +683,11 @@ Student Doubt: ${prompt}`
         // 🎛️ AI AUDIO PLAYER UI COMPONENT
         // ==========================================
         const AIAudioPlayerUI = ({ message, messageId, audioState, setAudioState }) => {
-            const isPlaying = audioState.id === messageId && audioState.isPlaying;
+            const isPlaying = audioState?.id === messageId && audioState?.isPlaying;
 
             return (
                 <button
-                    onClick={() => AIAudioPlayer.play(message.audio, message.text, messageId, setAudioState)}
+                    onClick={() => AIAudioPlayer && AIAudioPlayer.play ? AIAudioPlayer.play(message?.audio, message?.text, messageId, setAudioState) : null}
                     className={`mt-3 text-xs border px-3 py-1.5 rounded-full font-bold shadow-sm transition-colors flex items-center gap-1.5 ${isPlaying
                         ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
                         : 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-800/50'
@@ -588,42 +989,7 @@ Student Doubt: ${prompt}`
                 }
             }
 
-            // Universal Features State
-            const [currentView, setCurrentView] = useState('rooms');
-            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
-
-            // Sub tab state to align with VoiceRoomsTab logic
-            const [vcSubTab, setVcSubTab] = useState('rooms');
-            const [roomToJoinWithPassword, setRoomToJoinWithPassword] = useState(null);
-            const [joinPasswordInput, setJoinPasswordInput] = useState('');
-            const [fullScreenImage, setFullScreenImage] = useState(null);
-            const [showVCCreateModal, setShowVCCreateModal] = useState(false);
-            const [vcCreateName, setVcCreateName] = useState('');
-            const [vcCreateType, setVcCreateType] = useState('temporary');
-            const [vcCreatePass, setVcCreatePass] = useState('');
-            const [vcCreatePhoto, setVcCreatePhoto] = useState('');
-            const [vcCreatePassEnabled, setVcCreatePassEnabled] = useState(false);
-            const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
-
-            const chatEndRef = useRef(null);
-
-            // Friend System & DMs State
-            const [friends, setFriends] = useState([]);
-            const [pendingRequests, setPendingRequests] = useState([]);
-            const [sentRequests, setSentRequests] = useState([]);
-            const [dms, setDms] = useState({});
-            const [activeChatUser, setActiveChatUser] = useState(null);
-
-            const activeChatUserRef = useRef(null);
-            useEffect(() => { activeChatUserRef.current = activeChatUser; }, [activeChatUser]);
-
-            const friendsRef = useRef([]);
-            useEffect(() => { friendsRef.current = friends; }, [friends]);
-
-            const pendingRequestsRef = useRef([]);
-            useEffect(() => { pendingRequestsRef.current = pendingRequests; }, [pendingRequests]);
-
-            const inboxClientRef = useRef(null);
+            
 
             useEffect(() => {
                 let timeoutId;
@@ -759,12 +1125,12 @@ Student Doubt: ${prompt}`
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-b border-ataxy-border z-[40] px-4 h-[calc(60px_+_max(env(safe-area-inset-top),_24px))] pt-[max(env(safe-area-inset-top),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-[#FBFBFB] dark:bg-[#021633] border-b border-[#F0F0F0] dark:border-[#010B1C] z-[40] px-4 pr-[90px] h-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))] pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
-                        <AtaxyLogo className="w-9 h-9 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
-                        <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
+                        <AtaxyLogo className="w-8 h-8 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
+                        <span className="font-black text-lg tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
                     </div>
-                    <div className="flex items-center gap-3 text-[20px]">
+                    <div className="flex items-center gap-3 text-[18px]">
                         <button onClick={handleShare} className="text-gray-500 dark:text-gray-400 hover:text-ataxy-accent-primary dark:hover:text-cyan-400 hover:scale-110 transition-all drop-shadow-sm hover:drop-shadow-[0_0_5px_rgba(0,255,255,0.5)] mr-1" title="Share App">
                             <i className="fa-solid fa-share-nodes"></i>
                         </button>
@@ -1029,7 +1395,7 @@ Student Doubt: ${prompt}`
         // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests }) => {
             const [dmInput, setDmInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
             const [replyingTo, setReplyingTo] = useState(null);
@@ -1404,7 +1770,7 @@ Student Doubt: ${prompt}`
                             <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
                                 <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                     <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
-                                        <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                        <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
                                         <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                                     </div>
                                     <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
@@ -1573,7 +1939,7 @@ Student Doubt: ${prompt}`
                                 <i className="fa-solid fa-search text-sm"></i>
                             </button>
                             <button onClick={() => setShowRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-bell text-sm"></i>
+                                <i className="fa-solid fa-user-plus text-sm"></i>
                                 {pendingRequests.length > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
                                         {pendingRequests.length}
@@ -1682,7 +2048,7 @@ Student Doubt: ${prompt}`
                         <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
                             <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
-                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
                                     <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
@@ -2235,7 +2601,7 @@ Student Doubt: ${prompt}`
             );
         };
 
-        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState }) => {
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
             const currentUserPhoto = tgUser?.photo_url || "";
@@ -2273,7 +2639,7 @@ Student Doubt: ${prompt}`
             const [showRoomRequestsInbox, setShowRoomRequestsInbox] = useState(false);
 
             // Universal Features State
-            const [currentView, setCurrentView] = useState('rooms');
+            const currentView = currentTab === 'chats' ? 'chats' : 'rooms';
             const [selectedProfileUser, setSelectedProfileUser] = useState(null);
 
             // Sub tab state to align with VoiceRoomsTab logic
@@ -2727,6 +3093,47 @@ Student Doubt: ${prompt}`
 
                 const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
                 sendDirectMessage(senderId, payload);
+            };
+
+            const acceptAllFriendRequests = () => {
+                if (!pendingRequests || pendingRequests.length === 0) return;
+                
+                setFriends(prev => {
+                    const prevArray = Array.isArray(prev) ? prev : [];
+                    const newFriends = [...prevArray];
+                    
+                    pendingRequests.forEach(req => {
+                        const senderId = String(req.id);
+                        if (!newFriends.some(f => String(f.id || f) === senderId)) {
+                            newFriends.push({ id: senderId, name: req.name || `User ${senderId}`, photo: req.photo });
+                        }
+                    });
+                    
+                    setCloudData('ataxy_friends', newFriends);
+                    return newFriends;
+                });
+                
+                pendingRequests.forEach(req => {
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    sendDirectMessage(String(req.id), payload);
+                });
+                
+                setPendingRequests([]);
+                setCloudData('ataxy_pending_friends', []);
+                safeAlert(`Accepted ${pendingRequests.length} friend requests`);
+            };
+
+            const rejectAllFriendRequests = () => {
+                if (!pendingRequests || pendingRequests.length === 0) return;
+                
+                pendingRequests.forEach(req => {
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
+                    sendDirectMessage(String(req.id), payload);
+                });
+                
+                setPendingRequests([]);
+                setCloudData('ataxy_pending_friends', []);
+                safeAlert(`Rejected all friend requests`);
             };
 
             const syncFriendStatus = (targetId) => {
@@ -3419,15 +3826,9 @@ Student Doubt: ${prompt}`
                 if (currentView === 'chats') {
                     return (
                         <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
-                            <div className="flex bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-md relative z-30">
-                                <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all ${currentView === 'rooms' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
-                                <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>
-                                    Chats
-                                    {pendingRequests.length > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>}
-                                </button>
-                            </div>
+                            
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} />
                             </div>
                         </div>
                     );
@@ -3435,13 +3836,7 @@ Student Doubt: ${prompt}`
 
                 return (
                     <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010714] text-white space-y-0">
-                        <div className="flex bg-[#031530] p-1.5 rounded-2xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-lg relative z-30">
-                            <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${currentView === 'rooms' ? 'bg-gradient-to-r from-[#00FFFF] to-blue-500 text-[#010714] shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
-                            <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-gradient-to-r from-[#00FFFF] to-blue-500 text-[#010714] shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'text-[#A4DFE6] hover:text-white'}`}>
-                                Chats
-                                {pendingRequests.length > 0 && <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.9)]"></span>}
-                            </button>
-                        </div>
+                        
 
                         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
                             {/* Official Room Section */}
@@ -3462,7 +3857,7 @@ Student Doubt: ${prompt}`
                                         if (voiceState && voiceState.joinRoom) {
                                             const roomObj = { id: '2431', channel_name: 'ATAXY Official Room', host_user_id: '5182808926', owner_id: '5182808926', room_type: 'permanent', is_live: true };
                                             if (window.supabase) {
-                                                try { await window.supabase.from('voice_rooms').insert(roomObj); } catch(e) {}
+                                                try { await window.supabase.from('voice_rooms').insert(roomObj); } catch (e) { }
                                             }
                                             voiceState.joinRoom(roomObj);
                                         } else {
@@ -3605,8 +4000,8 @@ Student Doubt: ${prompt}`
                                     </div>
                                     <div className="flex items-center justify-between mb-4">
                                         <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => setVcCreatePassEnabled(!vcCreatePassEnabled)}>Enable Password</label>
-                                        <div 
-                                            onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if(vcCreatePassEnabled) setVcCreatePass(''); }}
+                                        <div
+                                            onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if (vcCreatePassEnabled) setVcCreatePass(''); }}
                                             className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${vcCreatePassEnabled ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
                                         >
                                             <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${vcCreatePassEnabled ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
@@ -3646,7 +4041,7 @@ Student Doubt: ${prompt}`
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                             <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-bell text-sm"></i>
+                                <i className="fa-solid fa-user-plus text-sm"></i>
                                 {pendingRequests.length > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
                                         {pendingRequests.length}
@@ -4078,7 +4473,7 @@ Student Doubt: ${prompt}`
                         <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRoomRequestsInbox(false)}>
                             <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
-                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bell text-[#00FFFF]"></i> Friend Requests</h3>
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
                                     <button onClick={() => setShowRoomRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
@@ -4164,7 +4559,7 @@ Student Doubt: ${prompt}`
                             pendingRequests={pendingRequests}
                             sentRequests={sentRequests}
                             sendFriendRequest={sendFriendRequest}
-                            setVcSubTab={setCurrentView}
+                            setVcSubTab={onNavigate}
                             setActiveChatUser={setActiveChatUser}
                             setIsMinimized={setIsMinimized}
                             leaveSeat={() => { if (mySeatIndex !== null) moveToAudience(currentUserId, mySeatIndex, currentUserName, currentUserPhoto); }}
@@ -4192,7 +4587,7 @@ Student Doubt: ${prompt}`
             const chatEndRef = useRef(null);
 
             useEffect(() => {
-                return () => AIAudioPlayer.stop();
+                return () => AIAudioPlayer && AIAudioPlayer.stop ? AIAudioPlayer.stop() : null;
             }, []);
 
             useEffect(() => {
@@ -4207,7 +4602,7 @@ Student Doubt: ${prompt}`
                 setAiMsgs([]);
                 setAiInput("");
                 setAiTyping(false);
-                AIAudioPlayer.stop();
+                AIAudioPlayer && AIAudioPlayer.stop ? AIAudioPlayer.stop() : null;
             }, [q.id]);
 
             const handleAskAI = async (promptText) => {
@@ -4399,7 +4794,7 @@ INSTRUCTIONS:
 
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-full">
-                    <div className="fixed top-[max(env(safe-area-inset-top),_24px)] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                    <div className="fixed top-0 pt-[24px] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
                             <div>
@@ -4556,9 +4951,9 @@ INSTRUCTIONS:
                                 </div>
                             </div>
                             <div className="flex items-center justify-between mb-2">
-                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => { if(password){ setPassword(''); } else { setPassword('0000'); }}}>Enable Password</label>
-                                <div 
-                                    onClick={() => { if(password){ setPassword(''); } else { setPassword('0000'); }}}
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => { if (password) { setPassword(''); } else { setPassword('0000'); } }}>Enable Password</label>
+                                <div
+                                    onClick={() => { if (password) { setPassword(''); } else { setPassword('0000'); } }}
                                     className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${password !== '' ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
                                 >
                                     <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${password !== '' ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
@@ -6425,7 +6820,7 @@ INSTRUCTIONS:
         // ==========================================
         // 🚀 AI MENTOR TAB (ATAXY AI MENTOR)
         // ==========================================
-        const AIMentorView = () => {
+        const AIMentorView = ({ onBack }) => {
             const [msg, setMsg] = useState('');
             const [isTyping, setIsTyping] = useState(false);
             const [chats, setChats] = useState([
@@ -6437,7 +6832,7 @@ INSTRUCTIONS:
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, isTyping]);
 
             useEffect(() => {
-                return () => AIAudioPlayer.stop();
+                return () => AIAudioPlayer && AIAudioPlayer.stop ? AIAudioPlayer.stop() : null;
             }, []);
 
             const sendMsg = async (e) => {
@@ -6493,8 +6888,11 @@ INSTRUCTIONS:
 
             return (
                 <div className="pb-[calc(140px_+_env(safe-area-inset-bottom,_0px))] animate-in fade-in flex flex-col h-full bg-gray-50 dark:bg-gray-950">
-                    <div className="fixed top-[max(env(safe-area-inset-top),_24px)] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                    <div className="fixed top-0 pt-[24px] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
+                            <button onClick={onBack} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center shrink-0 transition-colors">
+                                <i className="fa-solid fa-arrow-left"></i>
+                            </button>
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-purple-500/30 shadow-inner" />
                             <div>
                                 <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY Mentor</h2>
@@ -6507,7 +6905,7 @@ INSTRUCTIONS:
                         {chats.map((c, i) => (
                             <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-3.5 rounded-2xl shadow-sm text-sm whitespace-pre-wrap leading-relaxed ${c.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
-                                    <FormattedText text={c.text} />
+                                    <FormattedText text={c?.text || ""} />
                                     {c.sender === 'ai' && <AIAudioPlayerUI message={c} messageId={c.id} audioState={audioState} setAudioState={setAudioState} />}
                                 </div>
                             </div>
@@ -6576,6 +6974,50 @@ INSTRUCTIONS:
 
         // ==========================================
         // 📱 GLOBAL STATUS BAR SPACER
+        const OverallTestTimer = ({ activeGeneratedTest, onSubmit }) => {
+            const [timeLeft, setTimeLeft] = useState(() => {
+                if (!activeGeneratedTest) return 0;
+                if (activeGeneratedTest.type === 'full') return 180 * 60;
+                if (activeGeneratedTest.type === 'half') return 80 * 60;
+                return 0; // count up for DPP
+            });
+            const isCountdown = activeGeneratedTest?.type === 'full' || activeGeneratedTest?.type === 'half';
+
+            useEffect(() => {
+                if (!activeGeneratedTest) return;
+                const timer = setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (isCountdown) {
+                            if (prev <= 1) {
+                                clearInterval(timer);
+                                onSubmit();
+                                return 0;
+                            }
+                            return prev - 1;
+                        } else {
+                            return prev + 1;
+                        }
+                    });
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [activeGeneratedTest, onSubmit, isCountdown]);
+
+            const formatTime = (s) => {
+                const hrs = Math.floor(s / 3600);
+                const mins = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+                const secs = (s % 60).toString().padStart(2, '0');
+                if (hrs > 0) return `${hrs}:${mins}:${secs}`;
+                return `${mins}:${secs}`;
+            };
+
+            return (
+                <span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">
+                    <i className="fa-regular fa-clock"></i> {formatTime(timeLeft)}
+                </span>
+            );
+        };
+
+
         // ==========================================
         const GlobalStatusBar = ({ isVoiceRoom }) => {
             return (
@@ -6584,9 +7026,900 @@ INSTRUCTIONS:
         };
 
         // ==========================================
+        // 🚀 CUSTOM BEAUTIFUL SELECT COMPONENT
+        // ==========================================
+        const CustomSelect = ({ value, onChange, options, placeholder, className, disabled, compact }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const selectRef = useRef(null);
+
+            useEffect(() => {
+                const handleClickOutside = (e) => {
+                    if (selectRef.current && !selectRef.current.contains(e.target)) setIsOpen(false);
+                };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, []);
+
+            const selectedOption = options.find(o => o.value === value) || { label: placeholder || 'Select...', value: '' };
+
+            return (
+                <div ref={selectRef} className={`relative ${className || ''} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div
+                        className={`w-full flex items-center justify-between ${compact ? 'px-3 py-2 rounded-lg text-xs' : 'p-3 rounded-xl text-sm'} border ${isOpen ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-gray-300 dark:border-gray-700'} bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white cursor-pointer transition-all h-full`}
+                        onClick={() => !disabled && setIsOpen(!isOpen)}
+                    >
+                        <span className="truncate pr-4 font-semibold">{selectedOption.label}</span>
+                        <i className={`fa-solid fa-chevron-down ${compact ? 'text-[10px]' : 'text-sm'} transition-transform duration-300 text-gray-400 ${isOpen ? 'rotate-180' : ''}`}></i>
+                    </div>
+                    {isOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[99999] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 pb-1">
+                            {options.length === 0 ? (
+                                <div className="p-3 text-sm text-gray-500 dark:text-gray-400 text-center">No options</div>
+                            ) : (
+                                options.map((opt, i) => (
+                                    <div
+                                        key={i}
+                                        className={`p-3 mx-1 mt-1 rounded-lg text-sm cursor-pointer transition-colors ${value === opt.value ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold shadow-sm' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                        onClick={() => {
+                                            onChange({ target: { value: opt.value } });
+                                            setIsOpen(false);
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ?? GLOBAL TIMER WIDGET
+        // ==========================================
+        const GlobalTimerWidget = ({ timer, setTimer }) => {
+            const { active, targetText, duration, elapsed, paused } = timer;
+            const [isMinimized, setIsMinimized] = useState(false);
+
+            useEffect(() => {
+                if (!active || paused) return;
+                const interval = setInterval(() => {
+                    setTimer(prev => {
+                        if (prev.elapsed >= prev.duration) {
+                            clearInterval(interval);
+                            return { ...prev, paused: true, elapsed: prev.duration };
+                        }
+                        return { ...prev, elapsed: prev.elapsed + 1 };
+                    });
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [active, paused, setTimer]);
+
+            if (!active) return null;
+
+            const remaining = Math.max(0, duration - elapsed);
+            const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const s = (remaining % 60).toString().padStart(2, '0');
+            const progress = (elapsed / duration) * 100;
+
+            return (
+                <div className={`fixed z-[9999] top-[80px] right-4 bg-slate-900/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-64'}`}>
+                    {isMinimized ? (
+                        <div onClick={() => setIsMinimized(false)} className="px-4 py-3 flex items-center gap-3 cursor-pointer group hover:bg-slate-800/50">
+                            <i className="fa-solid fa-clock text-blue-400 group-hover:animate-spin"></i>
+                            <span className="font-mono font-bold text-white tracking-widest">{m}:{s}</span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col relative">
+                            <div className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                            <div className="p-3 flex justify-between items-center border-b border-white/10">
+                                <span className="text-xs font-bold text-blue-300 uppercase tracking-widest truncate flex-1 mr-2"><i className="fa-solid fa-bullseye mr-2"></i>{targetText || 'Focus Session'}</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsMinimized(true)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-compress text-xs"></i></button>
+                                    <button onClick={() => setTimer({ ...timer, active: false })} className="text-gray-400 hover:text-red-400"><i className="fa-solid fa-xmark text-xs"></i></button>
+                                </div>
+                            </div>
+                            <div className="p-4 flex flex-col items-center justify-center">
+                                <span className={`text-4xl font-black font-mono tracking-widest ${remaining === 0 ? 'text-green-400 animate-pulse' : 'text-white'}`}>{m}:{s}</span>
+                                <div className="flex items-center gap-4 mt-4">
+                                    <button onClick={() => setTimer({ ...timer, paused: !paused })} className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-colors">
+                                        <i className={`fa-solid ${paused ? 'fa-play ml-0.5' : 'fa-pause'}`}></i>
+                                    </button>
+                                    <button onClick={() => setTimer({ ...timer, elapsed: 0, paused: true })} className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors">
+                                        <i className="fa-solid fa-rotate-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ?? STUDY PARTNER SYSTEM
+        // ==========================================
+        const STUDY_PARTNERS = [
+            { id: 'mia_cheer', name: 'Mia (Female)', icon: 'fa-user-nurse', color: 'text-fuchsia-400', vibe: 'caring & energetic' },
+            { id: 'prof_oak', name: 'Oak (Male)', icon: 'fa-user-tie', color: 'text-amber-400', vibe: 'wise & encouraging' }
+        ];
+
+        const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage, currentTab, showQuiz }) => {
+            const widgetRef = useRef(null);
+            const canvasRef = useRef(null);
+            const threeRef = useRef(null);
+            const physicsRef = useRef({
+                x: 100,
+                y: -200, 
+                vx: 0,
+                vy: 0,
+                isGrounded: false,
+                state: 'falling',
+                facing: 1,
+                lastJump: Date.now(),
+                walkTimer: Date.now(),
+                walkDir: 1,
+                isDragging: false,
+                lastMouseX: 0,
+                lastMouseY: 0,
+                mouseVx: 0,
+                mouseVy: 0,
+                fallenTimeout: null
+            });
+            
+            const playSyntheticSound = (type) => {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    const ctx = new AudioContext();
+                    const osc = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    osc.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    if (type === 'hit') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(150, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15);
+                        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                        osc.start(); osc.stop(ctx.currentTime + 0.15);
+                    } else if (type === 'throw') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(300, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.3);
+                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(); osc.stop(ctx.currentTime + 0.3);
+                    } else if (type === 'boing') {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(400, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start(); osc.stop(ctx.currentTime + 0.2);
+                    }
+                } catch (e) { console.error("Audio block", e); }
+            };
+            
+            const [emotion, setEmotion] = useState('idle'); 
+            const [visible, setVisible] = useState(false);
+            const [renderState, setRenderState] = useState('falling');
+            const [facing, setFacing] = useState(1); 
+            const [availableAnims, setAvailableAnims] = useState([]);
+            const [previewAnim, setPreviewAnim] = useState(null);
+
+            
+
+            // Three.js Initialization
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+                camera.position.set(0, 1.5, 9);
+                
+                const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true, antialias: true });
+                renderer.setSize(300, 300);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                
+                const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+                scene.add(ambientLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+                dirLight.position.set(2, 5, 5);
+                scene.add(dirLight);
+                
+                const clock = new THREE.Clock();
+                let mixer;
+                
+                const loader = new GLTFLoader();
+                loader.load('character.glb', (gltf) => {
+                    const model = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    // Auto-scale to a comfortable height for the camera
+                    const targetHeight = 1.3; 
+                    const baseScale = targetHeight / size.y;
+                    
+                    model.scale.setScalar(baseScale);
+                    
+                    // Center the model on X and Z to fix off-screen exports, but keep feet grounded on Y
+                    const scaledBox = new THREE.Box3().setFromObject(model);
+                    const center = scaledBox.getCenter(new THREE.Vector3());
+                    model.position.set(-center.x, -0.65, -center.z); // -0.65 to ground it relative to 1.3 height
+                    scene.add(model);
+                    
+                    if (threeRef.current) threeRef.current.baseScale = baseScale;
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(model);
+                        const animNames = gltf.animations.map(a => a.name);
+                        setAvailableAnims(animNames);
+                        
+                        const animMap = {};
+                        gltf.animations.forEach(clip => {
+                            animMap[clip.name] = clip; // Exact name access
+                        });
+                        
+                        // Smart default mapping based on known animations
+                        animMap.idle = animMap['Idle_Loop'] || gltf.animations[0];
+                        animMap.walk = animMap['Walk_Loop'] || animMap.idle;
+                        animMap.fall = animMap['Jump_Loop'] || animMap['Flying Forward'] || animMap.idle;
+                        animMap.write = animMap['Idle_TalkingPhone_Loop'] || animMap.idle;
+                        animMap.talk = animMap['Idle_Talking_Loop'] || animMap.idle;
+                        animMap.hit = animMap['Hit_Knockback'] || animMap.idle;
+                        // Advanced Brain Animations
+                        animMap.listening = animMap['Idle Listening'] || animMap.idle;
+                        animMap.nod = animMap['Head Nod'] || animMap.idle;
+                        animMap.greet = animMap['Greeting'] || animMap.idle;
+                        animMap.victory = animMap['Victory'] || animMap.idle;
+                        animMap.confused = animMap['Confused'] || animMap.idle;
+                        animMap.yes = animMap['Yes'] || animMap.idle;
+                        
+                        if (!animMap.idle) animMap.idle = gltf.animations[0];
+                        if (!animMap.walk) animMap.walk = animMap.idle;
+                        if (!animMap.fall) animMap.fall = animMap.idle;
+                        
+                        threeRef.current.animMap = animMap;
+                        threeRef.current.mixer = mixer;
+                        threeRef.current.currentAction = mixer.clipAction(animMap.idle);
+                        threeRef.current.currentAction.play();
+                    }
+                });
+                
+                threeRef.current = { scene, camera, renderer, clock, currentAnimState: 'idle' };
+                
+                return () => renderer.dispose();
+            }, []);
+
+            useEffect(() => {
+                if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
+                    setVisible(true);
+                    
+                    const isImportant = partnerMessage.type === 'missed_target' || partnerMessage.type === 'reminder' || partnerMessage.requireAcknowledge;
+                    
+                    
+                    setEmotion(partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking'));
+                    
+                    if (isImportant) return; // Wait for Got It button
+                    
+                    const t = setTimeout(() => {
+                        setVisible(false);
+                        
+                        setTimeout(() => {
+                            setPartnerMessage(null);
+                            setEmotion('idle');
+                        }, 500); 
+                    }, Math.max(6000, partnerMessage.text.length * 70)); 
+                    return () => clearTimeout(t);
+                }
+            }, [partnerMessage, partnerConfig]);
+
+            // Chatter Engine
+            useEffect(() => {
+                if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
+                
+                const chatterPhrases = {
+                    'mia_cheer': ["You're doing amazing!", "Keep that energy up!", "Woohoo, let's crush these exams!", "Remember to take deep breaths!"],
+                    'prof_oak': ["Consistency is the key to mastery.", "Patience, young scholar.", "A focused mind achieves great things.", "Review your mistakes carefully."],
+                    'chief_commander': ["No slacking! Back to work!", "Discipline equals success!", "Focus! Don't let me catch you dozing!", "Push harder! You can do this!"],
+                    'serena_health': ["Don't forget to drink water!", "Sit up straight, posture matters!", "Take a quick stretch break soon.", "Your health is just as important as your studies."]
+                };
+                
+                const chatterInterval = setInterval(() => {
+                    // Only chatter if visible, grounded, and not already talking
+                    const p = physicsRef.current;
+                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.6) {
+                        const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
+                        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                        setPartnerMessage({ type: 'chatter', text: randomPhrase });
+                    }
+                }, 15000); 
+
+                return () => clearInterval(chatterInterval);
+            }, [partnerConfig, emotion, setPartnerMessage]);
+            useEffect(() => {
+                if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
+                
+                let animationFrameId;
+
+                const handlePointerMove = (e) => {
+                    const p = physicsRef.current;
+                    if (p.isDragging) {
+                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                        p.mouseVx = clientX - p.lastMouseX;
+                        p.mouseVy = clientY - p.lastMouseY;
+                        p.x = clientX;
+                        p.y = clientY;
+                        p.lastMouseX = clientX;
+                        p.lastMouseY = clientY;
+                    }
+                };
+
+                const handlePointerUp = (e) => {
+                    const p = physicsRef.current;
+                    if (p.isDragging) {
+                        p.isDragging = false;
+                        p.vx = p.mouseVx * 1.5;
+                        p.vy = p.mouseVy * 1.5;
+                        p.isGrounded = false;
+                        setEmotion('idle');
+                        playSyntheticSound('throw');
+                    }
+                };
+
+                window.addEventListener('pointermove', handlePointerMove);
+                window.addEventListener('pointerup', handlePointerUp);
+                window.addEventListener('touchmove', handlePointerMove, { passive: false });
+                window.addEventListener('touchend', handlePointerUp);
+
+                const loop = () => {
+                    if (currentTab === 'questions' && showQuiz && !visible) {
+                        if (widgetRef.current) widgetRef.current.style.opacity = '0';
+                        animationFrameId = requestAnimationFrame(loop);
+                        return;
+                    } else {
+                        if (widgetRef.current) widgetRef.current.style.opacity = '1';
+                    }
+
+                    const p = physicsRef.current;
+                    const now = Date.now();
+                    
+                    if (p.isDragging) {
+                        p.state = 'jumping';
+                        p.isGrounded = false;
+                    } else {
+                        p.vy += 0.6; // Gravity
+                        if (p.vy > 20) p.vy = 20;
+                        
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 100) { p.x = 100; p.vx = 0; p.walkDir = 1; }
+                        if (p.x > window.innerWidth - 100) { p.x = window.innerWidth - 100; p.vx = 0; p.walkDir = -1; }
+
+                        p.isGrounded = false;
+                        
+                        
+                        // Viewport Loss Recovery
+                        if (p.y < -200 || p.y > window.innerHeight + 200) {
+                            p.y = -50;
+                            p.vy = 0;
+                            p.x = window.innerWidth / 2;
+                            setEmotion('angry');
+                            setPartnerMessage({ type: 'chatter', text: 'Wait for me!!' });
+                            // playSyntheticSound('throw'); // Swoosh sound
+                        }
+                        
+                        
+                        // Brain logic initialization
+                        if (typeof p.brainState === 'undefined') {
+                            p.brainState = 'wander'; 
+                            p.brainTimer = now;
+                            p.tourStep = -1;
+                            p.lastTargetCheck = 0;
+                            p.groundTarget = null;
+                            
+                            // Check localstorage for tour
+                            if (!localStorage.getItem('ataxy_tour_done')) {
+                                p.brainState = 'tour';
+                                localStorage.setItem('ataxy_tour_done', 'true');
+                            }
+                        }
+
+                        // Daily Target Deadlines AI
+                        if (now - p.lastTargetCheck > 5000) {
+                            p.lastTargetCheck = now;
+                            try {
+                                const stored = JSON.parse(localStorage.getItem('ataxy_targets') || '{}');
+                                const todayStr = new Date().toDateString();
+                                const todayTargets = stored[todayStr] || [];
+                                
+                                const currentHour = new Date().getHours();
+                                const currentMinute = new Date().getMinutes();
+                                const currentTotalMins = currentHour * 60 + currentMinute;
+                                
+                                let lateTarget = null;
+                                let pendingTarget = null;
+                                
+                                for (const t of todayTargets) {
+                                    if (!t.done && t.startTime) {
+                                        const [th, tm] = t.startTime.split(':').map(Number);
+                                        const targetTotalMins = th * 60 + tm;
+                                        
+                                        // If we are past the start time!
+                                        if (currentTotalMins >= targetTotalMins) {
+                                            let isLate = true;
+                                            if (t.endTime) {
+                                                const [eh, em] = t.endTime.split(':').map(Number);
+                                                const endTotalMins = eh * 60 + em;
+                                                if (currentTotalMins <= endTotalMins) {
+                                                    isLate = false; // we are inside the window
+                                                    if (!pendingTarget) pendingTarget = t;
+                                                }
+                                            }
+                                            
+                                            if (isLate) lateTarget = t;
+                                        }
+                                    }
+                                }
+                                
+                                if (lateTarget && p.brainState !== 'angry' && p.brainState !== 'tour') {
+                                    p.brainState = 'angry';
+                                    p.brainTimer = now;
+                                    setEmotion('angry');
+                                    p.state = 'angry';
+                                    p.vx = 0;
+                                    setPartnerMessage({ type: 'chatter', text: `You are LATE for "${lateTarget.text}"! Go complete it NOW!` });
+                                } else if (pendingTarget && p.brainState !== 'angry' && p.brainState !== 'tour' && Math.random() < 0.2) {
+                                    setEmotion('talking');
+                                    p.state = 'greet';
+                                    setPartnerMessage({ type: 'chatter', text: `Reminder: You should be working on "${pendingTarget.text}" right now!` });
+                                }
+                            } catch(e) {}
+                        }
+
+                        // Physics / Collision
+                        if (p.vy >= 0) {
+                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                            let landed = false;
+                            
+                            // Check if still on the tracked groundTarget
+                            if (p.isGrounded && p.groundTarget) {
+                                const rect = p.groundTarget.getBoundingClientRect();
+                                // Check if button is still visible on screen and character is within its X bounds
+                                if (rect.height > 0 && rect.width > 0 && p.x > rect.left && p.x < rect.right) {
+                                    p.y = rect.top; // Glue to it during scroll!
+                                    p.vy = 0;
+                                    landed = true;
+                                } else {
+                                    p.groundTarget = null;
+                                }
+                            }
+                            
+                            if (!landed) {
+                                for (let i = 0; i < platforms.length; i++) {
+                                    const rect = platforms[i].getBoundingClientRect();
+                                    if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
+                                        if (p.x > rect.left && p.x < rect.right) {
+                                            p.y = rect.top;
+                                            p.vy = 0;
+                                            p.isGrounded = true;
+                                            p.groundTarget = platforms[i];
+                                            landed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!landed && p.y >= window.innerHeight - 10) {
+                                p.y = window.innerHeight - 10;
+                                p.vy = 0;
+                                p.isGrounded = true;
+                                p.groundTarget = null;
+                            } else if (!landed) {
+                                p.isGrounded = false;
+                            }
+                        }
+
+                        if (p.isGrounded && !visible) {
+                            if (p.brainState === 'tour') {
+                                // Tour State Machine
+                                const tourSteps = [
+                                    { text: "Welcome to ATAXY! I'm your AI study partner. Let me show you around!", target: null, anim: 'greet', duration: 4000 },
+                                    { text: "Up here is the Header. This is where you can see your rank and profile settings.", target: 'header', anim: 'point', duration: 4000 },
+                                    { text: "This is the Home tab! It shows your Daily Targets, progress, and 7-Day Momentum.", target: 'button:has(i.fa-rocket), a:has(i.fa-rocket)', anim: 'nod', duration: 4500 },
+                                    { text: "This is the Practice area where you can solve MCQs for NEET or JEE!", target: 'button:has(i.fa-layer-group), a:has(i.fa-layer-group)', anim: 'point', duration: 4000 },
+                                    { text: "Need help? Tap the Chat icon to talk to me about concepts or get study plans.", target: 'button:has(i.fa-comments), a:has(i.fa-comments)', anim: 'talk', duration: 4000 },
+                                    { text: "I'll be hanging around to help you out. Good luck dominating your exams!", target: null, anim: 'victory', duration: 4000 }
+                                ];
+                                
+                                if (now - p.brainTimer > (p.tourStep >= 0 ? tourSteps[p.tourStep].duration : 1000)) {
+                                    p.tourStep++;
+                                    if (p.tourStep >= tourSteps.length) {
+                                        p.brainState = 'wander';
+                                    } else {
+                                        const step = tourSteps[p.tourStep];
+                                        setPartnerMessage({ type: 'chatter', text: step.text });
+                                        p.brainTimer = now;
+                                        if (step.target) {
+                                            const targetEl = document.querySelector(step.target);
+                                            if (targetEl) {
+                                                const rect = targetEl.getBoundingClientRect();
+                                                const center = rect.left + rect.width / 2;
+                                                p.x = center; // teleport for tour
+                                                if (center > window.innerWidth / 2) p.facing = 1; else p.facing = -1;
+                                            }
+                                        }
+                                        p.state = step.anim;
+                                    }
+                                }
+                            } else if (p.brainState === 'angry') {
+                                if (now - p.brainTimer > 8000) {
+                                    p.brainState = 'wander';
+                                }
+                            } else {
+                                // Wander & Parkour Mode
+                                if (p.brainState === 'recovering') {
+                                    if (now - p.brainTimer > 3000) {
+                                        p.state = 'recovering';
+                                        if (now - p.brainTimer > 5000) {
+                                            p.brainState = 'wander';
+                                            p.state = 'idle';
+                                            setEmotion('idle');
+                                        }
+                                    }
+                                } else if (now - p.lastJump > 6000 && Math.random() < 0.01) {
+                                    p.vy = -16; 
+                                    p.isGrounded = false;
+                                    p.lastJump = now;
+                                    p.state = 'jumping';
+                                    p.groundTarget = null;
+                                } else {
+                                    if (now - p.walkTimer > 2000) {
+                                        if (Math.random() > 0.5) {
+                                            p.vx = 0;
+                                            p.state = 'idle';
+                                            if (Math.random() > 0.2) {
+                                                const idles = ['idle', 'listening', 'nod', 'confused', 'yes'];
+                                                p.state = idles[Math.floor(Math.random() * idles.length)];
+                                            }
+                                        } else {
+                                            // Advanced UI Parkour / Pathfinding
+                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                                            let jumpTarget = null;
+                                            
+                                            if (platforms.length > 0 && Math.random() > 0.4) {
+                                                const visiblePlatforms = Array.from(platforms).filter(el => {
+                                                    const r = el.getBoundingClientRect();
+                                                    return r.height > 0 && r.width > 0 && r.top > 0 && r.bottom < window.innerHeight;
+                                                });
+                                                
+                                                // Mountain Climbing: Find platforms HIGHER than current position (smaller Y)
+                                                const higherPlatforms = visiblePlatforms.filter(el => {
+                                                    const r = el.getBoundingClientRect();
+                                                    return r.top < p.y - 40; // At least 40px higher
+                                                });
+                                                
+                                                if (higherPlatforms.length > 0) {
+                                                    // Pick the lowest of the higher platforms to climb step-by-step
+                                                    higherPlatforms.sort((a,b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
+                                                    jumpTarget = higherPlatforms[0]; // Nearest one going up
+                                                } else {
+                                                    // Reached the top or no higher platforms! Wander or jump down
+                                                    jumpTarget = visiblePlatforms[Math.floor(Math.random() * visiblePlatforms.length)];
+                                                }
+
+                                            }
+                                            
+                                            if (jumpTarget) {
+                                                const rect = jumpTarget.getBoundingClientRect();
+                                                const tX = rect.left + rect.width / 2;
+                                                const tY = rect.top;
+                                                
+                                                // Parkour leap
+                                                const dx = tX - p.x;
+                                                const dy = tY - p.y;
+                                                
+                                                if (Math.abs(dy) > 20) {
+                                                    // Need to jump up or down
+                                                    p.vy = -16;
+                                                    p.vx = (dx / 40); // 40 frames flight time approx
+                                                    p.isGrounded = false;
+                                                    p.groundTarget = null;
+                                                    p.lastJump = now;
+                                                    p.state = 'jumping';
+                                                } else {
+                                                    // Walk to it
+                                                    p.walkDir = (dx > 0) ? 1 : -1;
+                                                    p.vx = p.walkDir * 2.5; 
+                                                    p.state = 'walking';
+                                                }
+                                            } else {
+                                                p.walkDir = Math.random() > 0.5 ? 1 : -1;
+                                                p.vx = p.walkDir * 1.5; 
+                                                p.state = 'walking';
+                                            }
+                                        }
+                                        p.walkTimer = now;
+                                    }
+                                }
+                            }
+} else if (p.isGrounded && visible) {
+                            p.vx = 0;
+                            p.state = 'idle';
+                        } else {
+                            if (p.vy < -2) p.state = 'climbing'; 
+                            else p.state = 'jumping';
+                            p.vx = p.vx * 0.99; 
+                        }
+
+                        if (p.vx > 0.1) p.facing = 1;
+                        else if (p.vx < -0.1) p.facing = -1;
+                    }
+                    if (widgetRef.current) {
+                        widgetRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
+                    }
+
+                    if (threeRef.current && threeRef.current.mixer) {
+                        const dt = threeRef.current.clock.getDelta();
+                        threeRef.current.mixer.update(dt);
+                        threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
+                        
+                        let targetAnim = 'idle';
+                        if (previewAnim) {
+                            targetAnim = previewAnim;
+                        } else {
+                            if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
+                            else if (p.state === 'walking') targetAnim = 'walk';
+                            else if (p.state === 'fallen') targetAnim = 'hit';
+                        }
+                        
+                        if (threeRef.current.currentAnimState !== targetAnim) {
+                            const clip = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
+                            if (clip) {
+                                const nextAction = threeRef.current.mixer.clipAction(clip);
+                                if (threeRef.current.currentAction) {
+                                    nextAction.reset().fadeIn(0.2).play();
+                                    threeRef.current.currentAction.fadeOut(0.2);
+                                } else {
+                                    nextAction.play();
+                                }
+                                threeRef.current.currentAction = nextAction;
+                            }
+                            threeRef.current.currentAnimState = targetAnim;
+                        }
+                        
+                        if (threeRef.current.scene.children.length > 2) {
+                            const model = threeRef.current.scene.children[2];
+                            const baseScale = threeRef.current.baseScale || 1;
+                            if (model) {
+                                let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
+                                if (p.state === 'idle') targetRotation = 0; // face forward when idle or talking
+                                model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
+                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
+                            }
+                        }
+                    }
+
+                    setRenderState(prev => prev !== p.state ? p.state : prev);
+                    setFacing(prev => prev !== p.facing ? p.facing : prev);
+                    
+                    animationFrameId = requestAnimationFrame(loop);
+                };
+
+                animationFrameId = requestAnimationFrame(loop);
+                return () => {
+                    cancelAnimationFrame(animationFrameId);
+                    window.removeEventListener('pointermove', handlePointerMove);
+                    window.removeEventListener('pointerup', handlePointerUp);
+                    window.removeEventListener('touchmove', handlePointerMove);
+                    window.removeEventListener('touchend', handlePointerUp);
+                };
+            }, [partnerConfig, currentTab, visible, showQuiz]);
+
+            if (!partnerConfig.enabled || partnerConfig.character === 'none') return null;
+
+            const partnerDef = STUDY_PARTNERS.find(p => p.id === partnerConfig.character) || STUDY_PARTNERS[1];
+            const isHidden = (currentTab === 'questions' && showQuiz) && !visible; 
+
+            let isFemale = partnerConfig.character.includes('serena') || partnerConfig.character.includes('mia');
+            let skinColor = "#fcd5ce";
+            let shirtColor = partnerDef.color.includes('rose') ? '#fb7185' : partnerDef.color.includes('amber') ? '#fbbf24' : partnerDef.color.includes('fuchsia') ? '#e879f9' : '#94a3b8';
+            let pantsColor = isFemale ? "#f1f5f9" : "#334155"; 
+            let hairColor = isFemale ? "#78350f" : "#1e293b"; 
+            
+            let faceText = "(^‿^)";
+            if (emotion === 'angry') { faceText = "(>_<)"; }
+            else if (emotion === 'talking') { faceText = "(^o^)"; }
+            else if (emotion === 'thinking' || emotion === 'writing') { faceText = "(-_-)"; }
+            else if (emotion === 'idle') { faceText = "(•‿•)"; }
+
+            const getAnimation = (part) => {
+                if (renderState === 'climbing') {
+                    if (part === 'armL') return 'proceduralClimbArmL 0.3s infinite alternate';
+                    if (part === 'armR') return 'proceduralClimbArmR 0.3s infinite alternate';
+                    if (part === 'legL') return 'proceduralClimbLeg 0.2s infinite alternate';
+                    if (part === 'legR') return 'proceduralClimbLeg 0.2s infinite alternate-reverse';
+                    return 'none';
+                }
+                if (renderState === 'walking') {
+                    if (part === 'armL') return 'proceduralLegR 0.5s infinite linear';
+                    if (part === 'armR') return 'proceduralLegL 0.5s infinite linear';
+                    if (part === 'legL') return 'proceduralLegL 0.5s infinite linear';
+                    if (part === 'legR') return 'proceduralLegR 0.5s infinite linear';
+                    if (part === 'body') return 'proceduralWalk 0.5s infinite linear';
+                }
+                if (renderState === 'jumping') {
+                    if (part === 'armL') return 'proceduralClimbArmL 1s forwards';
+                    if (part === 'armR') return 'proceduralClimbArmR 1s forwards';
+                    if (part === 'legL') return 'proceduralLegL 1s forwards';
+                }
+                if (emotion === 'happy' || emotion === 'talking') {
+                    if (part === 'armL') return 'proceduralTalk 1s infinite alternate ease-in-out';
+                    if (part === 'armR') return 'proceduralTalk 0.5s infinite alternate ease-in-out';
+                    if (part === 'body' && emotion === 'happy') return 'animate-bounce';
+                }
+                if (emotion === 'writing') {
+                    if (part === 'armR') return 'proceduralWrite 0.2s infinite alternate';
+                    if (part === 'armL') return 'proceduralTalk 1s infinite alternate';
+                    if (part === 'body') return 'animate-pulse';
+                }
+                return 'none';
+            };
+
+            return (
+                <div 
+                    ref={widgetRef}
+                    className={`fixed z-[10000] top-0 left-0 pointer-events-none transition-opacity duration-300`}
+                >
+                    <style>{`
+                        @keyframes proceduralWalk {
+                            0% { transform: translateY(0) rotate(0deg); }
+                            25% { transform: translateY(-3px) rotate(3deg); }
+                            50% { transform: translateY(0) rotate(0deg); }
+                            75% { transform: translateY(-3px) rotate(-3deg); }
+                            100% { transform: translateY(0) rotate(0deg); }
+                        }
+                        @keyframes proceduralLegL {
+                            0% { transform: rotate(0deg); }
+                            25% { transform: rotate(40deg); }
+                            50% { transform: rotate(0deg); }
+                            75% { transform: rotate(-40deg); }
+                            100% { transform: rotate(0deg); }
+                        }
+                        @keyframes proceduralLegR {
+                            0% { transform: rotate(0deg); }
+                            25% { transform: rotate(-40deg); }
+                            50% { transform: rotate(0deg); }
+                            75% { transform: rotate(40deg); }
+                            100% { transform: rotate(0deg); }
+                        }
+                        @keyframes proceduralClimbArmL {
+                            0% { transform: rotate(150deg); }
+                            100% { transform: rotate(180deg) translateY(-5px); }
+                        }
+                        @keyframes proceduralClimbArmR {
+                            0% { transform: rotate(-150deg); }
+                            100% { transform: rotate(-180deg) translateY(-5px); }
+                        }
+                        @keyframes proceduralClimbLeg {
+                            0% { transform: rotate(20deg) translateY(0); }
+                            100% { transform: rotate(-20deg) translateY(-5px); }
+                        }
+                        @keyframes proceduralWrite {
+                            0% { transform: rotate(0deg) translate(0, 0); }
+                            100% { transform: rotate(-30deg) translate(-5px, 5px); }
+                        }
+                        @keyframes proceduralTalk {
+                            0% { transform: rotate(0deg); }
+                            25% { transform: rotate(30deg); }
+                            50% { transform: rotate(10deg); }
+                            75% { transform: rotate(40deg); }
+                            100% { transform: rotate(0deg); }
+                        }
+                        @keyframes proceduralPoint {
+                            0% { transform: rotate(-90deg) translateY(5px); }
+                            100% { transform: rotate(-90deg) translateY(5px) scale(1.1); }
+                        }
+                    `}</style>
+                    <div 
+                        className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%] cursor-grab active:cursor-grabbing`} 
+                        style={{ zIndex: 10050 }}
+                        onPointerDown={(e) => {
+                            
+                            const p = physicsRef.current;
+                            p.isDragging = true;
+                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            p.lastMouseX = clientX;
+                            p.lastMouseY = clientY;
+                            setEmotion('angry');
+                            setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
+                        }}
+                    >
+                        <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                            <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
+                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
+                        </div>
+                        <div 
+                            className="relative flex flex-col items-center drop-shadow-xl" 
+                            style={{ 
+                                transformOrigin: 'bottom center',
+                                width: '300px',
+                                height: '300px',
+                                cursor: 'grab'
+                            }}
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setEmotion('happy'); 
+                                physicsRef.current.vy = -12; 
+                                physicsRef.current.isGrounded = false; 
+                                setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
+                                playSyntheticSound('boing'); 
+                            }}
+                        >
+                            <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
+                        </div>
+                        
+                        {availableAnims.length > 0 && (
+                            <div className="absolute top-0 right-[-150px] bg-black/80 text-white text-[10px] p-2 rounded max-h-[300px] overflow-y-auto z-50 pointer-events-auto flex flex-col gap-1 w-[140px] shadow-xl">
+                                <div className="font-bold text-xs mb-1 text-blue-400">Animation Debugger</div>
+                                <button onClick={(e) => { e.stopPropagation(); setPreviewAnim(null); }} className={`text-left hover:bg-white/20 p-1 rounded transition-colors ${!previewAnim ? 'bg-blue-600 font-bold' : ''}`}>⚡ Auto (Physics)</button>
+                                <div className="w-full h-px bg-white/20 my-1"></div>
+                                {availableAnims.map(a => (
+                                    <button key={a} onClick={(e) => { e.stopPropagation(); setPreviewAnim(a); }} className={`text-left hover:bg-white/20 p-1 rounded truncate transition-colors ${previewAnim === a ? 'bg-blue-500 font-bold' : ''}`} title={a}>{a}</button>
+                                ))}
+                            </div>
+                        )}
+
+                        
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
         // 🚀 MAIN APP & NAVIGATION ROUTER
         // ==========================================
         function App() {
+            // SATHEE Back-Navigation State Restoration
+            React.useEffect(() => {
+                const returnType = sessionStorage.getItem('ataxy_return_type');
+                const returnExamId = sessionStorage.getItem('ataxy_return_exam');
+                const returnSectionId = sessionStorage.getItem('ataxy_return_section');
+                const returnBatchId = sessionStorage.getItem('ataxy_return_batch');
+                if (returnType === 'others' && returnExamId) {
+                    // Set timeout to ensure SATHEE_DATA is parsed
+                    setTimeout(() => {
+                        setActivePracticeBatch({ type: 'others', name: 'Others', id: 'pb_others' });
+                        setCurrentTab('questions'); // This makes sure the app renders the practice/others tab
+                        if (typeof SATHEE_DATA !== 'undefined') {
+                            const exam = SATHEE_DATA.exams.find(e => e.id === returnExamId);
+                            if (exam) {
+                                setActiveSatheeExam(exam);
+                                if (returnSectionId && SATHEE_DATA.sections && SATHEE_DATA.sections[exam.id]) {
+                                    const section = SATHEE_DATA.sections[exam.id].find(s => s.id === returnSectionId);
+                                    if (section) setActiveSatheeSection(section);
+                                }
+                                if (returnBatchId) {
+                                    let foundBatch = null;
+                                    for (const key in SATHEE_DATA.batches) {
+                                        const b = SATHEE_DATA.batches[key].find(x => x.id === returnBatchId);
+                                        if (b) { foundBatch = b; break; }
+                                    }
+                                    if (foundBatch) setActiveSatheeBatch(foundBatch);
+                                }
+                            }
+                        }
+                    }, 50);
+                    sessionStorage.removeItem('ataxy_return_type');
+                    sessionStorage.removeItem('ataxy_return_exam');
+                    sessionStorage.removeItem('ataxy_return_section');
+                    sessionStorage.removeItem('ataxy_return_batch');
+                }
+            }, []);
+
             const safeRenderText = (val) => {
                 if (val === null || val === undefined) return '';
                 if (typeof val === 'object') {
@@ -6650,6 +7983,7 @@ INSTRUCTIONS:
             const handleBackRef = useRef(null);
 
             const handleBack = () => {
+                setIsManageMode(false);
                 const event = new CustomEvent('ataxy_back_requested', { cancelable: true });
                 window.dispatchEvent(event);
                 if (event.defaultPrevented) return;
@@ -6678,6 +8012,10 @@ INSTRUCTIONS:
                 else if (activePracticeSubject) setActivePracticeSubject(null);
                 else if (activePracticeMode) setActivePracticeMode(null);
                 else if (activePracticeFile) setActivePracticeFile(null);
+                else if (activeSatheeSubject) setActiveSatheeSubject(null);
+                else if (activeSatheeBatch) setActiveSatheeBatch(null);
+                else if (activeSatheeSection) setActiveSatheeSection(null);
+                else if (activeSatheeExam) setActiveSatheeExam(null);
                 else if (activePracticeBatch) setActivePracticeBatch(null);
                 else if (currentTab !== 'home') setCurrentTab('home');
             };
@@ -6791,6 +8129,15 @@ INSTRUCTIONS:
             const [currentTab, setCurrentTab] = useState('home');
             const [vcChatOpen, setVcChatOpen] = useState(false);
             const [activePracticeBatch, setActivePracticeBatch] = useState(null);
+
+            const [activeSatheeExam, setActiveSatheeExam] = useState(null);
+            const [activeSatheeSection, setActiveSatheeSection] = useState(null);
+            const [activeSatheeBatch, setActiveSatheeBatch] = useState(null);
+            const [activeSatheeSubject, setActiveSatheeSubject] = useState(null);
+
+
+
+
             const [activePracticeMode, setActivePracticeMode] = useState(null);
             const [activeQuestionType, setActiveQuestionType] = useState(null);
             const [activePracticeSubject, setActivePracticeSubject] = useState(null);
@@ -6803,17 +8150,22 @@ INSTRUCTIONS:
             const [practiceVisited, setPracticeVisited] = useState(() => safeGetJSON('ataxy_practice_visited', null) || []);
             const [practiceShowPalette, setPracticeShowPalette] = useState(false);
             const [practiceShowTopicModal, setPracticeShowTopicModal] = useState(false);
+            const [isManageMode, setIsManageMode] = useState(false);
             const [customGeneratorMode, setCustomGeneratorMode] = useState(null);
             const [historyFilter, setHistoryFilter] = useState('all');
             const [historySortOrder, setHistorySortOrder] = useState('newest');
             const [historySearchQuery, setHistorySearchQuery] = useState('');
             const [syllabusTest, setSyllabusTest] = useState(null);
-            const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0); 
-            const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, dppSubject: null, dppChapter: null, dppTopics: [], dppCount: 10, testName: '' });
+            const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0);
+            const [analysisShowPalette, setAnalysisShowPalette] = useState(false);
+            const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, topics: { Physics: {}, Chemistry: {}, Botany: {}, Zoology: {} }, selectAllTopics: true, dppSubject: null, dppChapter: null, dppTopics: [], dppSelectAllTopics: false, dppCount: 10, testName: '' });
+            const [recentlyGeneratedTest, setRecentlyGeneratedTest] = useState(null);
             const [generatedTestsHistory, setGeneratedTestsHistory] = useState(() => safeGetJSON('ataxy_generated_tests', []));
             const [activeGeneratedTest, setActiveGeneratedTest] = useState(null);
             const [generatedTestResult, setGeneratedTestResult] = useState(null);
             const [showScoreSummary, setShowScoreSummary] = useState(false);
+            const [pendingDPPConfig, setPendingDPPConfig] = useState(null);
+            const [pendingGeneratedDPP, setPendingGeneratedDPP] = useState(null);
 
             useEffect(() => {
                 setCloudData('ataxy_generated_tests', generatedTestsHistory);
@@ -6854,6 +8206,76 @@ INSTRUCTIONS:
             const [questionsLoading, setQuestionsLoading] = useState(false);
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+            const handleGenerateTargetedDPP = (subjectName, chapterName, topicNamesArray, count) => {
+                setPendingDPPConfig({ subjectName, chapterName, topicNamesArray, count });
+            };
+
+            const processGenerateDPP = () => {
+                if (!pendingDPPConfig) return;
+                const { subjectName, chapterName, topicNamesArray, count } = pendingDPPConfig;
+                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch?.sourceTable] || []) : qbankData;
+                const subData = availableQuestions.find(s => s.name === subjectName);
+                let testQuestions = [];
+                if (subData) {
+                    const chapData = subData.chapters?.find(c => c.name === chapterName);
+                    if (chapData) {
+                        chapData.topics?.forEach(t => {
+                            if (topicNamesArray.length === 0 || topicNamesArray.includes(t.name)) {
+                                t.questions?.forEach(q => testQuestions.push({ ...q, topicName: t.name, chapterName: chapData.name, subjectName: subData.name }));
+                            }
+                        });
+                    }
+                }
+                if (testQuestions.length === 0) {
+                    safeAlert('No questions available to generate DPP for the selected topics.');
+                    setPendingDPPConfig(null);
+                    return;
+                }
+                testQuestions.sort(() => Math.random() - 0.5);
+                testQuestions = testQuestions.slice(0, count);
+
+                const dateName = new Date().toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const testTitleName = topicNamesArray.length === 1 ? topicNamesArray[0] : (topicNamesArray.length === 0 ? chapterName : chapterName + ' (Weak Topics)');
+                const newTest = {
+                    id: 'test_' + Date.now(),
+                    type: 'dpp',
+                    date: new Date().toISOString(),
+                    questions: testQuestions,
+                    totalMarks: testQuestions.length * 4,
+                    isNeetPattern: false,
+                    name: 'Targeted DPP: ' + testTitleName + ' - ' + dateName,
+                    config: { dppSubject: subjectName, dppChapter: chapterName, dppTopics: topicNamesArray, dppCount: count }
+                };
+                setPendingGeneratedDPP(newTest);
+                setPendingDPPConfig(null);
+            };
+
+            const handleSaveDPP = () => {
+                if (pendingGeneratedDPP) {
+                    setGeneratedTestsHistory(prev => [pendingGeneratedDPP, ...prev]);
+                    safeAlert(`Targeted DPP (${pendingGeneratedDPP.questions.length} Qs) Saved Successfully! Check your saved tests.`);
+                }
+                setPendingGeneratedDPP(null);
+            };
+
+            const handleStartDPP = () => {
+                if (pendingGeneratedDPP) {
+                    setGeneratedTestsHistory(prev => [pendingGeneratedDPP, ...prev]);
+                    setPracticeAttempts({});
+                    setPracticeVisited([]);
+                    setPracticeReview([]);
+                    setCurrentQuestionIndex(0);
+                    setActiveGeneratedTest({ ...pendingGeneratedDPP, startTime: Date.now() });
+                    setLoadedQuestions(pendingGeneratedDPP.questions);
+                    setActivePracticeChapter({ name: pendingGeneratedDPP.name, isCustomTest: true });
+                    setShowQuiz(true);
+                    setGeneratedTestResult(null);
+                    setShowScoreSummary(false);
+                    setShowAnalyticsModal(false);
+                }
+                setPendingGeneratedDPP(null);
+            };
+
             const handleClearProgress = (scope, clearType = 'all') => {
                 let idsToRemove = [];
                 if (scope === 'all') {
@@ -6880,7 +8302,7 @@ INSTRUCTIONS:
                         idsToRemove.forEach(id => delete newAttempts[id]);
                         setPracticeAttempts(newAttempts);
                     }
-                    
+
                     if (clearType === 'bookmarks' || clearType === 'all') {
                         let newReview = practiceReview.filter(r => {
                             if (idsToRemove.includes(r.id)) {
@@ -6933,14 +8355,142 @@ INSTRUCTIONS:
                 return flat;
             }, [activePracticeChapter]);
 
-            // Daily Targets
+            // Daily Targets & Global Settings
             const getTodayStr = () => new Date().toISOString().split('T')[0];
             const [selectedDate, setSelectedDate] = useState(getTodayStr());
             const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', null) || {});
             const [newTarget, setNewTarget] = useState("");
+            const [newTargetStartTime, setNewTargetStartTime] = useState(""); // e.g. "15:00"
+            const [newTargetEndTime, setNewTargetEndTime] = useState(""); // e.g. "16:00"
             const [showDetailedAnalyzer, setShowDetailedAnalyzer] = useState(false);
 
+            // Global Timer State
+            const [globalTimer, setGlobalTimer] = useState(() => safeGetJSON('ataxy_global_timer', {
+                active: false, targetId: null, targetText: "", startTime: null, duration: 25 * 60, elapsed: 0, paused: false
+            }));
+
+            // Study Partner State
+            const [studyPartnerConfig, setStudyPartnerConfig] = useState(() => safeGetJSON('ataxy_study_partner_cfg', {
+                enabled: true, character: 'mia_cheer', hasSeenOnboarding: false
+            }));
+            const [studyPartnerState, setStudyPartnerState] = useState(() => safeGetJSON('ataxy_study_partner_state', {
+                lastActive: Date.now(), waterCount: 0, lastWaterTime: Date.now(), studyMinutesToday: 0
+            }));
+            const [partnerMessage, setPartnerMessage] = useState(null); 
+
             useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
+            useEffect(() => { safeSetItem('ataxy_global_timer', JSON.stringify(globalTimer)); }, [globalTimer]);
+            useEffect(() => { safeSetItem('ataxy_study_partner_cfg', JSON.stringify(studyPartnerConfig)); }, [studyPartnerConfig]);
+            useEffect(() => { safeSetItem('ataxy_study_partner_state', JSON.stringify(studyPartnerState)); }, [studyPartnerState]);
+
+            // --- STUDY PARTNER LOGIC ---
+            useEffect(() => {
+                if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none') return;
+                
+                // 1. Onboarding
+                if (!studyPartnerConfig.hasSeenOnboarding) {
+                    const partnerName = STUDY_PARTNERS.find(p => p.id === studyPartnerConfig.character)?.name.split(' ')[0] || 'Mia';
+                    setTimeout(() => {
+                        setPartnerMessage({ 
+                            text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I am your omniscient study partner! I will watch everything you do, remind you of your targets, and you can even pick me up and throw me around! Let's crush some goals!`, 
+                            type: 'welcome', 
+                            requireAcknowledge: true,
+                            id: Date.now() 
+                        });
+                        setStudyPartnerConfig(prev => ({ ...prev, hasSeenOnboarding: true }));
+                    }, 1000);
+                    return;
+                }
+
+                // 2. Schedule & Reminder Checker
+                const checkInterval = setInterval(() => {
+                    const now = new Date();
+                    const hours = now.getHours();
+                    const mins = now.getMinutes();
+                    const currentTime = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                    const todayStr = getTodayStr();
+                    const todayTargets = targetsData[todayStr] || [];
+
+                    let foundMissed = false;
+                    for (const t of todayTargets) {
+                        if (!t.done && t.endTime && t.endTime < currentTime) {
+                            // Only nag if we haven't nagged in the last 15 minutes to avoid spam
+                            const lastNag = studyPartnerState.lastNagTime || 0;
+                            if (Date.now() - lastNag > 15 * 60 * 1000) {
+                                setPartnerMessage({ text: `WHY ARE YOU LATE?! Your target "${t.text}" is not completed yet! Get to work!`, type: 'missed_target', requireAcknowledge: true, id: Date.now() });
+                                setStudyPartnerState(prev => ({ ...prev, lastNagTime: Date.now() }));
+                                foundMissed = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!foundMissed) {
+                        const lastWater = studyPartnerState.lastWaterTime || Date.now();
+                        if (Date.now() - lastWater > 2 * 60 * 60 * 1000) {
+                            setPartnerMessage({ text: `Time for a quick break! Hydrate yourself with some water.`, type: 'water', id: Date.now() });
+                            setStudyPartnerState(prev => ({ ...prev, lastWaterTime: Date.now() }));
+                        }
+                    }
+                }, 60000); // Check every minute
+
+                return () => clearInterval(checkInterval);
+            }, [studyPartnerConfig, targetsData, studyPartnerState.lastNagTime, studyPartnerState.lastWaterTime]);
+
+            // Mount Greeting
+            useEffect(() => {
+                if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none' || !studyPartnerConfig.hasSeenOnboarding) return;
+                const hour = new Date().getHours();
+                let greeting = "Good morning";
+                if (hour >= 12 && hour < 17) greeting = "Good afternoon";
+                else if (hour >= 17) greeting = "Good evening";
+                
+                setTimeout(() => {
+                    setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
+                }, 2000);
+            }, []);
+
+            // 3. Global Observer Brain
+            useEffect(() => {
+                if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none') return;
+                
+                let lastReactionTime = 0;
+                
+                const handleGlobalClick = (e) => {
+                    if (e.target.closest('button') && e.target.closest('button').innerText === 'Got it!') return;
+                    
+                    const now = Date.now();
+                    if (now - lastReactionTime < 15000) return; // 15 second cooldown
+                    
+                    let reactionText = null;
+                    const el = e.target;
+                    
+                    // Specific UI interactions
+                    if (el.closest('.fa-house')) reactionText = "Ah, back to the home page!";
+                    else if (el.closest('.fa-user')) reactionText = "Checking out your profile?";
+                    else if (el.closest('.fa-book-open')) reactionText = "Time to study some subjects!";
+                    else if (el.closest('.fa-flask')) reactionText = "Ready for a quiz?";
+                    else if (el.closest('.fa-trophy')) reactionText = "Let's see those leaderboard stats!";
+                    
+                    // Generic button texts
+                    const button = el.closest('button');
+                    if (!reactionText && button) {
+                        const txt = button.innerText ? button.innerText.toLowerCase() : '';
+                        if (txt.includes('start')) reactionText = "Let's go! Starting now.";
+                        else if (txt.includes('save') || txt.includes('update')) reactionText = "Saved it safely!";
+                        else if (txt.includes('delete') || button.innerHTML.includes('fa-trash')) reactionText = "Deleted. Poof!";
+                        else if (button.innerHTML.includes('fa-play')) reactionText = "Starting the timer! Focus up!";
+                    }
+                    
+                    if (reactionText && Math.random() > 0.3) {
+                        setPartnerMessage({ type: 'chatter', text: reactionText });
+                        lastReactionTime = now;
+                    }
+                };
+                
+                window.addEventListener('click', handleGlobalClick, true);
+                return () => window.removeEventListener('click', handleGlobalClick, true);
+            }, [studyPartnerConfig]);
             useEffect(() => {
                 const tg = window.Telegram?.WebApp;
                 if (tg) {
@@ -7282,22 +8832,45 @@ INSTRUCTIONS:
                 }
             }, [loadedQuestions, pendingJumpQuestion, practiceSelectedTopic]);
 
-if (!isVerified) return <Gatekeeper onVerify={(user) => { setTgUser(user); setIsVerified(true); }} />;
+            if (!isVerified) return <Gatekeeper onVerify={(user) => { setTgUser(user); setIsVerified(true); }} />;
 
 
-const renderHomeView = () => {
+            const renderHomeView = () => {
                 const currentTargets = targetsData[selectedDate] || [];
-                const toggleTarget = (id) => { const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); setTargetsData({ ...targetsData, [selectedDate]: u }); };
+                const toggleTarget = (id) => { 
+                    const target = currentTargets.find(t => t.id === id);
+                    if (target && !target.done) {
+                        setPartnerMessage({ type: 'chatter', text: `Awesome work completing "${target.text}"!` });
+                    }
+                    const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); 
+                    setTargetsData({ ...targetsData, [selectedDate]: u }); 
+                };
                 const removeTarget = (id) => { const u = currentTargets.filter(t => t.id !== id); setTargetsData({ ...targetsData, [selectedDate]: u }); };
-                const addTarget = (e) => { e.preventDefault(); if (!newTarget.trim()) return; const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false }]; setTargetsData({ ...targetsData, [selectedDate]: u }); setNewTarget(""); };
+                const addTarget = (e) => { 
+                    e.preventDefault(); 
+                    if (!newTarget.trim()) return; 
+                    const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false, startTime: newTargetStartTime, endTime: newTargetEndTime }]; 
+                    setTargetsData({ ...targetsData, [selectedDate]: u }); 
+                    
+                    const timeStr = newTargetStartTime ? `at ${newTargetStartTime}` : 'for today';
+                    setPartnerMessage({ 
+                        type: 'added_target', 
+                        text: `I have noted "${newTarget}" ${timeStr}. Come back on time!`,
+                        requireAcknowledge: true 
+                    });
+                    
+                    setNewTarget(""); 
+                    setNewTargetStartTime(""); 
+                    setNewTargetEndTime(""); 
+                };
 
                 // --- DEEP TARGET ANALYZER LOGIC ---
                 let totalTargets = 0;
                 let completedTargets = 0;
                 let productiveDays = 0;
-                
+
                 const rawDaysData = Object.entries(targetsData)
-                    .sort((a,b) => new Date(b[0]) - new Date(a[0]))
+                    .sort((a, b) => new Date(b[0]) - new Date(a[0]))
                     .map(([dateStr, dayTargets]) => {
                         if (!Array.isArray(dayTargets) || dayTargets.length === 0) return null;
                         const dayDone = dayTargets.filter(t => t.done).length;
@@ -7331,7 +8904,7 @@ const renderHomeView = () => {
                 let bestStreak = 0;
                 let tempStreak = 0;
                 const oldestToNewest = [...rawDaysData].reverse();
-                
+
                 oldestToNewest.forEach(d => {
                     if (d.dayRate >= 50) {
                         tempStreak++;
@@ -7340,12 +8913,12 @@ const renderHomeView = () => {
                         tempStreak = 0;
                     }
                 });
-                
+
                 // Calculate rates
                 const now = new Date();
                 const oneDay = 24 * 60 * 60 * 1000;
                 let wT = 0, wC = 0, mT = 0, mC = 0, dT = 0, dC = 0;
-                
+
                 rawDaysData.forEach(d => {
                     const dDate = new Date(d.dateStr);
                     const diffDays = Math.round(Math.abs((now - dDate) / oneDay));
@@ -7354,16 +8927,16 @@ const renderHomeView = () => {
                     if (diffDays <= 30) { mT += d.dayTotal; mC += d.dayDone; }
                 });
                 let dailyRate = 0, weeklyRate = 0, monthlyRate = 0;
-                dailyRate = dT > 0 ? Math.round((dC/dT)*100) : 0;
-                weeklyRate = wT > 0 ? Math.round((wC/wT)*100) : 0;
-                monthlyRate = mT > 0 ? Math.round((mC/mT)*100) : 0;
-                
+                dailyRate = dT > 0 ? Math.round((dC / dT) * 100) : 0;
+                weeklyRate = wT > 0 ? Math.round((wC / wT) * 100) : 0;
+                monthlyRate = mT > 0 ? Math.round((mC / mT) * 100) : 0;
+
                 const yesterdayDate = new Date();
                 yesterdayDate.setDate(yesterdayDate.getDate() - 1);
                 const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
                 const todayStr = getTodayStr();
                 const lastRecorded = oldestToNewest[oldestToNewest.length - 1]?.dateStr;
-                
+
                 if (lastRecorded === todayStr || lastRecorded === yesterdayStr) {
                     currentStreak = tempStreak;
                 } else {
@@ -7425,8 +8998,8 @@ const renderHomeView = () => {
                 else if (totalTargets > 0) { consistencyScore = "Needs Focus"; consistencyColor = "from-red-400 to-orange-500"; }
 
                 return (
-                    <div className="pb-24 pt-4 animate-in fade-in overflow-x-hidden">
-                        <div className="bg-gradient-to-r from-[#00A7A7] via-[#008f8f] to-cyan-600 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-[0_10px_30px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_30px_rgba(0,255,255,0.2)] border border-transparent dark:border-cyan-500/30 text-white mx-4 mb-6 relative overflow-hidden mt-4 animate-pop-bounce transform hover:scale-[1.02] transition-transform duration-300">
+                    <div className="pb-24 pt-2 animate-in fade-in overflow-x-hidden">
+                        <div className="bg-gradient-to-r from-[#00A7A7] via-[#008f8f] to-cyan-600 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-[0_10px_30px_rgba(0,167,167,0.3)] dark:shadow-[0_10px_30px_rgba(0,255,255,0.2)] border border-transparent dark:border-cyan-500/30 text-white mx-4 mb-6 relative overflow-hidden mt-2 animate-pop-bounce transform hover:scale-[1.02] transition-transform duration-300">
                             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_100%] animate-[shimmer_3s_infinite]"></div>
                             <div className="relative z-10 flex justify-between items-center">
                                 <div>
@@ -7446,273 +9019,341 @@ const renderHomeView = () => {
                         </div>
 
                         <div className="px-5 space-y-6">
-                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100">
+                            {/* ATAXY Mentor Hero Button */}
+                            <div onClick={() => setCurrentTab('ai')} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-3xl p-5 shadow-[0_10px_30px_rgba(139,92,246,0.3)] border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 group flex items-center justify-between animate-pop-bounce delay-75">
+                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/30">
+                                            <i className="fa-solid fa-dna text-purple-400 animate-pulse"></i>
+                                        </div>
+                                        <h3 className="font-black text-lg tracking-wide text-purple-100">ATAXY Mentor</h3>
+                                    </div>
+                                    <p className="text-[11px] text-purple-200/70 font-medium">Your AI-powered study companion</p>
+                                </div>
+                                <div className="relative z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-purple-500 transition-colors shadow-sm">
+                                    <i className="fa-solid fa-chevron-right text-sm"></i>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100 partner-platform">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
                                     <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
                                 </div>
                                 <div className="space-y-2 mb-4 min-h-[60px]">
-                                    {currentTargets.length === 0 ? <p className="text-xs text-gray-400 italic text-center py-2">No targets set. Add one below!</p> : currentTargets.map(t => (
-                                        <div key={t.id} className={`flex items-center justify-between p-3 rounded-xl transition-all duration-300 transform ${t.done ? 'bg-gray-50 dark:bg-gray-800 opacity-60 scale-[0.98]' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md'}`}>
-                                            <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
-                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${t.done ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-600'}`}>{t.done && <i className="fa-solid fa-check text-white text-xs animate-pop-in"></i>}</div>
-                                                <span className={`text-sm font-medium ${t.done ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>{t.text}</span>
+                                    {(() => {
+                                        if (currentTargets.length === 0) return <p className="text-xs text-gray-400 italic text-center py-4">No targets set. Add one below!</p>;
+                                        
+                                        const uncompleted = currentTargets.filter(t => !t.done);
+                                        const completed = currentTargets.filter(t => t.done);
+                                        
+                                        return (
+                                            <div className="space-y-3">
+                                                {uncompleted.map(t => (
+                                                    <div key={t.id} className="relative overflow-hidden flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-600/10 to-indigo-600/10 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-500/30 shadow-[0_4px_15px_rgba(59,130,246,0.1)] transition-all duration-300 transform hover:scale-[1.02]">
+                                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none z-0"></div>
+                                                        <div className="relative z-10 flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
+                                                            <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 border-blue-400"></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t.text}</span>
+                                                                {(t.startTime || t.endTime) && <span className="text-[10px] text-blue-500 dark:text-blue-400 font-black tracking-wider"><i className="fa-regular fa-clock mr-1"></i>{t.startTime || '?'} - {t.endTime || '?'}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div className="relative z-10 flex items-center gap-1">
+                                                            <button onClick={() => setGlobalTimer({ active: true, targetId: t.id, targetText: t.text, startTime: Date.now(), duration: 25 * 60, elapsed: 0, paused: false })} className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors shrink-0"><i className="fa-solid fa-play text-xs ml-0.5"></i></button>
+                                                            <button onClick={() => removeTarget(t.id)} className="w-8 h-8 rounded-full text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0"><i className="fa-solid fa-trash text-xs"></i></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                
+                                                {completed.length > 0 && <div className="w-full h-px bg-gray-200 dark:bg-gray-800 my-4"></div>}
+                                                
+                                                {completed.map(t => (
+                                                    <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 opacity-60 scale-[0.98] border border-transparent transition-all duration-300">
+                                                        <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
+                                                            <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 bg-green-500 border-green-500"><i className="fa-solid fa-check text-white text-xs animate-pop-in"></i></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-medium line-through text-gray-500 dark:text-gray-400">{t.text}</span>
+                                                                {(t.startTime || t.endTime) && <span className="text-[10px] line-through text-gray-500/70"><i className="fa-regular fa-clock mr-1"></i>{t.startTime || '?'} - {t.endTime || '?'}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={() => removeTarget(t.id)} className="w-8 h-8 rounded-full text-red-500/50 hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0"><i className="fa-solid fa-trash text-xs"></i></button>
+                                                    </div>
+                                                ))}
                                             </div>
-                                            <button onClick={() => removeTarget(t.id)} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><i className="fa-solid fa-trash text-sm"></i></button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })()}
                                 </div>
-                                <form onSubmit={addTarget} className="flex gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
-                                    <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
-                                    <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md"><i className="fa-solid fa-plus"></i></button>
+                                <form onSubmit={addTarget} className="flex flex-col sm:flex-row gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                                    <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={newTarget} 
+                                            onChange={(e) => setNewTarget(e.target.value)} 
+                                            onFocus={() => {
+                                                if (studyPartnerConfig.enabled && studyPartnerConfig.character !== 'none') {
+                                                    setPartnerMessage({ type: 'added_target', text: "Ooo, adding a new target? Let me get my pen!" });
+                                                }
+                                            }}
+                                            placeholder={`Add goal for ${selectedDate}...`} 
+                                            className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" 
+                                        />
+                                        <div className="flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-900 transition-all justify-center items-center">
+                                            <input type="time" value={newTargetStartTime} onChange={(e) => setNewTargetStartTime(e.target.value)} className="w-auto flex-1 bg-transparent px-2 py-3 text-sm focus:outline-none dark:text-white text-center" title="Start Time" />
+                                            <div className="text-gray-400 text-sm font-bold px-1">-</div>
+                                            <input type="time" value={newTargetEndTime} onChange={(e) => setNewTargetEndTime(e.target.value)} className="w-auto flex-1 bg-transparent px-2 py-3 text-sm focus:outline-none dark:text-white text-center" title="End Time" />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-full sm:w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md shrink-0"><i className="fa-solid fa-plus"></i></button>
                                 </form>
                             </div>
 
-                     {/* Home Tab Target Analyzer Widget */}
-                     {(() => {
-                         const todayTotal = currentTargets.length;
-                         const todayDone = currentTargets.filter(t => t.done).length;
-                         const todayRate = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
-                         
-                         return (
-                             <div onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-r from-gray-900 to-[#010714] dark:from-[#021633] dark:to-[#010B1C] rounded-2xl shadow-lg border border-[#0AE0D0]/20 animate-pop-bounce delay-150 relative overflow-hidden cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_20px_rgba(0,255,255,0.1)] transition-all duration-300 group flex flex-col">
-                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[70px] opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity"></div>
-                                 
-                                 <div className="flex items-center justify-between p-4 pb-3 relative z-10">
-                                     <div className="flex items-center gap-3">
-                                         <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 flex items-center justify-center border border-[#00FFFF]/20">
-                                             <i className="fa-solid fa-chart-pie text-[#00FFFF] text-lg"></i>
-                                         </div>
-                                         <div>
-                                             <h3 className="font-black text-white text-sm tracking-wide">Target Analyzer</h3>
-                                             <div className="flex items-center gap-2 mt-0.5">
-                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Today's Progress</span>
-                                                 <div className={`text-xs font-black px-1.5 rounded bg-black/50 ${todayRate >= 85 ? 'text-green-400' : todayRate >= 50 ? 'text-blue-400' : 'text-orange-400'}`}>{todayRate}%</div>
-                                             </div>
-                                         </div>
-                                     </div>
-                                     <div className="flex flex-col items-end">
-                                         <div className={`bg-gradient-to-r ${consistencyColor} px-2 py-0.5 rounded-sm text-white text-[9px] font-black uppercase tracking-widest shadow-md`}>
-                                             {consistencyScore}
-                                         </div>
-                                         <div className="text-[9px] font-mono text-gray-500 mt-1">{todayDone}/{todayTotal} Targets</div>
-                                     </div>
-                                 </div>
-                                 
-                                 {/* Full Width Progress Bar */}
-                                 <div className="w-full h-1.5 bg-gray-800 relative z-10 border-t border-[#0AE0D0]/10">
-                                     <div className="h-full bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] transition-all duration-1000 relative" style={{ width: `${todayRate}%` }}>
-                                         <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
-                                     </div>
-                                 </div>
-                             </div>
-                         );
-                     })()}
+                            {/* Home Tab Target Analyzer Widget */}
+                            {(() => {
+                                const todayTotal = currentTargets.length;
+                                const todayDone = currentTargets.filter(t => t.done).length;
+                                const todayRate = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
 
-                     {/* Detailed Analyzer Modal */}
-                     {showDetailedAnalyzer && ReactDOM.createPortal(
-                         <div className="fixed inset-0 z-[3000000] bg-[#010B1C]/95 backdrop-blur-xl flex flex-col w-full md:max-w-screen-xl max-w-md mx-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
-                             <div className="flex items-center gap-3 p-5 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(20px+max(env(safe-area-inset-top),_24px))] shadow-lg relative overflow-hidden">
-                                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
-                                 <button onClick={() => setShowDetailedAnalyzer(false)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-10 h-10 flex items-center justify-center bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full z-10">
-                                     <i className="fa-solid fa-arrow-left"></i>
-                                 </button>
-                                 <div className="flex-1 z-10">
-                                     <h2 className="text-xl font-black text-white leading-tight">Detailed Analysis</h2>
-                                     <p className="text-xs text-[#00FFFF] font-bold uppercase tracking-widest">Performance History</p>
-                                 </div>
-                             </div>
+                                return (
+                                    <div onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-r from-gray-900 to-[#010714] dark:from-[#021633] dark:to-[#010B1C] rounded-2xl shadow-lg border border-[#0AE0D0]/20 animate-pop-bounce delay-150 relative overflow-hidden cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_20px_rgba(0,255,255,0.1)] transition-all duration-300 group flex flex-col">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[70px] opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity"></div>
 
-                             <div className="flex-1 overflow-y-auto no-scrollbar p-5 pb-20 relative">
-                                 {/* Summary Header inside Modal */}
-                                 <div className="bg-[#021633] rounded-3xl p-6 shadow-xl border border-[#0AE0D0]/30 mb-6 relative overflow-hidden">
-                                     <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-500 rounded-full filter blur-[60px] opacity-20 pointer-events-none"></div>
-                                     <div className="text-center mb-6">
-                                         <h3 className="text-[#A4DFE6] text-xs font-bold uppercase tracking-widest mb-1">Overall Consistency</h3>
-                                         <div className="text-5xl font-black text-white font-mono drop-shadow-[0_0_15px_rgba(0,255,255,0.3)]">{completionRate}%</div>
-                                         <div className={`mt-3 inline-block bg-gradient-to-r ${consistencyColor} px-4 py-1.5 rounded-full text-white text-xs font-black uppercase tracking-widest shadow-lg`}>
-                                             {consistencyScore}
-                                         </div>
-                                     </div>
-                                     {/* Streaks */}
-                                     <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4 mb-4">
-                                         <div className="bg-[#010B1C]/50 rounded-xl p-3 text-center border border-orange-500/20">
-                                             <div className="text-2xl font-black text-orange-500 flex items-center justify-center gap-1"><i className="fa-solid fa-fire text-lg"></i> {currentStreak}</div>
-                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Current Streak</div>
-                                         </div>
-                                         <div className="bg-[#010B1C]/50 rounded-xl p-3 text-center border border-yellow-500/20">
-                                             <div className="text-2xl font-black text-yellow-500 flex items-center justify-center gap-1"><i className="fa-solid fa-crown text-lg"></i> {bestStreak}</div>
-                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Best Streak</div>
-                                         </div>
-                                     </div>
+                                        <div className="flex items-center justify-between p-4 pb-3 relative z-10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 flex items-center justify-center border border-[#00FFFF]/20">
+                                                    <i className="fa-solid fa-chart-pie text-[#00FFFF] text-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-white text-sm tracking-wide">Target Analyzer</h3>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Today's Progress</span>
+                                                        <div className={`text-xs font-black px-1.5 rounded bg-black/50 ${todayRate >= 85 ? 'text-green-400' : todayRate >= 50 ? 'text-blue-400' : 'text-orange-400'}`}>{todayRate}%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                                <div className={`bg-gradient-to-r ${consistencyColor} px-2 py-0.5 rounded-sm text-white text-[9px] font-black uppercase tracking-widest shadow-md`}>
+                                                    {consistencyScore}
+                                                </div>
+                                                <div className="text-[9px] font-mono text-gray-500 mt-1">{todayDone}/{todayTotal} Targets</div>
+                                            </div>
+                                        </div>
 
-                                     {/* Base Stats */}
-                                     <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4 mb-4">
-                                         <div className="text-center">
-                                             <div className="text-xl font-black text-white">{totalTargets}</div>
-                                             <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Targets</div>
-                                         </div>
-                                         <div className="text-center border-l border-[#0AE0D0]/20">
-                                             <div className="text-xl font-black text-green-400">{completedTargets}</div>
-                                             <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Achieved</div>
-                                         </div>
-                                     </div>
+                                        {/* Full Width Progress Bar */}
+                                        <div className="w-full h-1.5 bg-gray-800 relative z-10 border-t border-[#0AE0D0]/10">
+                                            <div className="h-full bg-gradient-to-r from-[#00A7A7] to-[#00FFFF] transition-all duration-1000 relative" style={{ width: `${todayRate}%` }}>
+                                                <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
-                                     {/* AIR 1 Predictor Component */}
-                                     <div className="border-t border-[#0AE0D0]/20 pt-5 mt-2 text-center relative">
-                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-transparent via-[#00FFFF] to-transparent"></div>
-                                         <div className="text-[9px] text-[#A4DFE6] font-bold uppercase tracking-widest mb-1"><i className="fa-solid fa-ranking-star"></i> AI Rank Predictor</div>
-                                         <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-[#00FFFF] to-blue-500 animate-pulse-soft">
-                                             {airPrediction}
-                                         </div>
-                                         <div className="text-[8px] text-gray-500 uppercase font-bold mt-1">Based on Weekly & Monthly Velocity</div>
-                                     </div>
-                                 </div>
+                            {/* Detailed Analyzer Modal */}
+                            {showDetailedAnalyzer && ReactDOM.createPortal(
+                                <div className="fixed inset-0 z-[3000000] bg-[#010B1C]/95 backdrop-blur-xl flex flex-col w-full md:max-w-screen-xl max-w-md mx-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
+                                    <div className="flex items-center gap-3 p-5 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(20px+max(env(safe-area-inset-top),_24px))] shadow-lg relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-40 h-40 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
+                                        <button onClick={() => setShowDetailedAnalyzer(false)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-10 h-10 flex items-center justify-center bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full z-10">
+                                            <i className="fa-solid fa-arrow-left"></i>
+                                        </button>
+                                        <div className="flex-1 z-10">
+                                            <h2 className="text-xl font-black text-white leading-tight">Detailed Analysis</h2>
+                                            <p className="text-xs text-[#00FFFF] font-bold uppercase tracking-widest">Performance History</p>
+                                        </div>
+                                    </div>
 
-                                 {/* Task Classification Breakdown */}
-                                 <div className="bg-[#021633] rounded-3xl p-5 border border-[#0AE0D0]/20 shadow-lg mb-6 relative overflow-hidden">
-                                     <h3 className="text-[#00FFFF] font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-layer-group"></i> Task Classification</h3>
-                                     <div className="grid grid-cols-2 gap-3">
-                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-pink-500/20 text-center">
-                                             <div className="text-lg font-black text-pink-400">{taskClassBreakdown.theory}</div>
-                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Theory / Lec</div>
-                                         </div>
-                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-yellow-500/20 text-center">
-                                             <div className="text-lg font-black text-yellow-400">{taskClassBreakdown.questions}</div>
-                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">PYQ / Practice</div>
-                                         </div>
-                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-indigo-500/20 text-center">
-                                             <div className="text-lg font-black text-indigo-400">{taskClassBreakdown.revision}</div>
-                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Revision</div>
-                                         </div>
-                                         <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-cyan-500/20 text-center">
-                                             <div className="text-lg font-black text-cyan-400">{taskClassBreakdown.mock}</div>
-                                             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mocks / Tests</div>
-                                         </div>
-                                     </div>
-                                 </div>
+                                    <div className="flex-1 overflow-y-auto no-scrollbar p-5 pb-20 relative">
+                                        {/* Summary Header inside Modal */}
+                                        <div className="bg-[#021633] rounded-3xl p-6 shadow-xl border border-[#0AE0D0]/30 mb-6 relative overflow-hidden">
+                                            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-500 rounded-full filter blur-[60px] opacity-20 pointer-events-none"></div>
+                                            <div className="text-center mb-6">
+                                                <h3 className="text-[#A4DFE6] text-xs font-bold uppercase tracking-widest mb-1">Overall Consistency</h3>
+                                                <div className="text-5xl font-black text-white font-mono drop-shadow-[0_0_15px_rgba(0,255,255,0.3)]">{completionRate}%</div>
+                                                <div className={`mt-3 inline-block bg-gradient-to-r ${consistencyColor} px-4 py-1.5 rounded-full text-white text-xs font-black uppercase tracking-widest shadow-lg`}>
+                                                    {consistencyScore}
+                                                </div>
+                                            </div>
+                                            {/* Streaks */}
+                                            <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4 mb-4">
+                                                <div className="bg-[#010B1C]/50 rounded-xl p-3 text-center border border-orange-500/20">
+                                                    <div className="text-2xl font-black text-orange-500 flex items-center justify-center gap-1"><i className="fa-solid fa-fire text-lg"></i> {currentStreak}</div>
+                                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Current Streak</div>
+                                                </div>
+                                                <div className="bg-[#010B1C]/50 rounded-xl p-3 text-center border border-yellow-500/20">
+                                                    <div className="text-2xl font-black text-yellow-500 flex items-center justify-center gap-1"><i className="fa-solid fa-crown text-lg"></i> {bestStreak}</div>
+                                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Best Streak</div>
+                                                </div>
+                                            </div>
 
-                                 {/* Dominator's Verdict */}
-                                 <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-5 border border-gray-800 shadow-lg mb-6 relative overflow-hidden group">
-                                     <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/20 rounded-full blur-[40px] pointer-events-none"></div>
-                                     <div className="flex items-center gap-3 mb-3 relative z-10">
-                                         <div className="w-8 h-8 rounded-full bg-[#010B1C] flex items-center justify-center border border-gray-700 shadow-inner shrink-0">
-                                             <i className="fa-solid fa-robot text-purple-400 text-sm"></i>
-                                         </div>
-                                         <h3 className="text-white font-bold text-sm uppercase tracking-widest">Dominator's Verdict</h3>
-                                     </div>
-                                     <p className={`text-sm font-medium leading-relaxed relative z-10 ${verdictColor}`}>{verdict}</p>
-                                 </div>
+                                            {/* Base Stats */}
+                                            <div className="grid grid-cols-2 gap-4 border-t border-[#0AE0D0]/20 pt-4 mb-4">
+                                                <div className="text-center">
+                                                    <div className="text-xl font-black text-white">{totalTargets}</div>
+                                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Targets</div>
+                                                </div>
+                                                <div className="text-center border-l border-[#0AE0D0]/20">
+                                                    <div className="text-xl font-black text-green-400">{completedTargets}</div>
+                                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Achieved</div>
+                                                </div>
+                                            </div>
 
-                                 {/* 7-Day Momentum */}
-                                 <div className="bg-[#021633] rounded-3xl p-5 border border-[#0AE0D0]/20 shadow-lg mb-6 relative overflow-hidden">
-                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400 opacity-50"></div>
-                                     <h3 className="text-[#00FFFF] font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-column"></i> 7-Day Momentum</h3>
-                                     <div className="flex items-end justify-between h-32 gap-2 mt-2">
-                                         {last7Days.map((d, i) => (
-                                             <div key={i} className="flex flex-col items-center flex-1 gap-2 group h-full">
-                                                 <div className="w-full bg-[#010B1C] rounded-t-sm rounded-b-lg h-full relative overflow-hidden flex items-end border border-gray-800 transition-colors group-hover:border-gray-600">
-                                                     <div className={`w-full transition-all duration-1000 ease-out rounded-t-sm rounded-b-lg ${d.dayRate >= 85 ? 'bg-gradient-to-t from-green-600 to-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]' : d.dayRate >= 50 ? 'bg-gradient-to-t from-blue-600 to-blue-400' : 'bg-gradient-to-t from-red-600 to-red-400 opacity-60'}`} style={{ height: `${d.dayRate}%` }}></div>
-                                                 </div>
-                                                 <span className="text-[8px] text-gray-500 font-bold">{d.dateStr.split('-')[2]}/{d.dateStr.split('-')[1]}</span>
-                                             </div>
-                                         ))}
-                                         {last7Days.length === 0 && <div className="w-full text-center text-xs text-gray-500 flex items-center justify-center h-full">No recent data</div>}
-                                     </div>
-                                 </div>
+                                            {/* AIR 1 Predictor Component */}
+                                            <div className="border-t border-[#0AE0D0]/20 pt-5 mt-2 text-center relative">
+                                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-transparent via-[#00FFFF] to-transparent"></div>
+                                                <div className="text-[9px] text-[#A4DFE6] font-bold uppercase tracking-widest mb-1"><i className="fa-solid fa-ranking-star"></i> AI Rank Predictor</div>
+                                                <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-[#00FFFF] to-blue-500 animate-pulse-soft">
+                                                    {airPrediction}
+                                                </div>
+                                                <div className="text-[8px] text-gray-500 uppercase font-bold mt-1">Based on Weekly & Monthly Velocity</div>
+                                            </div>
+                                        </div>
 
-                                 {/* Time-Based Completion Rates */}
-                                 <div className="grid grid-cols-3 gap-3 mb-6">
-                                     <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-blue-500/20 flex flex-col justify-center text-center shadow-lg">
-                                         <span className="text-xl font-black text-blue-400">{dailyRate}%</span>
-                                         <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Daily</span>
-                                     </div>
-                                     <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-emerald-500/20 flex flex-col justify-center text-center shadow-lg">
-                                         <span className="text-xl font-black text-emerald-400">{weeklyRate}%</span>
-                                         <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Weekly</span>
-                                     </div>
-                                     <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-purple-500/20 flex flex-col justify-center text-center shadow-lg">
-                                         <span className="text-xl font-black text-purple-400">{monthlyRate}%</span>
-                                         <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Monthly</span>
-                                     </div>
-                                 </div>
+                                        {/* Task Classification Breakdown */}
+                                        <div className="bg-[#021633] rounded-3xl p-5 border border-[#0AE0D0]/20 shadow-lg mb-6 relative overflow-hidden">
+                                            <h3 className="text-[#00FFFF] font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-layer-group"></i> Task Classification</h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-pink-500/20 text-center">
+                                                    <div className="text-lg font-black text-pink-400">{taskClassBreakdown.theory}</div>
+                                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Theory / Lec</div>
+                                                </div>
+                                                <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-yellow-500/20 text-center">
+                                                    <div className="text-lg font-black text-yellow-400">{taskClassBreakdown.questions}</div>
+                                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">PYQ / Practice</div>
+                                                </div>
+                                                <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-indigo-500/20 text-center">
+                                                    <div className="text-lg font-black text-indigo-400">{taskClassBreakdown.revision}</div>
+                                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Revision</div>
+                                                </div>
+                                                <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-cyan-500/20 text-center">
+                                                    <div className="text-lg font-black text-cyan-400">{taskClassBreakdown.mock}</div>
+                                                    <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mocks / Tests</div>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                 {/* Subject Radar */}
-                                 <div className="grid grid-cols-2 gap-3 mb-6">
-                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-blue-500/20 flex flex-col justify-center text-center relative overflow-hidden">
-                                         <i className="fa-solid fa-atom absolute -right-3 -bottom-3 text-5xl text-blue-500/10"></i>
-                                         <span className="text-2xl font-black text-blue-400">{subjectsBreakdown.physics}</span>
-                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Physics Focus</span>
-                                     </div>
-                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-emerald-500/20 flex flex-col justify-center text-center relative overflow-hidden">
-                                         <i className="fa-solid fa-flask absolute -right-3 -bottom-3 text-5xl text-emerald-500/10"></i>
-                                         <span className="text-2xl font-black text-emerald-400">{subjectsBreakdown.chemistry}</span>
-                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Chem Focus</span>
-                                     </div>
-                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-green-500/20 flex flex-col justify-center text-center relative overflow-hidden">
-                                         <i className="fa-solid fa-leaf absolute -right-3 -bottom-3 text-5xl text-green-500/10"></i>
-                                         <span className="text-2xl font-black text-green-400">{subjectsBreakdown.biology}</span>
-                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Bio Focus</span>
-                                     </div>
-                                     <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-purple-500/20 flex flex-col justify-center text-center relative overflow-hidden">
-                                         <i className="fa-solid fa-file-pen absolute -right-3 -bottom-3 text-5xl text-purple-500/10"></i>
-                                         <span className="text-2xl font-black text-purple-400">{subjectsBreakdown.mock}</span>
-                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mock/Rev Focus</span>
-                                     </div>
-                                 </div>
+                                        {/* Dominator's Verdict */}
+                                        <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-5 border border-gray-800 shadow-lg mb-6 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/20 rounded-full blur-[40px] pointer-events-none"></div>
+                                            <div className="flex items-center gap-3 mb-3 relative z-10">
+                                                <div className="w-8 h-8 rounded-full bg-[#010B1C] flex items-center justify-center border border-gray-700 shadow-inner shrink-0">
+                                                    <i className="fa-solid fa-robot text-purple-400 text-sm"></i>
+                                                </div>
+                                                <h3 className="text-white font-bold text-sm uppercase tracking-widest">Dominator's Verdict</h3>
+                                            </div>
+                                            <p className={`text-sm font-medium leading-relaxed relative z-10 ${verdictColor}`}>{verdict}</p>
+                                        </div>
 
-                                 <h3 className="text-[#00FFFF] font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
-                                     <i className="fa-solid fa-clock-rotate-left"></i> Day-by-Day History Feed
-                                 </h3>
+                                        {/* 7-Day Momentum */}
+                                        <div className="bg-[#021633] rounded-3xl p-5 border border-[#0AE0D0]/20 shadow-lg mb-6 relative overflow-hidden">
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400 opacity-50"></div>
+                                            <h3 className="text-[#00FFFF] font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-column"></i> 7-Day Momentum</h3>
+                                            <div className="flex items-end justify-between h-32 gap-2 mt-2">
+                                                {last7Days.map((d, i) => (
+                                                    <div key={i} className="flex flex-col items-center flex-1 gap-2 group h-full">
+                                                        <div className="w-full bg-[#010B1C] rounded-t-sm rounded-b-lg h-full relative overflow-hidden flex items-end border border-gray-800 transition-colors group-hover:border-gray-600">
+                                                            <div className={`w-full transition-all duration-1000 ease-out rounded-t-sm rounded-b-lg ${d.dayRate >= 85 ? 'bg-gradient-to-t from-green-600 to-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]' : d.dayRate >= 50 ? 'bg-gradient-to-t from-blue-600 to-blue-400' : 'bg-gradient-to-t from-red-600 to-red-400 opacity-60'}`} style={{ height: `${d.dayRate}%` }}></div>
+                                                        </div>
+                                                        <span className="text-[8px] text-gray-500 font-bold">{d.dateStr.split('-')[2]}/{d.dateStr.split('-')[1]}</span>
+                                                    </div>
+                                                ))}
+                                                {last7Days.length === 0 && <div className="w-full text-center text-xs text-gray-500 flex items-center justify-center h-full">No recent data</div>}
+                                            </div>
+                                        </div>
 
-                                 <div className="space-y-4">
-                                     {rawDaysData.length === 0 ? (
-                                         <div className="text-center text-gray-500 py-10 bg-[#021633] rounded-2xl border border-gray-800 border-dashed">
-                                             <i className="fa-solid fa-folder-open text-3xl mb-3 opacity-50"></i>
-                                             <p className="text-sm font-bold">No historical data found</p>
-                                         </div>
-                                     ) : (
-                                         rawDaysData.map(({ dateStr, dayTargets, dayDone, dayTotal, dayRate }) => {
-                                             const isToday = dateStr === getTodayStr();
+                                        {/* Time-Based Completion Rates */}
+                                        <div className="grid grid-cols-3 gap-3 mb-6">
+                                            <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-blue-500/20 flex flex-col justify-center text-center shadow-lg">
+                                                <span className="text-xl font-black text-blue-400">{dailyRate}%</span>
+                                                <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Daily</span>
+                                            </div>
+                                            <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-emerald-500/20 flex flex-col justify-center text-center shadow-lg">
+                                                <span className="text-xl font-black text-emerald-400">{weeklyRate}%</span>
+                                                <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Weekly</span>
+                                            </div>
+                                            <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-purple-500/20 flex flex-col justify-center text-center shadow-lg">
+                                                <span className="text-xl font-black text-purple-400">{monthlyRate}%</span>
+                                                <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Monthly</span>
+                                            </div>
+                                        </div>
 
-                                             return (
-                                                 <div key={dateStr} className="bg-[#021633] border border-[#0AE0D0]/10 rounded-2xl p-4 shadow-md hover:border-[#00FFFF]/30 transition-colors group">
-                                                     <div className="flex justify-between items-center mb-3">
-                                                         <div className="flex items-center gap-2">
-                                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${dayRate === 100 ? 'bg-green-500/20 text-green-400' : (dayRate >= 50 ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400')}`}>
-                                                                 <i className={`fa-solid ${dayRate === 100 ? 'fa-star' : (dayRate >= 50 ? 'fa-fire' : 'fa-triangle-exclamation')} text-sm`}></i>
-                                                             </div>
-                                                             <div>
-                                                                 <h4 className="font-bold text-white text-sm">{isToday ? 'Today' : new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</h4>
-                                                                 <p className="text-[10px] text-gray-400 font-mono">{dayDone} of {dayTotal} tasks done</p>
-                                                             </div>
-                                                         </div>
-                                                         <div className="text-right">
-                                                             <span className={`text-lg font-black ${dayRate === 100 ? 'text-green-400' : (dayRate >= 50 ? 'text-blue-400' : 'text-orange-400')}`}>{dayRate}%</span>
-                                                         </div>
-                                                     </div>
-                                                     
-                                                     <div className="w-full h-1.5 bg-gray-800 rounded-full mb-4 overflow-hidden">
-                                                         <div className={`h-full rounded-full ${dayRate === 100 ? 'bg-green-500' : (dayRate >= 50 ? 'bg-blue-500' : 'bg-orange-500')}`} style={{ width: `${dayRate}%` }}></div>
-                                                     </div>
+                                        {/* Subject Radar */}
+                                        <div className="grid grid-cols-2 gap-3 mb-6">
+                                            <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-blue-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                                <i className="fa-solid fa-atom absolute -right-3 -bottom-3 text-5xl text-blue-500/10"></i>
+                                                <span className="text-2xl font-black text-blue-400">{subjectsBreakdown.physics}</span>
+                                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Physics Focus</span>
+                                            </div>
+                                            <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-emerald-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                                <i className="fa-solid fa-flask absolute -right-3 -bottom-3 text-5xl text-emerald-500/10"></i>
+                                                <span className="text-2xl font-black text-emerald-400">{subjectsBreakdown.chemistry}</span>
+                                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Chem Focus</span>
+                                            </div>
+                                            <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-green-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                                <i className="fa-solid fa-leaf absolute -right-3 -bottom-3 text-5xl text-green-500/10"></i>
+                                                <span className="text-2xl font-black text-green-400">{subjectsBreakdown.biology}</span>
+                                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Bio Focus</span>
+                                            </div>
+                                            <div className="bg-[#010B1C]/80 rounded-2xl p-4 border border-purple-500/20 flex flex-col justify-center text-center relative overflow-hidden">
+                                                <i className="fa-solid fa-file-pen absolute -right-3 -bottom-3 text-5xl text-purple-500/10"></i>
+                                                <span className="text-2xl font-black text-purple-400">{subjectsBreakdown.mock}</span>
+                                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mock/Rev Focus</span>
+                                            </div>
+                                        </div>
 
-                                                     <div className="space-y-1.5 border-t border-white/5 pt-3">
-                                                         {dayTargets.map((t, idx) => (
-                                                             <div key={idx} className="flex items-start gap-2">
-                                                                 <i className={`fa-solid mt-0.5 text-[10px] ${t.done ? 'fa-circle-check text-green-500' : 'fa-circle-xmark text-gray-600'}`}></i>
-                                                                 <span className={`text-xs ${t.done ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{t.text}</span>
-                                                             </div>
-                                                         ))}
-                                                     </div>
-                                                 </div>
-                                             );
-                                         })
-                                     )}
-                                 </div>
-                             </div>
-                         </div>,
-                         document.body
-                     )}
+                                        <h3 className="text-[#00FFFF] font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
+                                            <i className="fa-solid fa-clock-rotate-left"></i> Day-by-Day History Feed
+                                        </h3>
+
+                                        <div className="space-y-4">
+                                            {rawDaysData.length === 0 ? (
+                                                <div className="text-center text-gray-500 py-10 bg-[#021633] rounded-2xl border border-gray-800 border-dashed">
+                                                    <i className="fa-solid fa-folder-open text-3xl mb-3 opacity-50"></i>
+                                                    <p className="text-sm font-bold">No historical data found</p>
+                                                </div>
+                                            ) : (
+                                                rawDaysData.map(({ dateStr, dayTargets, dayDone, dayTotal, dayRate }) => {
+                                                    const isToday = dateStr === getTodayStr();
+
+                                                    return (
+                                                        <div key={dateStr} className="bg-[#021633] border border-[#0AE0D0]/10 rounded-2xl p-4 shadow-md hover:border-[#00FFFF]/30 transition-colors group">
+                                                            <div className="flex justify-between items-center mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${dayRate === 100 ? 'bg-green-500/20 text-green-400' : (dayRate >= 50 ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400')}`}>
+                                                                        <i className={`fa-solid ${dayRate === 100 ? 'fa-star' : (dayRate >= 50 ? 'fa-fire' : 'fa-triangle-exclamation')} text-sm`}></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-bold text-white text-sm">{isToday ? 'Today' : new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</h4>
+                                                                        <p className="text-[10px] text-gray-400 font-mono">{dayDone} of {dayTotal} tasks done</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <span className={`text-lg font-black ${dayRate === 100 ? 'text-green-400' : (dayRate >= 50 ? 'text-blue-400' : 'text-orange-400')}`}>{dayRate}%</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="w-full h-1.5 bg-gray-800 rounded-full mb-4 overflow-hidden">
+                                                                <div className={`h-full rounded-full ${dayRate === 100 ? 'bg-green-500' : (dayRate >= 50 ? 'bg-blue-500' : 'bg-orange-500')}`} style={{ width: `${dayRate}%` }}></div>
+                                                            </div>
+
+                                                            <div className="space-y-1.5 border-t border-white/5 pt-3">
+                                                                {dayTargets.map((t, idx) => (
+                                                                    <div key={idx} className="flex items-start gap-2">
+                                                                        <i className={`fa-solid mt-0.5 text-[10px] ${t.done ? 'fa-circle-check text-green-500' : 'fa-circle-xmark text-gray-600'}`}></i>
+                                                                        <span className={`text-xs ${t.done ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{t.text}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>,
+                                document.body
+                            )}
                         </div>
                     </div>
                 );
@@ -7735,11 +9376,11 @@ const renderHomeView = () => {
                     const themeIcon = isNeet ? 'fa-stethoscope' : isJee ? 'fa-microchip' : 'fa-book';
                     const themeActiveBg = isNeet ? 'bg-[#003370]' : isJee ? 'bg-[#020617]' : 'bg-gray-900';
 
-                                        if (activePracticeChapter) {
+                    if (activePracticeChapter) {
                         if (activePracticeChapter.isCustomTest) {
-                            const selectedTopic = practiceSelectedTopic; 
-                            let displayedQuestions = loadedQuestions; 
-                            
+                            const selectedTopic = practiceSelectedTopic;
+                            let displayedQuestions = loadedQuestions;
+
                             if (!displayedQuestions || displayedQuestions.length === 0) return <div className="text-white text-center p-10">Loading test...</div>;
 
                             const safeQuestionIndex = Math.min(currentQuestionIndex, Math.max(0, displayedQuestions.length - 1));
@@ -7748,25 +9389,27 @@ const renderHomeView = () => {
                             const isAnswered = attempts[currentQuestion.id] !== undefined;
                             const userAnsIdx = attempts[currentQuestion.id];
 
-                            const StatusShape = ({ status, num }) => {
+                            const StatusShape = ({ status, num, isActive }) => {
+                                const activeStyle = isActive ? { filter: 'drop-shadow(0px 0px 4px rgba(0,0,0,0.5)) scale(1.05)', zIndex: 10, transition: 'all 0.2s' } : { transition: 'all 0.2s' };
+
                                 if (status === 'not_visited') {
                                     return (
-                                        <div className="w-[42px] h-[32px] text-black flex items-center justify-center font-normal text-[14px] bg-gradient-to-b from-[#ffffff] to-[#d5d5d5] rounded-[4px] relative shrink-0" style={{ boxShadow: 'inset 0 0 0 1px #888, inset 0 2px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                        <div className="w-[42px] h-[32px] text-black flex items-center justify-center font-normal text-[14px] bg-gradient-to-b from-[#ffffff] to-[#d5d5d5] rounded-[4px] relative shrink-0" style={{ boxShadow: 'inset 0 0 0 1px #888, inset 0 2px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2)', ...activeStyle }}>
                                             <span className="relative z-10">{num}</span>
                                         </div>
                                     );
                                 }
                                 if (status === 'not_answered') {
                                     return (
-                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0">
+                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0" style={activeStyle}>
                                             <svg viewBox="0 0 42 32" className="absolute inset-0 w-full h-full z-0 block" style={{ filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.25))' }}>
-                                              <defs>
-                                                <linearGradient id="orgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                  <stop offset="0%" stopColor="#f47814" />
-                                                  <stop offset="100%" stopColor="#d14e00" />
-                                                </linearGradient>
-                                              </defs>
-                                              <polygon points="1,1 34,1 41,31 1,31" fill="url(#orgGrad)" stroke="#a33a00" strokeWidth="1" strokeLinejoin="round" />
+                                                <defs>
+                                                    <linearGradient id="orgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" stopColor="#e35d0e" />
+                                                        <stop offset="100%" stopColor="#cc3f00" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <polygon points="1,1 41,6 41,26 1,31" fill="url(#orgGrad)" stroke="#a33a00" strokeWidth="1" strokeLinejoin="round" />
                                             </svg>
                                             <span className="relative z-10 text-white font-normal text-[14px]">{num}</span>
                                         </div>
@@ -7774,15 +9417,15 @@ const renderHomeView = () => {
                                 }
                                 if (status === 'answered') {
                                     return (
-                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0">
+                                        <div className="w-[42px] h-[32px] relative flex items-center justify-center shrink-0" style={activeStyle}>
                                             <svg viewBox="0 0 42 32" className="absolute inset-0 w-full h-full z-0 block" style={{ filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.25))' }}>
-                                              <defs>
-                                                <linearGradient id="grnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                  <stop offset="0%" stopColor="#66c266" />
-                                                  <stop offset="100%" stopColor="#4ea04e" />
-                                                </linearGradient>
-                                              </defs>
-                                              <polygon points="8,1 41,1 41,31 1,31" fill="url(#grnGrad)" stroke="#2b752b" strokeWidth="1" strokeLinejoin="round" />
+                                                <defs>
+                                                    <linearGradient id="grnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" stopColor="#419b16" />
+                                                        <stop offset="100%" stopColor="#2c720c" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <polygon points="1,1 41,6 41,26 1,31" fill="url(#grnGrad)" stroke="#1a4d04" strokeWidth="1" strokeLinejoin="round" />
                                             </svg>
                                             <span className="relative z-10 text-white font-normal text-[14px]">{num}</span>
                                         </div>
@@ -7790,16 +9433,16 @@ const renderHomeView = () => {
                                 }
                                 if (status === 'marked') {
                                     return (
-                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)', ...activeStyle }}>
                                             <span className="relative z-10">{num}</span>
                                         </div>
                                     );
                                 }
                                 if (status === 'answered_marked') {
                                     return (
-                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)' }}>
+                                        <div className="w-[34px] h-[34px] rounded-full text-white flex items-center justify-center font-normal text-[14px] relative shrink-0" style={{ background: 'linear-gradient(180deg, #6b4cba 0%, #462c82 100%)', boxShadow: 'inset 0 0 0 1px #30165c, 0 1px 2px rgba(0,0,0,0.2)', ...activeStyle }}>
                                             <span className="relative z-10">{num}</span>
-                                            <div className="absolute bottom-[-2px] right-[-2px] w-3.5 h-3.5 rounded-full border border-white z-20 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #66c266 0%, #4ea04e 100%)', boxShadow: 'inset 0 0 0 1px #2b752b' }}>
+                                            <div className="absolute bottom-[-2px] right-[-2px] w-3.5 h-3.5 rounded-full border border-white z-20 flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #419b16 0%, #2c720c 100%)', boxShadow: 'inset 0 0 0 1px #1a4d04' }}>
                                                 <i className="fa-solid fa-bars text-[6px] text-white transform scale-75"></i>
                                             </div>
                                         </div>
@@ -7807,8 +9450,9 @@ const renderHomeView = () => {
                                 }
                                 return null;
                             };
-const getStatus = (qId) => {
-                                const visited = practiceVisited.includes(qId);
+                            const getStatus = (qId) => {
+                                const isCurrent = currentQuestion?.id === qId;
+                                const visited = practiceVisited.includes(qId) || isCurrent;
                                 const ans = attempts[qId] !== undefined;
                                 const marked = practiceReview.includes(qId);
                                 if (!visited && !ans && !marked) return 'not_visited';
@@ -7818,7 +9462,7 @@ const getStatus = (qId) => {
                                 if (ans && marked) return 'answered_marked';
                                 return 'not_visited';
                             };
-                            
+
                             let cntNotVisited = 0, cntNotAnswered = 0, cntAnswered = 0, cntMarked = 0, cntAnsMarked = 0;
                             displayedQuestions.forEach(q => {
                                 const s = getStatus(q.id);
@@ -7837,10 +9481,31 @@ const getStatus = (qId) => {
                                 if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
                                 if (safeQuestionIndex < displayedQuestions.length - 1) setCurrentQuestionIndex(safeQuestionIndex + 1);
                             };
-                            
+
                             const handlePrevious = () => {
                                 if (!practiceVisited.includes(currentQuestion.id)) setPracticeVisited(prev => [...prev, currentQuestion.id]);
                                 if (safeQuestionIndex > 0) setCurrentQuestionIndex(safeQuestionIndex - 1);
+                            };
+
+                            const handleTestSubmit = () => {
+                                let score = 0;
+                                let correctCnt = 0;
+                                displayedQuestions.forEach(q => {
+                                    const ansIdx = attempts[q.id];
+                                    if (ansIdx !== undefined) {
+                                        const isCorr = ['A', 'B', 'C', 'D'][ansIdx] === q.correctOption;
+                                        if (isCorr) { score += 4; correctCnt++; } else { score -= 1; }
+                                    }
+                                });
+                                const finalResult = { ...activeGeneratedTest, score, accuracy: Math.round((correctCnt / displayedQuestions.length) * 100) || 0, attempts: { ...attempts }, questions: displayedQuestions };
+                                setGeneratedTestsHistory(prev => [finalResult, ...prev.filter(t => t.id !== finalResult.id)]);
+                                setGeneratedTestResult(finalResult);
+                                setShowScoreSummary(true);
+                                setActiveGeneratedTest(null);
+                                setActivePracticeChapter(null);
+                                setCustomGeneratorMode('history');
+                                setShowQuiz(false);
+                                safeAlert('Test Submitted Successfully! View your detailed analysis.');
                             };
 
                             return (
@@ -7848,7 +9513,7 @@ const getStatus = (qId) => {
                                     <div className="bg-gray-100 border-b border-gray-300 px-4 py-2 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm shrink-0 gap-4">
                                         <div className="flex items-center gap-4 relative w-full">
                                             <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none hidden md:block">
-                                                <svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><path d="M0,100 L200,0 M50,100 L200,20 M100,100 L200,40" stroke="#000" strokeWidth="2" fill="none"/></svg>
+                                                <svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><path d="M0,100 L200,0 M50,100 L200,20 M100,100 L200,40" stroke="#000" strokeWidth="2" fill="none" /></svg>
                                             </div>
                                             <div className="w-[85px] h-[95px] bg-white border-2 border-gray-400 flex items-center justify-center overflow-hidden shrink-0">
                                                 {tgUser?.photo_url ? <img src={tgUser.photo_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-user text-5xl text-gray-500"></i>}
@@ -7857,34 +9522,35 @@ const getStatus = (qId) => {
                                                 <span className="text-gray-700">Candidate Name</span><span className="font-bold text-[#E85D04]">: {safeRenderText(tgUser?.first_name ? (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '')) : 'Student')}</span>
                                                 <span className="text-gray-700">Exam Name</span><span className="font-bold text-[#E85D04]">: {isNeet ? 'NEET' : 'JEE'}</span>
                                                 <span className="text-gray-700">Test Name</span><span className="font-bold text-[#E85D04]">: {activePracticeChapter.name}</span>
-                                                <span className="text-gray-700">Remaining Time</span><span className="font-bold text-white bg-[#ff0000] px-2 py-0.5 rounded-full inline-block w-max text-xs tracking-wider shadow-sm">: <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} /></span>
+                                                <span className="text-gray-700">{activeGeneratedTest?.type === 'dpp' ? 'Time Elapsed' : 'Remaining Time'}</span>
+                                                <OverallTestTimer activeGeneratedTest={activeGeneratedTest} onSubmit={handleTestSubmit} />
                                             </div>
                                         </div>
-                                        <button onClick={() => { 
-    if (activePracticeChapter?.isCustomTest) {
-        if(window.confirm('Are you sure you want to quit this test? Your progress will not be saved.')) {
-            setShowQuiz(false);
-            setActivePracticeChapter(null);
-            setActiveGeneratedTest(null);
-            setCustomGeneratorMode('history');
-        }
-    } else {
-        setConfirmClearScope({ type: 'chapter', data: activePracticeChapter }); 
-    }
-}} className="text-red-500 text-sm font-bold hover:bg-red-50 px-3 py-1 rounded-sm transition-colors border border-red-200">Quit Test</button>
+                                        <button onClick={() => {
+                                            if (activePracticeChapter?.isCustomTest) {
+                                                safeConfirm('Are you sure you want to quit this test? Your progress will not be saved.', () => {
+                                                    setShowQuiz(false);
+                                                    setActivePracticeChapter(null);
+                                                    setActiveGeneratedTest(null);
+                                                    setCustomGeneratorMode('history');
+                                                });
+                                            } else {
+                                                setConfirmClearScope({ type: 'chapter', data: activePracticeChapter });
+                                            }
+                                        }} className="text-red-500 text-sm font-bold hover:bg-red-50 px-3 py-1 rounded-sm transition-colors border border-red-200">Quit Test</button>
                                     </div>
 
-                                    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-                                        <div className="flex-1 flex flex-col border-r border-gray-300 relative bg-white min-w-0">
+                                    <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
+                                        <div className={`flex-1 flex-col border-r border-gray-300 relative bg-white min-w-0 min-h-0 ${practiceShowPalette ? 'hidden lg:flex' : 'flex'}`}>
                                             <div className="flex justify-between items-center bg-white border-b-2 border-gray-300 px-4 py-2 shrink-0">
                                                 <h2 className="text-lg font-bold text-gray-800">Question {safeQuestionIndex + 1}:</h2>
                                                 <i className="fa-solid fa-circle-down text-blue-600 text-xl"></i>
                                             </div>
-                                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" data-qa-card>
+                                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0" data-qa-card>
                                                 <div className="text-black text-[15px] sm:text-[16px] leading-relaxed font-medium mb-8">
                                                     <FormattedText text={currentQuestion?.question || currentQuestion?.text || currentQuestion?.question_text} />
                                                     {currentQuestion.imageUrl && <div className="mt-4 max-w-full overflow-hidden rounded-md border border-gray-200"><img src={currentQuestion.imageUrl} className="max-w-full h-auto object-contain max-h-[400px]" alt="Question" /></div>}
-                                                    
+
                                                     {currentQuestion.options && currentQuestion.options.length > 0 && (
                                                         <div className="mt-8 flex flex-col gap-5 text-[15px]">
                                                             {currentQuestion.options.map((opt, oIdx) => (
@@ -7896,7 +9562,7 @@ const getStatus = (qId) => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                
+
                                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-auto w-full pt-8 pb-4 pl-2 pr-4">
                                                     {(currentQuestion.options || [1, 2, 3, 4]).map((_, oIdx) => {
                                                         const isSelected = userAnsIdx === oIdx;
@@ -7927,52 +9593,44 @@ const getStatus = (qId) => {
                                                     })}
                                                 </div>
                                             </div>
-                                            <div className="border-t border-gray-300 bg-white p-3 shrink-0">
-                                                <div className="flex gap-1 mb-3">
+                                            <div className="border-t border-gray-300 bg-white p-2 sm:p-3 shrink-0">
+                                                <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 lg:gap-1">
                                                     <button onClick={() => {
                                                         if (practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => prev.filter(id => id !== currentQuestion?.id));
                                                         handleNext();
-                                                    }} className="bg-[#5CB85C] hover:bg-[#4cae4c] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#4cae4c]">Save & Next</button>
-                                                    <button onClick={() => handleClear(currentQuestion?.id)} className="bg-white hover:bg-gray-100 text-black text-[12px] font-bold px-4 py-2 uppercase border border-gray-300">Clear</button>
+                                                    }} className="bg-[#5CB85C] hover:bg-[#4cae4c] text-white text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-[#4cae4c] leading-tight text-center sm:text-left">Save & Next</button>
+                                                    <button onClick={() => handleClear(currentQuestion?.id)} className="bg-white hover:bg-gray-100 text-black text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-gray-300 leading-tight text-center sm:text-left">Clear</button>
                                                     <button onClick={() => {
                                                         if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
                                                         handleNext();
-                                                    }} className="bg-[#F0AD4E] hover:bg-[#eea236] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#eea236]">Save & Mark For Review</button>
+                                                    }} className="bg-[#F0AD4E] hover:bg-[#eea236] text-white text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-[#eea236] leading-tight text-center sm:text-left">Save & Mark Review</button>
                                                     <button onClick={() => {
                                                         if (!practiceReview.includes(currentQuestion?.id)) setPracticeReview(prev => [...prev, currentQuestion?.id]);
                                                         handleNext();
-                                                    }} className="bg-[#337AB7] hover:bg-[#286090] text-white text-[12px] font-bold px-4 py-2 uppercase border border-[#2e6da4]">Mark For Review & Next</button>
+                                                    }} className="bg-[#337AB7] hover:bg-[#286090] text-white text-[11px] sm:text-[12px] font-bold px-2 sm:px-4 py-2 uppercase border border-[#2e6da4] leading-tight text-center sm:text-left">Mark Review & Next</button>
                                                 </div>
                                             </div>
-                                            <div className="bg-gray-100 border-t border-gray-300 px-4 py-3 flex justify-between shrink-0">
-                                                <div className="flex gap-2">
-                                                    <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">&lt;&lt; BACK</button>
-                                                    <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[12px] font-bold px-4 py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
+                                            <div className="bg-gray-100 border-t border-gray-300 px-2 sm:px-4 py-2 sm:py-3 flex justify-between items-center shrink-0">
+                                                <div className="flex gap-1 sm:gap-2">
+                                                    <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] sm:text-[12px] font-bold px-2 sm:px-4 py-1.5 sm:py-2 shadow-sm disabled:opacity-50">&lt;&lt; BACK</button>
+                                                    <button onClick={handleNext} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] sm:text-[12px] font-bold px-2 sm:px-4 py-1.5 sm:py-2 shadow-sm disabled:opacity-50">NEXT &gt;&gt;</button>
                                                 </div>
+                                                <button onClick={() => setPracticeShowPalette(true)} className="lg:hidden bg-gray-200 hover:bg-gray-300 text-gray-800 text-[11px] font-bold px-3 py-1.5 border border-gray-400 rounded-sm flex items-center gap-1 shadow-sm"><i className="fa-solid fa-grip"></i> Palette</button>
                                                 <button onClick={() => {
-                                                    let score = 0;
-                                                    let correctCnt = 0;
-                                                    displayedQuestions.forEach(q => {
-                                                        const ansIdx = attempts[q.id];
-                                                        if (ansIdx !== undefined) {
-                                                            const isCorr = ['A', 'B', 'C', 'D'][ansIdx] === q.correctOption;
-                                                            if (isCorr) { score += 4; correctCnt++; } else { score -= 1; }
-                                                        }
+                                                    safeConfirm('Are you sure you want to submit your test?', () => {
+                                                        handleTestSubmit();
                                                     });
-                                                    const finalResult = { ...activeGeneratedTest, score, accuracy: Math.round((correctCnt / displayedQuestions.length) * 100) || 0, attempts: { ...attempts }, questions: displayedQuestions };
-                                                    setGeneratedTestsHistory(prev => [finalResult, ...prev]);
-                                                    setGeneratedTestResult(finalResult);
-                                                    setActiveGeneratedTest(null);
-                                                    setActivePracticeChapter(null); 
-                                                    setCustomGeneratorMode('history');
-                                                    safeAlert('Test Submitted Successfully! View your detailed analysis.');
-                                                }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-xs font-bold px-6 py-1.5 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
+                                                }} className="bg-[#4caf50] hover:bg-[#43a047] text-white text-[11px] sm:text-[12px] font-bold px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm shadow-sm uppercase tracking-wider active:scale-95">Submit</button>
                                             </div>
                                         </div>
 
-                                        <div className="w-full lg:w-[320px] bg-white flex flex-col shrink-0 lg:h-full max-h-[40vh] lg:max-h-none border-t lg:border-t-0 border-gray-300 overflow-hidden relative">
-                                            <div className="absolute -left-6 top-[20%] w-6 h-10 bg-black text-white flex items-center justify-center cursor-pointer rounded-l-md hidden lg:flex z-50">
+                                        <div className={`w-full lg:w-[320px] bg-white flex-col shrink-0 lg:h-full lg:max-h-none border-t lg:border-t-0 border-gray-300 overflow-hidden relative ${practiceShowPalette ? 'flex absolute inset-0 z-50 h-full max-h-none' : 'hidden lg:flex'}`}>
+                                            <div className="absolute -left-6 top-[20%] w-6 h-10 bg-black text-white items-center justify-center cursor-pointer rounded-l-md hidden lg:flex z-50">
                                                 <i className="fa-solid fa-chevron-right text-xs"></i>
+                                            </div>
+                                            <div className="flex justify-between items-center p-3 bg-[#5C7FA5] text-white lg:hidden shrink-0">
+                                                <span className="font-bold text-xs uppercase">Question Palette</span>
+                                                <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30"><i className="fa-solid fa-xmark"></i></button>
                                             </div>
                                             <div className="p-3 m-2 bg-white border-2 border-dashed border-gray-500 grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] sm:text-[12px] text-gray-700 shrink-0 relative">
                                                 <div className="flex items-center gap-2"><StatusShape status="not_visited" num={cntNotVisited} /> <span>Not Visited</span></div>
@@ -7984,16 +9642,18 @@ const getStatus = (qId) => {
                                                     <span className="leading-tight">Answered & Marked for Review (will be considered for evaluation)</span>
                                                 </div>
                                             </div>
-                                            <div className="bg-[#5C7FA5] text-white font-bold px-3 py-1.5 text-xs uppercase shrink-0">Choose a Question</div>
-                                            <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white">
+                                            <div className="bg-[#5C7FA5] text-white font-bold px-3 py-1.5 text-xs uppercase shrink-0 hidden lg:block">Choose a Question</div>
+                                            <div className="p-3 overflow-y-auto flex-1 flex flex-wrap gap-1 content-start bg-white pb-10 lg:pb-3">
                                                 {displayedQuestions.map((q, idx) => {
                                                     const status = getStatus(q.id);
+                                                    const isActive = idx === safeQuestionIndex;
                                                     return (
                                                         <div key={q.id} onClick={() => {
                                                             if (!practiceVisited.includes(currentQuestion?.id)) setPracticeVisited(prev => [...prev, currentQuestion?.id]);
                                                             setCurrentQuestionIndex(idx);
+                                                            setPracticeShowPalette(false);
                                                         }} className="flex justify-center cursor-pointer mb-1 mr-1">
-                                                            <StatusShape status={status} num={idx + 1} />
+                                                            <StatusShape status={status} num={idx + 1} isActive={isActive} />
                                                         </div>
                                                     );
                                                 })}
@@ -8019,7 +9679,10 @@ const getStatus = (qId) => {
                                             <button onClick={handleBack} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-md shadow-inner active:scale-95 text-white/70 hover:text-white ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 hover:bg-cyan-800/50' : 'bg-white/10 border border-white/20 hover:bg-white/20'}`}><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight line-clamp-1">{safeRenderText(activePracticeChapter.name)}</h2>
                                         </div>
-                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setIsManageMode(!isManageMode)} className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.1)] active:scale-95 border ${isManageMode ? (isNeet ? 'bg-blue-500 border-blue-400 text-white' : isJee ? 'bg-cyan-500 border-cyan-400 text-white' : 'bg-white border-white/50 text-black') : (isNeet ? 'bg-blue-900/30 border-blue-500/30 text-white/70 hover:text-white hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border-cyan-500/30 text-white/70 hover:text-white hover:bg-cyan-800/50' : 'bg-white/10 border-white/20 text-white/70 hover:text-white hover:bg-white/20')}`} title="Manage Progress"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                        </div>
                                     </div>
 
                                     <h3 className={`font-black text-xs uppercase tracking-widest mb-4 inline-block px-3 py-1.5 rounded-lg border backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] ${isNeet ? 'text-blue-300 bg-blue-900/40 border-blue-500/30' : isJee ? 'text-cyan-300 bg-cyan-900/40 border-cyan-500/30' : 'text-white bg-white/10 border-white/20'}`}>Select Question Type</h3>
@@ -8039,12 +9702,14 @@ const getStatus = (qId) => {
                                                 <div key={i} onClick={() => { if (qCount > 0) { setActiveQuestionType(type); setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden ${qCount > 0 ? 'cursor-pointer hover:-translate-y-1 ' + (isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10') : 'opacity-50 grayscale'}`}>
                                                     <div className="flex-1 mr-4">
                                                         <h4 className={`font-black text-lg text-white transition-colors drop-shadow-sm ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-gray-300'}`}>{type}</h4>
-                                                        <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{qCount} Qs</p>
+                                                        {type !== 'All combined' && (
+                                                            <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{qCount} Qs</p>
+                                                        )}
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        {qCount > 0 && (
-                                                            <button onClick={(e) => { 
-                                                                e.stopPropagation(); 
+                                                        {qCount > 0 && isManageMode && (
+                                                            <button onClick={(e) => {
+                                                                e.stopPropagation();
                                                                 let questionsToClear = [];
                                                                 if (type === 'All combined') {
                                                                     activePracticeChapter.topics?.forEach(t => t.questions?.forEach(q => questionsToClear.push(q)));
@@ -8053,8 +9718,8 @@ const getStatus = (qId) => {
                                                                         if ((q.questionType || 'Main module (recommended)') === type) questionsToClear.push(q);
                                                                     }));
                                                                 }
-                                                                setConfirmClearScope({ type: 'topic', data: { name: type, questions: questionsToClear } }); 
-                                                            }} className="w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20 opacity-50 hover:opacity-100 group-hover:opacity-100" title="Clear Question Type Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                                setConfirmClearScope({ type: 'topic', data: { name: type, questions: questionsToClear } });
+                                                            }} className="w-7 h-7 rounded-lg text-xs bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20 opacity-50 hover:opacity-100 group-hover:opacity-100" title="Clear Question Type Progress"><i className="fa-solid fa-trash-can"></i></button>
                                                         )}
                                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${qCount > 0 ? 'bg-white/5 border border-white/10 text-white/50 group-hover:scale-110 ' + (isNeet ? 'group-hover:bg-blue-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] group-hover:border-blue-400' : isJee ? 'group-hover:bg-cyan-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] group-hover:border-cyan-400' : 'group-hover:bg-white group-hover:text-black') : 'bg-white/5 text-white/20 border border-white/5'}`}>
                                                             <i className="fa-solid fa-play ml-0.5 text-xs"></i>
@@ -8166,308 +9831,310 @@ const getStatus = (qId) => {
                         return (
                             <>
 
-                            <div className="pb-32 animate-pop-in relative min-h-screen bg-[#F3F4F6] text-gray-900 font-sans">
-                                {/* CBT Header */}
-                                <div className={`px-4 py-3 flex items-center justify-between ${themeBg} text-white shadow-md relative z-20`}>
-                                    <div className="flex items-center gap-3 w-full">
-                                        <button onClick={handleBack} className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center shrink-0 transition-colors"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <div className="flex-1 overflow-hidden">
-                                            <h2 className="text-base font-bold text-white leading-tight truncate">{safeRenderText(activePracticeChapter.name)}</h2>
-                                            <p className="text-xs text-blue-100 opacity-90">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
-                                        </div>
-                                        <div className="shrink-0 bg-black/20 px-3 py-1.5 rounded-sm border border-white/10 font-mono text-sm tracking-widest font-bold">
-                                            <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} />
+                                <div className="pb-32 animate-pop-in relative min-h-screen bg-[#F3F4F6] text-gray-900 font-sans">
+                                    {/* CBT Header */}
+                                    <div className={`px-4 py-3 flex items-center justify-between ${themeBg} text-white shadow-md relative z-20`}>
+                                        <div className="flex items-center gap-3 w-full">
+                                            <button onClick={handleBack} className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center shrink-0 transition-colors"><i className="fa-solid fa-arrow-left"></i></button>
+                                            <div className="flex-1 overflow-hidden">
+                                                <h2 className="text-base font-bold text-white leading-tight truncate">{safeRenderText(activePracticeChapter.name)}</h2>
+                                                <p className="text-xs text-blue-100 opacity-90">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
+                                            </div>
+                                            <div className="shrink-0 bg-black/20 px-3 py-1.5 rounded-sm border border-white/10 font-mono text-sm tracking-widest font-bold">
+                                                <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Optional Filters & Topic Selector */}
-                                <div className="bg-white px-4 py-2 border-b border-gray-300 shadow-sm flex items-center justify-between z-10 relative">
-                                    <div className="flex gap-2 items-center overflow-x-auto no-scrollbar flex-1 mr-2">
-                                        <button 
-                                            onClick={() => setPracticeShowTopicModal(true)}
-                                            className={`flex items-center gap-2 border rounded-sm transition-all px-3 py-1.5 ${practiceSelectedTopic ? themeBorder + ' ' + themeLightBg : 'border-gray-300 bg-white hover:border-gray-400'}`}
-                                        >
-                                            <i className={`fa-solid fa-filter text-[10px] ${practiceSelectedTopic ? themeText : 'text-gray-400'}`}></i>
-                                            <span className={`text-xs font-bold truncate max-w-[120px] md:max-w-[160px] ${practiceSelectedTopic ? themeText : 'text-gray-600'}`}>
-                                                {practiceSelectedTopic ? safeRenderText(practiceSelectedTopic) : 'All Topics'}
-                                            </span>
-                                            <i className={`fa-solid fa-chevron-down text-[10px] ${practiceSelectedTopic ? themeText : 'text-gray-400'}`}></i>
-                                        </button>
-                                        <div className="h-4 w-px bg-gray-300 mx-1 shrink-0"></div>
-                                        <button onClick={() => { setQuestionFilter('all'); setCurrentQuestionIndex(0); }} className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>All Qs</button>
-                                        <button onClick={() => { setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Bookmarked</button>
-                                        <button onClick={() => { setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Incorrect</button>
-                                    </div>
-                                    <button onClick={() => setPracticeShowPalette(true)} className={`ml-2 ${themeBg} text-white px-3 py-1.5 rounded-sm text-xs font-bold shrink-0 shadow-sm active:scale-95 transition-transform`}><i className="fa-solid fa-grip mr-1"></i> Palette</button>
-                                </div>
-
-                                {/* Question Content */}
-                                <div data-qa-card className="p-3 md:p-5 max-w-4xl mx-auto">
-                                    {displayedQuestions.length === 0 ? (
-                                        <div className="bg-white border border-gray-300 shadow-sm py-12 text-center px-4 rounded-sm mt-4">
-                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
-                                            <h3 className="font-bold text-gray-900 mb-2">No questions found</h3>
-                                            <p className="text-sm text-gray-500 mb-4">Adjust your filters to see questions.</p>
-                                            <button onClick={() => { setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className={`text-white font-semibold text-sm px-4 py-2 rounded-sm mt-2 transition-colors ${themeBg} ${themeHoverBorder}`}>Clear Filters</button>
+                                    {/* Optional Filters & Topic Selector */}
+                                    <div className="bg-white px-4 py-2 border-b border-gray-300 shadow-sm flex items-center justify-between z-10 relative">
+                                        <div className="flex gap-2 items-center overflow-x-auto no-scrollbar flex-1 mr-2">
+                                            <button
+                                                onClick={() => setPracticeShowTopicModal(true)}
+                                                className={`flex items-center gap-2 border rounded-sm transition-all px-3 py-1.5 ${practiceSelectedTopic ? themeBorder + ' ' + themeLightBg : 'border-gray-300 bg-white hover:border-gray-400'}`}
+                                            >
+                                                <i className={`fa-solid fa-filter text-[10px] ${practiceSelectedTopic ? themeText : 'text-gray-400'}`}></i>
+                                                <span className={`text-xs font-bold truncate max-w-[120px] md:max-w-[160px] ${practiceSelectedTopic ? themeText : 'text-gray-600'}`}>
+                                                    {practiceSelectedTopic ? safeRenderText(practiceSelectedTopic) : 'All Topics'}
+                                                </span>
+                                                <i className={`fa-solid fa-chevron-down text-[10px] ${practiceSelectedTopic ? themeText : 'text-gray-400'}`}></i>
+                                            </button>
+                                            <div className="h-4 w-px bg-gray-300 mx-1 shrink-0"></div>
+                                            <button onClick={() => { setQuestionFilter('all'); setCurrentQuestionIndex(0); }} className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>All Qs</button>
+                                            <button onClick={() => { setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Bookmarked</button>
+                                            <button onClick={() => { setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? themeBg + ' text-white ' + themeBorder : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Incorrect</button>
                                         </div>
-                                    ) : (
-                                        <div className="bg-white border border-gray-300 shadow-md rounded-sm mt-2">
-                                            <div className="p-4 md:p-6">
-                                                <div className="flex justify-between items-start mb-3 gap-4">
-                                                    <div className="text-black text-[15px] md:text-base leading-relaxed font-medium">
-                                                        <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
-                                                    </div>
-                                                    {/* Enhanced Bookmark Button */}
-                                                    <div className="shrink-0">
-                                                        <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
-                                                            <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i> 
-                                                            <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                {currentQuestion.imageUrl && (
-                                                    <div className="mb-6 rounded-sm overflow-hidden bg-white flex items-center justify-center border border-gray-200 p-2">
-                                                        <img src={currentQuestion.imageUrl} alt="Question Image" className="max-w-full max-h-[40vh] object-contain" onError={(e) => { e.target.style.display = 'none' }} />
-                                                    </div>
-                                                )}
+                                        <button onClick={() => setPracticeShowPalette(true)} className={`ml-2 ${themeBg} text-white px-3 py-1.5 rounded-sm text-xs font-bold shrink-0 shadow-sm active:scale-95 transition-transform`}><i className="fa-solid fa-grip mr-1"></i> Palette</button>
+                                    </div>
 
-                                                {/* Options Display */}
-                                                <div className="flex flex-col border border-gray-300 rounded-sm overflow-hidden mb-6">
-                                                    {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((opt, idx) => {
-                                                        return (
-                                                            <div key={idx} className="w-full text-left flex items-stretch border-b border-gray-300 last:border-b-0 bg-white">
-                                                                <div className="w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] border-r border-gray-300 bg-gray-50 text-gray-700">({idx + 1})</div>
-                                                                <div className="p-3 text-[14px] md:text-[15px] text-black w-full break-words leading-relaxed"><FormattedText text={opt} /></div>
-                                                            </div>
-                                                        );
-                                                    }) : null}
-                                                </div>
-
-                                                {/* CBT Options Selection Bar */}
-                                                <div className="flex justify-center gap-4 mb-5">
-                                                    {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((_, idx) => {
-                                                        const isSelected = selectedOptionIdx === idx;
-                                                        const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === currentQuestion.correctOption;
-                                                        let btnClass = "bg-white border-gray-400 text-gray-800 hover:bg-blue-50 hover:border-blue-300";
-                                                        if (isAnswered) {
-                                                            if (isCorrectChoice) btnClass = "bg-[#1e7e34] border-[#1e7e34] text-white ring-2 ring-[#1e7e34] ring-offset-2 z-10";
-                                                            else if (isSelected) btnClass = "bg-[#c5221f] border-[#c5221f] text-white ring-2 ring-[#c5221f] ring-offset-2 z-10";
-                                                            else btnClass = "bg-gray-100 border-gray-300 text-gray-400";
-                                                        } else if (isSelected) {
-                                                            btnClass = `${themeBg} ${themeBorder} text-white ring-2 ${themeRing} ring-offset-2 z-10`;
-                                                        }
-                                                        return (
-                                                            <button
-                                                                key={`cbt-opt-${idx}`}
-                                                                disabled={isAnswered}
-                                                                onClick={() => handleAttempt(currentQuestion.id, idx)}
-                                                                className={`w-12 h-12 flex items-center justify-center border-2 rounded-full font-bold text-lg transition-all duration-200 disabled:cursor-default ${btnClass} ${!isAnswered ? 'active:scale-95 cursor-pointer shadow-sm' : ''}`}
-                                                            >
-                                                                {idx + 1}
-                                                            </button>
-                                                        );
-                                                    }) : null}
-                                                </div>
-
-                                                        {/* Premium White/Grey Personal Notes UI */}
-                                                        <div className="mt-8 mb-4">
-                                                            <div className="flex justify-between items-center mb-4">
-                                                                <h4 className="text-[15px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2.5">
-                                                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shadow-inner shadow-blue-200/50">
-                                                                        <i className="fa-solid fa-pen-nib text-[#00418d] text-sm"></i>
-                                                                    </div>
-                                                                    My Personal Notes
-                                                                </h4>
-                                                                {!(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
-                                                                    <button 
-                                                                        onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))} 
-                                                                        className="group relative px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-[#00418d] hover:border-blue-200 shadow-sm hover:shadow-md hover:shadow-blue-100 active:scale-95 overflow-hidden"
-                                                                    >
-                                                                        <div className="absolute inset-0 bg-blue-50/50 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                                                                        <i className="fa-solid fa-plus relative z-10 group-hover:rotate-90 transition-transform duration-300"></i> 
-                                                                        <span className="relative z-10">Add Note</span>
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                            {(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
-                                                                <div className="bg-white border border-slate-200 p-5 rounded-3xl animate-in fade-in zoom-in-95 duration-300 ease-out relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
-                                                                    {/* Subtle Top Gradient Accent */}
-                                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00418d] via-blue-400 to-[#00a651] opacity-80"></div>
-                                                                    
-                                                                    {(!showNoteInput[currentQuestion.id] && questionNotes[currentQuestion.id]) ? (
-                                                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-[15px] text-slate-700 mb-4 whitespace-pre-wrap font-medium leading-relaxed shadow-inner">
-                                                                            {questionNotes[currentQuestion.id]}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="relative mb-4 group">
-                                                                            <textarea
-                                                                                className="w-full text-[15px] p-5 border-2 border-slate-100 rounded-2xl bg-white text-slate-800 focus:outline-none focus:border-[#00418d] focus:ring-4 focus:ring-[#00418d]/10 transition-all min-h-[120px] resize-y placeholder-slate-400 font-medium shadow-sm z-10 relative"
-                                                                                placeholder="Type your brilliant thoughts here... (auto-saved)"
-                                                                                value={questionNotes[currentQuestion.id] || ''}
-                                                                                onChange={(e) => setQuestionNotes(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
-                                                                                autoFocus
-                                                                            ></textarea>
-                                                                            {/* Glowing effect on focus */}
-                                                                            <div className="absolute inset-0 rounded-2xl bg-[#00418d] opacity-0 group-focus-within:opacity-[0.03] blur-xl transition-opacity duration-500 pointer-events-none"></div>
-                                                                        </div>
-                                                                    )}
-                                                                    
-                                                                    <div className="flex justify-end gap-3 relative z-10">
-                                                                        {questionNotes[currentQuestion.id] && (
-                                                                            <button 
-                                                                                onClick={() => {
-                                                                                    const newNotes = { ...questionNotes };
-                                                                                    delete newNotes[currentQuestion.id];
-                                                                                    setQuestionNotes(newNotes);
-                                                                                    setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }));
-                                                                                }} 
-                                                                                className="text-slate-500 hover:text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 border border-transparent hover:border-red-100"
-                                                                            >
-                                                                                <i className="fa-solid fa-trash-can"></i> Delete
-                                                                            </button>
-                                                                        )}
-                                                                        
-                                                                        {showNoteInput[currentQuestion.id] ? (
-                                                                            <button 
-                                                                                onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }))} 
-                                                                                className="bg-[#00418d] hover:bg-[#003370] text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(0,65,141,0.39)] hover:shadow-[0_6px_20px_rgba(0,65,141,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
-                                                                            >
-                                                                                <i className="fa-solid fa-check"></i> Save Note
-                                                                            </button>
-                                                                        ) : (
-                                                                            <button 
-                                                                                onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))} 
-                                                                                className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:shadow-[0_6px_20px_rgba(15,23,42,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
-                                                                            >
-                                                                                <i className="fa-solid fa-pen-to-square"></i> Edit Note
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                {isAnswered && (
-                                                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm mt-6 animate-in fade-in slide-in-from-top-2">
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <i className={`fa-solid ${isCorrect ? 'fa-circle-check text-[#1e7e34]' : 'fa-circle-xmark text-[#c5221f]'} text-lg`}></i>
-                                                            <span className={`font-bold text-sm ${isCorrect ? 'text-[#1e7e34]' : 'text-[#c5221f]'}`}>
-                                                                {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
-                                                            </span>
+                                    {/* Question Content */}
+                                    <div data-qa-card className="p-3 md:p-5 max-w-4xl mx-auto">
+                                        {displayedQuestions.length === 0 ? (
+                                            <div className="bg-white border border-gray-300 shadow-sm py-12 text-center px-4 rounded-sm mt-4">
+                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
+                                                <h3 className="font-bold text-gray-900 mb-2">No questions found</h3>
+                                                <p className="text-sm text-gray-500 mb-4">Adjust your filters to see questions.</p>
+                                                <button onClick={() => { setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className={`text-white font-semibold text-sm px-4 py-2 rounded-sm mt-2 transition-colors ${themeBg} ${themeHoverBorder}`}>Clear Filters</button>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-white border border-gray-300 shadow-md rounded-sm mt-2">
+                                                <div className="p-4 md:p-6">
+                                                    <div className="flex justify-between items-start mb-3 gap-4">
+                                                        <div className="text-black text-[15px] md:text-base leading-relaxed font-medium">
+                                                            <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
                                                         </div>
-                                                        {currentQuestion.explanation && currentQuestion.explanation.trim().toLowerCase() !== 'no explanation' && (
-                                                            <div className="text-sm text-gray-700 mt-2 bg-white p-3 border border-gray-200 rounded-sm">
-                                                                <span className="font-semibold text-black">Explanation:</span> <FormattedText text={currentQuestion.explanation} />
+                                                        {/* Enhanced Bookmark Button */}
+                                                        <div className="shrink-0">
+                                                            <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
+                                                                <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i>
+                                                                <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    {currentQuestion.imageUrl && (
+                                                        <div className="mb-6 rounded-sm overflow-hidden bg-white flex items-center justify-center border border-gray-200 p-2">
+                                                            <img src={currentQuestion.imageUrl} alt="Question Image" className="max-w-full max-h-[40vh] object-contain" onError={(e) => { e.target.style.display = 'none' }} />
+                                                        </div>
+                                                    )}
+
+                                                    {/* Options Display */}
+                                                    <div className="flex flex-col border border-gray-300 rounded-sm overflow-hidden mb-6">
+                                                        {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((opt, idx) => {
+                                                            return (
+                                                                <div key={idx} className="w-full text-left flex items-stretch border-b border-gray-300 last:border-b-0 bg-white">
+                                                                    <div className="w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] border-r border-gray-300 bg-gray-50 text-gray-700">({idx + 1})</div>
+                                                                    <div className="p-3 text-[14px] md:text-[15px] text-black w-full break-words leading-relaxed"><FormattedText text={opt} /></div>
+                                                                </div>
+                                                            );
+                                                        }) : null}
+                                                    </div>
+
+                                                    {/* CBT Options Selection Bar */}
+                                                    <div className="flex justify-center gap-4 mb-5">
+                                                        {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((_, idx) => {
+                                                            const isSelected = selectedOptionIdx === idx;
+                                                            const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === currentQuestion.correctOption;
+                                                            let btnClass = "bg-white border-gray-400 text-gray-800 hover:bg-blue-50 hover:border-blue-300";
+                                                            if (isAnswered) {
+                                                                if (isCorrectChoice) btnClass = "bg-[#1e7e34] border-[#1e7e34] text-white ring-2 ring-[#1e7e34] ring-offset-2 z-10";
+                                                                else if (isSelected) btnClass = "bg-[#c5221f] border-[#c5221f] text-white ring-2 ring-[#c5221f] ring-offset-2 z-10";
+                                                                else btnClass = "bg-gray-100 border-gray-300 text-gray-400";
+                                                            } else if (isSelected) {
+                                                                btnClass = `${themeBg} ${themeBorder} text-white ring-2 ${themeRing} ring-offset-2 z-10`;
+                                                            }
+                                                            return (
+                                                                <button
+                                                                    key={`cbt-opt-${idx}`}
+                                                                    disabled={isAnswered}
+                                                                    onClick={() => handleAttempt(currentQuestion.id, idx)}
+                                                                    className={`w-12 h-12 flex items-center justify-center border-2 rounded-full font-bold text-lg transition-all duration-200 disabled:cursor-default ${btnClass} ${!isAnswered ? 'active:scale-95 cursor-pointer shadow-sm' : ''}`}
+                                                                >
+                                                                    {idx + 1}
+                                                                </button>
+                                                            );
+                                                        }) : null}
+                                                    </div>
+
+                                                    {/* Premium White/Grey Personal Notes UI */}
+                                                    <div className="mt-8 mb-4">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <h4 className="text-[15px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2.5">
+                                                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shadow-inner shadow-blue-200/50">
+                                                                    <i className="fa-solid fa-pen-nib text-[#00418d] text-sm"></i>
+                                                                </div>
+                                                                My Personal Notes
+                                                            </h4>
+                                                            {!(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
+                                                                <button
+                                                                    onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))}
+                                                                    className="group relative px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-[#00418d] hover:border-blue-200 shadow-sm hover:shadow-md hover:shadow-blue-100 active:scale-95 overflow-hidden"
+                                                                >
+                                                                    <div className="absolute inset-0 bg-blue-50/50 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                                                                    <i className="fa-solid fa-plus relative z-10 group-hover:rotate-90 transition-transform duration-300"></i>
+                                                                    <span className="relative z-10">Add Note</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
+                                                            <div className="bg-white border border-slate-200 p-5 rounded-3xl animate-in fade-in zoom-in-95 duration-300 ease-out relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
+                                                                {/* Subtle Top Gradient Accent */}
+                                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00418d] via-blue-400 to-[#00a651] opacity-80"></div>
+
+                                                                {(!showNoteInput[currentQuestion.id] && questionNotes[currentQuestion.id]) ? (
+                                                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-[15px] text-slate-700 mb-4 whitespace-pre-wrap font-medium leading-relaxed shadow-inner">
+                                                                        {questionNotes[currentQuestion.id]}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="relative mb-4 group">
+                                                                        <textarea
+                                                                            className="w-full text-[15px] p-5 border-2 border-slate-100 rounded-2xl bg-white text-slate-800 focus:outline-none focus:border-[#00418d] focus:ring-4 focus:ring-[#00418d]/10 transition-all min-h-[120px] resize-y placeholder-slate-400 font-medium shadow-sm z-10 relative"
+                                                                            placeholder="Type your brilliant thoughts here... (auto-saved)"
+                                                                            value={questionNotes[currentQuestion.id] || ''}
+                                                                            onChange={(e) => setQuestionNotes(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
+                                                                            autoFocus
+                                                                        ></textarea>
+                                                                        {/* Glowing effect on focus */}
+                                                                        <div className="absolute inset-0 rounded-2xl bg-[#00418d] opacity-0 group-focus-within:opacity-[0.03] blur-xl transition-opacity duration-500 pointer-events-none"></div>
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex justify-end gap-3 relative z-10">
+                                                                    {questionNotes[currentQuestion.id] && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const newNotes = { ...questionNotes };
+                                                                                delete newNotes[currentQuestion.id];
+                                                                                setQuestionNotes(newNotes);
+                                                                                setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }));
+                                                                            }}
+                                                                            className="text-slate-500 hover:text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 border border-transparent hover:border-red-100"
+                                                                        >
+                                                                            <i className="fa-solid fa-trash-can"></i> Delete
+                                                                        </button>
+                                                                    )}
+
+                                                                    {showNoteInput[currentQuestion.id] ? (
+                                                                        <button
+                                                                            onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }))}
+                                                                            className="bg-[#00418d] hover:bg-[#003370] text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(0,65,141,0.39)] hover:shadow-[0_6px_20px_rgba(0,65,141,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
+                                                                        >
+                                                                            <i className="fa-solid fa-check"></i> Save Note
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))}
+                                                                            className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:shadow-[0_6px_20px_rgba(15,23,42,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
+                                                                        >
+                                                                            <i className="fa-solid fa-pen-to-square"></i> Edit Note
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         )}
-                                                        <div className="mt-4">
-                                                            <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                            </div>
-                                    )}
-                                </div>
-
-                                
-
-                                {/* Stunning Custom Topic Modal */}
-                                {practiceShowTopicModal && (
-                                    <div className="fixed inset-0 z-[99999] flex flex-col justify-end items-center sm:items-center sm:justify-center">
-                                        {/* Backdrop */}
-                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPracticeShowTopicModal(false)}></div>
-                                        
-                                        {/* Modal Body */}
-                                        <div className={`relative w-full sm:w-[400px] sm:rounded-3xl rounded-t-3xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-300 pb-safe`}>
-                                            {/* Header */}
-                                            <div className={`p-5 ${themeBg} text-white flex justify-between items-center shrink-0`}>
-                                                <h3 className="font-bold text-lg tracking-wide flex items-center gap-2"><i className="fa-solid fa-list-ul"></i> Select Topic</h3>
-                                                <button onClick={() => setPracticeShowTopicModal(false)} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-95"><i className="fa-solid fa-xmark"></i></button>
-                                            </div>
-                                            
-                                            {/* Scrollable List */}
-                                            <div className="p-2 overflow-y-auto max-h-[60vh] bg-gray-50 flex flex-col gap-1">
-                                                <button 
-                                                    onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setPracticeShowTopicModal(false); }}
-                                                    className={`p-4 rounded-xl flex items-center justify-between transition-all active:scale-98 ${!practiceSelectedTopic ? themeLightBg + ' ' + themeBorder + ' border shadow-sm' : 'bg-white border border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'}`}
-                                                >
-                                                    <span className={`font-bold ${!practiceSelectedTopic ? themeText : ''}`}>All Topics Combined</span>
-                                                    {!practiceSelectedTopic && <i className={`fa-solid fa-circle-check ${themeText} text-lg`}></i>}
-                                                </button>
-
-                                                {activePracticeChapter.topics?.map((top, i) => {
-                                                    const isSelected = practiceSelectedTopic === top.name;
-                                                    const qCount = top.questions?.length || 0;
-                                                    return (
-                                                        <button 
-                                                            key={i}
-                                                            onClick={() => { setPracticeSelectedTopic(top.name); setCurrentQuestionIndex(0); setPracticeShowTopicModal(false); }}
-                                                            className={`p-4 rounded-xl flex items-center justify-between transition-all active:scale-[0.98] ${isSelected ? themeLightBg + ' ' + themeBorder + ' border shadow-sm' : 'bg-white border border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'}`}
-                                                        >
-                                                            <div className="flex flex-col items-start text-left">
-                                                                <span className={`font-bold text-sm line-clamp-2 ${isSelected ? themeText : ''}`}>{safeRenderText(top.name)}</span>
-                                                                <span className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded-sm">{qCount} Qs</span>
+                                                        {isAnswered && (
+                                                            <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm mt-6 animate-in fade-in slide-in-from-top-2">
+                                                                <div className="flex items-center gap-2 mb-3">
+                                                                    <i className={`fa-solid ${isCorrect ? 'fa-circle-check text-[#1e7e34]' : 'fa-circle-xmark text-[#c5221f]'} text-lg`}></i>
+                                                                    <span className={`font-bold text-sm ${isCorrect ? 'text-[#1e7e34]' : 'text-[#c5221f]'}`}>
+                                                                        {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
+                                                                    </span>
+                                                                </div>
+                                                                {currentQuestion.explanation && currentQuestion.explanation.trim().toLowerCase() !== 'no explanation' && (
+                                                                    <div className="text-sm text-gray-700 mt-2 bg-white p-3 border border-gray-200 rounded-sm">
+                                                                        <span className="font-semibold text-black">Explanation:</span> <FormattedText text={currentQuestion.explanation} />
+                                                                    </div>
+                                                                )}
+                                                                <div className="mt-4">
+                                                                    <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
+                                                                </div>
                                                             </div>
-                                                            {isSelected && <i className={`fa-solid fa-circle-check ${themeText} text-lg shrink-0 ml-3`}></i>}
-                                                        </button>
-                                                    );
-                                                })}
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
-                                )}
-                                
-                                {/* CBT Palette Slide-over Modal */}
-                                {showPalette && (
-                                    <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-center items-end animate-in fade-in" onClick={() => setPracticeShowPalette(false)}>
-                                        <div className="bg-[#f0f4f7] dark:bg-gray-900 h-full w-[80vw] sm:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 dark:border-gray-800 transform transition-transform animate-in slide-in-from-right" onClick={e => e.stopPropagation()}>
-                                            <div className={`${themeBg} text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0`}>
-                                                <h3 className="font-bold text-sm uppercase tracking-wider"><i className="fa-solid fa-grip mr-2"></i> Question Palette</h3>
-                                                <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 rounded-sm hover:bg-white/20 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
-                                            </div>
-                                            <div className="p-4 bg-white border-b border-gray-300 shadow-sm flex flex-wrap justify-between gap-y-3 text-[11px] font-semibold text-gray-700 shrink-0">
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-white border border-gray-400 rounded-sm text-[10px] shadow-sm">1</div> Not Visited</div>
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-[#fce8e6] border border-[#c5221f] text-[#c5221f] rounded-bl-[10px] rounded-br-[4px] rounded-t-[4px] text-[10px] shadow-sm">2</div> Not Answered</div>
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-[#e6f4ea] border border-[#1e7e34] text-[#1e7e34] rounded-tl-[10px] rounded-tr-[4px] rounded-b-[4px] text-[10px] shadow-sm">3</div> Answered</div>
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] shadow-sm">4</div> Marked for Review</div>
-                                                <div className="flex items-center gap-1.5 w-full mt-1"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#1e7e34] rounded-full ring-1 ring-white"></div></div> Answered & Marked for Review</div>
-                                            </div>
-                                            <div className="p-4 flex-1 overflow-y-auto bg-gray-50">
-                                                <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
-                                                    {displayedQuestions.map((q, qIdx) => {
-                                                        const isAns = attempts[q.id] !== undefined;
-                                                        const isRev = practiceReview.includes(q.id);
 
-                                                        const isCorrectAns = isAns && ['A', 'B', 'C', 'D'][attempts[q.id]] === q.correctOption;
 
-                                                        let shapeClass = "bg-white border-gray-300 text-gray-700 rounded-md shadow-sm"; // Not visited
-                                                        if (isAns && isCorrectAns) {
-                                                            shapeClass = "bg-emerald-50 border-emerald-500 text-emerald-600 rounded-md ring-1 ring-emerald-500/30 font-black shadow-sm";
-                                                        } else if (isAns && !isCorrectAns) {
-                                                            shapeClass = "bg-rose-50 border-rose-500 text-rose-600 rounded-md ring-1 ring-rose-500/30 font-black shadow-sm";
-                                                        } else if (practiceVisited.includes(q.id)) {
-                                                            shapeClass = "bg-amber-50 border-amber-400 text-amber-700 rounded-md shadow-sm";
-                                                        }
-                                                        
-                                                        if (isRev) {
-                                                            shapeClass += " !bg-purple-100 !border-purple-500 !text-purple-700 !rounded-full";
-                                                        }
 
+                                    {/* Stunning Custom Topic Modal */}
+                                    {practiceShowTopicModal && (
+                                        <div className="fixed inset-0 z-[99999] flex flex-col justify-end items-center sm:items-center sm:justify-center">
+                                            {/* Backdrop */}
+                                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPracticeShowTopicModal(false)}></div>
+
+                                            {/* Modal Body */}
+                                            <div className={`relative w-full sm:w-[400px] sm:rounded-3xl rounded-t-3xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-300 pb-safe`}>
+                                                {/* Header */}
+                                                <div className={`p-5 ${themeBg} text-white flex justify-between items-center shrink-0`}>
+                                                    <h3 className="font-bold text-lg tracking-wide flex items-center gap-2"><i className="fa-solid fa-list-ul"></i> Select Topic</h3>
+                                                    <button onClick={() => setPracticeShowTopicModal(false)} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-95"><i className="fa-solid fa-xmark"></i></button>
+                                                </div>
+
+                                                {/* Scrollable List */}
+                                                <div className="p-2 overflow-y-auto max-h-[60vh] bg-gray-50 flex flex-col gap-1">
+                                                    <button
+                                                        onClick={() => { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setPracticeShowTopicModal(false); }}
+                                                        className={`p-4 rounded-xl flex items-center justify-between transition-all active:scale-98 ${!practiceSelectedTopic ? themeLightBg + ' ' + themeBorder + ' border shadow-sm' : 'bg-white border border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'}`}
+                                                    >
+                                                        <span className={`font-bold ${!practiceSelectedTopic ? themeText : ''}`}>All Topics Combined</span>
+                                                        {!practiceSelectedTopic && <i className={`fa-solid fa-circle-check ${themeText} text-lg`}></i>}
+                                                    </button>
+
+                                                    {activePracticeChapter.topics?.map((top, i) => {
+                                                        const isSelected = practiceSelectedTopic === top.name;
+                                                        const qCount = top.questions?.length || 0;
                                                         return (
-                                                            <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? `ring-2 ${themeRing} ring-offset-1` : ''}`}>
-                                                                {qIdx + 1}
-                                                                {isAns && isRev && <div className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-[#1e7e34] rounded-full ring-1 ring-white"></div>}
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => { setPracticeSelectedTopic(top.name); setCurrentQuestionIndex(0); setPracticeShowTopicModal(false); }}
+                                                                className={`p-4 rounded-xl flex items-center justify-between transition-all active:scale-[0.98] ${isSelected ? themeLightBg + ' ' + themeBorder + ' border shadow-sm' : 'bg-white border border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'}`}
+                                                            >
+                                                                <div className="flex flex-col items-start text-left">
+                                                                    <span className={`font-bold text-sm line-clamp-2 ${isSelected ? themeText : ''}`}>{safeRenderText(top.name)}</span>
+                                                                    <span className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded-sm">{qCount} Qs</span>
+                                                                </div>
+                                                                {isSelected && <i className={`fa-solid fa-circle-check ${themeText} text-lg shrink-0 ml-3`}></i>}
                                                             </button>
                                                         );
                                                     })}
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+
+                                    {/* CBT Palette Slide-over Modal */}
+                                    {showPalette && (
+                                        <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-center items-end animate-in fade-in" onClick={() => setPracticeShowPalette(false)}>
+                                            <div className="bg-[#f0f4f7] dark:bg-gray-900 h-full w-[80vw] sm:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 dark:border-gray-800 transform transition-transform animate-in slide-in-from-right" onClick={e => e.stopPropagation()}>
+                                                <div className={`${themeBg} text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0`}>
+                                                    <h3 className="font-bold text-sm uppercase tracking-wider"><i className="fa-solid fa-grip mr-2"></i> Question Palette</h3>
+                                                    <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 rounded-sm hover:bg-white/20 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
+                                                </div>
+                                                <div className="p-4 bg-white border-b border-gray-300 shadow-sm flex flex-wrap justify-between gap-y-3 text-[11px] font-semibold text-gray-700 shrink-0">
+                                                    <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-md shadow-sm text-[10px]">1</div> Not Attempted</div>
+                                                    <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-amber-50 border border-amber-400 text-amber-700 rounded-md shadow-sm text-[10px]">2</div> Skipped</div>
+                                                    <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-emerald-50 border border-emerald-500 text-emerald-600 rounded-md ring-1 ring-emerald-500/30 font-black shadow-sm text-[10px]">3</div> Correct Answer</div>
+                                                    <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-rose-50 border border-rose-500 text-rose-600 rounded-md ring-1 ring-rose-500/30 font-black shadow-sm text-[10px]">4</div> Wrong Answer</div>
+                                                    <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] shadow-sm">5</div> Marked (Unanswered)</div>
+                                                    <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-white"></div></div> Marked (Correct)</div>
+                                                    <div className="flex items-center gap-1.5 w-full"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-2 h-2 bg-rose-500 rounded-full ring-1 ring-white"></div></div> Marked (Wrong)</div>
+                                                </div>
+                                                <div className="p-4 flex-1 overflow-y-auto bg-gray-50">
+                                                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
+                                                        {displayedQuestions.map((q, qIdx) => {
+                                                            const isAns = attempts[q.id] !== undefined;
+                                                            const isRev = practiceReview.includes(q.id);
+
+                                                            const isCorrectAns = isAns && ['A', 'B', 'C', 'D'][attempts[q.id]] === q.correctOption;
+
+                                                            let shapeClass = "bg-white border-gray-300 text-gray-700 rounded-md shadow-sm"; // Not visited
+                                                            if (isAns && isCorrectAns) {
+                                                                shapeClass = "bg-emerald-50 border-emerald-500 text-emerald-600 rounded-md ring-1 ring-emerald-500/30 font-black shadow-sm";
+                                                            } else if (isAns && !isCorrectAns) {
+                                                                shapeClass = "bg-rose-50 border-rose-500 text-rose-600 rounded-md ring-1 ring-rose-500/30 font-black shadow-sm";
+                                                            } else if (practiceVisited.includes(q.id)) {
+                                                                shapeClass = "bg-amber-50 border-amber-400 text-amber-700 rounded-md shadow-sm";
+                                                            }
+
+                                                            if (isRev) {
+                                                                shapeClass += " !bg-purple-100 !border-purple-500 !text-purple-700 !rounded-full";
+                                                            }
+
+                                                            return (
+                                                                <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? `ring-2 ${themeRing} ring-offset-1` : ''}`}>
+                                                                    {qIdx + 1}
+                                                                    {isAns && isRev && <div className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full ring-1 ring-white ${isCorrectAns ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                                 {/* CBT Bottom Bar */}
                                 <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom,_12px)]">
                                     <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-between items-center">
@@ -8497,7 +10164,7 @@ const getStatus = (qId) => {
                                 </div>
                             </>
                         );
-                    
+
                     }
 
                     if (activePracticeSubject) {
@@ -8508,7 +10175,10 @@ const getStatus = (qId) => {
                                         <button onClick={handleBack} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-md shadow-inner active:scale-95 text-white/70 hover:text-white ${isNeet ? 'bg-blue-900/30 border border-blue-500/30 hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border border-cyan-500/30 hover:bg-cyan-800/50' : 'bg-white/10 border border-white/20 hover:bg-white/20'}`}><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeSubject.name)}</h2>
                                     </div>
-                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => setIsManageMode(!isManageMode)} className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.1)] active:scale-95 border ${isManageMode ? (isNeet ? 'bg-blue-500 border-blue-400 text-white' : isJee ? 'bg-cyan-500 border-cyan-400 text-white' : 'bg-white border-white/50 text-black') : (isNeet ? 'bg-blue-900/30 border-blue-500/30 text-white/70 hover:text-white hover:bg-blue-800/50' : isJee ? 'bg-cyan-900/30 border-cyan-500/30 text-white/70 hover:text-white hover:bg-cyan-800/50' : 'bg-white/10 border-white/20 text-white/70 hover:text-white hover:bg-white/20')}`} title="Manage Progress"><i className="fa-solid fa-pen"></i></button>
+                                        <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                    </div>
                                 </div>
                                 <h3 className={`font-black text-xs uppercase tracking-widest mb-4 inline-block px-3 py-1.5 rounded-lg border backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] ${isNeet ? 'text-blue-300 bg-blue-900/40 border-blue-500/30' : isJee ? 'text-cyan-300 bg-cyan-900/40 border-cyan-500/30' : 'text-white bg-white/10 border-white/20'}`}>Chapter Selection</h3>
                                 <div className="space-y-3">
@@ -8520,7 +10190,9 @@ const getStatus = (qId) => {
                                                     <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{chap.topics?.length || 0} Topics</p>
                                                 </div>
                                                 <div className="flex items-center gap-4">
-                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'chapter', data: chap }); }} className="w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                    {isManageMode && (
+                                                        <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'chapter', data: chap }); }} className="w-7 h-7 rounded-lg text-xs bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20 opacity-50 hover:opacity-100 group-hover:opacity-100 animate-in zoom-in duration-200" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                    )}
                                                     <i className={`fa-solid fa-chevron-right text-xl transition-all duration-300 opacity-50 group-hover:opacity-100 group-active:opacity-100 group-hover:translate-x-1 group-active:translate-x-1 ${isNeet ? 'text-blue-400' : isJee ? 'text-cyan-400' : 'text-white'}`}></i>
                                                 </div>
                                             </div>
@@ -8533,7 +10205,7 @@ const getStatus = (qId) => {
                         );
                     }
 
-                                        if (activePracticeMode === 'practice') {
+                    if (activePracticeMode === 'practice') {
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
                                 <div className="flex justify-between items-center mb-6 relative z-10">
@@ -8541,9 +10213,12 @@ const getStatus = (qId) => {
                                         <button onClick={handleBack} className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 text-white/70 hover:text-white hover:bg-white/20 flex items-center justify-center backdrop-blur-md shadow-inner transition-all active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{activePracticeBatch?.name || 'Practice Modules'}</h2>
                                     </div>
-                                    {activePracticeBatch && (
-                                        <button onClick={() => setConfirmClearScope({ type: 'batch', data: activePracticeBatch })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Track Progress"><i className="fa-solid fa-trash-can"></i></button>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => setIsManageMode(!isManageMode)} className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.1)] active:scale-95 border ${isManageMode ? 'bg-blue-500 border-blue-400 text-white' : 'bg-white/10 border-white/20 text-white/70 hover:text-white hover:bg-white/20'}`} title="Manage Progress"><i className="fa-solid fa-pen"></i></button>
+                                        {activePracticeBatch && (
+                                            <button onClick={() => setConfirmClearScope({ type: 'batch', data: activePracticeBatch })} className="shrink-0 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95" title="Clear Track Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {qbankError && (
@@ -8557,10 +10232,10 @@ const getStatus = (qId) => {
 
                                 <div className="grid grid-cols-2 gap-3">
                                     {(() => {
-                                        const activeData = activePracticeBatch && activePracticeBatch.sourceTable
-                                            ? (qbankDataByTable[activePracticeBatch.sourceTable] || [])
+                                        const activeData = activePracticeBatch && activePracticeBatch?.sourceTable
+                                            ? (qbankDataByTable[activePracticeBatch?.sourceTable] || [])
                                             : qbankData;
-                                            
+
                                         const getDynamicSubjectIcon = (name, fallback) => {
                                             if (!name) return fallback || <i className="fa-solid fa-folder"></i>;
                                             const lower = name.toLowerCase();
@@ -8577,10 +10252,12 @@ const getStatus = (qId) => {
                                         return activeData.length > 0 ? activeData.map(sub => (
                                             <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.3)] cursor-pointer active:scale-[0.98] transition-all duration-500 flex flex-col items-center justify-center text-center group relative overflow-hidden hover:-translate-y-2 active:-translate-y-2 ${isNeet ? 'hover:border-blue-500/50 active:border-blue-500/50 hover:bg-blue-900/30 active:bg-blue-900/30 hover:shadow-[0_20px_50px_rgba(0,65,141,0.5)] active:shadow-[0_20px_50px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 active:border-cyan-500/50 hover:bg-cyan-900/30 active:bg-cyan-900/30 hover:shadow-[0_20px_50px_rgba(6,182,212,0.4)] active:shadow-[0_20px_50px_rgba(6,182,212,0.4)]' : 'hover:border-white/30 active:border-white/30 hover:bg-white/10 active:bg-white/10'}`}>
                                                 <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-4xl mb-4 z-10 transition-all duration-500 shadow-inner ${isNeet ? 'bg-blue-900/30 text-blue-200 border border-blue-500/20 group-hover:bg-blue-500/20 group-active:bg-blue-500/20 group-hover:border-blue-400/50 group-active:border-blue-400/50 group-hover:scale-110 group-active:scale-110 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] group-active:shadow-[0_0_30px_rgba(59,130,246,0.4)]' : isJee ? 'bg-cyan-900/30 text-cyan-200 border border-cyan-500/20 group-hover:bg-cyan-500/20 group-active:bg-cyan-500/20 group-hover:border-cyan-400/50 group-active:border-cyan-400/50 group-hover:scale-110 group-active:scale-110 group-hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] group-active:shadow-[0_0_30px_rgba(6,182,212,0.4)]' : 'bg-white/10 text-white border border-white/20 group-hover:scale-110 group-active:scale-110'}`}>{getDynamicSubjectIcon(sub.name, sub.icon)}</div>
-<i className={`fa-solid ${themeIcon} absolute -right-6 -bottom-6 text-[100px] text-white/5 transition-all duration-700 group-hover:rotate-12 group-active:rotate-12 group-hover:scale-110 group-active:scale-110 ${isNeet ? 'group-hover:text-blue-400/10 group-active:text-blue-400/10' : isJee ? 'group-hover:text-cyan-400/10 group-active:text-cyan-400/10' : ''}`}></i>
+                                                <i className={`fa-solid ${themeIcon} absolute -right-6 -bottom-6 text-[100px] text-white/5 transition-all duration-700 group-hover:rotate-12 group-active:rotate-12 group-hover:scale-110 group-active:scale-110 ${isNeet ? 'group-hover:text-blue-400/10 group-active:text-blue-400/10' : isJee ? 'group-hover:text-cyan-400/10 group-active:text-cyan-400/10' : ''}`}></i>
                                                 <h3 className={`font-black text-2xl text-white mt-2 z-10 transition-colors drop-shadow-md ${isNeet ? 'group-hover:text-blue-300 group-active:text-blue-300' : isJee ? 'group-hover:text-cyan-300 group-active:text-cyan-300' : 'group-hover:text-white group-active:text-white'}`}>{safeRenderText(sub.name)}</h3>
                                                 <p className={`text-[10px] font-black uppercase tracking-widest mt-2 z-10 transition-colors ${isNeet ? 'text-blue-200/50 group-hover:text-blue-200 group-active:text-blue-200' : isJee ? 'text-cyan-200/50 group-hover:text-cyan-200 group-active:text-cyan-200' : 'text-white/50 group-hover:text-white group-active:text-white'}`}>{sub.chapters?.length || 0} Chapters</p>
-                                                <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'subject', data: sub }); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                {isManageMode && (
+                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'subject', data: sub }); }} className="absolute top-3 right-3 w-7 h-7 rounded-lg text-xs bg-red-900/30 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-400 transition-all shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] active:scale-95 z-20 animate-in zoom-in duration-200" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
+                                                )}
                                             </div>
                                         )) : (
                                             <p className="text-sm text-gray-500 text-center col-span-2 py-8">Loading subjects...</p>
@@ -8596,7 +10273,7 @@ const getStatus = (qId) => {
                             const stats = generatedTestResult.stats || (() => {
                                 let c = 0, ic = 0, u = 0;
                                 generatedTestResult.questions.forEach(q => {
-                                    const ans = generatedTestResult.attempts[q.id];
+                                    const ans = (generatedTestResult.attempts || {})[q.id];
                                     if (ans !== undefined) {
                                         if (['A', 'B', 'C', 'D'][ans] === q.correctOption) c++;
                                         else ic++;
@@ -8605,19 +10282,48 @@ const getStatus = (qId) => {
                                 return { correct: c, incorrect: ic, unattempted: u };
                             })();
 
+                            const topicAnalysis = (() => {
+                                const analysis = {};
+                                generatedTestResult.questions.forEach(q => {
+                                    const chap = q.chapterName || 'Unknown Chapter';
+                                    const top = q.topicName || 'Unknown Topic';
+                                    const sub = q.subjectName || 'Unknown Subject';
+                                    if (!analysis[chap]) analysis[chap] = { name: chap, subject: sub, total: 0, correct: 0, incorrect: 0, unattempted: 0, topics: {} };
+                                    if (!analysis[chap].topics[top]) analysis[chap].topics[top] = { name: top, subject: sub, total: 0, correct: 0, incorrect: 0, unattempted: 0 };
+
+                                    analysis[chap].total++;
+                                    analysis[chap].topics[top].total++;
+
+                                    const ans = (generatedTestResult.attempts || {})[q.id];
+                                    if (ans !== undefined) {
+                                        if (['A', 'B', 'C', 'D'][ans] === q.correctOption) {
+                                            analysis[chap].correct++;
+                                            analysis[chap].topics[top].correct++;
+                                        } else {
+                                            analysis[chap].incorrect++;
+                                            analysis[chap].topics[top].incorrect++;
+                                        }
+                                    } else {
+                                        analysis[chap].unattempted++;
+                                        analysis[chap].topics[top].unattempted++;
+                                    }
+                                });
+                                return Object.values(analysis).map(c => ({ ...c, topics: Object.values(c.topics) }));
+                            })();
+
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-[80vh] flex items-center justify-center">
                                     <div className="bg-white dark:bg-gray-900 rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-500 to-purple-600 opacity-20"></div>
                                         <button onClick={() => { setShowScoreSummary(false); setGeneratedTestResult(null); }} className="absolute top-4 left-4 w-10 h-10 bg-white/50 dark:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-black transition-colors z-10"><i className="fa-solid fa-arrow-left"></i></button>
-                                        
+
                                         <div className="relative z-10">
                                             <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg mb-6">
                                                 <i className="fa-solid fa-trophy text-4xl text-white"></i>
                                             </div>
                                             <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Test Score</h2>
                                             <p className="text-gray-500 font-bold mb-8">{generatedTestResult.name || 'Custom Test'}</p>
-                                            
+
                                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 mb-8 border border-gray-100 dark:border-gray-800 shadow-inner">
                                                 <div className="flex justify-between items-end mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
                                                     <div className="text-left">
@@ -8629,7 +10335,7 @@ const getStatus = (qId) => {
                                                         <div className="text-xl font-bold text-gray-500">{generatedTestResult.totalMarks}</div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
                                                         <div className="text-green-500 mb-1"><i className="fa-solid fa-check-circle"></i></div>
@@ -8653,16 +10359,71 @@ const getStatus = (qId) => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
+                                            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm mb-6 text-left overflow-hidden">
+                                                <div className="p-3 bg-gray-50 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700 font-black text-gray-800 dark:text-gray-200 text-sm">
+                                                    <i className="fa-solid fa-chart-pie text-blue-500 mr-2"></i> Topic-wise Breakdown
+                                                </div>
+                                                <div className="max-h-56 overflow-y-auto custom-scrollbar">
+                                                    {topicAnalysis.map((chap, i) => (
+                                                        <details key={i} className="group border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                                            <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors list-none">
+                                                                <div className="flex-1 pr-3">
+                                                                    <div className="font-bold text-[13px] text-gray-800 dark:text-gray-200 leading-tight">{chap.name}</div>
+                                                                    <div className="text-[10px] text-gray-500 mt-1 font-semibold flex gap-2">
+                                                                        <span className="text-green-600">{chap.correct} Correct</span> &bull;
+                                                                        <span className="text-red-500">{chap.incorrect} Wrong</span> &bull;
+                                                                        <span className="text-gray-400">{chap.unattempted} Skip</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 shrink-0">
+                                                                    {(chap.incorrect > 0 || chap.unattempted > 0) && (
+                                                                        <button onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            const weakTopics = chap.topics.filter(t => t.incorrect > 0 || t.unattempted > 0).map(t => t.name);
+                                                                            handleGenerateTargetedDPP(chap.subject, chap.name, weakTopics, 30);
+                                                                        }} className="px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-[10px] font-bold shadow-sm transition-colors active:scale-95" title="Generate Chapter DPP from Weak Topics">
+                                                                            <i className="fa-solid fa-bullseye mr-1"></i> Target Weakness
+                                                                        </button>
+                                                                    )}
+                                                                    <div className="text-gray-400 group-open:rotate-180 transition-transform">
+                                                                        <i className="fa-solid fa-chevron-down text-xs"></i>
+                                                                    </div>
+                                                                </div>
+                                                            </summary>
+                                                            <div className="bg-gray-50/50 dark:bg-gray-800/30 px-3 pb-3">
+                                                                <div className="space-y-1.5 mt-1">
+                                                                    {chap.topics.map((top, j) => (
+                                                                        <div key={j} className="flex justify-between items-center bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
+                                                                            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 truncate pr-2" title={top.name}>{top.name}</span>
+                                                                            <div className="flex gap-1 shrink-0 items-center">
+                                                                                {(top.incorrect > 0 || top.unattempted > 0) && (
+                                                                                    <button onClick={(e) => { e.preventDefault(); handleGenerateTargetedDPP(chap.subject, chap.name, [top.name], 10); }} className="px-2 h-4 mr-1 flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-sm text-[9px] font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-colors active:scale-95" title="Auto-Generate DPP"><i className="fa-solid fa-bullseye mr-1"></i> Target Weakness</button>
+                                                                                )}
+                                                                                {top.correct > 0 && <span className="w-4 h-4 flex items-center justify-center bg-green-100 text-green-700 rounded text-[9px] font-bold" title="Correct">{top.correct}</span>}
+                                                                                {top.incorrect > 0 && <span className="w-4 h-4 flex items-center justify-center bg-red-100 text-red-700 rounded text-[9px] font-bold" title="Incorrect">{top.incorrect}</span>}
+                                                                                {top.unattempted > 0 && <span className="w-4 h-4 flex items-center justify-center bg-gray-100 text-gray-600 rounded text-[9px] font-bold" title="Unattempted">{top.unattempted}</span>}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </details>
+                                                    ))}
+                                                </div>
+                                            </div>
+
                                             <button onClick={() => setShowScoreSummary(false)} className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-black text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">Detailed Analysis <i className="fa-solid fa-arrow-right ml-2"></i></button>
                                         </div>
                                     </div>
+
+
                                 </div>
                             );
                         }
 
                         const q = generatedTestResult.questions[analysisQuestionIndex];
-                        const userAnsIdx = generatedTestResult.attempts[q.id];
+                        const userAnsIdx = (generatedTestResult.attempts || {})[q.id];
                         const isAns = userAnsIdx !== undefined;
                         const isCorrect = isAns && ['A', 'B', 'C', 'D'][userAnsIdx] === q.correctOption;
 
@@ -8678,6 +10439,7 @@ const getStatus = (qId) => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
+                                        <button onClick={() => setAnalysisShowPalette(true)} className="h-10 px-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold text-sm flex items-center gap-2 shadow-sm transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40 active:scale-95"><i className="fa-solid fa-grip"></i> <span className="hidden sm:inline">Palette</span></button>
                                         <button onClick={() => setAnalysisQuestionIndex(Math.max(0, analysisQuestionIndex - 1))} disabled={analysisQuestionIndex === 0} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-left"></i></button>
                                         <button onClick={() => setAnalysisQuestionIndex(Math.min(generatedTestResult.questions.length - 1, analysisQuestionIndex + 1))} disabled={analysisQuestionIndex === generatedTestResult.questions.length - 1} className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center disabled:opacity-50 active:scale-95 shadow-sm"><i className="fa-solid fa-chevron-right"></i></button>
                                     </div>
@@ -8686,12 +10448,13 @@ const getStatus = (qId) => {
                                     {/* Main Question Area */}
                                     <div className="flex-1 space-y-6">
                                         <div className={`bg-white dark:bg-gray-900 border-2 rounded-2xl p-5 md:p-8 shadow-sm transition-colors ${isAns ? (isCorrect ? 'border-green-400' : 'border-red-400') : 'border-gray-200 dark:border-gray-700'}`}>
-                                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm">Q{analysisQuestionIndex + 1}</span>
-                                                    {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{q.subjectName}</span>}
+                                            <div className="flex justify-between items-start mb-6 border-b border-gray-100 dark:border-gray-800 pb-4 gap-4">
+                                                <div className="flex items-center gap-2 flex-wrap flex-1">
+                                                    <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm shrink-0">Q{analysisQuestionIndex + 1}</span>
+                                                    {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full shrink-0">{q.subjectName}</span>}
+                                                    {q.topicName && <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800 line-clamp-1" title={q.topicName}>{q.topicName}</span>}
                                                 </div>
-                                                <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                                <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner shrink-0 ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                                                     {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
                                                 </span>
                                             </div>
@@ -8704,11 +10467,11 @@ const getStatus = (qId) => {
                                                     const optLetter = ['A', 'B', 'C', 'D'][oIdx];
                                                     const isSelected = userAnsIdx === oIdx;
                                                     const isCorrectOpt = optLetter === q.correctOption;
-                                                    
+
                                                     let optClass = "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300";
                                                     if (isCorrectOpt) optClass = "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-800 dark:text-green-200 ring-2 ring-green-500/50 shadow-md transform scale-[1.01]";
                                                     else if (isSelected && !isCorrectOpt) optClass = "bg-red-50 dark:bg-red-900/20 border-red-500 text-red-800 dark:text-red-200 ring-2 ring-red-500/50 shadow-md";
-                                                    
+
                                                     return (
                                                         <div key={oIdx} className={`border-2 p-4 rounded-xl text-base flex gap-4 transition-all ${optClass}`}>
                                                             <span className="font-black w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shrink-0 shadow-sm text-sm">{optLetter}</span>
@@ -8729,49 +10492,57 @@ const getStatus = (qId) => {
                                         </div>
                                     </div>
 
-                                    {/* Sidebar Question Palette */}
-                                    <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
-                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm sticky top-24">
-                                            <h3 className="font-black text-lg mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
-                                            <div className="grid grid-cols-5 gap-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                                                {generatedTestResult.questions.map((pq, pIdx) => {
-                                                    const pAnsIdx = generatedTestResult.attempts[pq.id];
-                                                    const pIsAns = pAnsIdx !== undefined;
-                                                    const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
-                                                    
-                                                    let btnClass = "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400";
-                                                    if (pIsCorrect) btnClass = "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300 font-bold shadow-sm";
-                                                    else if (pIsAns && !pIsCorrect) btnClass = "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-300 font-bold shadow-sm";
-                                                    
-                                                    if (pIdx === analysisQuestionIndex) {
-                                                        btnClass += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 transform scale-110 z-10";
-                                                    }
+                                </div>
 
-                                                    return (
-                                                        <button key={pq.id} onClick={() => setAnalysisQuestionIndex(pIdx)} className={`w-10 h-10 rounded-lg border flex items-center justify-center text-xs transition-all ${btnClass}`}>
-                                                            {pIdx + 1}
-                                                        </button>
-                                                    );
-                                                })}
+                                {/* Analysis Palette Slide-over Modal */}
+                                {analysisShowPalette && (
+                                    <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-center items-end animate-in fade-in" onClick={() => setAnalysisShowPalette(false)}>
+                                        <div className="bg-white dark:bg-gray-900 h-full w-[80vw] sm:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 dark:border-gray-800 transform transition-transform animate-in slide-in-from-right" onClick={e => e.stopPropagation()}>
+                                            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm z-10 shrink-0 bg-gray-50 dark:bg-gray-800/50">
+                                                <h3 className="font-black text-lg flex items-center gap-2 text-gray-800 dark:text-gray-200"><i className="fa-solid fa-grip text-blue-500"></i> Question Palette</h3>
+                                                <button onClick={() => setAnalysisShowPalette(false)} className="w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
                                             </div>
-                                            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                            <div className="p-4 flex-1 overflow-y-auto">
+                                                <div className="grid grid-cols-5 gap-2">
+                                                    {generatedTestResult.questions.map((pq, pIdx) => {
+                                                        const pAnsIdx = (generatedTestResult.attempts || {})[pq.id];
+                                                        const pIsAns = pAnsIdx !== undefined;
+                                                        const pIsCorrect = pIsAns && ['A', 'B', 'C', 'D'][pAnsIdx] === pq.correctOption;
+
+                                                        let btnClass = "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400";
+                                                        if (pIsCorrect) btnClass = "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-300 font-bold shadow-sm";
+                                                        else if (pIsAns && !pIsCorrect) btnClass = "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-300 font-bold shadow-sm";
+
+                                                        if (pIdx === analysisQuestionIndex) {
+                                                            btnClass += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900 transform scale-110 z-10";
+                                                        }
+
+                                                        return (
+                                                            <button key={pq.id} onClick={() => { setAnalysisQuestionIndex(pIdx); setAnalysisShowPalette(false); }} className={`w-10 h-10 rounded-lg border flex items-center justify-center text-xs transition-all ${btnClass}`}>
+                                                                {pIdx + 1}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="p-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 bg-gray-50 dark:bg-gray-800/50 shrink-0">
                                                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-green-100 border border-green-500"></div> Correct</div>
                                                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-100 border border-red-500"></div> Incorrect</div>
                                                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200"></div> Skipped</div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         );
                     }
                     if (activePracticeBatch) {
-                        if (activePracticeBatch.type === 'jee') {
+                        if (activePracticeBatch?.type === 'jee') {
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
                                     <div className="flex items-center gap-3 mb-6 relative z-10">
                                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch.name)}</h2>
+                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch?.name)}</h2>
                                     </div>
                                     <div className="flex-1 flex flex-col items-center justify-center text-center -mt-20">
                                         <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-4 animate-pulse-soft border border-blue-500/30">
@@ -8783,31 +10554,267 @@ const getStatus = (qId) => {
                                 </div>
                             );
                         }
-                    
+                        if (activePracticeBatch?.type === 'others') {
+                            return (
+                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
+                                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                                        <button onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (activeSatheeSubject) setActiveSatheeSubject(null);
+                                            else if (activeSatheeBatch) setActiveSatheeBatch(null);
+                                            else if (activeSatheeSection) setActiveSatheeSection(null);
+                                            else if (activeSatheeExam) setActiveSatheeExam(null);
+                                            else setActivePracticeBatch(null);
+                                        }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
+                                        <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">
+                                            {activeSatheeBatch ? activeSatheeBatch.name : activeSatheeSection ? activeSatheeSection.name : activeSatheeExam ? activeSatheeExam.name : 'All Exams (SATHEE)'}
+                                        </h2>
+                                    </div>
+
+                                    {!activeSatheeExam && (
+                                        <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                                            {SATHEE_DATA.exams.map(exam => (
+                                                <div key={exam.id} onClick={() => setActiveSatheeExam(exam)} className="relative group overflow-hidden rounded-[1.5rem] p-[1px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(251,191,36,0.15)] active:scale-[0.98] active:-translate-y-1 text-center">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/40 via-orange-500/40 to-red-500/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                    <div className="relative h-full flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-6 border border-white/10 gap-3">
+                                                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-yellow-500/20 group-active:bg-yellow-500/20 group-hover:border-yellow-500/50 group-active:border-yellow-500/50 transition-colors shadow-inner">
+                                                            <i className={`fa-solid ${exam.icon} text-gray-400 group-hover:text-yellow-400 group-active:text-yellow-400 text-3xl group-hover:drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] group-active:drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] group-hover:scale-110 group-active:scale-110 transition-all duration-300`}></i>
+                                                        </div>
+                                                        <h3 className="font-black text-xl text-white tracking-wide uppercase drop-shadow-md group-hover:text-transparent group-active:text-transparent group-hover:bg-clip-text group-active:bg-clip-text group-hover:bg-gradient-to-r group-active:bg-gradient-to-r group-hover:from-yellow-300 group-active:from-yellow-300 group-hover:to-orange-300 group-active:to-orange-300 transition-all">{exam.name}</h3>
+                                                        <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
+                                                            <span className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">Select</span>
+                                                            <i className="fa-solid fa-arrow-right text-yellow-300 text-[10px] translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeSatheeExam && !activeSatheeSection && SATHEE_DATA.sections && SATHEE_DATA.sections[activeSatheeExam.id] && (
+                                        <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                                            {SATHEE_DATA.sections[activeSatheeExam.id].map(section => (
+                                                <div key={section.id} onClick={() => setActiveSatheeSection(section)} className="relative group overflow-hidden rounded-[1.5rem] p-[1px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-center">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                    <div className="relative h-full flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-6 border border-white/10 gap-3">
+                                                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-blue-500/20 group-active:bg-blue-500/20 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shadow-inner">
+                                                            <i className={`fa-solid ${section.icon} text-gray-400 group-hover:text-blue-400 group-active:text-blue-400 text-3xl group-hover:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-active:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-all duration-300`}></i>
+                                                        </div>
+                                                        <h3 className="font-black text-xl text-white tracking-wide uppercase drop-shadow-md group-hover:text-transparent group-active:text-transparent group-hover:bg-clip-text group-active:bg-clip-text group-hover:bg-gradient-to-r group-active:bg-gradient-to-r group-hover:from-blue-300 group-active:from-blue-300 group-hover:to-purple-300 group-active:to-purple-300 transition-all">{section.name}</h3>
+                                                        <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
+                                                            <span className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Explore</span>
+                                                            <i className="fa-solid fa-arrow-right text-blue-300 text-[10px] translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeSatheeExam && (!SATHEE_DATA.sections || !SATHEE_DATA.sections[activeSatheeExam.id] || activeSatheeSection) && !activeSatheeBatch && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                                            {(SATHEE_DATA.batches[activeSatheeSection ? activeSatheeSection.id : activeSatheeExam.id] || SATHEE_DATA.batches['default']).map(batch => (
+                                                <div key={batch.id} onClick={() => {
+                                                    // Save state so we can restore it when user clicks 'Back'
+                                                    sessionStorage.setItem('ataxy_return_exam', activeSatheeExam.id);
+                                                    if (activeSatheeSection) sessionStorage.setItem('ataxy_return_section', activeSatheeSection.id);
+                                                    sessionStorage.setItem('ataxy_return_type', 'others');
+
+                                                    if (SATHEE_DATA.subjects && SATHEE_DATA.subjects[batch.id]) {
+                                                        setActiveSatheeBatch(batch);
+                                                        return;
+                                                    }
+
+                                                    // Immediately redirect to SATHEE courseView menu with forced exam parameters
+                                                    const ref = batch.course_reference || 'ssc-mts-crash-course';
+                                                    const lang = batch.language || 'he';
+                                                    const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'ssc';
+                                                    const finalUrl = batch.direct_link ? batch.direct_link : `https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
+
+                                                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.Telegram?.WebApp?.platform !== 'tdesktop' && window.Telegram?.WebApp?.platform !== 'macos' && window.Telegram?.WebApp?.platform !== 'web');
+
+                                                    if (isMobile && window.Telegram?.WebApp?.openLink) {
+                                                        let pathParam;
+                                                        if (batch.direct_link) {
+                                                            pathParam = encodeURIComponent(batch.direct_link.split('sathee.iitk.ac.in')[1]?.replace('#', '') || '');
+                                                        } else {
+                                                            pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${ref}&language=${lang}&examType=${examParam}&exam_type=${examParam}`);
+                                                        }
+                                                        const loginUrl = `https://sathee.iitk.ac.in/login?path=${pathParam}&exam=${examParam}`;
+                                                        window.Telegram.WebApp.openLink(loginUrl, { try_instant_view: true, try_browser: 'inapp' });
+                                                    } else {
+                                                        if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
+                                                        window.open(finalUrl, '_self');
+                                                    }
+                                                }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 hover:border-${batch.color}-500/50 active:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 active:bg-${batch.color}-900/20 text-center relative`}>
+                                                    {batch.isCustomUI ? (
+                                                        <>
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                            <div className="relative h-full flex flex-col bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-5 border border-white/10">
+                                                                <div className="flex justify-between items-start mb-5">
+                                                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-blue-500/20 group-active:bg-blue-500/20 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shrink-0 shadow-inner">
+                                                                        <i className={`fa-solid ${activeSatheeExam?.icon || 'fa-award'} text-gray-400 group-hover:text-blue-400 group-active:text-blue-400 text-2xl group-hover:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-active:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-all duration-300`}></i>
+                                                                    </div>
+                                                                    <div className="flex flex-col items-end space-y-2 mt-0.5">
+                                                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-medium text-gray-300 backdrop-blur-md shadow-sm">
+                                                                            <i className="fa-solid fa-language text-blue-400"></i>
+                                                                            {batch.languageStr}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-medium text-gray-300 backdrop-blur-md shadow-sm">
+                                                                            <i className="fa-solid fa-clapperboard text-purple-400"></i>
+                                                                            {batch.totalVideos} Videos
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div className="mt-auto">
+                                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                                        <span className="font-black text-white text-base tracking-wide uppercase drop-shadow-md">
+                                                                            {batch.name.replace(batch.highlight, '').trim()}
+                                                                        </span>
+                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border border-white/20">
+                                                                            {batch.highlight}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-2 text-[11px] font-semibold text-gray-400">
+                                                                        <i className={`fa-solid ${batch.subtitleIcon} text-purple-400/80 mt-[2px]`}></i>
+                                                                        <span className="line-clamp-3 leading-tight">{batch.subtitle}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="mt-5">
+                                                                    <button className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-white/10 hover:border-white/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.98] active:brightness-110 active:border-white/30 transition-all duration-300">
+                                                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] group-active/btn:translate-x-[100%] transition-transform duration-700"></div>
+                                                                        <i className="fa-solid fa-play text-blue-400 group-hover/btn:scale-110 group-active/btn:scale-110 transition-transform"></i>
+                                                                        <span className="group-hover/btn:text-blue-100 group-active/btn:text-blue-100 transition-colors relative z-10">Start Learning</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 group-active:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
+                                                                <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white group-active:text-white group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
+                                                            </div>
+                                                            <h3 className={`font-black text-sm sm:text-base text-white group-hover:text-${batch.color}-300 group-active:text-${batch.color}-300 transition-colors leading-tight`}>{batch.name}</h3>
+                                                            <span className={`inline-block px-2 py-0.5 rounded bg-${batch.color}-500/20 border border-${batch.color}-500/30 text-[10px] font-bold text-${batch.color}-200 mt-auto`}>{batch.medium}</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {!activeSatheeSubject && activeSatheeBatch && SATHEE_DATA.subjects && SATHEE_DATA.subjects[activeSatheeBatch.id] && (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                                            {SATHEE_DATA.subjects[activeSatheeBatch.id].map(subject => (
+                                                <div key={subject.id} onClick={() => {
+                                                    if (subject.url) {
+                                                        sessionStorage.setItem('ataxy_return_batch', activeSatheeBatch.id);
+                                                        let finalUrl = subject.url;
+                                                        if (!finalUrl.includes('exam=')) {
+                                                            const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'cuet';
+                                                            finalUrl = finalUrl.replace('#', '') + `&language=en&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
+                                                        }
+
+                                                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.Telegram?.WebApp?.platform !== 'tdesktop' && window.Telegram?.WebApp?.platform !== 'macos' && window.Telegram?.WebApp?.platform !== 'web');
+
+                                                        if (isMobile && window.Telegram?.WebApp?.openLink) {
+                                                            const match = finalUrl.match(/course_reference=([^&]+)/);
+                                                            const refParam = match ? match[1] : '';
+                                                            const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'cuet';
+                                                            const pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${refParam}&language=en&examType=${examParam}&exam_type=${examParam}`);
+                                                            const loginUrl = `https://sathee.iitk.ac.in/login?path=${pathParam}&exam=${examParam}`;
+                                                            window.Telegram.WebApp.openLink(loginUrl, { try_instant_view: true, try_browser: 'inapp' });
+                                                        } else {
+                                                            if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
+                                                            window.open(finalUrl, '_self');
+                                                        }
+                                                    } else if (SATHEE_DATA.courses && SATHEE_DATA.courses[subject.id]) {
+                                                        setActiveSatheeSubject(subject);
+                                                    } else {
+                                                        safeAlert('Subject selected: ' + subject.name + '. Content coming soon!');
+                                                    }
+                                                }} className={`bg-[#4f9c8b] hover:bg-[#3d7a6d] active:bg-[#3d7a6d] active:scale-[0.98] active:brightness-110 p-4 sm:p-5 rounded-lg flex items-center justify-center shadow-md cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 active:-translate-y-0.5 text-center`}>
+                                                    <h3 className={`font-semibold text-sm sm:text-base text-white tracking-wide`}>{subject.name}</h3>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeSatheeSubject && SATHEE_DATA.courses && SATHEE_DATA.courses[activeSatheeSubject.id] && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                                            {SATHEE_DATA.courses[activeSatheeSubject.id].map(course => (
+                                                <div key={course.id} onClick={() => {
+                                                    if (course.url) {
+                                                        sessionStorage.setItem('ataxy_return_batch', activeSatheeBatch.id);
+                                                        let finalUrl = course.url;
+                                                        if (!finalUrl.includes('exam=')) {
+                                                            const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'cuet';
+                                                            finalUrl = finalUrl.replace('#', '') + `&language=en&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
+                                                        }
+
+                                                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.Telegram?.WebApp?.platform !== 'tdesktop' && window.Telegram?.WebApp?.platform !== 'macos' && window.Telegram?.WebApp?.platform !== 'web');
+
+                                                        if (isMobile && window.Telegram?.WebApp?.openLink) {
+                                                            const match = finalUrl.match(/course_reference=([^&]+)/);
+                                                            const refParam = match ? match[1] : '';
+                                                            const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'cuet';
+                                                            const pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${refParam}&language=en&examType=${examParam}&exam_type=${examParam}`);
+                                                            const loginUrl = `https://sathee.iitk.ac.in/login?path=${pathParam}&exam=${examParam}`;
+                                                            window.Telegram.WebApp.openLink(loginUrl, { try_instant_view: true, try_browser: 'inapp' });
+                                                        } else {
+                                                            if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
+                                                            window.open(finalUrl, '_self');
+                                                        }
+                                                    }
+                                                }} className={`bg-[#4f9c8b] hover:bg-[#3d7a6d] p-4 sm:p-5 rounded-lg flex items-center justify-center shadow-md cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-center`}>
+                                                    <h3 className={`font-semibold text-sm sm:text-base text-white tracking-wide`}>{course.name}</h3>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+
+                                </div>
+                            );
+                        }
+
                         if (activePracticeMode === 'custom') {
                             const handleGenerateTest = (type) => {
                                 let testQuestions = [];
                                 let subjectsToGenerate = [];
-                                
-                                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
+
+                                const availableQuestions = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch?.sourceTable] || []) : qbankData;
 
                                 if (type === 'full' || type === 'half') {
                                     ['Physics', 'Chemistry', 'Botany', 'Zoology'].forEach(subName => {
                                         const subData = availableQuestions.find(s => s.name.toLowerCase().includes(subName.toLowerCase()));
                                         if (!subData) return;
-                                        
+
                                         let subQs = [];
                                         const selectedChapters = customGenConfig.subjects[subName];
-                                        
+
                                         subData.chapters?.forEach(c => {
                                             if (selectedChapters.length === 0 || selectedChapters.includes(c.name)) {
                                                 c.topics?.forEach(t => t.questions?.forEach(q => subQs.push({ ...q, topicName: t.name, chapterName: c.name, subjectName: subName })));
                                             }
                                         });
-                                        
+
                                         // Shuffle and pick
                                         subQs.sort(() => Math.random() - 0.5);
-                                        
+
+                                        // Topic filtering for full/half length
+                                        if (!customGenConfig.selectAllTopics) {
+                                            const selectedTopicsMap = customGenConfig.topics[subName] || {};
+                                            subQs = subQs.filter(q => {
+                                                const chapTopics = selectedTopicsMap[q.chapterName];
+                                                if (!chapTopics) return false; // if undefined or empty, means no topics for this chapter
+                                                return chapTopics.includes(q.topicName);
+                                            });
+                                        }
+
                                         if (type === 'full' && isNeet) {
                                             const subQsSelected = subQs.slice(0, 50);
                                             subQsSelected.forEach((q, idx) => {
@@ -8817,7 +10824,7 @@ const getStatus = (qId) => {
                                         } else if (type === 'full' && !isNeet) {
                                             testQuestions = [...testQuestions, ...subQs.slice(0, 45)];
                                         } else if (type === 'half') {
-                                            testQuestions = [...testQuestions, ...subQs.slice(0, 25)];
+                                            testQuestions = [...testQuestions, ...subQs.slice(0, 20)];
                                         }
                                     });
                                 } else if (type === 'dpp') {
@@ -8827,7 +10834,7 @@ const getStatus = (qId) => {
                                         if (chapData) {
                                             let subQs = [];
                                             chapData.topics?.forEach(t => {
-                                                if (customGenConfig.dppTopics.length === 0 || customGenConfig.dppTopics.includes(t.name)) {
+                                                if (customGenConfig.dppSelectAllTopics || customGenConfig.dppTopics.length === 0 || customGenConfig.dppTopics.includes(t.name)) {
                                                     t.questions?.forEach(q => subQs.push({ ...q, topicName: t.name, chapterName: chapData.name, subjectName: subData.name }));
                                                 }
                                             });
@@ -8848,7 +10855,7 @@ const getStatus = (qId) => {
                                 else if (type === 'half') tMarks = testQuestions.length * 4;
                                 else tMarks = testQuestions.length * 4;
 
-                                const dateName = new Date().toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
+                                const dateName = new Date().toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                                 const finalTestName = customGenConfig.testName && customGenConfig.testName.trim() !== '' ? customGenConfig.testName : ((type === 'full' ? 'Full Length Test' : type === 'half' ? 'Half Length Test' : 'Custom DPP') + ' - ' + dateName);
 
                                 const newTest = {
@@ -8863,19 +10870,56 @@ const getStatus = (qId) => {
                                 };
 
                                 // Launch Test
+                                setGeneratedTestsHistory(prev => [newTest, ...prev]);
+                                setRecentlyGeneratedTest(newTest);
+                                setCustomGeneratorMode('history');
+                            };
+
+                            const startGeneratedTest = (test) => {
                                 setPracticeAttempts({});
                                 setPracticeVisited([]);
                                 setPracticeReview([]);
                                 setCurrentQuestionIndex(0);
-                                setActiveGeneratedTest(newTest);
-                                setLoadedQuestions(testQuestions);
-                                setActivePracticeChapter({ name: finalTestName, isCustomTest: true });
+                                setActiveGeneratedTest({ ...test, startTime: Date.now() });
+                                setLoadedQuestions(test.questions);
+                                setActivePracticeChapter({ name: test.name, isCustomTest: true });
                                 setShowQuiz(true);
+                                setRecentlyGeneratedTest(null);
                             };
 
                             if (customGeneratorMode === 'history') {
+                                let historyFiltered = generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter);
+                                if (historySearchQuery.trim()) {
+                                    const query = historySearchQuery.toLowerCase();
+                                    historyFiltered = historyFiltered.filter(t => {
+                                        const dispName = t.name || (t.type === 'full' ? 'Full Length Test' : t.type === 'half' ? 'Half Length Test' : 'Custom DPP');
+                                        return dispName.toLowerCase().includes(query);
+                                    });
+                                }
+                                historyFiltered.sort((a, b) => {
+                                    const da = a.date ? new Date(a.date).getTime() : parseInt(a.id.split('_')[1] || 0);
+                                    const db = b.date ? new Date(b.date).getTime() : parseInt(b.id.split('_')[1] || 0);
+                                    return historySortOrder === 'newest' ? db - da : da - db;
+                                });
+
                                 return (
                                     <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
+                                        {recentlyGeneratedTest && (
+                                            <div className="fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 animate-in fade-in">
+                                                <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md p-6 shadow-2xl text-center relative border border-gray-200 dark:border-gray-800">
+                                                    <button onClick={() => setRecentlyGeneratedTest(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                                                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                                                        <i className="fa-solid fa-check"></i>
+                                                    </div>
+                                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Test Generated!</h3>
+                                                    <p className="text-gray-500 mb-6">{recentlyGeneratedTest.name}</p>
+                                                    <div className="flex gap-3">
+                                                        <button onClick={() => setRecentlyGeneratedTest(null)} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Close</button>
+                                                        <button onClick={() => startGeneratedTest(recentlyGeneratedTest)} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-md transition-colors">Start Test CBT Mode</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="flex items-center gap-3 mb-6">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
@@ -8920,10 +10964,23 @@ const getStatus = (qId) => {
                                                                         {chaps.length === 0 ? (
                                                                             <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-blue-200 dark:border-blue-800/50">All Chapters</span>
                                                                         ) : (
-                                                                            <div className="flex flex-wrap gap-2">
-                                                                                {chaps.map((c, idx) => (
-                                                                                    <span key={idx} className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200 dark:border-gray-700">{c}</span>
-                                                                                ))}
+                                                                            <div className="flex flex-col gap-3">
+                                                                                {chaps.map((c, idx) => {
+                                                                                    const topics = syllabusTest.config?.topics?.[sub]?.[c];
+                                                                                    const hasSelectedTopics = topics && topics.length > 0 && syllabusTest.config.selectAllTopics === false;
+                                                                                    return (
+                                                                                        <div key={idx} className="flex flex-col gap-1.5">
+                                                                                            <span className="bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200 dark:border-gray-700 w-fit">{c}</span>
+                                                                                            {hasSelectedTopics && (
+                                                                                                <div className="flex flex-wrap gap-1 ml-4 border-l-2 border-gray-200 dark:border-gray-700 pl-3 py-1">
+                                                                                                    {topics.map((t, tidx) => (
+                                                                                                        <span key={tidx} className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded text-xs font-semibold">{t}</span>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -8951,25 +11008,17 @@ const getStatus = (qId) => {
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="space-y-4">
-                                            {(() => {
-                                                let filtered = generatedTestsHistory.filter(t => historyFilter === 'all' || t.type === historyFilter);
-                                                if (historySearchQuery.trim()) {
-                                                    filtered = filtered.filter(t => t.name && t.name.toLowerCase().includes(historySearchQuery.toLowerCase()));
-                                                }
-                                                filtered.sort((a, b) => {
-                                                    const da = new Date(a.date).getTime();
-                                                    const db = new Date(b.date).getTime();
-                                                    return historySortOrder === 'newest' ? db - da : da - db;
-                                                });
-                                                if (filtered.length === 0) return <p className="text-gray-500 text-center py-10">No tests found matching your criteria.</p>;
-                                                return filtered.map(test => (
+                                        <div className="space-y-4" key={historyFilter + '_' + historySortOrder + '_' + historySearchQuery}>
+                                            {historyFiltered.length === 0 ? <p className="text-gray-500 text-center py-10">No tests found matching your criteria.</p> : historyFiltered.map(test => (
                                                 <div key={test.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                                                    {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45">EXACT NEET</div>}
-                                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1 pr-10 truncate">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
+                                                    {test.isNeetPattern && <div className="absolute -right-4 -top-4 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 text-[10px] font-black py-4 px-6 rotate-45 z-10">EXACT NEET</div>}
+                                                    <div className="flex justify-between items-start gap-2 mb-1">
+                                                        <h3 className="font-bold text-lg text-gray-900 dark:text-white pr-10 truncate flex-1">{test.name || (test.type === 'full' ? 'Full Length Test' : test.type === 'half' ? 'Half Length Test' : 'Custom DPP')}</h3>
+                                                        <button onClick={(e) => { e.stopPropagation(); safeConfirm('Delete this test?', () => setGeneratedTestsHistory(prev => prev.filter(t => t.id !== test.id))); }} className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-500 flex items-center justify-center shrink-0 transition-colors z-10 relative"><i className="fa-solid fa-trash"></i></button>
+                                                    </div>
                                                     <p className="text-xs font-semibold text-gray-500 mb-4 flex items-center gap-3">
-                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-calendar"></i> {new Date(test.date).toLocaleDateString([], {day: 'numeric', month: 'short', year: 'numeric'})}</span>
-                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-calendar"></i> {new Date(test.date || parseInt(test.id.split('_')[1] || 0)).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                        <span className="flex items-center gap-1"><i className="fa-regular fa-clock"></i> {new Date(test.date || parseInt(test.id.split('_')[1] || 0)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </p>
                                                     <div className="flex gap-3 mb-5">
                                                         <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl flex-1 text-center border border-gray-100 dark:border-gray-800">
@@ -8987,26 +11036,20 @@ const getStatus = (qId) => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        <button onClick={() => {
-                                                            // Reattempt logic
-                                                            setPracticeAttempts({});
-                                                            setPracticeVisited([]);
-                                                            setPracticeReview([]);
-                                                            setCurrentQuestionIndex(0);
-                                                            setActiveGeneratedTest(test);
-                                                            setLoadedQuestions(test.questions);
-                                                            setActivePracticeChapter({ name: test.name || "Reattempted Test", isCustomTest: true });
-                                                            setShowQuiz(true);
-                                                        }} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
-                                                        <button onClick={() => {
-                                                            setGeneratedTestResult(test);
-                                                            setShowScoreSummary(true);
-                                                            setAnalysisQuestionIndex(0);
-                                                        }} className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-[0_4px_14px_rgba(59,130,246,0.4)] transition-colors text-sm">Analysis <i className="fa-solid fa-arrow-right ml-1"></i></button>
-                                                    </div>
+                                                    {test.attempts ? (
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <button onClick={() => startGeneratedTest(test)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl font-bold shadow-sm transition-colors text-sm"><i className="fa-solid fa-rotate-right mr-1"></i> Reattempt</button>
+                                                            <button onClick={() => {
+                                                                setGeneratedTestResult(test);
+                                                                setShowScoreSummary(true);
+                                                                setAnalysisQuestionIndex(0);
+                                                            }} className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-[0_4px_14px_rgba(59,130,246,0.4)] transition-colors text-sm">Analysis <i className="fa-solid fa-arrow-right ml-1"></i></button>
+                                                        </div>
+                                                    ) : (
+                                                        <button onClick={() => startGeneratedTest(test)} className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-black shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 text-sm flex items-center justify-center gap-2"><i className="fa-solid fa-play"></i> Start Test</button>
+                                                    )}
                                                 </div>
-                                            ))})()}
+                                            ))}
                                         </div>
                                     </div>
                                 );
@@ -9024,12 +11067,20 @@ const getStatus = (qId) => {
                                         </div>
                                         <div className="mb-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Custom Test Name (Optional)</label>
-                                            <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., My Target Sunday Test" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                                            <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({ ...prev, testName: e.target.value }))} placeholder="e.g., My Target Sunday Test" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                                         </div>
-                                        
+
+                                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm mb-4">
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <input type="checkbox" checked={customGenConfig.selectAllTopics !== false} onChange={e => setCustomGenConfig(prev => ({ ...prev, selectAllTopics: e.target.checked }))} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                <span className="font-bold text-gray-800 dark:text-gray-200">Include All Topics by Default</span>
+                                            </label>
+                                            <p className="text-xs text-gray-500 mt-1 ml-8">Uncheck this if you want to select specific topics within each chapter.</p>
+                                        </div>
+
                                         <div className="space-y-4">
                                             {['Physics', 'Chemistry', 'Botany', 'Zoology'].map(sub => {
-                                                const subData = (activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData).find(s => s.name.toLowerCase().includes(sub.toLowerCase()));
+                                                const subData = (activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch?.sourceTable] || []) : qbankData).find(s => s.name.toLowerCase().includes(sub.toLowerCase()));
                                                 if (!subData) return null;
                                                 return (
                                                     <div key={sub} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
@@ -9038,17 +11089,56 @@ const getStatus = (qId) => {
                                                             {subData.chapters?.map(c => {
                                                                 const isChecked = customGenConfig.subjects[sub].includes(c.name);
                                                                 return (
-                                                                    <label key={c.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
-                                                                        <input type="checkbox" checked={isChecked} onChange={(e) => {
-                                                                            setCustomGenConfig(prev => {
-                                                                                const newSub = e.target.checked 
-                                                                                    ? [...prev.subjects[sub], c.name]
-                                                                                    : prev.subjects[sub].filter(n => n !== c.name);
-                                                                                return { ...prev, subjects: { ...prev.subjects, [sub]: newSub } };
-                                                                            });
-                                                                        }} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{safeRenderText(c.name)}</span>
-                                                                    </label>
+                                                                    <div key={c.name} className="flex flex-col">
+                                                                        <label className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
+                                                                            <input type="checkbox" checked={isChecked} onChange={(e) => {
+                                                                                setCustomGenConfig(prev => {
+                                                                                    const newSub = e.target.checked
+                                                                                        ? [...prev.subjects[sub], c.name]
+                                                                                        : prev.subjects[sub].filter(n => n !== c.name);
+                                                                                    const newTopics = { ...prev.topics };
+                                                                                    if (!newTopics[sub]) newTopics[sub] = {};
+                                                                                    if (e.target.checked && !newTopics[sub][c.name]) {
+                                                                                        newTopics[sub][c.name] = [];
+                                                                                    }
+                                                                                    return { ...prev, subjects: { ...prev.subjects, [sub]: newSub }, topics: newTopics };
+                                                                                });
+                                                                            }} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{safeRenderText(c.name)}</span>
+                                                                        </label>
+                                                                        {isChecked && !customGenConfig.selectAllTopics && c.topics?.length > 0 && (
+                                                                            <div className="ml-8 mt-1 space-y-1 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                                                                                <div className="flex items-center justify-between mb-2">
+                                                                                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Select Topics</div>
+                                                                                    <label className="flex items-center gap-1.5 cursor-pointer">
+                                                                                        <input type="checkbox" checked={customGenConfig.topics[sub]?.[c.name]?.length === c.topics.length} onChange={e => {
+                                                                                            setCustomGenConfig(prev => {
+                                                                                                const subTopics = prev.topics[sub] || {};
+                                                                                                return { ...prev, topics: { ...prev.topics, [sub]: { ...subTopics, [c.name]: e.target.checked ? c.topics.map(t => t.name) : [] } } };
+                                                                                            });
+                                                                                        }} className="w-3.5 h-3.5 rounded text-blue-500 focus:ring-blue-500 border-gray-300" />
+                                                                                        <span className="text-[10px] font-bold text-gray-500 uppercase">All Topics</span>
+                                                                                    </label>
+                                                                                </div>
+                                                                                {c.topics.map(t => {
+                                                                                    const tChecked = customGenConfig.topics[sub]?.[c.name]?.includes(t.name) || false;
+                                                                                    return (
+                                                                                        <label key={t.name} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                                                            <input type="checkbox" checked={tChecked} onChange={e => {
+                                                                                                setCustomGenConfig(prev => {
+                                                                                                    const subTopics = prev.topics[sub] || {};
+                                                                                                    const currentTopics = subTopics[c.name] || [];
+                                                                                                    const newTopics = e.target.checked ? [...currentTopics, t.name] : currentTopics.filter(x => x !== t.name);
+                                                                                                    return { ...prev, topics: { ...prev.topics, [sub]: { ...subTopics, [c.name]: newTopics } } };
+                                                                                                });
+                                                                                            }} className="w-4 h-4 rounded text-blue-500" />
+                                                                                            <span className="text-[13px] text-gray-600 dark:text-gray-400">{safeRenderText(t.name)}</span>
+                                                                                        </label>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 );
                                                             })}
                                                         </div>
@@ -9062,7 +11152,7 @@ const getStatus = (qId) => {
                             }
 
                             if (customGeneratorMode === 'dpp') {
-                                const availableSubjects = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch.sourceTable] || []) : qbankData;
+                                const availableSubjects = activePracticeBatch?.sourceTable ? (qbankDataByTable[activePracticeBatch?.sourceTable] || []) : qbankData;
                                 const subData = availableSubjects.find(s => s.name === customGenConfig.dppSubject);
                                 const chapData = subData?.chapters?.find(c => c.name === customGenConfig.dppChapter);
 
@@ -9072,41 +11162,51 @@ const getStatus = (qId) => {
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Generate DPP</h2>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Custom DPP Name (Optional)</label>
-                                                <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({...prev, testName: e.target.value}))} placeholder="e.g., Physics Mechanics DPP" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500" />
+                                                <input type="text" value={customGenConfig.testName || ''} onChange={e => setCustomGenConfig(prev => ({ ...prev, testName: e.target.value }))} placeholder="e.g., Physics Mechanics DPP" className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500" />
                                             </div>
                                             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Subject</label>
-                                                <select className="w-full p-3 rounded-xl border border-gray-300 bg-gray-50 outline-none" value={customGenConfig.dppSubject || ''} onChange={e => setCustomGenConfig(prev => ({...prev, dppSubject: e.target.value, dppChapter: null, dppTopics: []}))}>
-                                                    <option value="">-- Choose Subject --</option>
-                                                    {availableSubjects.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
-                                                </select>
+                                                <CustomSelect
+                                                    value={customGenConfig.dppSubject || ''}
+                                                    onChange={e => setCustomGenConfig(prev => ({ ...prev, dppSubject: e.target.value, dppChapter: null, dppTopics: [] }))}
+                                                    options={[{ label: '-- Choose Subject --', value: '' }, ...availableSubjects.map(s => ({ label: s.name, value: s.name }))]}
+                                                    placeholder="-- Choose Subject --"
+                                                />
                                             </div>
 
                                             {subData && (
                                                 <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
                                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Chapter</label>
-                                                    <select className="w-full p-3 rounded-xl border border-gray-300 bg-gray-50 outline-none" value={customGenConfig.dppChapter || ''} onChange={e => setCustomGenConfig(prev => ({...prev, dppChapter: e.target.value, dppTopics: []}))}>
-                                                        <option value="">-- Choose Chapter --</option>
-                                                        {subData.chapters?.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                                                    </select>
+                                                    <CustomSelect
+                                                        value={customGenConfig.dppChapter || ''}
+                                                        onChange={e => setCustomGenConfig(prev => ({ ...prev, dppChapter: e.target.value, dppTopics: [] }))}
+                                                        options={[{ label: '-- Choose Chapter --', value: '' }, ...(subData.chapters?.map(c => ({ label: c.name, value: c.name })) || [])]}
+                                                        placeholder="-- Choose Chapter --"
+                                                    />
                                                 </div>
                                             )}
 
                                             {chapData && (
                                                 <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
-                                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Select Topics (Optional)</label>
-                                                    <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Select Topics (Optional)</label>
+                                                        <label className="flex items-center gap-2 cursor-pointer text-xs">
+                                                            <input type="checkbox" checked={customGenConfig.dppSelectAllTopics} onChange={e => setCustomGenConfig(prev => ({ ...prev, dppSelectAllTopics: e.target.checked }))} className="w-4 h-4 rounded text-blue-500" />
+                                                            <span className="font-bold text-gray-600 dark:text-gray-400">All Topics</span>
+                                                        </label>
+                                                    </div>
+                                                    <div className={`max-h-40 overflow-y-auto space-y-2 pr-2 ${customGenConfig.dppSelectAllTopics ? 'opacity-50 pointer-events-none' : ''}`}>
                                                         {chapData.topics?.map(t => {
                                                             const isChecked = customGenConfig.dppTopics.includes(t.name);
                                                             return (
                                                                 <label key={t.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors">
                                                                     <input type="checkbox" checked={isChecked} onChange={(e) => {
                                                                         setCustomGenConfig(prev => {
-                                                                            const newTopics = e.target.checked 
+                                                                            const newTopics = e.target.checked
                                                                                 ? [...prev.dppTopics, t.name]
                                                                                 : prev.dppTopics.filter(n => n !== t.name);
                                                                             return { ...prev, dppTopics: newTopics };
@@ -9124,7 +11224,7 @@ const getStatus = (qId) => {
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Question Count</label>
                                                 <div className="flex gap-3">
                                                     {[10, 20, 30].map(c => (
-                                                        <button key={c} onClick={() => setCustomGenConfig(prev => ({...prev, dppCount: c}))} className={`flex-1 py-3 rounded-xl font-bold border transition-all ${customGenConfig.dppCount === c ? 'bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500/30' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}>{c}</button>
+                                                        <button key={c} onClick={() => setCustomGenConfig(prev => ({ ...prev, dppCount: c }))} className={`flex-1 py-3 rounded-xl font-bold border transition-all ${customGenConfig.dppCount === c ? 'bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500/30' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}>{c}</button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -9145,7 +11245,7 @@ const getStatus = (qId) => {
                                         <button onClick={() => setCustomGeneratorMode('history')} className="text-blue-500 text-sm font-bold flex items-center gap-1 hover:text-blue-600"><i className="fa-solid fa-clock-rotate-left"></i> My Tests</button>
                                     </div>
                                     <div className="space-y-4">
-                                        <div onClick={() => setCustomGeneratorMode('full')} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                                        <div onClick={() => { setCustomGeneratorMode('full'); setCustomGenConfig(prev => ({ ...prev, selectAllTopics: true })); }} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-900/30">
                                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30 text-blue-600 group-hover:bg-blue-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]"><i className="fa-solid fa-file-contract"></i></div>
                                             <div className="flex-1 relative z-10">
                                                 <h3 className="font-black text-xl text-gray-900 dark:text-white transition-colors drop-shadow-sm group-hover:text-blue-600 dark:group-hover:text-blue-300">Full Length Test</h3>
@@ -9153,7 +11253,7 @@ const getStatus = (qId) => {
                                             </div>
                                             <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-500 transition-colors"></i>
                                         </div>
-                                        <div onClick={() => setCustomGeneratorMode('half')} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-cyan-500/50 hover:bg-cyan-50 dark:hover:bg-cyan-900/30">
+                                        <div onClick={() => { setCustomGeneratorMode('half'); setCustomGenConfig(prev => ({ ...prev, selectAllTopics: false })); }} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-cyan-500/50 hover:bg-cyan-50 dark:hover:bg-cyan-900/30">
                                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-cyan-100 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-500/30 text-cyan-600 group-hover:bg-cyan-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(6,182,212,0.6)]"><i className="fa-solid fa-file-lines"></i></div>
                                             <div className="flex-1 relative z-10">
                                                 <h3 className="font-black text-xl text-gray-900 dark:text-white transition-colors drop-shadow-sm group-hover:text-cyan-600 dark:group-hover:text-cyan-300">Half Length Test</h3>
@@ -9177,7 +11277,7 @@ const getStatus = (qId) => {
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
                                 <div className="flex items-center gap-3 mb-6">
                                     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                    <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch.name)}</h2>
+                                    <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch?.name)}</h2>
                                 </div>
                                 <div className="space-y-3">
                                     <div onClick={() => setActivePracticeMode('practice')} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 ${isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10'}`}>
@@ -9209,10 +11309,10 @@ const getStatus = (qId) => {
                         );
                     }
 
-const PRACTICE_BATCHES = [
+                    const PRACTICE_BATCHES = [
                         { id: 'pb_neet_bank', name: 'NEET Bank', type: 'neet', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Basic Math' }] },
                         { id: 'pb_jee_bank', name: 'JEE Bank', type: 'jee', sourceTable: 'coming_soon', files: [] },
-                        { id: 'pb_checking', name: 'Checking', type: 'checking', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] }
+                        { id: 'pb_others', name: 'Others', type: 'others', sourceTable: null, files: [] }
                     ];
 
                     return (
@@ -9227,28 +11327,30 @@ const PRACTICE_BATCHES = [
                                 {PRACTICE_BATCHES.map(batch => {
                                     if (batch.type === 'neet') {
                                         return (
-                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,65,141,0.5)] hover:shadow-[0_20px_50px_-10px_rgba(0,65,141,0.7)] hover:-translate-y-2 transition-all duration-500 ease-out">
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,65,141,0.5)] hover:shadow-[0_20px_50px_-10px_rgba(0,65,141,0.7)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out">
+                                                {/* Shimmer Effect */}
+                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none z-[100]"></div>
                                                 {/* Gaming/Premium Blue Gradient Base */}
                                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00418d] via-[#003370] to-[#001a3d] z-0"></div>
-                                                
+
                                                 {/* Animated Medical Patterns */}
                                                 <div className="absolute inset-0 opacity-[0.05] bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] mix-blend-overlay z-0"></div>
-                                                
+
                                                 {/* Glowing Orbs */}
-                                                <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-300/30 transition-all duration-700 z-0"></div>
-                                                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-400/20 rounded-full blur-2xl group-hover:bg-teal-300/30 transition-all duration-700 z-0"></div>
-                                                
+                                                <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-300/30 group-active:bg-blue-300/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-400/20 rounded-full blur-2xl group-hover:bg-teal-300/30 group-active:bg-teal-300/30 transition-all duration-700 z-0"></div>
+
                                                 {/* Floating Medical Icons (Gaming Style) */}
-                                                <i className="fa-solid fa-stethoscope absolute -right-4 -bottom-4 text-[120px] text-white/5 group-hover:text-blue-400/10 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 z-10 drop-shadow-2xl"></i>
-                                                <i className="fa-solid fa-pills absolute top-6 right-24 text-3xl text-blue-300/10 group-hover:text-teal-300/20 group-hover:-translate-y-4 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-hospital absolute bottom-8 right-32 text-4xl text-blue-200/5 group-hover:text-blue-200/15 group-hover:-translate-x-4 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-staff-snake absolute top-1/2 right-12 -translate-y-1/2 text-6xl text-white/5 group-hover:text-blue-100/10 group-hover:scale-125 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-stethoscope absolute -right-4 -bottom-4 text-[120px] text-white/5 group-hover:text-blue-400/10 group-active:text-blue-400/10 group-hover:scale-110 group-active:scale-110 group-hover:-rotate-12 group-active:-rotate-12 transition-all duration-700 z-10 drop-shadow-2xl"></i>
+                                                <i className="fa-solid fa-pills absolute top-6 right-24 text-3xl text-blue-300/10 group-hover:text-teal-300/20 group-active:text-teal-300/20 group-hover:-translate-y-4 group-active:-translate-y-4 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-hospital absolute bottom-8 right-32 text-4xl text-blue-200/5 group-hover:text-blue-200/15 group-active:text-blue-200/15 group-hover:-translate-x-4 group-active:-translate-x-4 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-staff-snake absolute top-1/2 right-12 -translate-y-1/2 text-6xl text-white/5 group-hover:text-blue-100/10 group-active:text-blue-100/10 group-hover:scale-125 group-active:scale-125 transition-all duration-1000 z-10"></i>
 
                                                 {/* Content */}
                                                 <div className="relative z-20 h-full flex flex-col justify-center px-8">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-white/20 transition-all duration-500">
-                                                            <i className="fa-solid fa-user-doctor text-2xl text-blue-100 group-hover:text-white group-hover:scale-110 transition-transform duration-500"></i>
+                                                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-white/20 group-active:bg-white/20 transition-all duration-500">
+                                                            <i className="fa-solid fa-user-doctor text-2xl text-blue-100 group-hover:text-white group-active:text-white group-hover:scale-110 group-active:scale-110 transition-transform duration-500"></i>
                                                         </div>
                                                         <div>
                                                             <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">NEET Bank</h3>
@@ -9263,29 +11365,31 @@ const PRACTICE_BATCHES = [
                                         );
                                     } else if (batch.type === 'jee') {
                                         return (
-                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(15,23,42,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(6,182,212,0.4)] hover:-translate-y-2 transition-all duration-500 ease-out mt-4">
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(15,23,42,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(6,182,212,0.4)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out mt-4">
+                                                {/* Shimmer Effect */}
+                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none z-[100]"></div>
                                                 {/* Gaming/Premium Engineer Base */}
                                                 <div className="absolute inset-0 bg-[#0b0f19] z-0"></div>
                                                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-transparent to-purple-900/40 z-0"></div>
-                                                
+
                                                 {/* Grid Pattern */}
                                                 <div className="absolute inset-0 opacity-[0.1] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] mix-blend-overlay z-0"></div>
-                                                
+
                                                 {/* Hacker/Cyberpunk Glows */}
-                                                <div className="absolute top-0 right-0 w-[200%] h-[200%] bg-[conic-gradient(from_90deg_at_50%_50%,#00000000_50%,#06b6d4_100%)] opacity-0 group-hover:opacity-10 group-hover:animate-spin-slow transition-opacity duration-1000 z-0 pointer-events-none"></div>
-                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-400/20 transition-all duration-700 z-0"></div>
-                                                
+                                                <div className="absolute top-0 right-0 w-[200%] h-[200%] bg-[conic-gradient(from_90deg_at_50%_50%,#00000000_50%,#06b6d4_100%)] opacity-0 group-hover:opacity-10 group-active:opacity-10 group-hover:animate-spin-slow transition-opacity duration-1000 z-0 pointer-events-none"></div>
+                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-400/20 group-active:bg-cyan-400/20 transition-all duration-700 z-0"></div>
+
                                                 {/* Floating Engineer Icons (Gaming Style) */}
-                                                <i className="fa-solid fa-microchip absolute -right-6 -bottom-6 text-[130px] text-cyan-500/5 group-hover:text-cyan-400/15 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]"></i>
-                                                <i className="fa-solid fa-laptop-code absolute top-8 right-24 text-3xl text-cyan-300/10 group-hover:text-cyan-200/30 group-hover:-translate-y-3 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-compass-drafting absolute bottom-8 right-36 text-4xl text-purple-400/10 group-hover:text-purple-300/30 group-hover:rotate-12 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-ruler-combined absolute top-1/2 right-12 -translate-y-1/2 text-5xl text-white/5 group-hover:text-cyan-100/20 group-hover:scale-110 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-microchip absolute -right-6 -bottom-6 text-[130px] text-cyan-500/5 group-hover:text-cyan-400/15 group-active:text-cyan-400/15 group-hover:scale-110 group-active:scale-110 group-hover:rotate-6 group-active:rotate-6 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]"></i>
+                                                <i className="fa-solid fa-laptop-code absolute top-8 right-24 text-3xl text-cyan-300/10 group-hover:text-cyan-200/30 group-active:text-cyan-200/30 group-hover:-translate-y-3 group-active:-translate-y-3 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-compass-drafting absolute bottom-8 right-36 text-4xl text-purple-400/10 group-hover:text-purple-300/30 group-active:text-purple-300/30 group-hover:rotate-12 group-active:rotate-12 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-ruler-combined absolute top-1/2 right-12 -translate-y-1/2 text-5xl text-white/5 group-hover:text-cyan-100/20 group-active:text-cyan-100/20 group-hover:scale-110 group-active:scale-110 transition-all duration-1000 z-10"></i>
 
                                                 {/* Content */}
                                                 <div className="relative z-20 h-full flex flex-col justify-center px-8">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 rounded-2xl bg-[#1e293b] border border-cyan-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(6,182,212,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-hover:border-cyan-400 transition-all duration-500">
-                                                            <i className="fa-solid fa-helmet-safety text-2xl text-cyan-500 group-hover:text-cyan-300 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
+                                                        <div className="w-14 h-14 rounded-2xl bg-[#1e293b] border border-cyan-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(6,182,212,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-active:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-hover:border-cyan-400 group-active:border-cyan-400 transition-all duration-500">
+                                                            <i className="fa-solid fa-helmet-safety text-2xl text-cyan-500 group-hover:text-cyan-300 group-active:text-cyan-300 group-hover:scale-110 group-active:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
                                                         </div>
                                                         <div>
                                                             <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">JEE Bank</h3>
@@ -9300,32 +11404,32 @@ const PRACTICE_BATCHES = [
                                         );
                                     } else {
                                         return (
-                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[100px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] hover:-translate-y-2 transition-all duration-500 ease-out mt-4">
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[100px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out mt-4">
                                                 {/* Hacker/Laboratory Base */}
                                                 <div className="absolute inset-0 bg-[#050505] z-0"></div>
                                                 <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 via-transparent to-black z-0"></div>
-                                                
+
                                                 {/* Matrix Pattern */}
                                                 <div className="absolute inset-0 opacity-[0.15] bg-[url('https://www.transparenttextures.com/patterns/binary-code.png')] mix-blend-overlay z-0"></div>
-                                                
+
                                                 {/* Acid/Radioactive Glows */}
-                                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/20 rounded-full blur-3xl group-hover:bg-green-400/30 transition-all duration-700 z-0"></div>
-                                                <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-400/20 transition-all duration-700 z-0"></div>
-                                                
-                                                {/* Floating Laboratory Icons (Gaming Style) */}
-                                                <i className="fa-solid fa-vial-virus absolute -right-4 -bottom-8 text-[100px] text-green-500/5 group-hover:text-green-400/20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]"></i>
-                                                <i className="fa-solid fa-microscope absolute top-4 right-32 text-3xl text-purple-400/10 group-hover:text-purple-300/30 group-hover:-translate-y-2 transition-all duration-1000 z-10"></i>
+                                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/20 rounded-full blur-3xl group-hover:bg-green-400/30 group-active:bg-green-400/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-400/20 group-active:bg-purple-400/20 transition-all duration-700 z-0"></div>
+
+                                                {/* Floating Exams Icons (Gaming Style) */}
+                                                <i className="fa-solid fa-layer-group absolute -right-4 -bottom-8 text-[100px] text-green-500/5 group-hover:text-green-400/20 group-active:text-green-400/20 group-hover:scale-110 group-active:scale-110 group-hover:rotate-12 group-active:rotate-12 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]"></i>
+                                                <i className="fa-solid fa-folder-tree absolute top-4 right-32 text-3xl text-purple-400/10 group-hover:text-purple-300/30 group-active:text-purple-300/30 group-hover:-translate-y-2 group-active:-translate-y-2 transition-all duration-1000 z-10"></i>
 
                                                 {/* Content */}
                                                 <div className="relative z-20 h-full flex flex-col justify-center px-8">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-2xl bg-[#0f172a] border border-green-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(34,197,94,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-hover:border-green-400 transition-all duration-500">
-                                                            <i className="fa-solid fa-flask text-2xl text-green-500 group-hover:text-green-300 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"></i>
+                                                        <div className="w-12 h-12 rounded-2xl bg-[#0f172a] border border-green-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(34,197,94,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-active:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-hover:border-green-400 group-active:border-green-400 transition-all duration-500">
+                                                            <i className="fa-solid fa-list-ul text-2xl text-green-500 group-hover:text-green-300 group-active:text-green-300 group-hover:scale-110 group-active:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"></i>
                                                         </div>
                                                         <div>
                                                             <h3 className="text-2xl font-black text-white tracking-tight drop-shadow-md">{batch.name}</h3>
                                                             <div className="flex items-center gap-2 mt-1">
-                                                                <span className="px-2 py-0.5 rounded bg-green-900/40 border border-green-500/40 text-[9px] font-black text-green-400 uppercase tracking-widest backdrop-blur-sm">Standard Track</span>
+                                                                <span className="px-2 py-0.5 rounded bg-green-900/40 border border-green-500/40 text-[9px] font-black text-green-400 uppercase tracking-widest backdrop-blur-sm">Explore More Exams</span>
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,1)]"></span>
                                                             </div>
                                                         </div>
@@ -9433,7 +11537,7 @@ const PRACTICE_BATCHES = [
                 }[historyViewType];
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[2000000] bg-white/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-gray-200 dark:border-gray-800">
+                    <div className="fixed inset-x-0 bottom-0 top-0 pt-[24px] z-[2000000] bg-white/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-gray-200 dark:border-gray-800">
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setHistoryViewType(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
@@ -9451,18 +11555,27 @@ const PRACTICE_BATCHES = [
                                 <input type="text" placeholder={`Search ${config.title.toLowerCase()}...`} value={historySearch} onChange={e => setHistorySearch(e.target.value)} className={`w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 ${config.focusRing} outline-none transition-all`} />
                             </div>
                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                                <select value={historySubjectFilter} onChange={e => { setHistorySubjectFilter(e.target.value); setHistoryChapterFilter(''); setHistoryTopicFilter(''); }} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
-                                    <option value="">All Subjects</option>
-                                    {[...subjects].map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <select value={historyChapterFilter} onChange={e => { setHistoryChapterFilter(e.target.value); setHistoryTopicFilter(''); }} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
-                                    <option value="">All Chapters</option>
-                                    {[...chapters].map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                                <select value={historyTopicFilter} onChange={e => setHistoryTopicFilter(e.target.value)} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border-none outline-none shrink-0">
-                                    <option value="">All Topics</option>
-                                    {[...topics].map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
+                                <CustomSelect
+                                    value={historySubjectFilter}
+                                    onChange={e => { setHistorySubjectFilter(e.target.value); setHistoryChapterFilter(''); setHistoryTopicFilter(''); }}
+                                    options={[{ label: 'All Subjects', value: '' }, ...[...subjects].map(s => ({ label: s, value: s }))]}
+                                    compact={true}
+                                    className="shrink-0 min-w-[130px]"
+                                />
+                                <CustomSelect
+                                    value={historyChapterFilter}
+                                    onChange={e => { setHistoryChapterFilter(e.target.value); setHistoryTopicFilter(''); }}
+                                    options={[{ label: 'All Chapters', value: '' }, ...[...chapters].map(c => ({ label: c, value: c }))]}
+                                    compact={true}
+                                    className="shrink-0 min-w-[150px]"
+                                />
+                                <CustomSelect
+                                    value={historyTopicFilter}
+                                    onChange={e => setHistoryTopicFilter(e.target.value)}
+                                    options={[{ label: 'All Topics', value: '' }, ...[...topics].map(t => ({ label: t, value: t }))]}
+                                    compact={true}
+                                    className="shrink-0 min-w-[150px]"
+                                />
                             </div>
                         </div>
 
@@ -9510,33 +11623,30 @@ const PRACTICE_BATCHES = [
                 const perf = safeGetJSON('ataxy_practice_perf', null) || {};
 
                 // 1. Group Data into Subjects & Chapters
-                const getGroup = (subName) => {
-                    const n = subName.toLowerCase();
-                    if (n.includes('phy')) return 'Physics';
-                    if (n.includes('chem')) return 'Chemistry';
-                    if (n.includes('bio') || n.includes('bot') || n.includes('zoo')) return 'Biology';
-                    return 'Other';
-                };
-
                 let totalAttempted = 0;
                 let totalCorrect = 0;
 
-                const subjectStats = {
-                    'Physics': { attempted: 0, correct: 0, max: 180, colorClass: 'text-red-500' },
-                    'Chemistry': { attempted: 0, correct: 0, max: 180, colorClass: 'text-orange-500' },
-                    'Biology': { attempted: 0, correct: 0, max: 360, colorClass: 'text-green-500' }
-                };
+                const subjectStats = {};
                 const chapterStats = {};
 
                 qbankData.forEach(sub => {
-                    const group = getGroup(sub.name);
-                    if (group === 'Other') return;
+                    const group = sub.name;
 
                     sub.chapters?.forEach(chap => {
                         chap.topics?.forEach(top => top.questions?.forEach(q => {
                             if (perf[q.id] !== undefined) {
+                                if (!subjectStats[group]) {
+                                    let colorClass = 'text-blue-500';
+                                    if (group.toLowerCase().includes('phy')) colorClass = 'text-red-500';
+                                    if (group.toLowerCase().includes('chem')) colorClass = 'text-orange-500';
+                                    if (group.toLowerCase().includes('bot') || group.toLowerCase().includes('bio')) colorClass = 'text-green-500';
+                                    if (group.toLowerCase().includes('zoo')) colorClass = 'text-emerald-500';
+                                    if (group.toLowerCase().includes('math')) colorClass = 'text-purple-500';
+
+                                    subjectStats[group] = { attempted: 0, correct: 0, colorClass };
+                                }
                                 if (!chapterStats[chap.name]) {
-                                    chapterStats[chap.name] = { subjectGroup: group, attempted: 0, correct: 0 };
+                                    chapterStats[chap.name] = { subjectGroup: group, subjectName: sub.name, attempted: 0, correct: 0, weakTopics: new Set() };
                                 }
                                 totalAttempted++;
                                 subjectStats[group].attempted++;
@@ -9545,23 +11655,22 @@ const PRACTICE_BATCHES = [
                                     totalCorrect++;
                                     subjectStats[group].correct++;
                                     chapterStats[chap.name].correct++;
+                                } else {
+                                    chapterStats[chap.name].weakTopics.add(top.name);
                                 }
                             }
                         }));
                     });
                 });
 
-                // 2. Compute Predicted Scores
-                const getPredicted = (group) => {
+                // 2. Compute Accuracy
+                const getAccuracy = (group) => {
                     const s = subjectStats[group];
-                    if (s.attempted === 0) return 0;
-                    return Math.round((s.correct / s.attempted) * s.max);
+                    if (!s || s.attempted === 0) return 0;
+                    return Math.round((s.correct / s.attempted) * 100);
                 };
 
-                const phyScore = getPredicted('Physics');
-                const chemScore = getPredicted('Chemistry');
-                const bioScore = getPredicted('Biology');
-                const totalPredicted = phyScore + chemScore + bioScore;
+                const overallAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
 
                 // 3. Compute Mock Metrics for premium feel
                 const accuracyRatio = totalAttempted > 0 ? (totalCorrect / totalAttempted) : 0;
@@ -9582,21 +11691,24 @@ const PRACTICE_BATCHES = [
 
                 const handleGenerateDPP = (chapterName) => {
                     try { if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy'); } catch (e) { }
-                    safeAlert(`Generating Custom DPP for: ${chapterName}...
-
-This feature will compile your weakest topics into a tailored test.`);
+                    const chapData = chapterStats[chapterName];
+                    if (chapData) {
+                        setShowAnalyticsModal(false);
+                        const topicsToTarget = Array.from(chapData.weakTopics);
+                        handleGenerateTargetedDPP(chapData.subjectName, chapterName, topicsToTarget, 20);
+                    }
                 };
 
                 // 5. Active Chapters for Table
                 const activeChapters = Object.keys(chapterStats)
-                    .filter(c => chapterStats[c].subjectGroup === activeAnalysisTab)
+                    .filter(c => activeAnalysisTab === 'All' || chapterStats[c].subjectGroup === activeAnalysisTab)
                     .map(c => ({ name: c, ...chapterStats[c] }))
                     .sort((a, b) => b.attempted - a.attempted); // Most attempted first
 
                 let chapterQuestions = [];
                 if (expandedAnalysisChapter) {
                     qbankData.forEach(sub => {
-                        if (getGroup(sub.name) !== activeAnalysisTab) return;
+                        if (activeAnalysisTab !== 'All' && sub.name !== activeAnalysisTab) return;
                         const chap = sub.chapters?.find(c => c.name === expandedAnalysisChapter);
                         if (chap) {
                             chap.topics?.forEach(top => top.questions?.forEach(q => {
@@ -9617,7 +11729,7 @@ This feature will compile your weakest topics into a tailored test.`);
                 });
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-[max(env(safe-area-inset-top),_24px)] z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                    <div className="fixed inset-x-0 bottom-0 top-0 pt-[24px] z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
                         {/* HEADER */}
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
@@ -9663,26 +11775,26 @@ This feature will compile your weakest topics into a tailored test.`);
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800/80 text-center relative overflow-hidden">
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
                                 <h3 className="font-black text-xl text-gray-900 dark:text-white mb-1 tracking-wide">
-                                    Predicted Score: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{totalPredicted}</span> <span className="text-sm text-gray-400">/ 720</span>
+                                    Overall Accuracy: <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{overallAccuracy}%</span>
                                 </h3>
                                 <p className="text-[10px] text-gray-500 mb-6 uppercase tracking-widest font-semibold">Based on your practice accuracy</p>
 
-                                <div className="flex justify-around items-center">
-                                    <CircularRing score={phyScore} max={180} colorClass="text-red-500" label="Physics" />
-                                    <CircularRing score={chemScore} max={180} colorClass="text-orange-500" label="Chemistry" />
-                                    <CircularRing score={bioScore} max={360} colorClass="text-green-500" label="Biology" />
+                                <div className="flex justify-around items-center flex-wrap gap-4">
+                                    {Object.keys(subjectStats).map(group => (
+                                        <CircularRing key={group} score={getAccuracy(group)} max={100} colorClass={subjectStats[group].colorClass} label={group} />
+                                    ))}
                                 </div>
                             </div>
 
                             {/* SUBJECT TABS & CHAPTER-WISE TABLE */}
                             <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800/80 overflow-hidden flex flex-col">
                                 {/* Pill Tabs */}
-                                <div className="flex p-2 bg-gray-50 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800/80">
-                                    {['Physics', 'Chemistry', 'Biology'].map(tab => (
+                                <div className="flex p-2 bg-gray-50 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800/80 overflow-x-auto custom-scrollbar gap-2">
+                                    {['All', ...Object.keys(subjectStats)].map(tab => (
                                         <button
                                             key={tab}
                                             onClick={() => handleTabClick(tab)}
-                                            className={`flex-1 py-2.5 text-xs font-bold rounded-full transition-all duration-300 ${activeAnalysisTab === tab ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-gray-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-transparent'}`}
+                                            className={`flex-1 min-w-[80px] py-2.5 px-3 text-xs font-bold rounded-full transition-all duration-300 whitespace-nowrap ${activeAnalysisTab === tab ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-gray-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-transparent'}`}
                                         >
                                             {tab}
                                         </button>
@@ -9736,7 +11848,7 @@ This feature will compile your weakest topics into a tailored test.`);
                                                             </td>
                                                             <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                                                                 <button onClick={() => handleGenerateDPP(chap.name)} className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap border border-indigo-400/50">
-                                                                    GEN DPP
+                                                                    <i className="fa-solid fa-bullseye mr-1"></i> Target Weakness
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -9746,14 +11858,13 @@ This feature will compile your weakest topics into a tailored test.`);
                                                                     <div className="animate-in slide-in-from-top-2 flex flex-col gap-3">
                                                                         {/* Filters */}
                                                                         <div className="flex flex-wrap gap-2">
-                                                                            <select
+                                                                            <CustomSelect
                                                                                 value={analysisChapterFilters.topic}
                                                                                 onChange={e => setAnalysisChapterFilters(prev => ({ ...prev, topic: e.target.value }))}
-                                                                                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-[10px] font-bold px-2 py-1.5 text-gray-700 dark:text-gray-300 outline-none"
-                                                                            >
-                                                                                <option value="">All Topics</option>
-                                                                                {[...new Set(chapterQuestions.map(q => q.topicName))].map(t => <option key={t} value={t}>{t}</option>)}
-                                                                            </select>
+                                                                                options={[{ label: 'All Topics', value: '' }, ...[...new Set(chapterQuestions.map(q => q.topicName))].map(t => ({ label: t, value: t }))]}
+                                                                                compact={true}
+                                                                                className="min-w-[130px]"
+                                                                            />
 
                                                                             <button
                                                                                 onClick={() => setAnalysisChapterFilters(prev => ({ ...prev, incorrect: !prev.incorrect }))}
@@ -9830,8 +11941,8 @@ This feature will compile your weakest topics into a tailored test.`);
 
                         </div>
                     </div>
-                , document.body
-);
+                    , document.body
+                );
             };
 
             // --- PROFILE & PERFORMANCE ---
@@ -9933,12 +12044,53 @@ This feature will compile your weakest topics into a tailored test.`);
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">Notes</p>
                                 </div>
                             </div>
+                            
+                            {/* Study Partner Settings */}
+                            <h3 className="font-black text-gray-800 dark:text-white text-lg mb-4 px-2 flex items-center gap-2 mt-8">
+                                <i className="fa-solid fa-user-astronaut text-rose-500"></i> Study Partner
+                            </h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${studyPartnerConfig.enabled ? 'bg-rose-100 text-rose-500 dark:bg-rose-900/30' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'}`}>
+                                            <i className="fa-solid fa-robot"></i>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white text-lg">Enable Assistant</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Your AI study companion</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'mia_cheer'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
+                                        <div className="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform"></div>
+                                    </button>
+                                </div>
+                                
+                                {studyPartnerConfig.enabled && (
+                                    <div className="space-y-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Choose your partner</p>
+                                        {STUDY_PARTNERS.filter(p => p.id !== 'none').map(p => (
+                                            <div key={p.id} onClick={() => setStudyPartnerConfig({...studyPartnerConfig, character: p.id})} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${studyPartnerConfig.character === p.id ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-500 shadow-[0_4px_15px_rgba(59,130,246,0.1)]' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 ${p.color}`}>
+                                                        <i className={`fa-solid ${p.icon}`}></i>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200 block">{p.name}</span>
+                                                        <span className="text-[10px] text-gray-500 uppercase">{p.vibe}</span>
+                                                    </div>
+                                                </div>
+                                                {studyPartnerConfig.character === p.id && <i className="fa-solid fa-circle-check text-blue-500"></i>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Detailed Analytics Block */}
-                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group">
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group partner-platform">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors"></div>
                                 <h4 className="font-black text-gray-900 dark:text-white text-lg mb-5 flex items-center gap-2"><i className="fa-solid fa-microscope text-purple-500"></i> Subject Mastery</h4>
-                                
+
                                 <div className="space-y-5 relative z-10">
                                     {Object.keys(subjectStats).length > 0 ? Object.keys(subjectStats).map(subName => {
                                         const s = subjectStats[subName];
@@ -10002,7 +12154,9 @@ This feature will compile your weakest topics into a tailored test.`);
 
             return (
                 <VoiceRoomErrorBoundary>
-                    <div className={`min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden ${showTopNav ? 'pt-[calc(60px_+_max(env(safe-area-inset-top),_24px))]' : 'pt-[max(env(safe-area-inset-top),_24px)]'}`}>
+                    <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
+                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} currentTab={currentTab} showQuiz={showQuiz} />
+                    <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
                         <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gray-50 dark:bg-gray-950">
@@ -10018,12 +12172,12 @@ This feature will compile your weakest topics into a tailored test.`);
 
                         {showTopNav && <TopNavBar />}
 
-                        <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : ''}`}>
-                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
+                        <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${showTopNav ? "pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))]" : "pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)]"}`}>
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
-                                    {currentTab === 'ai' && <AIMentorView />}
+                                    {currentTab === 'ai' && <AIMentorView onBack={() => setCurrentTab('home')} />}
                                     {/* Voice Room Tab logic moved to VC Official Room */}
                                     {currentTab === 'questions' && renderQuestionsView()}
                                     {currentTab === 'profile' && renderProfileView()}
@@ -10033,13 +12187,17 @@ This feature will compile your weakest topics into a tailored test.`);
 
                                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
                                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
-                                        <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)]">
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+                                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-center gap-8 sm:gap-12 md:gap-24 pb-[calc(16px_+_var(--tg-content-safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Home</span></button>
 
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">VC</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
+                                            
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('chats'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chats' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Chats</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 relative overflow-hidden rounded-xl ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}>
+                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none rounded-xl"></div>
+                                                <i className="fa-solid fa-layer-group text-[20px] relative z-10"></i><span className="text-[10px] font-bold uppercase tracking-wider relative z-10">Practice</span>
+                                            </button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
                                         </div>
                                     )}
                                 </>
@@ -10062,18 +12220,18 @@ This feature will compile your weakest topics into a tailored test.`);
                                 <div className="bg-[#0b0f19] border border-cyan-900/30 rounded-[2rem] p-6 w-full max-w-sm text-center shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden relative" onClick={e => e.stopPropagation()}>
                                     <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-red-900/10 pointer-events-none"></div>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                                    
+
                                     <div className="w-16 h-16 bg-red-900/30 text-red-500 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 border border-red-500/30 shadow-inner relative z-10">
                                         <i className="fa-solid fa-dumpster-fire"></i>
                                     </div>
-                                    
+
                                     {!pendingClearAction ? (
                                         <>
                                             <h3 className="text-2xl font-black text-white mb-2 relative z-10 drop-shadow-md">Clear Data</h3>
                                             <p className="text-xs text-gray-400 mb-6 font-bold relative z-10">
                                                 Select what you want to delete for {confirmClearScope === 'all' ? 'everything' : confirmClearScope.type === 'batch' ? 'this track' : 'this ' + confirmClearScope.type}.
                                             </p>
-                                            
+
                                             <div className="space-y-3 relative z-10">
                                                 <button onClick={() => setPendingClearAction('attempts')} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-white font-bold rounded-xl transition-colors flex items-center justify-between px-4 group">
                                                     <span><i className="fa-solid fa-rotate-left mr-2 text-cyan-400 group-hover:scale-110 transition-transform"></i> Clear Attempts</span>
@@ -10088,7 +12246,7 @@ This feature will compile your weakest topics into a tailored test.`);
                                                     <i className="fa-solid fa-chevron-right text-white/50 text-xs"></i>
                                                 </button>
                                             </div>
-                                            
+
                                             <button onClick={() => { setConfirmClearScope(null); setPendingClearAction(null); }} className="w-full mt-4 py-3 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-bold rounded-xl transition-colors relative z-10">Cancel</button>
                                         </>
                                     ) : (
@@ -10097,13 +12255,70 @@ This feature will compile your weakest topics into a tailored test.`);
                                             <p className="text-sm text-red-300 mb-6 font-bold relative z-10">
                                                 This will {pendingClearAction === 'attempts' ? 'clear all attempt history' : pendingClearAction === 'bookmarks' ? 'remove all bookmarks' : 'permanently delete all data'} for {confirmClearScope === 'all' ? 'everything' : confirmClearScope.type === 'batch' ? 'this track' : 'this ' + confirmClearScope.type}. This action cannot be undone!
                                             </p>
-                                            
+
                                             <div className="flex gap-3 relative z-10">
                                                 <button onClick={() => setPendingClearAction(null)} className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">Go Back</button>
                                                 <button onClick={() => { handleClearProgress(confirmClearScope, pendingClearAction); setPendingClearAction(null); }} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)]">Yes, {pendingClearAction === 'attempts' ? 'Clear' : pendingClearAction === 'bookmarks' ? 'Clear' : 'Delete'}</button>
                                             </div>
                                         </>
                                     )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modal 1: Confirm Target Weakness Generation */}
+                        {pendingDPPConfig && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in p-4">
+                                <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95">
+                                    <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                                        <i className="fa-solid fa-bullseye"></i>
+                                    </div>
+                                    <h3 className="text-xl font-black text-center text-gray-900 dark:text-white mb-2">Target Weakness</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                                        You are about to generate a targeted DPP focusing on your weak areas:
+                                    </p>
+                                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
+                                        <div className="text-xs font-bold text-gray-400 uppercase mb-1">Chapter</div>
+                                        <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">{pendingDPPConfig.chapterName}</div>
+                                        <div className="text-xs font-bold text-gray-400 uppercase mb-1">Topics</div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {pendingDPPConfig.topicNamesArray.length > 0 ? pendingDPPConfig.topicNamesArray.map((t, idx) => (
+                                                <span key={idx} className="bg-white dark:bg-gray-700 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t}</span>
+                                            )) : (
+                                                <span className="bg-white dark:bg-gray-700 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-[11px] font-semibold text-gray-700 dark:text-gray-300">Entire Chapter</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setPendingDPPConfig(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95">Cancel</button>
+                                        <button onClick={processGenerateDPP} className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-colors active:scale-95">Generate DPP</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modal 2: DPP Generated Action */}
+                        {pendingGeneratedDPP && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in p-4">
+                                <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95">
+                                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                                        <i className="fa-solid fa-check-circle"></i>
+                                    </div>
+                                    <h3 className="text-xl font-black text-center text-gray-900 dark:text-white mb-2">DPP Ready!</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                                        Successfully generated a {pendingGeneratedDPP.questions.length} questions DPP focusing on your weak topics.
+                                    </p>
+                                    <div className="flex flex-col gap-3">
+                                        <button onClick={handleStartDPP} className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            <i className="fa-solid fa-play"></i> Start Test Now
+                                        </button>
+                                        <button onClick={handleSaveDPP} className="w-full py-3 rounded-xl border-2 border-green-500 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 font-bold transition-colors active:scale-95 flex items-center justify-center gap-2">
+                                            <i className="fa-solid fa-bookmark"></i> Save to My Tests
+                                        </button>
+                                        <button onClick={() => setPendingGeneratedDPP(null)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95 mt-2">
+                                            Cancel & Discard
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

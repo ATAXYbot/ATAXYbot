@@ -7600,7 +7600,7 @@ INSTRUCTIONS:
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
 
-            const [isGiant, setIsGiant] = useState(false);
+            
 
             // Three.js Initialization
             useEffect(() => {
@@ -7688,7 +7688,7 @@ INSTRUCTIONS:
                     setVisible(true);
                     
                     const isImportant = partnerMessage.type === 'missed_target' || partnerMessage.type === 'reminder' || partnerMessage.requireAcknowledge;
-                    setIsGiant(isImportant);
+                    
                     
                     setEmotion(partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking'));
                     
@@ -7696,7 +7696,7 @@ INSTRUCTIONS:
                     
                     const t = setTimeout(() => {
                         setVisible(false);
-                        setIsGiant(false);
+                        
                         setTimeout(() => {
                             setPartnerMessage(null);
                             setEmotion('idle');
@@ -7777,15 +7777,7 @@ INSTRUCTIONS:
                     const p = physicsRef.current;
                     const now = Date.now();
                     
-                    if (isGiant) {
-                        p.x = window.innerWidth / 2;
-                        p.y = window.innerHeight / 2 + 100;
-                        p.vx = 0;
-                        p.vy = 0;
-                        p.isGrounded = true;
-                        p.state = 'idle';
-                        p.facing = 1;
-                    } else if (p.isDragging) {
+                    if (p.isDragging) {
                         p.state = 'jumping';
                         p.isGrounded = false;
                     } else {
@@ -7811,11 +7803,14 @@ INSTRUCTIONS:
                             // playSyntheticSound('throw'); // Swoosh sound
                         }
                         
-                        // Brain logic
+                        
+                        // Brain logic initialization
                         if (typeof p.brainState === 'undefined') {
-                            p.brainState = 'wander'; // tour, wander, inspecting
+                            p.brainState = 'wander'; 
                             p.brainTimer = now;
                             p.tourStep = -1;
+                            p.lastTargetCheck = 0;
+                            p.groundTarget = null;
                             
                             // Check localstorage for tour
                             if (!localStorage.getItem('ataxy_tour_done')) {
@@ -7824,19 +7819,88 @@ INSTRUCTIONS:
                             }
                         }
 
+                        // Daily Target Deadlines AI
+                        if (now - p.lastTargetCheck > 5000) {
+                            p.lastTargetCheck = now;
+                            try {
+                                const stored = JSON.parse(localStorage.getItem('ataxy_targets') || '{}');
+                                const todayStr = new Date().toDateString();
+                                const todayTargets = stored[todayStr] || [];
+                                
+                                const currentHour = new Date().getHours();
+                                const currentMinute = new Date().getMinutes();
+                                const currentTotalMins = currentHour * 60 + currentMinute;
+                                
+                                let lateTarget = null;
+                                let pendingTarget = null;
+                                
+                                for (const t of todayTargets) {
+                                    if (!t.done && t.startTime) {
+                                        const [th, tm] = t.startTime.split(':').map(Number);
+                                        const targetTotalMins = th * 60 + tm;
+                                        
+                                        // If we are past the start time!
+                                        if (currentTotalMins >= targetTotalMins) {
+                                            let isLate = true;
+                                            if (t.endTime) {
+                                                const [eh, em] = t.endTime.split(':').map(Number);
+                                                const endTotalMins = eh * 60 + em;
+                                                if (currentTotalMins <= endTotalMins) {
+                                                    isLate = false; // we are inside the window
+                                                    if (!pendingTarget) pendingTarget = t;
+                                                }
+                                            }
+                                            
+                                            if (isLate) lateTarget = t;
+                                        }
+                                    }
+                                }
+                                
+                                if (lateTarget && p.brainState !== 'angry' && p.brainState !== 'tour') {
+                                    p.brainState = 'angry';
+                                    p.brainTimer = now;
+                                    setEmotion('angry');
+                                    p.state = 'angry';
+                                    p.vx = 0;
+                                    setPartnerMessage({ type: 'chatter', text: `You are LATE for "${lateTarget.text}"! Go complete it NOW!` });
+                                } else if (pendingTarget && p.brainState !== 'angry' && p.brainState !== 'tour' && Math.random() < 0.2) {
+                                    setEmotion('talking');
+                                    p.state = 'greet';
+                                    setPartnerMessage({ type: 'chatter', text: `Reminder: You should be working on "${pendingTarget.text}" right now!` });
+                                }
+                            } catch(e) {}
+                        }
+
+                        // Physics / Collision
                         if (p.vy >= 0) {
                             const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
                             let landed = false;
                             
-                            for (let i = 0; i < platforms.length; i++) {
-                                const rect = platforms[i].getBoundingClientRect();
-                                if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
-                                    if (p.x > rect.left && p.x < rect.right) {
-                                        p.y = rect.top;
-                                        p.vy = 0;
-                                        p.isGrounded = true;
-                                        landed = true;
-                                        break;
+                            // Check if still on the tracked groundTarget
+                            if (p.isGrounded && p.groundTarget) {
+                                const rect = p.groundTarget.getBoundingClientRect();
+                                // Check if button is still visible on screen and character is within its X bounds
+                                if (rect.height > 0 && rect.width > 0 && p.x > rect.left && p.x < rect.right) {
+                                    p.y = rect.top; // Glue to it during scroll!
+                                    p.vy = 0;
+                                    landed = true;
+                                } else {
+                                    p.groundTarget = null;
+                                }
+                            }
+                            
+                            if (!landed) {
+                                for (let i = 0; i < platforms.length; i++) {
+                                    const rect = platforms[i].getBoundingClientRect();
+                                    if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
+                                        if (p.x > rect.left && p.x < rect.right) {
+                                            p.y = rect.top;
+                                            p.vy = 0;
+                                            p.isGrounded = true;
+                                            p.groundTarget = platforms[i];
+                                            landed = true;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -7845,6 +7909,9 @@ INSTRUCTIONS:
                                 p.y = window.innerHeight - 10;
                                 p.vy = 0;
                                 p.isGrounded = true;
+                                p.groundTarget = null;
+                            } else if (!landed) {
+                                p.isGrounded = false;
                             }
                         }
 
@@ -7852,11 +7919,12 @@ INSTRUCTIONS:
                             if (p.brainState === 'tour') {
                                 // Tour State Machine
                                 const tourSteps = [
-                                    { text: "Welcome to ATAXY! I'm your AI study partner. Let me show you around!", target: null, anim: 'greet', duration: 5000 },
-                                    { text: "Up here is the Header. You can access your profile and settings.", target: 'header', anim: 'point', duration: 4000 },
-                                    { text: "This is your Daily Targets section. Complete these to stay on track!", target: '.bg-gray-800', anim: 'nod', duration: 4000 },
-                                    { text: "And down here is the Navigation Bar. You can switch between Home, Practice, and more.", target: 'nav', anim: 'point', duration: 4000 },
-                                    { text: "I'll be hanging around to help you out. Good luck!", target: null, anim: 'victory', duration: 4000 }
+                                    { text: "Welcome to ATAXY! I'm your AI study partner. Let me show you around!", target: null, anim: 'greet', duration: 4000 },
+                                    { text: "Up here is the Header. This is where you can see your rank and profile settings.", target: 'header', anim: 'point', duration: 4000 },
+                                    { text: "This is the Home tab! It shows your Daily Targets, progress, and 7-Day Momentum.", target: 'button:has(i.fa-rocket), a:has(i.fa-rocket)', anim: 'nod', duration: 4500 },
+                                    { text: "This is the Practice area where you can solve MCQs for NEET or JEE!", target: 'button:has(i.fa-layer-group), a:has(i.fa-layer-group)', anim: 'point', duration: 4000 },
+                                    { text: "Need help? Tap the Chat icon to talk to me about concepts or get study plans.", target: 'button:has(i.fa-comments), a:has(i.fa-comments)', anim: 'talk', duration: 4000 },
+                                    { text: "I'll be hanging around to help you out. Good luck dominating your exams!", target: null, anim: 'victory', duration: 4000 }
                                 ];
                                 
                                 if (now - p.brainTimer > (p.tourStep >= 0 ? tourSteps[p.tourStep].duration : 1000)) {
@@ -7879,13 +7947,27 @@ INSTRUCTIONS:
                                         p.state = step.anim;
                                     }
                                 }
+                            } else if (p.brainState === 'angry') {
+                                if (now - p.brainTimer > 8000) {
+                                    p.brainState = 'wander';
+                                }
                             } else {
-                                // Wander Mode
-                                if (now - p.lastJump > 6000 && Math.random() < 0.01) {
+                                // Wander & Parkour Mode
+                                if (p.brainState === 'recovering') {
+                                    if (now - p.brainTimer > 3000) {
+                                        p.state = 'recovering';
+                                        if (now - p.brainTimer > 5000) {
+                                            p.brainState = 'wander';
+                                            p.state = 'idle';
+                                            setEmotion('idle');
+                                        }
+                                    }
+                                } else if (now - p.lastJump > 6000 && Math.random() < 0.01) {
                                     p.vy = -16; 
                                     p.isGrounded = false;
                                     p.lastJump = now;
                                     p.state = 'jumping';
+                                    p.groundTarget = null;
                                 } else {
                                     if (now - p.walkTimer > 2000) {
                                         if (Math.random() > 0.5) {
@@ -7896,23 +7978,67 @@ INSTRUCTIONS:
                                                 p.state = idles[Math.floor(Math.random() * idles.length)];
                                             }
                                         } else {
-                                            // Find a random platform to walk towards
+                                            // Advanced UI Parkour / Pathfinding
                                             const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
-                                            if (platforms.length > 0 && Math.random() > 0.5) {
-                                                const target = platforms[Math.floor(Math.random() * platforms.length)];
-                                                const rect = target.getBoundingClientRect();
-                                                p.walkDir = (rect.left > p.x) ? 1 : -1;
+                                            let jumpTarget = null;
+                                            
+                                            if (platforms.length > 0 && Math.random() > 0.4) {
+                                                const visiblePlatforms = Array.from(platforms).filter(el => {
+                                                    const r = el.getBoundingClientRect();
+                                                    return r.height > 0 && r.width > 0 && r.top > 0 && r.bottom < window.innerHeight;
+                                                });
+                                                
+                                                // Mountain Climbing: Find platforms HIGHER than current position (smaller Y)
+                                                const higherPlatforms = visiblePlatforms.filter(el => {
+                                                    const r = el.getBoundingClientRect();
+                                                    return r.top < p.y - 40; // At least 40px higher
+                                                });
+                                                
+                                                if (higherPlatforms.length > 0) {
+                                                    // Pick the lowest of the higher platforms to climb step-by-step
+                                                    higherPlatforms.sort((a,b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
+                                                    jumpTarget = higherPlatforms[0]; // Nearest one going up
+                                                } else {
+                                                    // Reached the top or no higher platforms! Wander or jump down
+                                                    jumpTarget = visiblePlatforms[Math.floor(Math.random() * visiblePlatforms.length)];
+                                                }
+
+                                            }
+                                            
+                                            if (jumpTarget) {
+                                                const rect = jumpTarget.getBoundingClientRect();
+                                                const tX = rect.left + rect.width / 2;
+                                                const tY = rect.top;
+                                                
+                                                // Parkour leap
+                                                const dx = tX - p.x;
+                                                const dy = tY - p.y;
+                                                
+                                                if (Math.abs(dy) > 20) {
+                                                    // Need to jump up or down
+                                                    p.vy = -16;
+                                                    p.vx = (dx / 40); // 40 frames flight time approx
+                                                    p.isGrounded = false;
+                                                    p.groundTarget = null;
+                                                    p.lastJump = now;
+                                                    p.state = 'jumping';
+                                                } else {
+                                                    // Walk to it
+                                                    p.walkDir = (dx > 0) ? 1 : -1;
+                                                    p.vx = p.walkDir * 2.5; 
+                                                    p.state = 'walking';
+                                                }
                                             } else {
                                                 p.walkDir = Math.random() > 0.5 ? 1 : -1;
+                                                p.vx = p.walkDir * 1.5; 
+                                                p.state = 'walking';
                                             }
-                                            p.vx = p.walkDir * 1.5; 
-                                            p.state = 'walking';
                                         }
                                         p.walkTimer = now;
                                     }
                                 }
                             }
-                        } else if (p.isGrounded && visible) {
+} else if (p.isGrounded && visible) {
                             p.vx = 0;
                             p.state = 'idle';
                         } else {
@@ -7937,8 +8063,7 @@ INSTRUCTIONS:
                         if (previewAnim) {
                             targetAnim = previewAnim;
                         } else {
-                            if (isGiant) targetAnim = 'talk';
-                            else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
+                            if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
                             else if (p.state === 'walking') targetAnim = 'walk';
                             else if (p.state === 'fallen') targetAnim = 'hit';
                         }
@@ -7963,13 +8088,9 @@ INSTRUCTIONS:
                             const baseScale = threeRef.current.baseScale || 1;
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
-                                if (p.state === 'idle' || isGiant) targetRotation = 0; // face forward when idle or talking
+                                if (p.state === 'idle') targetRotation = 0; // face forward when idle or talking
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
-                                if (isGiant) {
-                                    model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale * 2.5, 0.1));
-                                } else {
-                                    model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
-                                }
+                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
                             }
                         }
                     }
@@ -8097,9 +8218,9 @@ INSTRUCTIONS:
                     `}</style>
                     <div 
                         className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%] cursor-grab active:cursor-grabbing`} 
-                        style={{ zIndex: isGiant ? 10050 : 10 }}
+                        style={{ zIndex: 10050 }}
                         onPointerDown={(e) => {
-                            if (isGiant) return;
+                            
                             const p = physicsRef.current;
                             p.isDragging = true;
                             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -8110,18 +8231,7 @@ INSTRUCTIONS:
                             setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
                         }}
                     >
-                        {isGiant && (
-                            <button className="absolute top-[120%] bg-blue-600 text-white font-black text-xl py-3 px-8 rounded-full shadow-2xl hover:bg-blue-700 animate-bounce pointer-events-auto" onClick={(e) => {
-                                e.stopPropagation();
-                                setIsGiant(false);
-                                setVisible(false);
-                                setPartnerMessage(null);
-                                setEmotion('idle');
-                            }}>
-                                Got it!
-                            </button>
-                        )}
-                        <div className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 ${isGiant ? 'min-w-[300px] max-w-[400px] text-lg' : 'min-w-[200px] max-w-[280px] text-sm'} bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
                             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                         </div>
@@ -8156,11 +8266,7 @@ INSTRUCTIONS:
                             </div>
                         )}
 
-                        {!isGiant && (
-                            <div className="absolute top-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap shadow-lg z-50" style={{ transform: 'translateX(-50%)', left: '50%' }}>
-                                {partnerDef.name.split(' ')[0]} <span className="text-gray-400 capitalize ml-1">({emotion})</span>
-                            </div>
-                        )}
+                        
                     </div>
                 </div>
             );
