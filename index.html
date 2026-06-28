@@ -7457,6 +7457,117 @@ INSTRUCTIONS:
             );
         };
 
+        // ?? GLOBAL TIMER WIDGET
+        // ==========================================
+        const GlobalTimerWidget = ({ timer, setTimer }) => {
+            const { active, targetText, duration, elapsed, paused } = timer;
+            const [isMinimized, setIsMinimized] = useState(false);
+
+            useEffect(() => {
+                if (!active || paused) return;
+                const interval = setInterval(() => {
+                    setTimer(prev => {
+                        if (prev.elapsed >= prev.duration) {
+                            clearInterval(interval);
+                            return { ...prev, paused: true, elapsed: prev.duration };
+                        }
+                        return { ...prev, elapsed: prev.elapsed + 1 };
+                    });
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [active, paused, setTimer]);
+
+            if (!active) return null;
+
+            const remaining = Math.max(0, duration - elapsed);
+            const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const s = (remaining % 60).toString().padStart(2, '0');
+            const progress = (elapsed / duration) * 100;
+
+            return (
+                <div className={`fixed z-[9999] top-[80px] right-4 bg-slate-900/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-64'}`}>
+                    {isMinimized ? (
+                        <div onClick={() => setIsMinimized(false)} className="px-4 py-3 flex items-center gap-3 cursor-pointer group hover:bg-slate-800/50">
+                            <i className="fa-solid fa-clock text-blue-400 group-hover:animate-spin"></i>
+                            <span className="font-mono font-bold text-white tracking-widest">{m}:{s}</span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col relative">
+                            <div className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                            <div className="p-3 flex justify-between items-center border-b border-white/10">
+                                <span className="text-xs font-bold text-blue-300 uppercase tracking-widest truncate flex-1 mr-2"><i className="fa-solid fa-bullseye mr-2"></i>{targetText || 'Focus Session'}</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsMinimized(true)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-compress text-xs"></i></button>
+                                    <button onClick={() => setTimer({ ...timer, active: false })} className="text-gray-400 hover:text-red-400"><i className="fa-solid fa-xmark text-xs"></i></button>
+                                </div>
+                            </div>
+                            <div className="p-4 flex flex-col items-center justify-center">
+                                <span className={`text-4xl font-black font-mono tracking-widest ${remaining === 0 ? 'text-green-400 animate-pulse' : 'text-white'}`}>{m}:{s}</span>
+                                <div className="flex items-center gap-4 mt-4">
+                                    <button onClick={() => setTimer({ ...timer, paused: !paused })} className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-colors">
+                                        <i className={`fa-solid ${paused ? 'fa-play ml-0.5' : 'fa-pause'}`}></i>
+                                    </button>
+                                    <button onClick={() => setTimer({ ...timer, elapsed: 0, paused: true })} className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors">
+                                        <i className="fa-solid fa-rotate-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ?? STUDY PARTNER SYSTEM
+        // ==========================================
+        const STUDY_PARTNERS = [
+            { id: 'none', name: 'None (Disabled)', icon: 'fa-ban', color: 'text-gray-400', vibe: 'disabled' },
+            { id: 'serena_health', name: 'Serena (Wellness Coach)', icon: 'fa-heart-pulse', color: 'text-rose-400', vibe: 'caring & sweet' },
+            { id: 'prof_oak', name: 'Prof. Oak (Study Buddy)', icon: 'fa-glasses', color: 'text-amber-400', vibe: 'wise & encouraging' },
+            { id: 'chief_mentor', name: 'Chief (Strict Mentor)', icon: 'fa-shield-halved', color: 'text-slate-400', vibe: 'disciplined' },
+            { id: 'mia_cheer', name: 'Mia (Cheerleader)', icon: 'fa-wand-magic-sparkles', color: 'text-fuchsia-400', vibe: 'energetic' }
+        ];
+
+        const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage }) => {
+            const [visible, setVisible] = useState(false);
+            
+            useEffect(() => {
+                if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
+                    setVisible(true);
+                    const t = setTimeout(() => {
+                        setVisible(false);
+                        setTimeout(() => setPartnerMessage(null), 500); 
+                    }, 6000); 
+                    return () => clearTimeout(t);
+                }
+            }, [partnerMessage, partnerConfig]);
+
+            if (!partnerConfig.enabled || partnerConfig.character === 'none' || !partnerMessage) return null;
+
+            const partnerDef = STUDY_PARTNERS.find(p => p.id === partnerConfig.character) || STUDY_PARTNERS[1];
+
+            return (
+                <div className={`fixed z-[10000] bottom-24 right-4 max-w-[280px] transition-all duration-500 ease-out ${visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95 pointer-events-none'}`}>
+                    <div className="relative flex flex-col items-end">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-br-sm p-4 shadow-xl border border-gray-100 dark:border-gray-700 mb-2 relative animate-pop-bounce">
+                            <p className="text-sm text-gray-800 dark:text-gray-200 font-medium leading-relaxed">{partnerMessage.text}</p>
+                            <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur rounded-full pl-2 pr-4 py-1.5 border border-white/10 shadow-lg">
+                            <div className={`w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border-2 border-slate-600 shadow-inner ${partnerDef.color}`}>
+                                <i className={`fa-solid ${partnerDef.icon} text-lg`}></i>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-white leading-tight">{partnerDef.name.split(' ')[0]}</span>
+                                <span className="text-[9px] text-gray-400 font-mono tracking-widest uppercase">{partnerDef.vibe.split(' ')[0]}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // ==========================================
         // 🚀 MAIN APP & NAVIGATION ROUTER
         // ==========================================
@@ -7933,14 +8044,81 @@ INSTRUCTIONS:
                 return flat;
             }, [activePracticeChapter]);
 
-            // Daily Targets
+            // Daily Targets & Global Settings
             const getTodayStr = () => new Date().toISOString().split('T')[0];
             const [selectedDate, setSelectedDate] = useState(getTodayStr());
             const [targetsData, setTargetsData] = useState(() => safeGetJSON('ataxy_targets', null) || {});
             const [newTarget, setNewTarget] = useState("");
+            const [newTargetTime, setNewTargetTime] = useState(""); // Time slot like "15:00"
             const [showDetailedAnalyzer, setShowDetailedAnalyzer] = useState(false);
 
+            // Global Timer State
+            const [globalTimer, setGlobalTimer] = useState(() => safeGetJSON('ataxy_global_timer', {
+                active: false, targetId: null, targetText: "", startTime: null, duration: 25 * 60, elapsed: 0, paused: false
+            }));
+
+            // Study Partner State
+            const [studyPartnerConfig, setStudyPartnerConfig] = useState(() => safeGetJSON('ataxy_study_partner_cfg', {
+                enabled: false, character: 'none', hasSeenOnboarding: false
+            }));
+            const [studyPartnerState, setStudyPartnerState] = useState(() => safeGetJSON('ataxy_study_partner_state', {
+                lastActive: Date.now(), waterCount: 0, lastWaterTime: Date.now(), studyMinutesToday: 0
+            }));
+            const [partnerMessage, setPartnerMessage] = useState(null); 
+
             useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
+            useEffect(() => { safeSetItem('ataxy_global_timer', JSON.stringify(globalTimer)); }, [globalTimer]);
+            useEffect(() => { safeSetItem('ataxy_study_partner_cfg', JSON.stringify(studyPartnerConfig)); }, [studyPartnerConfig]);
+            useEffect(() => { safeSetItem('ataxy_study_partner_state', JSON.stringify(studyPartnerState)); }, [studyPartnerState]);
+
+            // --- STUDY PARTNER LOGIC ---
+            useEffect(() => {
+                if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none') return;
+                
+                // 1. Onboarding
+                if (!studyPartnerConfig.hasSeenOnboarding) {
+                    setStudyPartnerConfig(prev => ({ ...prev, hasSeenOnboarding: true }));
+                    const partnerName = STUDY_PARTNERS.find(p => p.id === studyPartnerConfig.character)?.name.split(' ')[0] || 'your partner';
+                    setTimeout(() => {
+                        setPartnerMessage({ text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I'll be your study partner from now on. Don't forget to set your Daily Targets and I'll keep an eye on your schedule!`, type: 'welcome', id: Date.now() });
+                    }, 2000);
+                    return;
+                }
+
+                // 2. Schedule & Reminder Checker
+                const checkInterval = setInterval(() => {
+                    const now = new Date();
+                    const hours = now.getHours();
+                    const mins = now.getMinutes();
+                    const currentTime = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                    const todayStr = getTodayStr();
+                    const todayTargets = targetsData[todayStr] || [];
+
+                    let foundMissed = false;
+                    for (const t of todayTargets) {
+                        if (!t.done && t.timeSlot && t.timeSlot < currentTime) {
+                            // Only nag if we haven't nagged in the last 15 minutes to avoid spam
+                            const lastNag = studyPartnerState.lastNagTime || 0;
+                            if (Date.now() - lastNag > 15 * 60 * 1000) {
+                                setPartnerMessage({ text: `Hey! You missed your target "${t.text}" scheduled for ${t.timeSlot}. Let's get back on track!`, type: 'missed_target', id: Date.now() });
+                                setStudyPartnerState(prev => ({ ...prev, lastNagTime: Date.now() }));
+                                foundMissed = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!foundMissed) {
+                        const lastWater = studyPartnerState.lastWaterTime || Date.now();
+                        if (Date.now() - lastWater > 2 * 60 * 60 * 1000) {
+                            setPartnerMessage({ text: `Time for a quick break! Hydrate yourself with some water.`, type: 'water', id: Date.now() });
+                            setStudyPartnerState(prev => ({ ...prev, lastWaterTime: Date.now() }));
+                        }
+                    }
+                }, 60000); // Check every minute
+
+                return () => clearInterval(checkInterval);
+            }, [studyPartnerConfig, targetsData, studyPartnerState.lastNagTime, studyPartnerState.lastWaterTime]);
             useEffect(() => {
                 const tg = window.Telegram?.WebApp;
                 if (tg) {
@@ -8289,7 +8467,7 @@ INSTRUCTIONS:
                 const currentTargets = targetsData[selectedDate] || [];
                 const toggleTarget = (id) => { const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); setTargetsData({ ...targetsData, [selectedDate]: u }); };
                 const removeTarget = (id) => { const u = currentTargets.filter(t => t.id !== id); setTargetsData({ ...targetsData, [selectedDate]: u }); };
-                const addTarget = (e) => { e.preventDefault(); if (!newTarget.trim()) return; const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false }]; setTargetsData({ ...targetsData, [selectedDate]: u }); setNewTarget(""); };
+                const addTarget = (e) => { e.preventDefault(); if (!newTarget.trim()) return; const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false, timeSlot: newTargetTime }]; setTargetsData({ ...targetsData, [selectedDate]: u }); setNewTarget(""); setNewTargetTime(""); };
 
                 // --- DEEP TARGET ANALYZER LOGIC ---
                 let totalTargets = 0;
@@ -8469,19 +8647,55 @@ INSTRUCTIONS:
                                     <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
                                 </div>
                                 <div className="space-y-2 mb-4 min-h-[60px]">
-                                    {currentTargets.length === 0 ? <p className="text-xs text-gray-400 italic text-center py-2">No targets set. Add one below!</p> : currentTargets.map(t => (
-                                        <div key={t.id} className={`flex items-center justify-between p-3 rounded-xl transition-all duration-300 transform ${t.done ? 'bg-gray-50 dark:bg-gray-800 opacity-60 scale-[0.98]' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md'}`}>
-                                            <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
-                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${t.done ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-600'}`}>{t.done && <i className="fa-solid fa-check text-white text-xs animate-pop-in"></i>}</div>
-                                                <span className={`text-sm font-medium ${t.done ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>{t.text}</span>
+                                    {(() => {
+                                        if (currentTargets.length === 0) return <p className="text-xs text-gray-400 italic text-center py-4">No targets set. Add one below!</p>;
+                                        
+                                        const uncompleted = currentTargets.filter(t => !t.done);
+                                        const completed = currentTargets.filter(t => t.done);
+                                        
+                                        return (
+                                            <div className="space-y-3">
+                                                {uncompleted.map(t => (
+                                                    <div key={t.id} className="relative overflow-hidden flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-600/10 to-indigo-600/10 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-500/30 shadow-[0_4px_15px_rgba(59,130,246,0.1)] transition-all duration-300 transform hover:scale-[1.02]">
+                                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none z-0"></div>
+                                                        <div className="relative z-10 flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
+                                                            <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 border-blue-400"></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t.text}</span>
+                                                                {t.timeSlot && <span className="text-[10px] text-blue-500 dark:text-blue-400 font-black tracking-wider"><i className="fa-regular fa-clock mr-1"></i>{t.timeSlot}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div className="relative z-10 flex items-center gap-1">
+                                                            <button onClick={() => setGlobalTimer({ active: true, targetId: t.id, targetText: t.text, startTime: Date.now(), duration: 25 * 60, elapsed: 0, paused: false })} className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors shrink-0"><i className="fa-solid fa-play text-xs ml-0.5"></i></button>
+                                                            <button onClick={() => removeTarget(t.id)} className="w-8 h-8 rounded-full text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0"><i className="fa-solid fa-trash text-xs"></i></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                
+                                                {completed.length > 0 && <div className="w-full h-px bg-gray-200 dark:bg-gray-800 my-4"></div>}
+                                                
+                                                {completed.map(t => (
+                                                    <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 opacity-60 scale-[0.98] border border-transparent transition-all duration-300">
+                                                        <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
+                                                            <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 bg-green-500 border-green-500"><i className="fa-solid fa-check text-white text-xs animate-pop-in"></i></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-medium line-through text-gray-500 dark:text-gray-400">{t.text}</span>
+                                                                {t.timeSlot && <span className="text-[10px] line-through text-gray-500/70"><i className="fa-regular fa-clock mr-1"></i>{t.timeSlot}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={() => removeTarget(t.id)} className="w-8 h-8 rounded-full text-red-500/50 hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0"><i className="fa-solid fa-trash text-xs"></i></button>
+                                                    </div>
+                                                ))}
                                             </div>
-                                            <button onClick={() => removeTarget(t.id)} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><i className="fa-solid fa-trash text-sm"></i></button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })()}
                                 </div>
-                                <form onSubmit={addTarget} className="flex gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
-                                    <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
-                                    <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md"><i className="fa-solid fa-plus"></i></button>
+                                <form onSubmit={addTarget} className="flex flex-col sm:flex-row gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                                    <div className="flex-1 flex gap-2">
+                                        <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
+                                        <input type="time" value={newTargetTime} onChange={(e) => setNewTargetTime(e.target.value)} className="w-24 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-3 text-sm focus:outline-none focus:border-blue-500 transition-all dark:text-white" />
+                                    </div>
+                                    <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-full sm:w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md shrink-0"><i className="fa-solid fa-plus"></i></button>
                                 </form>
                             </div>
 
@@ -11420,6 +11634,47 @@ INSTRUCTIONS:
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">Notes</p>
                                 </div>
                             </div>
+                            
+                            {/* Study Partner Settings */}
+                            <h3 className="font-black text-gray-800 dark:text-white text-lg mb-4 px-2 flex items-center gap-2 mt-8">
+                                <i className="fa-solid fa-user-astronaut text-rose-500"></i> Study Partner
+                            </h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${studyPartnerConfig.enabled ? 'bg-rose-100 text-rose-500 dark:bg-rose-900/30' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'}`}>
+                                            <i className="fa-solid fa-robot"></i>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white text-lg">Enable Assistant</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Your AI study companion</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'serena_health'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
+                                        <div className="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform"></div>
+                                    </button>
+                                </div>
+                                
+                                {studyPartnerConfig.enabled && (
+                                    <div className="space-y-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Choose your partner</p>
+                                        {STUDY_PARTNERS.filter(p => p.id !== 'none').map(p => (
+                                            <div key={p.id} onClick={() => setStudyPartnerConfig({...studyPartnerConfig, character: p.id})} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${studyPartnerConfig.character === p.id ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-500 shadow-[0_4px_15px_rgba(59,130,246,0.1)]' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 ${p.color}`}>
+                                                        <i className={`fa-solid ${p.icon}`}></i>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200 block">{p.name}</span>
+                                                        <span className="text-[10px] text-gray-500 uppercase">{p.vibe}</span>
+                                                    </div>
+                                                </div>
+                                                {studyPartnerConfig.character === p.id && <i className="fa-solid fa-circle-check text-blue-500"></i>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Detailed Analytics Block */}
                             <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group">
@@ -11489,6 +11744,8 @@ INSTRUCTIONS:
 
             return (
                 <VoiceRoomErrorBoundary>
+                    <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
+                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} />
                     <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
