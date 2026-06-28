@@ -9695,8 +9695,16 @@ INSTRUCTIONS:
                                                     const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'ssc';
                                                     const finalUrl = `https://sathee.iitk.ac.in/dashboard/courseView?course_reference=${ref}&language=${lang}&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
                                                     
-                                                    if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
-                                                    window.open(finalUrl, '_self');
+                                                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.Telegram?.WebApp?.platform !== 'tdesktop' && window.Telegram?.WebApp?.platform !== 'macos' && window.Telegram?.WebApp?.platform !== 'web');
+                                                    
+                                                    if (isMobile && window.Telegram?.WebApp?.openLink) {
+                                                        const pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${ref}&language=${lang}&examType=${examParam}&exam_type=${examParam}`);
+                                                        const loginUrl = `https://sathee.iitk.ac.in/login?path=${pathParam}&exam=${examParam}`;
+                                                        window.Telegram.WebApp.openLink(loginUrl, { try_instant_view: true, try_browser: 'inapp' });
+                                                    } else {
+                                                        if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
+                                                        window.open(finalUrl, '_self');
+                                                    }
                                                 }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
                                                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
                                                         <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white`}></i>
@@ -9720,8 +9728,19 @@ INSTRUCTIONS:
                                                             finalUrl = finalUrl.replace('#', '') + `&language=en&exam=${examParam}&examType=${examParam}&exam_type=${examParam}#`;
                                                         }
                                                         
-                                                        if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
-                                                        window.open(finalUrl, '_self');
+                                                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.Telegram?.WebApp?.platform !== 'tdesktop' && window.Telegram?.WebApp?.platform !== 'macos' && window.Telegram?.WebApp?.platform !== 'web');
+                                                        
+                                                        if (isMobile && window.Telegram?.WebApp?.openLink) {
+                                                            const match = finalUrl.match(/course_reference=([^&]+)/);
+                                                            const refParam = match ? match[1] : '';
+                                                            const examParam = activeSatheeExam ? activeSatheeExam.name.toLowerCase() : 'cuet';
+                                                            const pathParam = encodeURIComponent(`/dashboard/courseView?course_reference=${refParam}&language=en&examType=${examParam}&exam_type=${examParam}`);
+                                                            const loginUrl = `https://sathee.iitk.ac.in/login?path=${pathParam}&exam=${examParam}`;
+                                                            window.Telegram.WebApp.openLink(loginUrl, { try_instant_view: true, try_browser: 'inapp' });
+                                                        } else {
+                                                            if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
+                                                            window.open(finalUrl, '_self');
+                                                        }
                                                     } else {
                                                         safeAlert('Subject selected: ' + subject.name + '. Content coming soon!');
                                                     }
