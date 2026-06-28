@@ -383,7 +383,18 @@
             presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]]
         });
     </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
     <script type="text/babel" data-presets="react-classic" data-type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
         window.addEventListener('error', function (e) {
             const errDiv = document.createElement('div');
             errDiv.style.color = 'red';
@@ -7521,15 +7532,14 @@ INSTRUCTIONS:
         // ?? STUDY PARTNER SYSTEM
         // ==========================================
         const STUDY_PARTNERS = [
-            { id: 'none', name: 'None (Disabled)', icon: 'fa-ban', color: 'text-gray-400', vibe: 'disabled' },
-            { id: 'serena_health', name: 'Serena (Wellness Coach)', icon: 'fa-heart-pulse', color: 'text-rose-400', vibe: 'caring & sweet' },
-            { id: 'prof_oak', name: 'Prof. Oak (Study Buddy)', icon: 'fa-glasses', color: 'text-amber-400', vibe: 'wise & encouraging' },
-            { id: 'chief_mentor', name: 'Chief (Strict Mentor)', icon: 'fa-shield-halved', color: 'text-slate-400', vibe: 'disciplined' },
-            { id: 'mia_cheer', name: 'Mia (Cheerleader)', icon: 'fa-wand-magic-sparkles', color: 'text-fuchsia-400', vibe: 'energetic' }
+            { id: 'mia_cheer', name: 'Mia (Female)', icon: 'fa-user-nurse', color: 'text-fuchsia-400', vibe: 'caring & energetic' },
+            { id: 'prof_oak', name: 'Oak (Male)', icon: 'fa-user-tie', color: 'text-amber-400', vibe: 'wise & encouraging' }
         ];
 
         const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage, currentTab, showQuiz }) => {
             const widgetRef = useRef(null);
+            const canvasRef = useRef(null);
+            const threeRef = useRef(null);
             const physicsRef = useRef({
                 x: 100,
                 y: -200, 
@@ -7540,15 +7550,138 @@ INSTRUCTIONS:
                 facing: 1,
                 lastJump: Date.now(),
                 walkTimer: Date.now(),
-                walkDir: 1
+                walkDir: 1,
+                isDragging: false,
+                lastMouseX: 0,
+                lastMouseY: 0,
+                mouseVx: 0,
+                mouseVy: 0,
+                fallenTimeout: null
             });
+            
+            const playSyntheticSound = (type) => {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    const ctx = new AudioContext();
+                    const osc = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    osc.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    if (type === 'hit') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(150, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15);
+                        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                        osc.start(); osc.stop(ctx.currentTime + 0.15);
+                    } else if (type === 'throw') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(300, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.3);
+                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(); osc.stop(ctx.currentTime + 0.3);
+                    } else if (type === 'boing') {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(400, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start(); osc.stop(ctx.currentTime + 0.2);
+                    }
+                } catch (e) { console.error("Audio block", e); }
+            };
             
             const [emotion, setEmotion] = useState('idle'); 
             const [visible, setVisible] = useState(false);
             const [renderState, setRenderState] = useState('falling');
             const [facing, setFacing] = useState(1); 
+            const [availableAnims, setAvailableAnims] = useState([]);
+            const [previewAnim, setPreviewAnim] = useState(null);
 
             const [isGiant, setIsGiant] = useState(false);
+
+            // Three.js Initialization
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+                camera.position.set(0, 1.5, 9);
+                
+                const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true, antialias: true });
+                renderer.setSize(300, 300);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                
+                const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+                scene.add(ambientLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+                dirLight.position.set(2, 5, 5);
+                scene.add(dirLight);
+                
+                const clock = new THREE.Clock();
+                let mixer;
+                
+                const loader = new GLTFLoader();
+                loader.load('character.glb', (gltf) => {
+                    const model = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    // Auto-scale to a comfortable height for the camera
+                    const targetHeight = 1.3; 
+                    const baseScale = targetHeight / size.y;
+                    
+                    model.scale.setScalar(baseScale);
+                    
+                    // Center the model on X and Z to fix off-screen exports, but keep feet grounded on Y
+                    const scaledBox = new THREE.Box3().setFromObject(model);
+                    const center = scaledBox.getCenter(new THREE.Vector3());
+                    model.position.set(-center.x, -0.65, -center.z); // -0.65 to ground it relative to 1.3 height
+                    scene.add(model);
+                    
+                    if (threeRef.current) threeRef.current.baseScale = baseScale;
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(model);
+                        const animNames = gltf.animations.map(a => a.name);
+                        setAvailableAnims(animNames);
+                        
+                        const animMap = {};
+                        gltf.animations.forEach(clip => {
+                            animMap[clip.name] = clip; // Exact name access
+                        });
+                        
+                        // Smart default mapping based on known animations
+                        animMap.idle = animMap['Idle_Loop'] || gltf.animations[0];
+                        animMap.walk = animMap['Walk_Loop'] || animMap.idle;
+                        animMap.fall = animMap['Jump_Loop'] || animMap['Flying Forward'] || animMap.idle;
+                        animMap.write = animMap['Idle_TalkingPhone_Loop'] || animMap.idle;
+                        animMap.talk = animMap['Idle_Talking_Loop'] || animMap.idle;
+                        animMap.hit = animMap['Hit_Knockback'] || animMap.idle;
+                        // Advanced Brain Animations
+                        animMap.listening = animMap['Idle Listening'] || animMap.idle;
+                        animMap.nod = animMap['Head Nod'] || animMap.idle;
+                        animMap.greet = animMap['Greeting'] || animMap.idle;
+                        animMap.victory = animMap['Victory'] || animMap.idle;
+                        animMap.confused = animMap['Confused'] || animMap.idle;
+                        animMap.yes = animMap['Yes'] || animMap.idle;
+                        
+                        if (!animMap.idle) animMap.idle = gltf.animations[0];
+                        if (!animMap.walk) animMap.walk = animMap.idle;
+                        if (!animMap.fall) animMap.fall = animMap.idle;
+                        
+                        threeRef.current.animMap = animMap;
+                        threeRef.current.mixer = mixer;
+                        threeRef.current.currentAction = mixer.clipAction(animMap.idle);
+                        threeRef.current.currentAction.play();
+                    }
+                });
+                
+                threeRef.current = { scene, camera, renderer, clock, currentAnimState: 'idle' };
+                
+                return () => renderer.dispose();
+            }, []);
 
             useEffect(() => {
                 if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
@@ -7601,6 +7734,37 @@ INSTRUCTIONS:
                 
                 let animationFrameId;
 
+                const handlePointerMove = (e) => {
+                    const p = physicsRef.current;
+                    if (p.isDragging) {
+                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                        p.mouseVx = clientX - p.lastMouseX;
+                        p.mouseVy = clientY - p.lastMouseY;
+                        p.x = clientX;
+                        p.y = clientY;
+                        p.lastMouseX = clientX;
+                        p.lastMouseY = clientY;
+                    }
+                };
+
+                const handlePointerUp = (e) => {
+                    const p = physicsRef.current;
+                    if (p.isDragging) {
+                        p.isDragging = false;
+                        p.vx = p.mouseVx * 1.5;
+                        p.vy = p.mouseVy * 1.5;
+                        p.isGrounded = false;
+                        setEmotion('idle');
+                        playSyntheticSound('throw');
+                    }
+                };
+
+                window.addEventListener('pointermove', handlePointerMove);
+                window.addEventListener('pointerup', handlePointerUp);
+                window.addEventListener('touchmove', handlePointerMove, { passive: false });
+                window.addEventListener('touchend', handlePointerUp);
+
                 const loop = () => {
                     if (currentTab === 'questions' && showQuiz && !visible) {
                         if (widgetRef.current) widgetRef.current.style.opacity = '0';
@@ -7614,7 +7778,6 @@ INSTRUCTIONS:
                     const now = Date.now();
                     
                     if (isGiant) {
-                        // Giant Announcement Mode Override
                         p.x = window.innerWidth / 2;
                         p.y = window.innerHeight / 2 + 100;
                         p.vx = 0;
@@ -7622,6 +7785,9 @@ INSTRUCTIONS:
                         p.isGrounded = true;
                         p.state = 'idle';
                         p.facing = 1;
+                    } else if (p.isDragging) {
+                        p.state = 'jumping';
+                        p.isGrounded = false;
                     } else {
                         p.vy += 0.6; // Gravity
                         if (p.vy > 20) p.vy = 20;
@@ -7629,13 +7795,37 @@ INSTRUCTIONS:
                         p.x += p.vx;
                         p.y += p.vy;
 
-                        if (p.x < 30) { p.x = 30; p.vx = 0; p.walkDir = 1; }
-                        if (p.x > window.innerWidth - 30) { p.x = window.innerWidth - 30; p.vx = 0; p.walkDir = -1; }
+                        if (p.x < 100) { p.x = 100; p.vx = 0; p.walkDir = 1; }
+                        if (p.x > window.innerWidth - 100) { p.x = window.innerWidth - 100; p.vx = 0; p.walkDir = -1; }
 
                         p.isGrounded = false;
                         
+                        
+                        // Viewport Loss Recovery
+                        if (p.y < -200 || p.y > window.innerHeight + 200) {
+                            p.y = -50;
+                            p.vy = 0;
+                            p.x = window.innerWidth / 2;
+                            setEmotion('angry');
+                            setPartnerMessage({ type: 'chatter', text: 'Wait for me!!' });
+                            // playSyntheticSound('throw'); // Swoosh sound
+                        }
+                        
+                        // Brain logic
+                        if (typeof p.brainState === 'undefined') {
+                            p.brainState = 'wander'; // tour, wander, inspecting
+                            p.brainTimer = now;
+                            p.tourStep = -1;
+                            
+                            // Check localstorage for tour
+                            if (!localStorage.getItem('ataxy_tour_done')) {
+                                p.brainState = 'tour';
+                                localStorage.setItem('ataxy_tour_done', 'true');
+                            }
+                        }
+
                         if (p.vy >= 0) {
-                            const platforms = document.querySelectorAll('.partner-platform');
+                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
                             let landed = false;
                             
                             for (let i = 0; i < platforms.length; i++) {
@@ -7651,33 +7841,75 @@ INSTRUCTIONS:
                                 }
                             }
 
-                            if (!landed && p.y >= window.innerHeight - 80) {
-                                p.y = window.innerHeight - 80;
+                            if (!landed && p.y >= window.innerHeight - 10) {
+                                p.y = window.innerHeight - 10;
                                 p.vy = 0;
                                 p.isGrounded = true;
                             }
                         }
 
                         if (p.isGrounded && !visible) {
-                            if (now - p.lastJump > 6000 && Math.random() < 0.01) {
-                                p.vy = -16; 
-                                p.isGrounded = false;
-                                p.lastJump = now;
-                                p.state = 'jumping';
-                            } else {
-                                if (now - p.walkTimer > 2000) {
-                                    if (Math.random() > 0.5) {
-                                        p.vx = 0;
-                                        p.state = 'idle';
-                                        if (Math.random() > 0.5) setEmotion('thinking');
-                                        else setEmotion('idle');
+                            if (p.brainState === 'tour') {
+                                // Tour State Machine
+                                const tourSteps = [
+                                    { text: "Welcome to ATAXY! I'm your AI study partner. Let me show you around!", target: null, anim: 'greet', duration: 5000 },
+                                    { text: "Up here is the Header. You can access your profile and settings.", target: 'header', anim: 'point', duration: 4000 },
+                                    { text: "This is your Daily Targets section. Complete these to stay on track!", target: '.bg-gray-800', anim: 'nod', duration: 4000 },
+                                    { text: "And down here is the Navigation Bar. You can switch between Home, Practice, and more.", target: 'nav', anim: 'point', duration: 4000 },
+                                    { text: "I'll be hanging around to help you out. Good luck!", target: null, anim: 'victory', duration: 4000 }
+                                ];
+                                
+                                if (now - p.brainTimer > (p.tourStep >= 0 ? tourSteps[p.tourStep].duration : 1000)) {
+                                    p.tourStep++;
+                                    if (p.tourStep >= tourSteps.length) {
+                                        p.brainState = 'wander';
                                     } else {
-                                        p.walkDir = Math.random() > 0.5 ? 1 : -1;
-                                        p.vx = p.walkDir * 1.5; 
-                                        p.state = 'walking';
-                                        setEmotion('idle');
+                                        const step = tourSteps[p.tourStep];
+                                        setPartnerMessage({ type: 'chatter', text: step.text });
+                                        p.brainTimer = now;
+                                        if (step.target) {
+                                            const targetEl = document.querySelector(step.target);
+                                            if (targetEl) {
+                                                const rect = targetEl.getBoundingClientRect();
+                                                const center = rect.left + rect.width / 2;
+                                                p.x = center; // teleport for tour
+                                                if (center > window.innerWidth / 2) p.facing = 1; else p.facing = -1;
+                                            }
+                                        }
+                                        p.state = step.anim;
                                     }
-                                    p.walkTimer = now;
+                                }
+                            } else {
+                                // Wander Mode
+                                if (now - p.lastJump > 6000 && Math.random() < 0.01) {
+                                    p.vy = -16; 
+                                    p.isGrounded = false;
+                                    p.lastJump = now;
+                                    p.state = 'jumping';
+                                } else {
+                                    if (now - p.walkTimer > 2000) {
+                                        if (Math.random() > 0.5) {
+                                            p.vx = 0;
+                                            p.state = 'idle';
+                                            if (Math.random() > 0.2) {
+                                                const idles = ['idle', 'listening', 'nod', 'confused', 'yes'];
+                                                p.state = idles[Math.floor(Math.random() * idles.length)];
+                                            }
+                                        } else {
+                                            // Find a random platform to walk towards
+                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                                            if (platforms.length > 0 && Math.random() > 0.5) {
+                                                const target = platforms[Math.floor(Math.random() * platforms.length)];
+                                                const rect = target.getBoundingClientRect();
+                                                p.walkDir = (rect.left > p.x) ? 1 : -1;
+                                            } else {
+                                                p.walkDir = Math.random() > 0.5 ? 1 : -1;
+                                            }
+                                            p.vx = p.walkDir * 1.5; 
+                                            p.state = 'walking';
+                                        }
+                                        p.walkTimer = now;
+                                    }
                                 }
                             }
                         } else if (p.isGrounded && visible) {
@@ -7692,9 +7924,54 @@ INSTRUCTIONS:
                         if (p.vx > 0.1) p.facing = 1;
                         else if (p.vx < -0.1) p.facing = -1;
                     }
-
                     if (widgetRef.current) {
                         widgetRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
+                    }
+
+                    if (threeRef.current && threeRef.current.mixer) {
+                        const dt = threeRef.current.clock.getDelta();
+                        threeRef.current.mixer.update(dt);
+                        threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
+                        
+                        let targetAnim = 'idle';
+                        if (previewAnim) {
+                            targetAnim = previewAnim;
+                        } else {
+                            if (isGiant) targetAnim = 'talk';
+                            else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
+                            else if (p.state === 'walking') targetAnim = 'walk';
+                            else if (p.state === 'fallen') targetAnim = 'hit';
+                        }
+                        
+                        if (threeRef.current.currentAnimState !== targetAnim) {
+                            const clip = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
+                            if (clip) {
+                                const nextAction = threeRef.current.mixer.clipAction(clip);
+                                if (threeRef.current.currentAction) {
+                                    nextAction.reset().fadeIn(0.2).play();
+                                    threeRef.current.currentAction.fadeOut(0.2);
+                                } else {
+                                    nextAction.play();
+                                }
+                                threeRef.current.currentAction = nextAction;
+                            }
+                            threeRef.current.currentAnimState = targetAnim;
+                        }
+                        
+                        if (threeRef.current.scene.children.length > 2) {
+                            const model = threeRef.current.scene.children[2];
+                            const baseScale = threeRef.current.baseScale || 1;
+                            if (model) {
+                                let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
+                                if (p.state === 'idle' || isGiant) targetRotation = 0; // face forward when idle or talking
+                                model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
+                                if (isGiant) {
+                                    model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale * 2.5, 0.1));
+                                } else {
+                                    model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
+                                }
+                            }
+                        }
                     }
 
                     setRenderState(prev => prev !== p.state ? p.state : prev);
@@ -7704,7 +7981,13 @@ INSTRUCTIONS:
                 };
 
                 animationFrameId = requestAnimationFrame(loop);
-                return () => cancelAnimationFrame(animationFrameId);
+                return () => {
+                    cancelAnimationFrame(animationFrameId);
+                    window.removeEventListener('pointermove', handlePointerMove);
+                    window.removeEventListener('pointerup', handlePointerUp);
+                    window.removeEventListener('touchmove', handlePointerMove);
+                    window.removeEventListener('touchend', handlePointerUp);
+                };
             }, [partnerConfig, currentTab, visible, showQuiz]);
 
             if (!partnerConfig.enabled || partnerConfig.character === 'none') return null;
@@ -7807,10 +8090,25 @@ INSTRUCTIONS:
                             75% { transform: rotate(40deg); }
                             100% { transform: rotate(0deg); }
                         }
+                        @keyframes proceduralPoint {
+                            0% { transform: rotate(-90deg) translateY(5px); }
+                            100% { transform: rotate(-90deg) translateY(5px) scale(1.1); }
+                        }
                     `}</style>
                     <div 
-                        className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%]`} 
+                        className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%] cursor-grab active:cursor-grabbing`} 
                         style={{ zIndex: isGiant ? 10050 : 10 }}
+                        onPointerDown={(e) => {
+                            if (isGiant) return;
+                            const p = physicsRef.current;
+                            p.isDragging = true;
+                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            p.lastMouseX = clientX;
+                            p.lastMouseY = clientY;
+                            setEmotion('angry');
+                            setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
+                        }}
                     >
                         {isGiant && (
                             <button className="absolute top-[120%] bg-blue-600 text-white font-black text-xl py-3 px-8 rounded-full shadow-2xl hover:bg-blue-700 animate-bounce pointer-events-auto" onClick={(e) => {
@@ -7823,69 +8121,41 @@ INSTRUCTIONS:
                                 Got it!
                             </button>
                         )}
-                        <div className={`absolute bottom-[100px] ${isGiant ? 'min-w-[300px] max-w-[400px] text-lg' : 'min-w-[200px] max-w-[280px] text-sm'} bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        <div className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 ${isGiant ? 'min-w-[300px] max-w-[400px] text-lg' : 'min-w-[200px] max-w-[280px] text-sm'} bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
                             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                         </div>
-                        
                         <div 
-                            className="relative flex flex-col items-center drop-shadow-xl transition-transform duration-500" 
+                            className="relative flex flex-col items-center drop-shadow-xl" 
                             style={{ 
-                                animation: getAnimation('body'),
-                                transform: `scaleX(${facing}) ${isGiant ? 'scale(3)' : 'scale(1)'}`,
-                                transformOrigin: 'bottom center'
+                                transformOrigin: 'bottom center',
+                                width: '300px',
+                                height: '300px',
+                                cursor: 'grab'
+                            }}
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setEmotion('happy'); 
+                                physicsRef.current.vy = -12; 
+                                physicsRef.current.isGrounded = false; 
+                                setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
+                                playSyntheticSound('boing'); 
                             }}
                         >
-                            {/* Head */}
-                            <div className="w-[45px] h-[45px] rounded-[18px] shadow-sm flex items-center justify-center relative z-20 border border-black/10 cursor-pointer hover:scale-110 transition-transform" 
-                                style={{ backgroundColor: skinColor }}
-                                onClick={(e) => { e.stopPropagation(); setEmotion('angry'); setPartnerMessage({type:'chatter', text:'Ouch! Watch the head!'}); }}
-                            >
-                                <div className="text-black font-black text-sm tracking-tighter relative z-20" style={{ transform: `scaleX(${facing})` }}>{faceText}</div>
-                                {isFemale ? (
-                                    <>
-                                        <div className="absolute top-[-4px] w-full h-[22px] rounded-t-[18px] rounded-b-[10px] opacity-95 z-10" style={{ backgroundColor: hairColor }}></div>
-                                        <div className="absolute top-[5px] right-[-12px] w-[18px] h-[35px] rounded-full opacity-95 z-0 transform rotate-[15deg]" style={{ backgroundColor: hairColor }}></div>
-                                    </>
-                                ) : (
-                                    <div className="absolute top-[-2px] w-[90%] h-[15px] rounded-t-[18px] rounded-b-[5px] opacity-95 z-10" style={{ backgroundColor: hairColor }}></div>
-                                )}
-                            </div>
-                            
-                            {/* Body & Arms */}
-                            <div className="relative w-[28px] h-[35px] mt-[-4px] z-10 shadow-inner cursor-pointer hover:scale-110 transition-transform" 
-                                style={{ backgroundColor: shirtColor, borderRadius: isFemale ? '12px 12px 18px 18px' : '12px' }}
-                                onClick={(e) => { e.stopPropagation(); setEmotion('happy'); physicsRef.current.vy = -12; physicsRef.current.isGrounded = false; setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); }}
-                            >
-                                <div className="absolute top-[4px] left-[-12px] w-[12px] h-[26px] origin-top-right rounded-full shadow-sm" 
-                                    style={{ 
-                                        backgroundColor: skinColor, 
-                                        borderTop: `12px solid ${shirtColor}`,
-                                        animation: getAnimation('armL') 
-                                    }}>
-                                </div>
-                                <div className="absolute top-[4px] right-[-12px] w-[12px] h-[26px] origin-top-left rounded-full shadow-sm" 
-                                    style={{ 
-                                        backgroundColor: skinColor, 
-                                        borderTop: `12px solid ${shirtColor}`,
-                                        animation: getAnimation('armR') 
-                                    }}>
-                                </div>
-                            </div>
-
-                            {/* Legs */}
-                            <div className="flex gap-[4px] mt-[-8px] z-0 relative cursor-pointer hover:scale-110 transition-transform"
-                                onClick={(e) => { e.stopPropagation(); setEmotion('angry'); physicsRef.current.vx = facing * 5; physicsRef.current.vy = -5; physicsRef.current.isGrounded = false; setPartnerMessage({type:'chatter', text:'Woah, tripped me!'}); }}
-                            >
-                                <div className="w-[11px] h-[30px] rounded-b-full origin-top shadow-sm border border-black/10" 
-                                    style={{ backgroundColor: pantsColor, animation: getAnimation('legL') }}>
-                                </div>
-                                <div className="w-[11px] h-[30px] rounded-b-full origin-top shadow-sm border border-black/10" 
-                                    style={{ backgroundColor: pantsColor, animation: getAnimation('legR') }}>
-                                </div>
-                            </div>
+                            <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
                         </div>
                         
+                        {availableAnims.length > 0 && (
+                            <div className="absolute top-0 right-[-150px] bg-black/80 text-white text-[10px] p-2 rounded max-h-[300px] overflow-y-auto z-50 pointer-events-auto flex flex-col gap-1 w-[140px] shadow-xl">
+                                <div className="font-bold text-xs mb-1 text-blue-400">Animation Debugger</div>
+                                <button onClick={(e) => { e.stopPropagation(); setPreviewAnim(null); }} className={`text-left hover:bg-white/20 p-1 rounded transition-colors ${!previewAnim ? 'bg-blue-600 font-bold' : ''}`}>⚡ Auto (Physics)</button>
+                                <div className="w-full h-px bg-white/20 my-1"></div>
+                                {availableAnims.map(a => (
+                                    <button key={a} onClick={(e) => { e.stopPropagation(); setPreviewAnim(a); }} className={`text-left hover:bg-white/20 p-1 rounded truncate transition-colors ${previewAnim === a ? 'bg-blue-500 font-bold' : ''}`} title={a}>{a}</button>
+                                ))}
+                            </div>
+                        )}
+
                         {!isGiant && (
                             <div className="absolute top-full mt-3 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap shadow-lg z-50" style={{ transform: 'translateX(-50%)', left: '50%' }}>
                                 {partnerDef.name.split(' ')[0]} <span className="text-gray-400 capitalize ml-1">({emotion})</span>
@@ -8388,7 +8658,7 @@ INSTRUCTIONS:
 
             // Study Partner State
             const [studyPartnerConfig, setStudyPartnerConfig] = useState(() => safeGetJSON('ataxy_study_partner_cfg', {
-                enabled: false, character: 'none', hasSeenOnboarding: false
+                enabled: true, character: 'mia_cheer', hasSeenOnboarding: false
             }));
             const [studyPartnerState, setStudyPartnerState] = useState(() => safeGetJSON('ataxy_study_partner_state', {
                 lastActive: Date.now(), waterCount: 0, lastWaterTime: Date.now(), studyMinutesToday: 0
@@ -8406,11 +8676,16 @@ INSTRUCTIONS:
                 
                 // 1. Onboarding
                 if (!studyPartnerConfig.hasSeenOnboarding) {
-                    setStudyPartnerConfig(prev => ({ ...prev, hasSeenOnboarding: true }));
-                    const partnerName = STUDY_PARTNERS.find(p => p.id === studyPartnerConfig.character)?.name.split(' ')[0] || 'your partner';
+                    const partnerName = STUDY_PARTNERS.find(p => p.id === studyPartnerConfig.character)?.name.split(' ')[0] || 'Mia';
                     setTimeout(() => {
-                        setPartnerMessage({ text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I'll be your study partner from now on. Don't forget to set your Daily Targets and I'll keep an eye on your schedule!`, type: 'welcome', id: Date.now() });
-                    }, 2000);
+                        setPartnerMessage({ 
+                            text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I am your omniscient study partner! I will watch everything you do, remind you of your targets, and you can even pick me up and throw me around! Let's crush some goals!`, 
+                            type: 'welcome', 
+                            requireAcknowledge: true,
+                            id: Date.now() 
+                        });
+                        setStudyPartnerConfig(prev => ({ ...prev, hasSeenOnboarding: true }));
+                    }, 1000);
                     return;
                 }
 
@@ -8461,6 +8736,48 @@ INSTRUCTIONS:
                     setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
                 }, 2000);
             }, []);
+
+            // 3. Global Observer Brain
+            useEffect(() => {
+                if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none') return;
+                
+                let lastReactionTime = 0;
+                
+                const handleGlobalClick = (e) => {
+                    if (e.target.closest('button') && e.target.closest('button').innerText === 'Got it!') return;
+                    
+                    const now = Date.now();
+                    if (now - lastReactionTime < 15000) return; // 15 second cooldown
+                    
+                    let reactionText = null;
+                    const el = e.target;
+                    
+                    // Specific UI interactions
+                    if (el.closest('.fa-house')) reactionText = "Ah, back to the home page!";
+                    else if (el.closest('.fa-user')) reactionText = "Checking out your profile?";
+                    else if (el.closest('.fa-book-open')) reactionText = "Time to study some subjects!";
+                    else if (el.closest('.fa-flask')) reactionText = "Ready for a quiz?";
+                    else if (el.closest('.fa-trophy')) reactionText = "Let's see those leaderboard stats!";
+                    
+                    // Generic button texts
+                    const button = el.closest('button');
+                    if (!reactionText && button) {
+                        const txt = button.innerText ? button.innerText.toLowerCase() : '';
+                        if (txt.includes('start')) reactionText = "Let's go! Starting now.";
+                        else if (txt.includes('save') || txt.includes('update')) reactionText = "Saved it safely!";
+                        else if (txt.includes('delete') || button.innerHTML.includes('fa-trash')) reactionText = "Deleted. Poof!";
+                        else if (button.innerHTML.includes('fa-play')) reactionText = "Starting the timer! Focus up!";
+                    }
+                    
+                    if (reactionText && Math.random() > 0.3) {
+                        setPartnerMessage({ type: 'chatter', text: reactionText });
+                        lastReactionTime = now;
+                    }
+                };
+                
+                window.addEventListener('click', handleGlobalClick, true);
+                return () => window.removeEventListener('click', handleGlobalClick, true);
+            }, [studyPartnerConfig]);
             useEffect(() => {
                 const tg = window.Telegram?.WebApp;
                 if (tg) {
@@ -8807,7 +9124,14 @@ INSTRUCTIONS:
 
             const renderHomeView = () => {
                 const currentTargets = targetsData[selectedDate] || [];
-                const toggleTarget = (id) => { const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); setTargetsData({ ...targetsData, [selectedDate]: u }); };
+                const toggleTarget = (id) => { 
+                    const target = currentTargets.find(t => t.id === id);
+                    if (target && !target.done) {
+                        setPartnerMessage({ type: 'chatter', text: `Awesome work completing "${target.text}"!` });
+                    }
+                    const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); 
+                    setTargetsData({ ...targetsData, [selectedDate]: u }); 
+                };
                 const removeTarget = (id) => { const u = currentTargets.filter(t => t.id !== id); setTargetsData({ ...targetsData, [selectedDate]: u }); };
                 const addTarget = (e) => { 
                     e.preventDefault(); 
@@ -9049,12 +9373,23 @@ INSTRUCTIONS:
                                     })()}
                                 </div>
                                 <form onSubmit={addTarget} className="flex flex-col sm:flex-row gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
-                                    <div className="flex-1 flex gap-2">
-                                        <input type="text" value={newTarget} onChange={(e) => setNewTarget(e.target.value)} placeholder={`Add goal for ${selectedDate}...`} className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" />
-                                        <div className="flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-900 transition-all">
-                                            <input type="time" value={newTargetStartTime} onChange={(e) => setNewTargetStartTime(e.target.value)} className="w-20 bg-transparent px-2 py-3 text-xs focus:outline-none dark:text-white text-center" title="Start Time" />
-                                            <div className="flex items-center text-gray-400 text-xs px-1">-</div>
-                                            <input type="time" value={newTargetEndTime} onChange={(e) => setNewTargetEndTime(e.target.value)} className="w-20 bg-transparent px-2 py-3 text-xs focus:outline-none dark:text-white text-center" title="End Time" />
+                                    <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={newTarget} 
+                                            onChange={(e) => setNewTarget(e.target.value)} 
+                                            onFocus={() => {
+                                                if (studyPartnerConfig.enabled && studyPartnerConfig.character !== 'none') {
+                                                    setPartnerMessage({ type: 'added_target', text: "Ooo, adding a new target? Let me get my pen!" });
+                                                }
+                                            }}
+                                            placeholder={`Add goal for ${selectedDate}...`} 
+                                            className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" 
+                                        />
+                                        <div className="flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-900 transition-all justify-center items-center">
+                                            <input type="time" value={newTargetStartTime} onChange={(e) => setNewTargetStartTime(e.target.value)} className="w-auto flex-1 bg-transparent px-2 py-3 text-sm focus:outline-none dark:text-white text-center" title="Start Time" />
+                                            <div className="text-gray-400 text-sm font-bold px-1">-</div>
+                                            <input type="time" value={newTargetEndTime} onChange={(e) => setNewTargetEndTime(e.target.value)} className="w-auto flex-1 bg-transparent px-2 py-3 text-sm focus:outline-none dark:text-white text-center" title="End Time" />
                                         </div>
                                     </div>
                                     <button type="submit" className="bg-gradient-to-br from-blue-500 to-blue-700 text-white w-full sm:w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-md shrink-0"><i className="fa-solid fa-plus"></i></button>
@@ -12012,7 +12347,7 @@ INSTRUCTIONS:
                                             <p className="text-xs text-gray-500 dark:text-gray-400">Your AI study companion</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'serena_health'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
+                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'mia_cheer'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
                                         <div className="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform"></div>
                                     </button>
                                 </div>
