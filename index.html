@@ -9846,11 +9846,18 @@ INSTRUCTIONS:
                                     {!activeSatheeExam && (
                                         <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
                                             {SATHEE_DATA.exams.map(exam => (
-                                                <div key={exam.id} onClick={() => setActiveSatheeExam(exam)} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-yellow-500/50 hover:bg-yellow-900/20 hover:shadow-[0_15px_40px_rgba(251,191,36,0.3)]">
-                                                    <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-yellow-500/20 group-hover:border-yellow-400/50 transition-all duration-300">
-                                                        <i className={`fa-solid ${exam.icon} text-3xl text-gray-300 group-hover:text-yellow-400 group-hover:scale-110 transition-all duration-300`}></i>
+                                                <div key={exam.id} onClick={() => setActiveSatheeExam(exam)} className="relative group overflow-hidden rounded-[1.5rem] p-[1px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(251,191,36,0.15)] active:scale-[0.98] active:-translate-y-1 text-center">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/40 via-orange-500/40 to-red-500/40 opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                    <div className="relative h-full flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-6 border border-white/10 gap-3">
+                                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center border border-white/10 group-hover:border-yellow-500/50 group-active:border-yellow-500/50 transition-colors shadow-inner">
+                                                            <i className={`fa-solid ${exam.icon} text-transparent bg-clip-text bg-gradient-to-br from-yellow-400 to-orange-400 text-3xl drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
+                                                        </div>
+                                                        <h3 className="font-black text-xl text-white tracking-wide uppercase drop-shadow-md group-hover:text-transparent group-active:text-transparent group-hover:bg-clip-text group-active:bg-clip-text group-hover:bg-gradient-to-r group-active:bg-gradient-to-r group-hover:from-yellow-300 group-active:from-yellow-300 group-hover:to-orange-300 group-active:to-orange-300 transition-all">{exam.name}</h3>
+                                                        <div className="flex items-center gap-2 mt-1 opacity-100 lg:opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
+                                                            <span className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">Select</span>
+                                                            <i className="fa-solid fa-arrow-right text-yellow-300 text-[10px] translate-x-0 lg:translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
+                                                        </div>
                                                     </div>
-                                                    <h3 className="font-black text-lg text-white text-center group-hover:text-yellow-300">{exam.name}</h3>
                                                 </div>
                                             ))}
                                         </div>
@@ -9911,7 +9918,7 @@ INSTRUCTIONS:
                                                         if (window.Telegram?.WebApp?.BackButton) window.Telegram.WebApp.BackButton.hide();
                                                         window.open(finalUrl, '_self');
                                                     }
-                                                }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 text-center relative`}>
+                                                }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 hover:border-${batch.color}-500/50 active:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 active:bg-${batch.color}-900/20 text-center relative`}>
                                                     {batch.isCustomUI ? (
                                                         <>
                                                             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-50 lg:opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
@@ -9958,10 +9965,10 @@ INSTRUCTIONS:
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
-                                                                <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white`}></i>
+                                                            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-${batch.color}-900/30 border border-${batch.color}-500/30 flex items-center justify-center shadow-inner group-hover:bg-${batch.color}-500 group-active:bg-${batch.color}-500 transition-all duration-500 mb-1`}>
+                                                                <i className={`fa-solid ${batch.icon} text-2xl sm:text-3xl text-${batch.color}-300 group-hover:text-white group-active:text-white group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
                                                             </div>
-                                                            <h3 className={`font-black text-sm sm:text-base text-white group-hover:text-${batch.color}-300 transition-colors leading-tight`}>{batch.name}</h3>
+                                                            <h3 className={`font-black text-sm sm:text-base text-white group-hover:text-${batch.color}-300 group-active:text-${batch.color}-300 transition-colors leading-tight`}>{batch.name}</h3>
                                                             <span className={`inline-block px-2 py-0.5 rounded bg-${batch.color}-500/20 border border-${batch.color}-500/30 text-[10px] font-bold text-${batch.color}-200 mt-auto`}>{batch.medium}</span>
                                                         </>
                                                     )}
@@ -10000,7 +10007,7 @@ INSTRUCTIONS:
                                                     } else {
                                                         safeAlert('Subject selected: ' + subject.name + '. Content coming soon!');
                                                     }
-                                                }} className={`bg-[#4f9c8b] hover:bg-[#3d7a6d] p-4 sm:p-5 rounded-lg flex items-center justify-center shadow-md cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 text-center`}>
+                                                }} className={`bg-[#4f9c8b] hover:bg-[#3d7a6d] active:bg-[#3d7a6d] active:scale-[0.98] active:brightness-110 p-4 sm:p-5 rounded-lg flex items-center justify-center shadow-md cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 active:-translate-y-0.5 text-center`}>
                                                     <h3 className={`font-semibold text-sm sm:text-base text-white tracking-wide`}>{subject.name}</h3>
                                                 </div>
                                             ))}
