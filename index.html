@@ -3477,6 +3477,47 @@ Student Doubt: ${prompt}`
                 sendDirectMessage(senderId, payload);
             };
 
+            const acceptAllFriendRequests = () => {
+                if (!pendingRequests || pendingRequests.length === 0) return;
+                
+                setFriends(prev => {
+                    const prevArray = Array.isArray(prev) ? prev : [];
+                    const newFriends = [...prevArray];
+                    
+                    pendingRequests.forEach(req => {
+                        const senderId = String(req.id);
+                        if (!newFriends.some(f => String(f.id || f) === senderId)) {
+                            newFriends.push({ id: senderId, name: req.name || `User ${senderId}`, photo: req.photo });
+                        }
+                    });
+                    
+                    setCloudData('ataxy_friends', newFriends);
+                    return newFriends;
+                });
+                
+                pendingRequests.forEach(req => {
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
+                    sendDirectMessage(String(req.id), payload);
+                });
+                
+                setPendingRequests([]);
+                setCloudData('ataxy_pending_friends', []);
+                safeAlert(`Accepted ${pendingRequests.length} friend requests`);
+            };
+
+            const rejectAllFriendRequests = () => {
+                if (!pendingRequests || pendingRequests.length === 0) return;
+                
+                pendingRequests.forEach(req => {
+                    const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
+                    sendDirectMessage(String(req.id), payload);
+                });
+                
+                setPendingRequests([]);
+                setCloudData('ataxy_pending_friends', []);
+                safeAlert(`Rejected all friend requests`);
+            };
+
             const syncFriendStatus = (targetId) => {
                 const payload = { type: 'ROOM_EVENT', event: 'SYNC_FRIEND_REQUEST', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
                 sendDirectMessage(targetId, payload);
