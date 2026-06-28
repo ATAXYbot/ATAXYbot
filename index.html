@@ -7570,53 +7570,6 @@ INSTRUCTIONS:
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
 
-            const [isChatOpen, setIsChatOpen] = useState(false);
-            const [chatInput, setChatInput] = useState('');
-            const [isAiTyping, setIsAiTyping] = useState(false);
-
-            const handleChatSubmit = async (e) => {
-                e.preventDefault();
-                if (!chatInput.trim() || isAiTyping) return;
-                
-                const userQuery = chatInput;
-                setChatInput('');
-                setIsChatOpen(false);
-                setPartnerMessage({ type: 'chatter', text: userQuery });
-                setEmotion('listening');
-                setIsAiTyping(true);
-                
-                try {
-                    const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
-                    const systemContext = `You are ATAXY, an intelligent, energetic, and helpful AI study partner. Your physical avatar is a 3D character on the user's screen. Keep your answers extremely concise (max 2-3 short sentences) because they appear in a small speech bubble above your head. Be encouraging and helpful.`;
-                    const res = await fetch(proxyUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt: userQuery,
-                            history: [],
-                            system: systemContext,
-                            model: "gemini-3.1-flash-lite",
-                            question_id: 'ataxy_npc_chat'
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (data && data.response) {
-                        setEmotion('talking');
-                        setPartnerMessage({ type: 'chatter', text: data.response });
-                    } else {
-                        setEmotion('confused');
-                        setPartnerMessage({ type: 'chatter', text: "Hmm, my brain is feeling a bit foggy. Try asking again?" });
-                    }
-                } catch (err) {
-                    console.error("NPC Chat Error", err);
-                    setEmotion('angry');
-                    setPartnerMessage({ type: 'chatter', text: "Connection error! I couldn't reach my brain servers!" });
-                } finally {
-                    setIsAiTyping(false);
-                }
-            };
-
             // Three.js Initialization
             useEffect(() => {
                 if (!canvasRef.current) return;
@@ -7985,7 +7938,7 @@ INSTRUCTIONS:
                                     p.groundTarget = null;
                                 } else {
                                     if (now - p.walkTimer > 2000) {
-                                        if (Math.random() > 0.5) {
+                                        if (Math.random() > 0.4) {
                                             p.vx = 0;
                                             p.state = 'idle';
                                             if (Math.random() > 0.2) {
@@ -7997,27 +7950,26 @@ INSTRUCTIONS:
                                             const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
                                             let jumpTarget = null;
                                             
-                                            if (platforms.length > 0 && Math.random() > 0.4) {
+                                            if (platforms.length > 0) {
                                                 const visiblePlatforms = Array.from(platforms).filter(el => {
                                                     const r = el.getBoundingClientRect();
                                                     return r.height > 0 && r.width > 0 && r.top > 0 && r.bottom < window.innerHeight;
                                                 });
                                                 
-                                                // Mountain Climbing: Find platforms HIGHER than current position (smaller Y)
+                                                // Intelligent Climbing: Find platforms HIGHER than current position (smaller Y)
                                                 const higherPlatforms = visiblePlatforms.filter(el => {
                                                     const r = el.getBoundingClientRect();
-                                                    return r.top < p.y - 40; // At least 40px higher
+                                                    return r.top < p.y - 20; // At least 20px higher
                                                 });
                                                 
                                                 if (higherPlatforms.length > 0) {
-                                                    // Pick the lowest of the higher platforms to climb step-by-step
+                                                    // Pick the lowest of the higher platforms to climb step-by-step like a human
                                                     higherPlatforms.sort((a,b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
                                                     jumpTarget = higherPlatforms[0]; // Nearest one going up
                                                 } else {
                                                     // Reached the top or no higher platforms! Wander or jump down
                                                     jumpTarget = visiblePlatforms[Math.floor(Math.random() * visiblePlatforms.length)];
                                                 }
-
                                             }
                                             
                                             if (jumpTarget) {
@@ -8025,14 +7977,23 @@ INSTRUCTIONS:
                                                 const tX = rect.left + rect.width / 2;
                                                 const tY = rect.top;
                                                 
-                                                // Parkour leap
+                                                // Perfectly intelligent parkour leap physics
                                                 const dx = tX - p.x;
                                                 const dy = tY - p.y;
                                                 
                                                 if (Math.abs(dy) > 20) {
-                                                    // Need to jump up or down
-                                                    p.vy = -16;
-                                                    p.vx = (dx / 40); // 40 frames flight time approx
+                                                    // Need to jump up or down. Calculate exact arc.
+                                                    // Gravity is 0.6 per frame.
+                                                    // y = y0 + vy*t + 0.5*g*t^2 => vy = (dy - 0.5*g*t^2) / t
+                                                    // Since g is added before y update, we use a slightly modified discrete math,
+                                                    // but continuous approximation works perfectly for UI bounding boxes.
+                                                    const flightFrames = 45; // Fixed flight time of 45 frames (~0.75 seconds)
+                                                    
+                                                    // Exact required velocity to land on tY in flightFrames
+                                                    let reqVy = (dy - 0.5 * 0.6 * flightFrames * flightFrames) / flightFrames;
+                                                    
+                                                    p.vy = reqVy;
+                                                    p.vx = dx / flightFrames; 
                                                     p.isGrounded = false;
                                                     p.groundTarget = null;
                                                     p.lastJump = now;
@@ -8260,50 +8221,17 @@ INSTRUCTIONS:
                             }}
                             onClick={(e) => { 
                                 e.stopPropagation(); 
-                                if (!isChatOpen) {
-                                    setIsChatOpen(true);
-                                    setEmotion('listening');
-                                    setPartnerMessage({ type: 'chatter', text: "Hey! What's on your mind? Type below!" });
-                                } else {
-                                    setIsChatOpen(false);
-                                    setEmotion('happy'); 
-                                    physicsRef.current.vy = -12; 
-                                    physicsRef.current.isGrounded = false; 
-                                    setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
-                                    playSyntheticSound('boing'); 
-                                }
+                                setEmotion('happy'); 
+                                physicsRef.current.vy = -12; 
+                                physicsRef.current.isGrounded = false; 
+                                setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
+                                playSyntheticSound('boing'); 
                             }}
                         >
                             <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
                         </div>
                         
-                        {/* AI Chat Input Widget */}
-                        <div className={`absolute bottom-[30px] left-1/2 -translate-x-1/2 z-30 transition-all duration-300 ${isChatOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
-                            <form onSubmit={handleChatSubmit} className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 w-[260px]" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
-                                <input 
-                                    type="text" 
-                                    placeholder="Ask me anything..." 
-                                    value={chatInput}
-                                    onChange={(e) => setChatInput(e.target.value)}
-                                    className="flex-1 bg-transparent border-none outline-none text-sm px-3 text-gray-800 dark:text-gray-200 placeholder-gray-400"
-                                    disabled={isAiTyping}
-                                />
-                                <button type="submit" disabled={isAiTyping || !chatInput.trim()} className="bg-ataxy-accent-primary text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-opacity-90 disabled:opacity-50 transition-colors cursor-pointer z-40 relative">
-                                    {isAiTyping ? <i className="fa-solid fa-spinner fa-spin text-xs"></i> : <i className="fa-solid fa-paper-plane text-xs"></i>}
-                                </button>
-                            </form>
-                        </div>
-                        
-                        {availableAnims.length > 0 && (
-                            <div className="absolute top-0 right-[-150px] bg-black/80 text-white text-[10px] p-2 rounded max-h-[300px] overflow-y-auto z-50 pointer-events-auto flex flex-col gap-1 w-[140px] shadow-xl">
-                                <div className="font-bold text-xs mb-1 text-blue-400">Animation Debugger</div>
-                                <button onClick={(e) => { e.stopPropagation(); setPreviewAnim(null); }} className={`text-left hover:bg-white/20 p-1 rounded transition-colors ${!previewAnim ? 'bg-blue-600 font-bold' : ''}`}>⚡ Auto (Physics)</button>
-                                <div className="w-full h-px bg-white/20 my-1"></div>
-                                {availableAnims.map(a => (
-                                    <button key={a} onClick={(e) => { e.stopPropagation(); setPreviewAnim(a); }} className={`text-left hover:bg-white/20 p-1 rounded truncate transition-colors ${previewAnim === a ? 'bg-blue-500 font-bold' : ''}`} title={a}>{a}</button>
-                                ))}
-                            </div>
-                        )}
+
 
                         
                     </div>
