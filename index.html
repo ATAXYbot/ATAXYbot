@@ -1542,12 +1542,12 @@ Student Doubt: ${prompt}`
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-b border-ataxy-border z-[40] px-4 h-[calc(60px_+_max(env(safe-area-inset-top),_24px))] pt-[max(env(safe-area-inset-top),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-b border-ataxy-border z-[40] px-4 pr-[90px] h-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),24px))] pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
-                        <AtaxyLogo className="w-9 h-9 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
-                        <span className="font-black text-xl tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
+                        <AtaxyLogo className="w-8 h-8 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
+                        <span className="font-black text-lg tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
                     </div>
-                    <div className="flex items-center gap-3 text-[20px]">
+                    <div className="flex items-center gap-3 text-[18px]">
                         <button onClick={handleShare} className="text-gray-500 dark:text-gray-400 hover:text-ataxy-accent-primary dark:hover:text-cyan-400 hover:scale-110 transition-all drop-shadow-sm hover:drop-shadow-[0_0_5px_rgba(0,255,255,0.5)] mr-1" title="Share App">
                             <i className="fa-solid fa-share-nodes"></i>
                         </button>
@@ -8449,6 +8449,23 @@ INSTRUCTIONS:
                         </div>
 
                         <div className="px-5 space-y-6">
+                            {/* ATAXY Mentor Hero Button */}
+                            <div onClick={() => setCurrentTab('ai')} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-3xl p-5 shadow-[0_10px_30px_rgba(139,92,246,0.3)] border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 group flex items-center justify-between animate-pop-bounce delay-75">
+                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/30">
+                                            <i className="fa-solid fa-dna text-purple-400 animate-pulse"></i>
+                                        </div>
+                                        <h3 className="font-black text-lg tracking-wide text-purple-100">ATAXY Mentor</h3>
+                                    </div>
+                                    <p className="text-[11px] text-purple-200/70 font-medium">Your AI-powered study companion</p>
+                                </div>
+                                <div className="relative z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-purple-500 transition-colors shadow-sm">
+                                    <i className="fa-solid fa-chevron-right text-sm"></i>
+                                </div>
+                            </div>
+                            
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
@@ -11487,7 +11504,7 @@ INSTRUCTIONS:
 
                         {showTopNav && <TopNavBar />}
 
-                        <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : ''}`}>
+                        <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : showTopNav ? 'pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),24px))]' : ''}`}>
                             <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
@@ -11502,13 +11519,13 @@ INSTRUCTIONS:
 
                                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
                                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
-                                        <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_env(safe-area-inset-bottom,_0px))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)]">
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+                                        <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_var(--tg-content-safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Home</span></button>
 
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">VC</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('ai'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'ai' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-dna text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">ATAXY Mentor</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Practice</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[22px]"></i><span className="text-[9px] font-bold uppercase tracking-wider">Me</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
+                                            
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Practice</span></button>
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
                                         </div>
                                     )}
                                 </>
