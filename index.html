@@ -11498,7 +11498,7 @@ INSTRUCTIONS:
 
                         {showTopNav && <TopNavBar />}
 
-                        <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${(activePracticeChapter && currentTab === "questions") ? "!pt-0" : showTopNav ? "pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))]" : "pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)]"}`}>
+                        <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${showTopNav ? "pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))]" : "pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)]"}`}>
                             <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
