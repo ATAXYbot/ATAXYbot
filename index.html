@@ -11482,7 +11482,7 @@ INSTRUCTIONS:
 
             return (
                 <VoiceRoomErrorBoundary>
-                    <div className={`min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden ${showTopNav ? 'pt-[calc(60px_+_max(env(safe-area-inset-top),_24px))]' : 'pt-[max(env(safe-area-inset-top),_24px)]'}`}>
+                    <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
                         <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gray-50 dark:bg-gray-950">
@@ -11498,7 +11498,7 @@ INSTRUCTIONS:
 
                         {showTopNav && <TopNavBar />}
 
-                        <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${(activePracticeChapter && currentTab === "questions") ? "!pt-0" : showTopNav ? "pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))]" : ""}`}>
+                        <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${(activePracticeChapter && currentTab === "questions") ? "!pt-0" : showTopNav ? "pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))]" : "pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)]"}`}>
                             <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
@@ -11513,7 +11513,7 @@ INSTRUCTIONS:
 
                                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
                                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
-                                        <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-around pb-[calc(16px_+_var(--tg-content-safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
+                                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-center gap-8 sm:gap-12 md:gap-24 pb-[calc(16px_+_var(--tg-content-safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
                                             <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Home</span></button>
 
                                             <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
