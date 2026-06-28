@@ -1372,7 +1372,7 @@ Student Doubt: ${prompt}`
             }
 
             // Universal Features State
-            const [currentView, setCurrentView] = useState('rooms');
+            const currentView = currentTab === 'chats' ? 'chats' : 'rooms';
             const [selectedProfileUser, setSelectedProfileUser] = useState(null);
 
             // Sub tab state to align with VoiceRoomsTab logic
@@ -3018,7 +3018,7 @@ Student Doubt: ${prompt}`
             );
         };
 
-        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState }) => {
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
             const currentUserPhoto = tgUser?.photo_url || "";
@@ -3056,7 +3056,7 @@ Student Doubt: ${prompt}`
             const [showRoomRequestsInbox, setShowRoomRequestsInbox] = useState(false);
 
             // Universal Features State
-            const [currentView, setCurrentView] = useState('rooms');
+            const currentView = currentTab === 'chats' ? 'chats' : 'rooms';
             const [selectedProfileUser, setSelectedProfileUser] = useState(null);
 
             // Sub tab state to align with VoiceRoomsTab logic
@@ -4202,13 +4202,7 @@ Student Doubt: ${prompt}`
                 if (currentView === 'chats') {
                     return (
                         <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
-                            <div className="flex bg-[#021633] p-1.5 rounded-xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-md relative z-30">
-                                <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all ${currentView === 'rooms' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
-                                <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.3)]' : 'text-[#A4DFE6] hover:text-white'}`}>
-                                    Chats
-                                    {pendingRequests.length > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>}
-                                </button>
-                            </div>
+                            
                             <div className="flex-1 overflow-hidden relative">
                                 <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} />
                             </div>
@@ -4218,13 +4212,7 @@ Student Doubt: ${prompt}`
 
                 return (
                     <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010714] text-white space-y-0">
-                        <div className="flex bg-[#031530] p-1.5 rounded-2xl border border-[#0AE0D0]/20 mx-4 mt-4 shrink-0 shadow-lg relative z-30">
-                            <button onClick={() => setCurrentView('rooms')} className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${currentView === 'rooms' ? 'bg-gradient-to-r from-[#00FFFF] to-blue-500 text-[#010714] shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'text-[#A4DFE6] hover:text-white'}`}>Rooms</button>
-                            <button onClick={() => setCurrentView('chats')} className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 flex items-center justify-center gap-2 ${currentView === 'chats' ? 'bg-gradient-to-r from-[#00FFFF] to-blue-500 text-[#010714] shadow-[0_0_15px_rgba(0,255,255,0.4)]' : 'text-[#A4DFE6] hover:text-white'}`}>
-                                Chats
-                                {pendingRequests.length > 0 && <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.9)]"></span>}
-                            </button>
-                        </div>
+                        
 
                         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
                             {/* Official Room Section */}
@@ -4947,7 +4935,7 @@ Student Doubt: ${prompt}`
                             pendingRequests={pendingRequests}
                             sentRequests={sentRequests}
                             sendFriendRequest={sendFriendRequest}
-                            setVcSubTab={setCurrentView}
+                            setVcSubTab={onNavigate}
                             setActiveChatUser={setActiveChatUser}
                             setIsMinimized={setIsMinimized}
                             leaveSeat={() => { if (mySeatIndex !== null) moveToAudience(currentUserId, mySeatIndex, currentUserName, currentUserPhoto); }}
@@ -11505,7 +11493,7 @@ INSTRUCTIONS:
                         {showTopNav && <TopNavBar />}
 
                         <div className={`h-full w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? 'z-[2000000]' : 'z-10'} ${(activePracticeChapter && currentTab === 'questions') ? '!pt-0' : showTopNav ? 'pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),24px))]' : ''}`}>
-                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc'} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
@@ -11524,6 +11512,7 @@ INSTRUCTIONS:
 
                                             <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
                                             
+                                            <button onClick={() => { resetDeepState(); setCurrentTab('chats'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chats' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Chats</span></button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-layer-group text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Practice</span></button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
                                         </div>
