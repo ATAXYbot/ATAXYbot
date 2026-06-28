@@ -9847,15 +9847,15 @@ INSTRUCTIONS:
                                         <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
                                             {SATHEE_DATA.exams.map(exam => (
                                                 <div key={exam.id} onClick={() => setActiveSatheeExam(exam)} className="relative group overflow-hidden rounded-[1.5rem] p-[1px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(251,191,36,0.15)] active:scale-[0.98] active:-translate-y-1 text-center">
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/40 via-orange-500/40 to-red-500/40 opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/40 via-orange-500/40 to-red-500/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
                                                     <div className="relative h-full flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-6 border border-white/10 gap-3">
-                                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center border border-white/10 group-hover:border-yellow-500/50 group-active:border-yellow-500/50 transition-colors shadow-inner">
-                                                            <i className={`fa-solid ${exam.icon} text-transparent bg-clip-text bg-gradient-to-br from-yellow-400 to-orange-400 text-3xl drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
+                                                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-yellow-500/20 group-active:bg-yellow-500/20 group-hover:border-yellow-500/50 group-active:border-yellow-500/50 transition-colors shadow-inner">
+                                                            <i className={`fa-solid ${exam.icon} text-gray-400 group-hover:text-yellow-400 group-active:text-yellow-400 text-3xl group-hover:drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] group-active:drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] group-hover:scale-110 group-active:scale-110 transition-all duration-300`}></i>
                                                         </div>
                                                         <h3 className="font-black text-xl text-white tracking-wide uppercase drop-shadow-md group-hover:text-transparent group-active:text-transparent group-hover:bg-clip-text group-active:bg-clip-text group-hover:bg-gradient-to-r group-active:bg-gradient-to-r group-hover:from-yellow-300 group-active:from-yellow-300 group-hover:to-orange-300 group-active:to-orange-300 transition-all">{exam.name}</h3>
-                                                        <div className="flex items-center gap-2 mt-1 opacity-100 lg:opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
+                                                        <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
                                                             <span className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">Select</span>
-                                                            <i className="fa-solid fa-arrow-right text-yellow-300 text-[10px] translate-x-0 lg:translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
+                                                            <i className="fa-solid fa-arrow-right text-yellow-300 text-[10px] translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -9867,15 +9867,15 @@ INSTRUCTIONS:
                                         <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
                                             {SATHEE_DATA.sections[activeSatheeExam.id].map(section => (
                                                 <div key={section.id} onClick={() => setActiveSatheeSection(section)} className="relative group overflow-hidden rounded-[1.5rem] p-[1px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-center">
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
                                                     <div className="relative h-full flex flex-col items-center justify-center bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-6 border border-white/10 gap-3">
-                                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shadow-inner">
-                                                            <i className={`fa-solid ${section.icon} text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 text-3xl drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
+                                                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-blue-500/20 group-active:bg-blue-500/20 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shadow-inner">
+                                                            <i className={`fa-solid ${section.icon} text-gray-400 group-hover:text-blue-400 group-active:text-blue-400 text-3xl group-hover:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-active:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-all duration-300`}></i>
                                                         </div>
                                                         <h3 className="font-black text-xl text-white tracking-wide uppercase drop-shadow-md group-hover:text-transparent group-active:text-transparent group-hover:bg-clip-text group-active:bg-clip-text group-hover:bg-gradient-to-r group-active:bg-gradient-to-r group-hover:from-blue-300 group-active:from-blue-300 group-hover:to-purple-300 group-active:to-purple-300 transition-all">{section.name}</h3>
-                                                        <div className="flex items-center gap-2 mt-1 opacity-100 lg:opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
+                                                        <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 h-4">
                                                             <span className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Explore</span>
-                                                            <i className="fa-solid fa-arrow-right text-blue-300 text-[10px] translate-x-0 lg:translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
+                                                            <i className="fa-solid fa-arrow-right text-blue-300 text-[10px] translate-x-[-10px] group-hover:translate-x-0 group-active:translate-x-0 transition-transform duration-500"></i>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -9921,11 +9921,11 @@ INSTRUCTIONS:
                                                 }} className={batch.isCustomUI ? "relative group overflow-hidden rounded-[1.5rem] p-[1px] w-full min-h-[220px] cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.15)] active:scale-[0.98] active:-translate-y-1 text-left" : `backdrop-blur-xl bg-white/5 border border-white/10 p-4 sm:p-5 rounded-[1.5rem] flex flex-col items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 hover:border-${batch.color}-500/50 active:border-${batch.color}-500/50 hover:bg-${batch.color}-900/20 active:bg-${batch.color}-900/20 text-center relative`}>
                                                     {batch.isCustomUI ? (
                                                         <>
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-50 lg:opacity-40 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 via-purple-500/40 to-pink-500/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500 rounded-[1.5rem]"></div>
                                                             <div className="relative h-full flex flex-col bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] p-5 border border-white/10">
                                                                 <div className="flex justify-between items-start mb-5">
-                                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shrink-0 shadow-inner">
-                                                                        <i className={`fa-solid ${activeSatheeExam?.icon || 'fa-award'} text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 text-2xl drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-transform duration-300`}></i>
+                                                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-blue-500/20 group-active:bg-blue-500/20 group-hover:border-blue-500/50 group-active:border-blue-500/50 transition-colors shrink-0 shadow-inner">
+                                                                        <i className={`fa-solid ${activeSatheeExam?.icon || 'fa-award'} text-gray-400 group-hover:text-blue-400 group-active:text-blue-400 text-2xl group-hover:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-active:drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover:scale-110 group-active:scale-110 transition-all duration-300`}></i>
                                                                     </div>
                                                                     <div className="flex flex-col items-end space-y-2 mt-0.5">
                                                                         <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-medium text-gray-300 backdrop-blur-md shadow-sm">
@@ -10598,7 +10598,7 @@ INSTRUCTIONS:
                                 {PRACTICE_BATCHES.map(batch => {
                                     if (batch.type === 'neet') {
                                         return (
-                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,65,141,0.5)] hover:shadow-[0_20px_50px_-10px_rgba(0,65,141,0.7)] hover:-translate-y-2 transition-all duration-500 ease-out">
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,65,141,0.5)] hover:shadow-[0_20px_50px_-10px_rgba(0,65,141,0.7)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out">
                                                 {/* Gaming/Premium Blue Gradient Base */}
                                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00418d] via-[#003370] to-[#001a3d] z-0"></div>
 
@@ -10606,20 +10606,20 @@ INSTRUCTIONS:
                                                 <div className="absolute inset-0 opacity-[0.05] bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] mix-blend-overlay z-0"></div>
 
                                                 {/* Glowing Orbs */}
-                                                <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-300/30 transition-all duration-700 z-0"></div>
-                                                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-400/20 rounded-full blur-2xl group-hover:bg-teal-300/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-300/30 group-active:bg-blue-300/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-400/20 rounded-full blur-2xl group-hover:bg-teal-300/30 group-active:bg-teal-300/30 transition-all duration-700 z-0"></div>
 
                                                 {/* Floating Medical Icons (Gaming Style) */}
-                                                <i className="fa-solid fa-stethoscope absolute -right-4 -bottom-4 text-[120px] text-white/5 group-hover:text-blue-400/10 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 z-10 drop-shadow-2xl"></i>
-                                                <i className="fa-solid fa-pills absolute top-6 right-24 text-3xl text-blue-300/10 group-hover:text-teal-300/20 group-hover:-translate-y-4 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-hospital absolute bottom-8 right-32 text-4xl text-blue-200/5 group-hover:text-blue-200/15 group-hover:-translate-x-4 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-staff-snake absolute top-1/2 right-12 -translate-y-1/2 text-6xl text-white/5 group-hover:text-blue-100/10 group-hover:scale-125 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-stethoscope absolute -right-4 -bottom-4 text-[120px] text-white/5 group-hover:text-blue-400/10 group-active:text-blue-400/10 group-hover:scale-110 group-active:scale-110 group-hover:-rotate-12 group-active:-rotate-12 transition-all duration-700 z-10 drop-shadow-2xl"></i>
+                                                <i className="fa-solid fa-pills absolute top-6 right-24 text-3xl text-blue-300/10 group-hover:text-teal-300/20 group-active:text-teal-300/20 group-hover:-translate-y-4 group-active:-translate-y-4 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-hospital absolute bottom-8 right-32 text-4xl text-blue-200/5 group-hover:text-blue-200/15 group-active:text-blue-200/15 group-hover:-translate-x-4 group-active:-translate-x-4 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-staff-snake absolute top-1/2 right-12 -translate-y-1/2 text-6xl text-white/5 group-hover:text-blue-100/10 group-active:text-blue-100/10 group-hover:scale-125 group-active:scale-125 transition-all duration-1000 z-10"></i>
 
                                                 {/* Content */}
                                                 <div className="relative z-20 h-full flex flex-col justify-center px-8">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-white/20 transition-all duration-500">
-                                                            <i className="fa-solid fa-user-doctor text-2xl text-blue-100 group-hover:text-white group-hover:scale-110 transition-transform duration-500"></i>
+                                                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner group-hover:bg-white/20 group-active:bg-white/20 transition-all duration-500">
+                                                            <i className="fa-solid fa-user-doctor text-2xl text-blue-100 group-hover:text-white group-active:text-white group-hover:scale-110 group-active:scale-110 transition-transform duration-500"></i>
                                                         </div>
                                                         <div>
                                                             <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">NEET Bank</h3>
@@ -10634,7 +10634,7 @@ INSTRUCTIONS:
                                         );
                                     } else if (batch.type === 'jee') {
                                         return (
-                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(15,23,42,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(6,182,212,0.4)] hover:-translate-y-2 transition-all duration-500 ease-out mt-4">
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[180px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(15,23,42,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(6,182,212,0.4)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out mt-4">
                                                 {/* Gaming/Premium Engineer Base */}
                                                 <div className="absolute inset-0 bg-[#0b0f19] z-0"></div>
                                                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-transparent to-purple-900/40 z-0"></div>
@@ -10643,20 +10643,20 @@ INSTRUCTIONS:
                                                 <div className="absolute inset-0 opacity-[0.1] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] mix-blend-overlay z-0"></div>
 
                                                 {/* Hacker/Cyberpunk Glows */}
-                                                <div className="absolute top-0 right-0 w-[200%] h-[200%] bg-[conic-gradient(from_90deg_at_50%_50%,#00000000_50%,#06b6d4_100%)] opacity-0 group-hover:opacity-10 group-hover:animate-spin-slow transition-opacity duration-1000 z-0 pointer-events-none"></div>
-                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-400/20 transition-all duration-700 z-0"></div>
+                                                <div className="absolute top-0 right-0 w-[200%] h-[200%] bg-[conic-gradient(from_90deg_at_50%_50%,#00000000_50%,#06b6d4_100%)] opacity-0 group-hover:opacity-10 group-active:opacity-10 group-hover:animate-spin-slow transition-opacity duration-1000 z-0 pointer-events-none"></div>
+                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-400/20 group-active:bg-cyan-400/20 transition-all duration-700 z-0"></div>
 
                                                 {/* Floating Engineer Icons (Gaming Style) */}
-                                                <i className="fa-solid fa-microchip absolute -right-6 -bottom-6 text-[130px] text-cyan-500/5 group-hover:text-cyan-400/15 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]"></i>
-                                                <i className="fa-solid fa-laptop-code absolute top-8 right-24 text-3xl text-cyan-300/10 group-hover:text-cyan-200/30 group-hover:-translate-y-3 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-compass-drafting absolute bottom-8 right-36 text-4xl text-purple-400/10 group-hover:text-purple-300/30 group-hover:rotate-12 transition-all duration-1000 z-10"></i>
-                                                <i className="fa-solid fa-ruler-combined absolute top-1/2 right-12 -translate-y-1/2 text-5xl text-white/5 group-hover:text-cyan-100/20 group-hover:scale-110 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-microchip absolute -right-6 -bottom-6 text-[130px] text-cyan-500/5 group-hover:text-cyan-400/15 group-active:text-cyan-400/15 group-hover:scale-110 group-active:scale-110 group-hover:rotate-6 group-active:rotate-6 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]"></i>
+                                                <i className="fa-solid fa-laptop-code absolute top-8 right-24 text-3xl text-cyan-300/10 group-hover:text-cyan-200/30 group-active:text-cyan-200/30 group-hover:-translate-y-3 group-active:-translate-y-3 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-compass-drafting absolute bottom-8 right-36 text-4xl text-purple-400/10 group-hover:text-purple-300/30 group-active:text-purple-300/30 group-hover:rotate-12 group-active:rotate-12 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-ruler-combined absolute top-1/2 right-12 -translate-y-1/2 text-5xl text-white/5 group-hover:text-cyan-100/20 group-active:text-cyan-100/20 group-hover:scale-110 group-active:scale-110 transition-all duration-1000 z-10"></i>
 
                                                 {/* Content */}
                                                 <div className="relative z-20 h-full flex flex-col justify-center px-8">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 rounded-2xl bg-[#1e293b] border border-cyan-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(6,182,212,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-hover:border-cyan-400 transition-all duration-500">
-                                                            <i className="fa-solid fa-helmet-safety text-2xl text-cyan-500 group-hover:text-cyan-300 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
+                                                        <div className="w-14 h-14 rounded-2xl bg-[#1e293b] border border-cyan-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(6,182,212,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-active:shadow-[inset_0_0_25px_rgba(6,182,212,0.4)] group-hover:border-cyan-400 group-active:border-cyan-400 transition-all duration-500">
+                                                            <i className="fa-solid fa-helmet-safety text-2xl text-cyan-500 group-hover:text-cyan-300 group-active:text-cyan-300 group-hover:scale-110 group-active:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
                                                         </div>
                                                         <div>
                                                             <h3 className="text-3xl font-black text-white tracking-tight drop-shadow-md">JEE Bank</h3>
@@ -10671,7 +10671,7 @@ INSTRUCTIONS:
                                         );
                                     } else {
                                         return (
-                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[100px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] hover:-translate-y-2 transition-all duration-500 ease-out mt-4">
+                                            <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className="group relative w-full h-[100px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] hover:-translate-y-2 active:scale-[0.98] active:-translate-y-1 transition-all duration-500 ease-out mt-4">
                                                 {/* Hacker/Laboratory Base */}
                                                 <div className="absolute inset-0 bg-[#050505] z-0"></div>
                                                 <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 via-transparent to-black z-0"></div>
@@ -10680,18 +10680,18 @@ INSTRUCTIONS:
                                                 <div className="absolute inset-0 opacity-[0.15] bg-[url('https://www.transparenttextures.com/patterns/binary-code.png')] mix-blend-overlay z-0"></div>
 
                                                 {/* Acid/Radioactive Glows */}
-                                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/20 rounded-full blur-3xl group-hover:bg-green-400/30 transition-all duration-700 z-0"></div>
-                                                <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-400/20 transition-all duration-700 z-0"></div>
+                                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/20 rounded-full blur-3xl group-hover:bg-green-400/30 group-active:bg-green-400/30 transition-all duration-700 z-0"></div>
+                                                <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-400/20 group-active:bg-purple-400/20 transition-all duration-700 z-0"></div>
 
                                                 {/* Floating Laboratory Icons (Gaming Style) */}
-                                                <i className="fa-solid fa-vial-virus absolute -right-4 -bottom-8 text-[100px] text-green-500/5 group-hover:text-green-400/20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]"></i>
-                                                <i className="fa-solid fa-microscope absolute top-4 right-32 text-3xl text-purple-400/10 group-hover:text-purple-300/30 group-hover:-translate-y-2 transition-all duration-1000 z-10"></i>
+                                                <i className="fa-solid fa-vial-virus absolute -right-4 -bottom-8 text-[100px] text-green-500/5 group-hover:text-green-400/20 group-active:text-green-400/20 group-hover:scale-110 group-active:scale-110 group-hover:rotate-12 group-active:rotate-12 transition-all duration-700 z-10 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]"></i>
+                                                <i className="fa-solid fa-microscope absolute top-4 right-32 text-3xl text-purple-400/10 group-hover:text-purple-300/30 group-active:text-purple-300/30 group-hover:-translate-y-2 group-active:-translate-y-2 transition-all duration-1000 z-10"></i>
 
                                                 {/* Content */}
                                                 <div className="relative z-20 h-full flex flex-col justify-center px-8">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-2xl bg-[#0f172a] border border-green-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(34,197,94,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-hover:border-green-400 transition-all duration-500">
-                                                            <i className="fa-solid fa-flask text-2xl text-green-500 group-hover:text-green-300 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"></i>
+                                                        <div className="w-12 h-12 rounded-2xl bg-[#0f172a] border border-green-500/30 flex items-center justify-center shadow-[inset_0_0_15px_rgba(34,197,94,0.2)] group-hover:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-active:shadow-[inset_0_0_25px_rgba(34,197,94,0.4)] group-hover:border-green-400 group-active:border-green-400 transition-all duration-500">
+                                                            <i className="fa-solid fa-flask text-2xl text-green-500 group-hover:text-green-300 group-active:text-green-300 group-hover:scale-110 group-active:scale-110 transition-transform duration-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"></i>
                                                         </div>
                                                         <div>
                                                             <h3 className="text-2xl font-black text-white tracking-tight drop-shadow-md">{batch.name}</h3>
