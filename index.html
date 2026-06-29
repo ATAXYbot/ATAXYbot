@@ -7790,6 +7790,8 @@ INSTRUCTIONS:
             useEffect(() => {
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
                 
+                let animationFrameId;
+                
                 const handleGlobalPointerDown = (e) => {
                     // Ignore clicks on HTML UI elements (like chat bubble buttons)
                     if (e.target.closest && (e.target.closest('button') || e.target.closest('.chat-bubble') || e.target.closest('input') || e.target.closest('textarea'))) return;
