@@ -8290,18 +8290,40 @@ INSTRUCTIONS:
                         // Procedural Head Animation (Anime Emotion Engine)
                         const headBone = threeRef.current.scene.getObjectByName('head');
                         if (headBone && !p.isDragging && (p.state === 'idle' || p.state === 'sit_idle')) {
-                            if (p.emotion === 'happy') {
-                                headBone.rotation.x += Math.sin(time * 8) * 0.1;
-                            } else if (p.emotion === 'angry') {
-                                headBone.rotation.y += Math.sin(time * 25) * 0.15;
-                                headBone.rotation.x += 0.1;
-                            } else if (p.emotion === 'confused' || p.emotion === 'writing' || p.emotion === 'thinking') {
-                                headBone.rotation.z -= 0.25;
-                            } else if (p.emotion === 'sad') {
-                                headBone.rotation.x += 0.4;
-                            } else if (p.emotion === 'surprised') {
-                                headBone.rotation.x -= 0.3;
+                            // Revert previous frame's offset
+                            if (headBone.userData.lastOffsetX !== undefined) {
+                                headBone.rotation.x -= headBone.userData.lastOffsetX;
+                                headBone.rotation.y -= headBone.userData.lastOffsetY;
+                                headBone.rotation.z -= headBone.userData.lastOffsetZ;
                             }
+                            
+                            let offsetX = 0, offsetY = 0, offsetZ = 0;
+                            if (p.emotion === 'happy') {
+                                offsetX = Math.sin(time * 8) * 0.1;
+                            } else if (p.emotion === 'angry') {
+                                offsetY = Math.sin(time * 25) * 0.15;
+                                offsetX = 0.1;
+                            } else if (p.emotion === 'confused' || p.emotion === 'writing' || p.emotion === 'thinking') {
+                                offsetZ = -0.25;
+                            } else if (p.emotion === 'sad') {
+                                offsetX = 0.4;
+                            } else if (p.emotion === 'surprised') {
+                                offsetX = -0.3;
+                            }
+                            
+                            // Apply new offset and store
+                            headBone.rotation.x += offsetX;
+                            headBone.rotation.y += offsetY;
+                            headBone.rotation.z += offsetZ;
+                            
+                            headBone.userData.lastOffsetX = offsetX;
+                            headBone.userData.lastOffsetY = offsetY;
+                            headBone.userData.lastOffsetZ = offsetZ;
+                        } else if (headBone && headBone.userData.lastOffsetX !== undefined) {
+                            headBone.rotation.x -= headBone.userData.lastOffsetX;
+                            headBone.rotation.y -= headBone.userData.lastOffsetY;
+                            headBone.rotation.z -= headBone.userData.lastOffsetZ;
+                            headBone.userData.lastOffsetX = undefined;
                         }
 
                         threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
