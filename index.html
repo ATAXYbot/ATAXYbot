@@ -7502,8 +7502,7 @@ INSTRUCTIONS:
         // ?? STUDY PARTNER SYSTEM
         // ==========================================
         const STUDY_PARTNERS = [
-            { id: 'mia_cheer', name: 'Mia (Female)', icon: 'fa-user-nurse', color: 'text-fuchsia-400', vibe: 'caring & energetic' },
-            { id: 'prof_oak', name: 'Oak (Male)', icon: 'fa-user-tie', color: 'text-amber-400', vibe: 'wise & encouraging' }
+            { id: 'reminder_bot', name: 'Reminder', icon: 'fa-robot', color: 'text-blue-500', vibe: 'Intelligent Assistant' }
         ];
 
         const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage, currentTab, showQuiz }) => {
@@ -7748,40 +7747,7 @@ INSTRUCTIONS:
                 };
                 
                 const chatterInterval = setInterval(() => {
-                    // Only chatter if visible, grounded, and not already talking
-                    const p = physicsRef.current;
-                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.4) {
-                        let dynamicPhrase = null;
-                        
-                        // Live Context Reading
-                        if (currentTab === 'practice') {
-                            if (Math.random() > 0.5) dynamicPhrase = {text: "Solving MCQs? Don't forget to review your mistakes!", emotion: 'thinking'};
-                        } else if (currentTab === 'profile') {
-                            if (Math.random() > 0.5) dynamicPhrase = {text: "Checking your stats? Keep grinding and you'll hit Rank 1!", emotion: 'happy'};
-                        } else if (currentTab === 'home') {
-                            const targetsStr = localStorage.getItem('ataxy_daily_targets');
-                            if (targetsStr) {
-                                try {
-                                    const targets = JSON.parse(targetsStr);
-                                    const pending = targets.filter(t => !t.completed);
-                                    if (pending.length > 0) {
-                                        const t = pending[Math.floor(Math.random() * pending.length)];
-                                        dynamicPhrase = {text: `Hey! Are you working on "${t.text}"? Keep at it!`, emotion: 'thinking'};
-                                    } else {
-                                        dynamicPhrase = {text: `All targets complete! You are doing amazing!`, emotion: 'love'};
-                                    }
-                                } catch(e){}
-                            }
-                        }
-                        
-                        if (dynamicPhrase && Math.random() > 0.3) {
-                            setPartnerMessage({ type: 'chatter', text: dynamicPhrase.text, emotion: dynamicPhrase.emotion });
-                        } else {
-                            const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
-                            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                            setPartnerMessage({ type: 'chatter', text: randomPhrase.text, emotion: randomPhrase.emotion });
-                        }
-                    }
+                    // Chatter disabled. NPC only appears for important target alerts.
                 }, 15000); 
 
                 return () => clearInterval(chatterInterval);
@@ -7800,6 +7766,7 @@ INSTRUCTIONS:
                 let animationFrameId;
                 
                 const handleGlobalPointerDown = (e) => {
+                    if (!visible) return; // Ignore if NPC is not visible
                     // Ignore clicks on HTML UI elements (like chat bubble buttons)
                     if (e.target.closest && (e.target.closest('button') || e.target.closest('.chat-bubble') || e.target.closest('input') || e.target.closest('textarea'))) return;
                     if (!threeRef.current || !threeRef.current.scene || !canvasRef.current) return;
@@ -7947,10 +7914,12 @@ INSTRUCTIONS:
                 window.addEventListener('touchend', handlePointerUp);
 
                 const loop = () => {
-                    if (currentTab === 'questions' && showQuiz && !visible) {
+                    if (!visible || (currentTab === 'questions' && showQuiz)) {
                         if (widgetRef.current) widgetRef.current.style.opacity = '0';
-                        animationFrameId = requestAnimationFrame(loop);
-                        return;
+                        if (currentTab === 'questions' && showQuiz) {
+                            animationFrameId = requestAnimationFrame(loop);
+                            return;
+                        }
                     } else {
                         if (widgetRef.current) widgetRef.current.style.opacity = '1';
                     }
@@ -8017,9 +7986,20 @@ INSTRUCTIONS:
                             p.groundTarget = null;
                             
                             // Check localstorage for tour
-                            if (!localStorage.getItem('ataxy_tour_done')) {
+                            if (!localStorage.getItem('ataxy_tour_done_v2')) {
                                 p.brainState = 'tour';
-                                localStorage.setItem('ataxy_tour_done', 'true');
+                                p.tourStep = -1;
+                                p.brainTimer = now;
+                                localStorage.setItem('ataxy_tour_done_v2', 'true');
+                            } else if (!sessionStorage.getItem('ataxy_greeting_done')) {
+                                p.brainState = 'wander';
+                                sessionStorage.setItem('ataxy_greeting_done', 'true');
+                                const hour = new Date().getHours();
+                                let greeting = "Good morning";
+                                if (hour >= 12 && hour < 17) greeting = "Good afternoon";
+                                else if (hour >= 17) greeting = "Good evening";
+                                setPartnerMessage({ type: 'chatter', text: `${greeting}! Ready to crush your targets today?`, emotion: 'happy' });
+                                p.state = 'talk';
                             }
                         }
 
@@ -8035,44 +8015,44 @@ INSTRUCTIONS:
                                 const currentMinute = new Date().getMinutes();
                                 const currentTotalMins = currentHour * 60 + currentMinute;
                                 
+                                let overdueTarget = null;
                                 let lateTarget = null;
-                                let pendingTarget = null;
                                 
                                 for (const t of todayTargets) {
                                     if (!t.done && t.startTime) {
                                         const [th, tm] = t.startTime.split(':').map(Number);
-                                        const targetTotalMins = th * 60 + tm;
+                                        const startTotalMins = th * 60 + tm;
                                         
-                                        // If we are past the start time!
-                                        if (currentTotalMins >= targetTotalMins) {
-                                            let isLate = true;
+                                        if (currentTotalMins >= startTotalMins) {
                                             if (t.endTime) {
                                                 const [eh, em] = t.endTime.split(':').map(Number);
                                                 const endTotalMins = eh * 60 + em;
-                                                if (currentTotalMins <= endTotalMins) {
-                                                    isLate = false; // we are inside the window
-                                                    if (!pendingTarget) pendingTarget = t;
+                                                if (currentTotalMins > endTotalMins) {
+                                                    overdueTarget = t;
+                                                } else {
+                                                    lateTarget = t;
                                                 }
+                                            } else {
+                                                lateTarget = t;
                                             }
-                                            
-                                            if (isLate) lateTarget = t;
                                         }
                                     }
                                 }
                                 
-                                if (lateTarget && p.brainState !== 'angry' && p.brainState !== 'tour') {
+                                if (overdueTarget && p.brainState !== 'angry' && p.brainState !== 'tour') {
                                     p.brainState = 'angry';
                                     p.brainTimer = now;
                                     setEmotion('angry');
-                                    p.state = 'angry';
+                                    p.state = 'hit';
                                     p.vx = 0;
-                                    setPartnerMessage({ type: 'target_alert', text: `You are LATE! It is past time for "${lateTarget.text}"! Go complete it NOW!` });
-                                } else if (pendingTarget && p.brainState !== 'angry' && p.brainState !== 'tour' && Math.random() < 0.2) {
-                                    setEmotion('talking');
-                                    p.state = 'greet';
-                                    p.brainState = 'wander'; 
+                                    setPartnerMessage({ type: 'target_alert', text: `Wait... target time for "${overdueTarget.text}" is OVER! I don't see any tick on your set targets! Haven't you completed it yet?! Get it done NOW!`, requireAcknowledge: true });
+                                } else if (lateTarget && p.brainState !== 'angry' && p.brainState !== 'tour') {
+                                    p.brainState = 'angry';
                                     p.brainTimer = now;
-                                    setPartnerMessage({ type: 'target_alert', text: `Hello! Just a reminder: You should be working on "${pendingTarget.text}" right now!` });
+                                    setEmotion('angry');
+                                    p.state = 'write';
+                                    p.vx = 0;
+                                    setPartnerMessage({ type: 'target_alert', text: `Hey! You opened the app AFTER the start time for "${lateTarget.text}"! It's time to do this target right now!`, requireAcknowledge: true });
                                 }
                             } catch(e) {}
                         }
@@ -8149,12 +8129,13 @@ INSTRUCTIONS:
                             if (p.brainState === 'tour') {
                                 // Tour State Machine
                                 const tourSteps = [
-                                    { text: "Welcome to ATAXY! I'm your AI study partner. Let me show you around!", target: null, anim: 'greet', duration: 4000 },
-                                    { text: "Up here is the Header. This is where you can see your rank and profile settings.", target: 'header', anim: 'point', duration: 4000 },
-                                    { text: "This is the Home tab! It shows your Daily Targets, progress, and 7-Day Momentum.", target: 'button:has(i.fa-rocket), a:has(i.fa-rocket)', anim: 'nod', duration: 4500 },
-                                    { text: "This is the Practice area where you can solve MCQs for NEET or JEE!", target: 'button:has(i.fa-layer-group), a:has(i.fa-layer-group)', anim: 'point', duration: 4000 },
-                                    { text: "Need help? Tap the Chat icon to talk to me about concepts or get study plans.", target: 'button:has(i.fa-comments), a:has(i.fa-comments)', anim: 'talk', duration: 4000 },
-                                    { text: "I'll be hanging around to help you out. Good luck dominating your exams!", target: null, anim: 'victory', duration: 4000 }
+                                    { text: "HIIII! 👋 I'm Reminder, your intelligent study assistant! Welcome to the best app ever! Let me show you around!", target: null, anim: 'talk', duration: 5000 },
+                                    { text: "Up here is the Header. It shows your profile, rank, and streaks!", target: 'header', anim: 'write', duration: 4500 },
+                                    { text: "This is the Home tab! Your central hub for Daily Targets, momentum, and progress.", target: 'button:has(i.fa-rocket), a:has(i.fa-rocket)', anim: 'write', duration: 4500 },
+                                    { text: "The Practice area! Solve MCQs and crush NEET or JEE like a pro!", target: 'button:has(i.fa-layer-group), a:has(i.fa-layer-group)', anim: 'write', duration: 4500 },
+                                    { text: "The Voice Rooms! Join live study sessions with your friends and stay accountable.", target: 'button:has(i.fa-headset), a:has(i.fa-headset)', anim: 'write', duration: 4500 },
+                                    { text: "The Me tab! Check your stats, settings, and manage my configurations.", target: 'button:has(i.fa-user), a:has(i.fa-user)', anim: 'write', duration: 4500 },
+                                    { text: "I'll stay out of your way unless you're late for your targets! Let's conquer your goals together!", target: null, anim: 'talk', duration: 5000 }
                                 ];
                                 
                                 if (now - p.brainTimer > (p.tourStep >= 0 ? tourSteps[p.tourStep].duration : 1000)) {
@@ -8551,8 +8532,9 @@ INSTRUCTIONS:
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
                                 model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, currentTargetScale, 0.1));
                             }
-                            
-                            threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
+                            if (visible) {
+                                threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
+                            }
                         }
                     }
 
@@ -8572,7 +8554,7 @@ INSTRUCTIONS:
 
             if (!partnerConfig.enabled || partnerConfig.character === 'none') return null;
 
-            const partnerDef = STUDY_PARTNERS.find(p => p.id === partnerConfig.character) || STUDY_PARTNERS[1];
+            const partnerDef = STUDY_PARTNERS.find(p => p.id === partnerConfig.character) || STUDY_PARTNERS[0];
             const isHidden = (currentTab === 'questions' && showQuiz) && !visible; 
 
             let isFemale = partnerConfig.character.includes('serena') || partnerConfig.character.includes('mia');
@@ -9236,7 +9218,7 @@ INSTRUCTIONS:
 
             // Study Partner State
             const [studyPartnerConfig, setStudyPartnerConfig] = useState(() => safeGetJSON('ataxy_study_partner_cfg', {
-                enabled: true, character: 'mia_cheer', hasSeenOnboarding: false
+                enabled: true, character: 'reminder_bot', hasSeenOnboarding: false
             }));
             const [studyPartnerState, setStudyPartnerState] = useState(() => safeGetJSON('ataxy_study_partner_state', {
                 lastActive: Date.now(), waterCount: 0, lastWaterTime: Date.now(), studyMinutesToday: 0
@@ -9256,12 +9238,13 @@ INSTRUCTIONS:
                 if (!studyPartnerConfig.hasSeenOnboarding) {
                     const partnerName = STUDY_PARTNERS.find(p => p.id === studyPartnerConfig.character)?.name.split(' ')[0] || 'Mia';
                     setTimeout(() => {
-                        setPartnerMessage({ 
-                            text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I am your omniscient study partner! I will watch everything you do, remind you of your targets, and you can even pick me up and throw me around! Let's crush some goals!`, 
-                            type: 'welcome', 
-                            requireAcknowledge: true,
-                            id: Date.now() 
-                        });
+                        // Disabled welcome message
+                        // setPartnerMessage({ 
+                        //     text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I am your omniscient study partner! I will watch everything you do, remind you of your targets, and you can even pick me up and throw me around! Let's crush some goals!`, 
+                        //     type: 'welcome', 
+                        //     requireAcknowledge: true,
+                        //     id: Date.now() 
+                        // });
                         setStudyPartnerConfig(prev => ({ ...prev, hasSeenOnboarding: true }));
                     }, 1000);
                     return;
@@ -9293,7 +9276,7 @@ INSTRUCTIONS:
                     if (!foundMissed) {
                         const lastWater = studyPartnerState.lastWaterTime || Date.now();
                         if (Date.now() - lastWater > 2 * 60 * 60 * 1000) {
-                            setPartnerMessage({ text: `Time for a quick break! Hydrate yourself with some water.`, type: 'water', id: Date.now() });
+                            // setPartnerMessage({ text: `Time for a quick break! Hydrate yourself with some water.`, type: 'water', id: Date.now() });
                             setStudyPartnerState(prev => ({ ...prev, lastWaterTime: Date.now() }));
                         }
                     }
@@ -9311,7 +9294,7 @@ INSTRUCTIONS:
                 else if (hour >= 17) greeting = "Good evening";
                 
                 setTimeout(() => {
-                    setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
+                    // setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
                 }, 2000);
             }, []);
 
@@ -9348,7 +9331,7 @@ INSTRUCTIONS:
                     }
                     
                     if (reactionText && Math.random() > 0.3) {
-                        setPartnerMessage({ type: 'chatter', text: reactionText });
+                        // setPartnerMessage({ type: 'chatter', text: reactionText });
                         lastReactionTime = now;
                     }
                 };
@@ -12925,7 +12908,7 @@ INSTRUCTIONS:
                                             <p className="text-xs text-gray-500 dark:text-gray-400">Your AI study companion</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'mia_cheer'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
+                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'reminder_bot'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
                                         <div className="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform"></div>
                                     </button>
                                 </div>
