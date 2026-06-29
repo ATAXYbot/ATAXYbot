@@ -1,31 +1,24 @@
-import re
+with open('index.html', 'r', encoding='utf-8') as f:
+    lines = f.readlines()
 
-def fix_practice_batches():
-    with open('c:/Users/risha/ATAXYbot/index.html', 'r', encoding='utf-8') as f:
-        code = f.read()
+# We need to delete the dangling chunk that starts around line 8953
+# Let's find the exact indices
+start_idx = -1
+end_idx = -1
 
-    # The corrupted section is:
-    # const PRACTICE_BATCHES = [
-    # ...
-    # ] },
-    # { id: 'pb_others', name: 'Others', type: 'others', sourceTable: null, files: [] }
-    # ];
-    
-    # Let's extract everything from "const PRACTICE_BATCHES" to "];" and replace it cleanly.
-    start_idx = code.find('const PRACTICE_BATCHES = [')
-    end_idx = code.find('];', start_idx) + 2
-    
-    clean_batches = """const PRACTICE_BATCHES = [
-                        { id: 'pb_neet_bank', name: 'NEET Bank', type: 'neet', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Basic Math' }] },
-                        { id: 'pb_jee_bank', name: 'JEE Bank', type: 'jee', sourceTable: 'coming_soon', files: [] },
-                        { id: 'pb_others', name: 'Others', type: 'others', sourceTable: null, files: [] }
-                    ];"""
-                    
-    code = code[:start_idx] + clean_batches + code[end_idx:]
+for i, line in enumerate(lines):
+    if "if (neetBatch) setActivePracticeBatch(neetBatch);" in line and "};" not in line:
+        # Check if previous line is `};` which marks the end of our new getTourSteps
+        if i > 0 and "};" in lines[i-1]:
+            start_idx = i
+    if start_idx != -1 and "const [tourStep, setTourStep] = React.useState" in line:
+        end_idx = i
+        break
 
-    with open('c:/Users/risha/ATAXYbot/index.html', 'w', encoding='utf-8') as f:
-        f.write(code)
-
-    print("Fixed syntax error in PRACTICE_BATCHES!")
-
-fix_practice_batches()
+if start_idx != -1 and end_idx != -1:
+    del lines[start_idx:end_idx]
+    with open('index.html', 'w', encoding='utf-8') as f:
+        f.writelines(lines)
+    print(f"Deleted lines from {start_idx} to {end_idx-1} to fix Syntax Error.")
+else:
+    print("Could not find exact block bounds.", start_idx, end_idx)
