@@ -7790,13 +7790,13 @@ INSTRUCTIONS:
                         playSyntheticSound('throw');
                         
                         // Nearest Button Targeting
-                        const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                        const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
                         let nearest = null;
                         let minDist = Infinity;
                         
                         platforms.forEach(el => {
                             const rect = el.getBoundingClientRect();
-                            if (rect.height > 0 && rect.width > 0 && rect.top > 0 && rect.bottom < window.innerHeight) {
+                            if (rect.height > 0 && rect.width > 0 && rect.top > 150 && rect.bottom < window.innerHeight) {
                                 const cX = rect.left + rect.width / 2;
                                 const cY = rect.top;
                                 const dist = Math.hypot(cX - p.x, cY - p.y);
@@ -7957,14 +7957,14 @@ INSTRUCTIONS:
 
                         // Physics / Collision
                         if (p.vy >= 0) {
-                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
                             let landed = false;
                             
                             // Check if still on the tracked groundTarget
                             if (p.isGrounded && p.groundTarget) {
                                 const rect = p.groundTarget.getBoundingClientRect();
                                 // Check if button is still visible on screen and character is within its X bounds
-                                if (rect.height > 0 && rect.width > 0 && p.x > rect.left && p.x < rect.right) {
+                                if (rect.height > 0 && rect.width > 0 && rect.top > 150 && p.x > rect.left && p.x < rect.right) {
                                     p.y = rect.top; // Glue to it during scroll!
                                     p.vy = 0;
                                     landed = true;
@@ -7976,6 +7976,10 @@ INSTRUCTIONS:
                             if (!landed) {
                                 for (let i = 0; i < platforms.length; i++) {
                                     const rect = platforms[i].getBoundingClientRect();
+                                    if (rect.height === 0 || rect.width === 0) continue;
+                                    if (rect.width > window.innerWidth * 0.8) continue; // Ignore full width elements
+                                    if (rect.top < 150) continue; // Ignore top headers
+                                    
                                     if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
                                         if (p.x > rect.left && p.x < rect.right) {
                                             const impactVy = p.vy;
@@ -8156,13 +8160,13 @@ INSTRUCTIONS:
                                             }
                                         } else {
                                             // Advanced UI Parkour / Pathfinding
-                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
                                             let jumpTarget = null;
                                             
                                             if (platforms.length > 0) {
                                                 const visiblePlatforms = Array.from(platforms).filter(el => {
                                                     const r = el.getBoundingClientRect();
-                                                    return r.height > 0 && r.width > 0 && r.top > 0 && r.bottom < window.innerHeight;
+                                                    return r.height > 0 && r.width > 0 && r.top > 150 && r.bottom < window.innerHeight;
                                                 });
                                                 
                                                 // Intelligent Climbing: Find platforms HIGHER than current position (smaller Y)
@@ -8454,10 +8458,38 @@ INSTRUCTIONS:
                             const p = physicsRef.current;
                             p.isPointerDown = true;
                             p.pointerDownTime = Date.now();
+                            if (p.brainState === 'knockout') return; // Ignore hits if already knocked out!
                             if (p.brainState === 'sitting' || p.brainState === 'hurt') {
                                 p.brainState = 'wander';
                                 p.sitExitTimer = null;
                             }
+                            
+                            // INSTANT HIT REACTION
+                            p.hitCount = (p.hitCount || 0) + 1;
+                            if (p.hitCount >= 4) {
+                                p.brainState = 'knockout';
+                                p.state = 'dizzy';
+                                p.knockoutTimer = Date.now();
+                                p.vx = 0;
+                                p.hitCount = 0;
+                                p.playedDizzySound = false;
+                                p.playedFallSound = false;
+                                p.playedWakeSound = false;
+                                setEmotion('angry');
+                                setPartnerMessage({type:'chatter', text:'Ugh... so dizzy...'});
+                            } else {
+                                p.brainState = 'hit_tap';
+                                p.state = 'hit_tap';
+                                p.hitTimer = Date.now();
+                                setEmotion('angry');
+                                p.vx = Math.random() > 0.5 ? 2 : -2;
+                                const painText = ['Ouch!', 'Hey!', 'Stop hitting me!', 'Ow!'];
+                                setPartnerMessage({type:'chatter', text: painText[Math.floor(Math.random() * painText.length)]}); 
+                                try { playSyntheticSound('hit'); } catch(err){}
+                            }
+                            clearTimeout(p.hitClearTimer);
+                            p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
+                            
                             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                             p.lastMouseX = clientX;
@@ -8481,39 +8513,8 @@ INSTRUCTIONS:
                                 transformOrigin: 'bottom center',
                                 width: '300px',
                                 height: '300px',
-                                cursor: 'grab'
-                            }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const p = physicsRef.current;
-                                if (p.isDragging) return; // Prevent triggering if they were dragging
-                                
-                                // TAP DETECTED!
-                                p.hitCount = (p.hitCount || 0) + 1;
-                                if (p.hitCount >= 4) {
-                                    // Knockout!
-                                    p.brainState = 'knockout';
-                                    p.state = 'dizzy';
-                                    p.knockoutTimer = Date.now();
-                                    p.vx = 0;
-                                    p.hitCount = 0;
-                                    p.playedDizzySound = false;
-                                    p.playedFallSound = false;
-                                    p.playedWakeSound = false;
-                                    setEmotion('angry');
-                                    setPartnerMessage({type:'chatter', text:'Ugh... so dizzy...'});
-                                } else {
-                                    p.brainState = 'hit_tap';
-                                    p.state = 'hit_tap';
-                                    p.hitTimer = Date.now();
-                                    setEmotion('angry');
-                                    p.vx = Math.random() > 0.5 ? 2 : -2; // Pushback
-                                    const painText = ['Ouch!', 'Hey!', 'Stop hitting me!', 'Ow!'];
-                                    setPartnerMessage({type:'chatter', text: painText[Math.floor(Math.random() * painText.length)]}); 
-                                    try { playSyntheticSound('hit'); } catch(err){}
-                                }
-                                clearTimeout(p.hitClearTimer);
-                                p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
+                                cursor: 'grab',
+                                touchAction: 'none'
                             }}
                         >
                             <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
