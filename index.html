@@ -7629,13 +7629,30 @@ INSTRUCTIONS:
                         animMap.write = animMap['Idle_TalkingPhone_Loop'] || animMap.idle;
                         animMap.talk = animMap['Idle_Talking_Loop'] || animMap.idle;
                         animMap.hit = animMap['Hit_Knockback'] || animMap.idle;
-                        // Advanced Brain Animations
-                        animMap.listening = animMap['Idle Listening'] || animMap.idle;
-                        animMap.nod = animMap['Head Nod'] || animMap.idle;
-                        animMap.greet = animMap['Greeting'] || animMap.idle;
-                        animMap.victory = animMap['Victory'] || animMap.idle;
-                        animMap.confused = animMap['Confused'] || animMap.idle;
-                        animMap.yes = animMap['Yes'] || animMap.idle;
+                        animMap.sit_enter = animMap['Sitting_Enter'] || animMap.idle;
+                        animMap.sit_idle = animMap['Sitting_Idle_Loop'] || animMap.idle;
+                        animMap.sit_exit = animMap['Sitting_Exit'] || animMap.idle;
+                        animMap.sleeping = animMap['Sleeping'] || animMap.idle;
+                        animMap.wake = animMap['LayToIdle'] || animMap.idle;
+                        animMap.jump_start = animMap['Jump_Start'] || animMap.fall;
+                        animMap.jump_land = animMap['Jump_Land'] || animMap.idle;
+                        // Advanced Brain Animations & Pools
+                        animMap.pool_idle = ['Idle_Loop', 'Idle_FoldArms_Loop', 'Idle Listening', 'Tired Hunched', 'Shivering'];
+                        animMap.pool_happy = ['Victory', 'Victory Fist Pump', 'Dance Charleston', 'Dance Body Roll', 'Jumping Jacks', 'Backflip'];
+                        animMap.pool_angry = ['Angry', 'Reject', 'Defend', 'Sword_Attack'];
+                        animMap.pool_talk = ['Idle_Talking_Loop', 'Idle_TalkingPhone_Loop'];
+                        animMap.pool_hit = ['Hit_Head', 'Hit_Chest', 'Hit_Knockback'];
+                        
+                        // Expressive mapping
+                        animMap.expr_angry = animMap.pool_angry;
+                        animMap.expr_happy = animMap.pool_happy;
+                        animMap.expr_talk = animMap.pool_talk;
+                        animMap.expr_confused = ['Confused', 'Idle Listening'];
+                        animMap.expr_idle = animMap.pool_idle;
+                        animMap.sit_talk = animMap['Sitting_Talking_Loop'] || animMap.sit_idle;
+                        animMap.hit_tap = animMap.pool_hit;
+                        animMap.dizzy = animMap['Dizzy'] || animMap.idle;
+                        animMap.knockout = animMap['Death01'] || animMap.idle;
                         
                         if (!animMap.idle) animMap.idle = gltf.animations[0];
                         if (!animMap.walk) animMap.walk = animMap.idle;
@@ -7690,15 +7707,47 @@ INSTRUCTIONS:
                 const chatterInterval = setInterval(() => {
                     // Only chatter if visible, grounded, and not already talking
                     const p = physicsRef.current;
-                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.6) {
-                        const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
-                        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                        setPartnerMessage({ type: 'chatter', text: randomPhrase });
+                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.4) {
+                        let dynamicPhrase = null;
+                        
+                        // Live Context Reading
+                        if (currentTab === 'practice') {
+                            if (Math.random() > 0.5) dynamicPhrase = "Solving MCQs? Don't forget to review your mistakes!";
+                        } else if (currentTab === 'profile') {
+                            if (Math.random() > 0.5) dynamicPhrase = "Checking your stats? Keep grinding and you'll hit Rank 1!";
+                        } else if (currentTab === 'home') {
+                            const targetsStr = localStorage.getItem('ataxy_daily_targets');
+                            if (targetsStr) {
+                                try {
+                                    const targets = JSON.parse(targetsStr);
+                                    const pending = targets.filter(t => !t.completed);
+                                    if (pending.length > 0) {
+                                        const t = pending[Math.floor(Math.random() * pending.length)];
+                                        dynamicPhrase = `Hey! Are you working on "${t.text}"? Keep at it!`;
+                                    } else {
+                                        dynamicPhrase = `All targets complete! You are doing amazing!`;
+                                    }
+                                } catch(e){}
+                            }
+                        }
+                        
+                        if (dynamicPhrase && Math.random() > 0.3) {
+                            setPartnerMessage({ type: 'chatter', text: dynamicPhrase });
+                        } else {
+                            const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
+                            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                            setPartnerMessage({ type: 'chatter', text: randomPhrase });
+                        }
                     }
                 }, 15000); 
 
                 return () => clearInterval(chatterInterval);
-            }, [partnerConfig, emotion, setPartnerMessage]);
+            }, [partnerConfig, emotion, setPartnerMessage, currentTab]);
+            
+            useEffect(() => {
+                if (physicsRef.current) physicsRef.current.emotion = emotion;
+            }, [emotion]);
+
             useEffect(() => {
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
                 
@@ -7736,11 +7785,36 @@ INSTRUCTIONS:
                     p.isPointerDown = false;
                     if (p.isDragging) {
                         p.isDragging = false;
-                        p.vx = p.mouseVx * 1.5;
-                        p.vy = p.mouseVy * 1.5;
                         p.isGrounded = false;
                         setEmotion('idle');
                         playSyntheticSound('throw');
+                        
+                        // Nearest Button Targeting
+                        const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                        let nearest = null;
+                        let minDist = Infinity;
+                        
+                        platforms.forEach(el => {
+                            const rect = el.getBoundingClientRect();
+                            if (rect.height > 0 && rect.width > 0 && rect.top > 0 && rect.bottom < window.innerHeight) {
+                                const cX = rect.left + rect.width / 2;
+                                const cY = rect.top;
+                                const dist = Math.hypot(cX - p.x, cY - p.y);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    nearest = rect;
+                                }
+                            }
+                        });
+                        
+                        if (nearest && minDist < 300) {
+                            const flightFrames = 30;
+                            p.vx = (nearest.left + nearest.width / 2 - p.x) / flightFrames;
+                            p.vy = (nearest.top - p.y - 0.5 * 0.6 * flightFrames * flightFrames) / flightFrames;
+                        } else {
+                            p.vx = p.mouseVx * 1.5;
+                            p.vy = p.mouseVy * 1.5;
+                        }
                     } else {
                         // Snap back rotation slowly if dropped without dragging
                         p.targetRotationY = 0;
@@ -7782,12 +7856,16 @@ INSTRUCTIONS:
                         
                         // Viewport Loss Recovery
                         if (p.y < -200 || p.y > window.innerHeight + 200) {
-                            p.y = -50;
-                            p.vy = 0;
+                            p.y = 50; // Just inside the top of the screen
+                            p.vy = 5; // Fall down
                             p.x = window.innerWidth / 2;
+                            p.groundTarget = null;
+                            p.isGrounded = false;
+                            p.brainState = 'hurt';
+                            p.hurtTimer = now;
+                            p.state = 'hit';
                             setEmotion('angry');
                             setPartnerMessage({ type: 'chatter', text: 'Wait for me!!' });
-                            // playSyntheticSound('throw'); // Swoosh sound
                         }
                         
                         
@@ -7881,11 +7959,23 @@ INSTRUCTIONS:
                                     const rect = platforms[i].getBoundingClientRect();
                                     if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
                                         if (p.x > rect.left && p.x < rect.right) {
+                                            const impactVy = p.vy;
                                             p.y = rect.top;
                                             p.vy = 0;
                                             p.isGrounded = true;
                                             p.groundTarget = platforms[i];
                                             landed = true;
+                                            
+                                            if (impactVy > 15) {
+                                                p.brainState = 'hurt';
+                                                p.state = 'hit';
+                                                p.hurtTimer = now;
+                                                setEmotion('angry');
+                                            } else if (Math.random() < 0.2) {
+                                                p.brainState = 'sitting';
+                                                p.state = 'sit_enter';
+                                                p.sitTimer = now;
+                                            }
                                             break;
                                         }
                                     }
@@ -7893,10 +7983,18 @@ INSTRUCTIONS:
                             }
 
                             if (!landed && p.y >= window.innerHeight - 10) {
+                                const impactVy = p.vy;
                                 p.y = window.innerHeight - 10;
                                 p.vy = 0;
                                 p.isGrounded = true;
                                 p.groundTarget = null;
+                                
+                                if (impactVy > 15) {
+                                    p.brainState = 'hurt';
+                                    p.state = 'hit';
+                                    p.hurtTimer = now;
+                                    setEmotion('angry');
+                                }
                             } else if (!landed) {
                                 p.isGrounded = false;
                             }
@@ -7937,6 +8035,61 @@ INSTRUCTIONS:
                             } else if (p.brainState === 'angry') {
                                 if (now - p.brainTimer > 8000) {
                                     p.brainState = 'wander';
+                                }
+                            } else if (p.brainState === 'hit_tap') {
+                                const elapsed = now - p.hitTimer;
+                                if (elapsed < 1000) {
+                                    p.state = 'hit_tap';
+                                } else {
+                                    p.brainState = 'wander';
+                                    p.state = 'idle';
+                                }
+                            } else if (p.brainState === 'knockout') {
+                                const elapsed = now - p.knockoutTimer;
+                                if (elapsed < 3000) {
+                                    p.state = 'dizzy';
+                                } else if (elapsed < 4000) {
+                                    p.state = 'knockout';
+                                } else if (elapsed < 10000) {
+                                    p.state = 'sleeping';
+                                } else if (elapsed < 11500) {
+                                    p.state = 'wake';
+                                } else {
+                                    p.brainState = 'wander';
+                                    p.state = 'idle';
+                                    p.hitCount = 0;
+                                }
+                            } else if (p.brainState === 'hurt') {
+                                const elapsed = now - p.hurtTimer;
+                                if (elapsed < 1000) {
+                                    p.state = 'hit';
+                                } else if (elapsed < 4000) {
+                                    p.state = 'sleeping';
+                                    setEmotion('idle');
+                                } else if (elapsed < 5500) {
+                                    p.state = 'wake';
+                                } else {
+                                    p.brainState = 'wander';
+                                    p.state = 'idle';
+                                }
+                            } else if (p.brainState === 'sitting') {
+                                p.vx = 0; // Stop sliding
+                                const elapsed = now - p.sitTimer;
+                                if (elapsed < 1000) {
+                                    p.state = 'sit_enter';
+                                } else if (p.sitExitTimer) {
+                                    p.state = 'sit_exit';
+                                    if (now - p.sitExitTimer > 1000) {
+                                        p.brainState = 'wander';
+                                        p.state = 'idle';
+                                        p.sitExitTimer = null;
+                                    }
+                                } else {
+                                    p.state = 'sit_idle';
+                                    // Stand up naturally after a long time randomly
+                                    if (elapsed > 15000 && Math.random() < 0.002) {
+                                        p.sitExitTimer = now;
+                                    }
                                 }
                             } else {
                                 // Wander & Parkour Mode
@@ -8060,19 +8213,56 @@ INSTRUCTIONS:
                         } else {
                             if (p.isDragging) targetAnim = 'drag';
                             else if (p.state === 'climbing') targetAnim = 'climb';
+                            else if (p.state === 'sit_enter') targetAnim = 'sit_enter';
+                            else if (p.state === 'sit_idle') {
+                                if (p.emotion === 'talking') targetAnim = 'sit_talk';
+                                else targetAnim = 'sit_idle';
+                            }
+                            else if (p.state === 'sit_exit') targetAnim = 'sit_exit';
+                            else if (p.state === 'hit') targetAnim = 'hit';
+                            else if (p.state === 'hit_tap') targetAnim = 'hit_tap';
+                            else if (p.state === 'dizzy') targetAnim = 'dizzy';
+                            else if (p.state === 'knockout') targetAnim = 'knockout';
+                            else if (p.state === 'sleeping') targetAnim = 'sleeping';
+                            else if (p.state === 'wake') targetAnim = 'wake';
+                            else if (p.state === 'jumping' && p.vy < 0) targetAnim = 'jump_start';
                             else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
                             else if (p.state === 'walking') targetAnim = 'walk';
                             else if (p.state === 'fallen') targetAnim = 'hit';
+                            else if (p.state === 'idle') {
+                                if (p.emotion === 'angry') targetAnim = 'expr_angry';
+                                else if (p.emotion === 'happy') targetAnim = 'expr_happy';
+                                else if (p.emotion === 'talking') targetAnim = 'expr_talk';
+                                else if (p.emotion === 'writing' || p.emotion === 'thinking') targetAnim = 'expr_confused';
+                                else targetAnim = 'expr_idle';
+                            }
+                            else targetAnim = p.state;
                         }
                         
                         if (threeRef.current.currentAnimState !== targetAnim) {
-                            const clip = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
+                            let clipRef = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
+                            if (Array.isArray(clipRef)) {
+                                clipRef = threeRef.current.animMap[clipRef[Math.floor(Math.random() * clipRef.length)]];
+                            }
+                            const clip = clipRef || threeRef.current.animMap.idle;
+
                             if (clip) {
                                 const nextAction = threeRef.current.mixer.clipAction(clip);
-                                if (threeRef.current.currentAction) {
+                                
+                                // Prevent continuous looping of transitional and expressive animations
+                                const nonLooping = ['sit_enter', 'sit_exit', 'hit', 'hit_tap', 'knockout', 'wake', 'jump_start', 'jump_land', 'sleeping', 'expr_angry', 'expr_happy', 'expr_talk', 'expr_confused', 'sit_talk'];
+                                if (nonLooping.includes(targetAnim)) {
+                                    nextAction.setLoop(THREE.LoopOnce, 1);
+                                    nextAction.clampWhenFinished = true;
+                                } else {
+                                    nextAction.setLoop(THREE.LoopRepeat, Infinity);
+                                    nextAction.clampWhenFinished = false;
+                                }
+
+                                if (threeRef.current.currentAction && threeRef.current.currentAction !== nextAction) {
                                     nextAction.reset().fadeIn(0.2).play();
                                     threeRef.current.currentAction.fadeOut(0.2);
-                                } else {
+                                } else if (!threeRef.current.currentAction) {
                                     nextAction.play();
                                 }
                                 threeRef.current.currentAction = nextAction;
@@ -8224,6 +8414,10 @@ INSTRUCTIONS:
                         onPointerDown={(e) => {
                             const p = physicsRef.current;
                             p.isPointerDown = true;
+                            if (p.brainState === 'sitting' || p.brainState === 'hurt') {
+                                p.brainState = 'wander';
+                                p.sitExitTimer = null;
+                            }
                             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                             p.lastMouseX = clientX;
@@ -8251,11 +8445,32 @@ INSTRUCTIONS:
                             }}
                             onClick={(e) => { 
                                 e.stopPropagation(); 
-                                setEmotion('happy'); 
-                                physicsRef.current.vy = -12; 
-                                physicsRef.current.isGrounded = false; 
-                                setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
-                                playSyntheticSound('boing'); 
+                                const p = physicsRef.current;
+                                p.hitCount = (p.hitCount || 0) + 1;
+                                
+                                if (p.hitCount >= 4) {
+                                    // Knockout!
+                                    p.brainState = 'knockout';
+                                    p.state = 'dizzy';
+                                    p.knockoutTimer = Date.now();
+                                    p.vx = 0;
+                                    p.hitCount = 0;
+                                    setEmotion('angry');
+                                    setPartnerMessage({type:'chatter', text:'Ugh... so dizzy...'});
+                                } else {
+                                    p.brainState = 'hit_tap';
+                                    p.state = 'hit_tap';
+                                    p.hitTimer = Date.now();
+                                    setEmotion('angry');
+                                    p.vx = Math.random() > 0.5 ? 5 : -5; 
+                                    p.vy = -5; // Small knockback
+                                    p.isGrounded = false; 
+                                    const painText = ['Ouch!', 'Hey!', 'Stop hitting me!', 'Ow!'];
+                                    setPartnerMessage({type:'chatter', text: painText[Math.floor(Math.random() * painText.length)]}); 
+                                }
+                                // Reset hit counter if no hits after 3 seconds
+                                clearTimeout(p.hitClearTimer);
+                                p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
                             }}
                         >
                             <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
