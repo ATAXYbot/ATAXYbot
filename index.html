@@ -8127,10 +8127,10 @@ INSTRUCTIONS:
                                 const tourSteps = [
                                     { text: "HIIII! 👋 I'm Reminder, your intelligent study assistant! Welcome to the best app ever! Let me show you around!", target: null, anim: 'talk', duration: 5000 },
                                     { text: "Up here is the Header. It shows your profile, rank, and streaks!", target: 'header', anim: 'write', duration: 4500 },
-                                    { text: "This is the Home tab! Your central hub for Daily Targets, momentum, and progress.", target: 'button:has(i.fa-rocket), a:has(i.fa-rocket)', anim: 'write', duration: 4500 },
-                                    { text: "The Practice area! Solve MCQs and crush NEET or JEE like a pro!", target: 'button:has(i.fa-layer-group), a:has(i.fa-layer-group)', anim: 'write', duration: 4500 },
-                                    { text: "The Voice Rooms! Join live study sessions with your friends and stay accountable.", target: 'button:has(i.fa-headset), a:has(i.fa-headset)', anim: 'write', duration: 4500 },
-                                    { text: "The Me tab! Check your stats, settings, and manage my configurations.", target: 'button:has(i.fa-user), a:has(i.fa-user)', anim: 'write', duration: 4500 },
+                                    { text: "This is the Home tab! Your central hub for Daily Targets, momentum, and progress.", target: '.fa-rocket', anim: 'write', duration: 4500 },
+                                    { text: "The Practice area! Solve MCQs and crush NEET or JEE like a pro!", target: '.fa-layer-group', anim: 'write', duration: 4500 },
+                                    { text: "The Voice Rooms! Join live study sessions with your friends and stay accountable.", target: '.fa-headset', anim: 'write', duration: 4500 },
+                                    { text: "The Me tab! Check your stats, settings, and manage my configurations.", target: '.fa-user', anim: 'write', duration: 4500 },
                                     { text: "I'll stay out of your way unless you're late for your targets! Let's conquer your goals together!", target: null, anim: 'talk', duration: 5000 }
                                 ];
                                 
@@ -8143,12 +8143,16 @@ INSTRUCTIONS:
                                         setPartnerMessage({ type: 'chatter', text: step.text });
                                         p.brainTimer = now;
                                         if (step.target) {
-                                            const targetEl = document.querySelector(step.target);
-                                            if (targetEl) {
-                                                const rect = targetEl.getBoundingClientRect();
-                                                const center = rect.left + rect.width / 2;
-                                                p.x = center; // teleport for tour
-                                                if (center > window.innerWidth / 2) p.facing = 1; else p.facing = -1;
+                                            try {
+                                                const targetEl = document.querySelector(step.target);
+                                                if (targetEl) {
+                                                    const rect = targetEl.getBoundingClientRect();
+                                                    const center = rect.left + rect.width / 2;
+                                                    p.x = center; // teleport for tour
+                                                    if (center > window.innerWidth / 2) p.facing = 1; else p.facing = -1;
+                                                }
+                                            } catch(e) {
+                                                console.error("Tour target selector failed:", e);
                                             }
                                         }
                                         p.state = step.anim;
