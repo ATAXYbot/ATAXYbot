@@ -2963,6 +2963,7 @@ Student Doubt: ${prompt}`
         const VCFloatingWidget = ({ activeRoom, isLocalMuted, isSpeakerMuted, onRestore, toggleMute, toggleSpeaker, onExit }) => {
             const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
             const widgetRef = useRef(null);
+            const magicFingerRef = useRef(null);
 
             const handleTouchStart = (e) => {
                 dragRef.current.isDragging = true;
@@ -7518,6 +7519,7 @@ INSTRUCTIONS:
 
         const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage, currentTab, showQuiz, tourStep, tourTargetId, onTourNext }) => {
             const widgetRef = useRef(null);
+            const magicFingerRef = React.useRef(null);
             const canvasRef = useRef(null);
             const threeRef = useRef(null);
             const physicsRef = useRef({
@@ -7959,14 +7961,21 @@ INSTRUCTIONS:
                                 p.isGrounded = false;
                                 if (dist < 15) {
                                     p.state = 'greet';
+                                    if (magicFingerRef.current) {
+                                        magicFingerRef.current.style.opacity = '1';
+                                        magicFingerRef.current.style.left = `${targetX}px`;
+                                        magicFingerRef.current.style.top = `${rect.top - 10}px`;
+                                    }
                                 } else {
                                     p.state = 'falling';
+                                    if (magicFingerRef.current) magicFingerRef.current.style.opacity = '0';
                                 }
                                 
                                 // Removed auto scroll logic from physics loop
                             }
                         } else {
                             p.vy += 0.6; // Gravity
+                            if (magicFingerRef.current) magicFingerRef.current.style.opacity = '0';
                         }
 
                         if (p.vy > 20) p.vy = 20;
@@ -8675,6 +8684,7 @@ INSTRUCTIONS:
             }, [tourTargetId]);
 
             return (
+                <>
                 <div 
                     ref={widgetRef}
                     className={`fixed z-[4000000] top-0 left-0 pointer-events-none transition-opacity duration-300`}
@@ -8818,12 +8828,10 @@ INSTRUCTIONS:
                         >
                             <canvas ref={canvasRef} style={{ pointerEvents: 'none', filter: 'drop-shadow(0px 8px 6px rgba(0,0,0,0.4))' }}></canvas>
                         </div>
-                        
-
-
-                        
                     </div>
                 </div>
+                <div ref={magicFingerRef} className="fixed z-[9999999] pointer-events-none text-5xl opacity-0 transition-opacity duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-bounce" style={{ top: 0, left: 0, transform: 'translate(-50%, -100%)' }}>👇</div>
+                </>
             );
         };
 
