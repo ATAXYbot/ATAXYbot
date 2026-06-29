@@ -7522,7 +7522,7 @@ INSTRUCTIONS:
             const threeRef = useRef(null);
             const physicsRef = useRef({
                 x: 100,
-                y: 0, 
+                y: -200, 
                 vx: 0,
                 vy: 0,
                 isGrounded: false,
@@ -7966,7 +7966,7 @@ INSTRUCTIONS:
                             p.hurtTimer = now;
                             p.state = 'fall';
                             setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
+                            setPartnerMessage({ type: 'chatter', text: 'Whoa! Here I am! 👋' });
                             try { playSyntheticSound('throw'); } catch(e){}
                         } else if (p.y > window.innerHeight + 50) {
                             // Scrolled down too far, jump up from floor
@@ -7979,7 +7979,7 @@ INSTRUCTIONS:
                             p.hurtTimer = now;
                             p.state = 'jump_start';
                             setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
+                            setPartnerMessage({ type: 'chatter', text: 'Whoops! Found you!' });
                             try { playSyntheticSound('throw'); } catch(e){}
                         }
                         
