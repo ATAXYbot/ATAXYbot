@@ -2325,7 +2325,7 @@ Student Doubt: ${prompt}`
 
             return (
                 <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                         <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setShowSearch(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
@@ -4418,7 +4418,7 @@ Student Doubt: ${prompt}`
                 <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={() => setShowRoomMenu(false)}>
                     <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; }`}</style>
                     {/* Header */}
-                    <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+max(env(safe-area-inset-top),_24px))]">
+                    <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 pr-[90px] lg:pr-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+max(env(safe-area-inset-top),_24px))]">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
                             <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
                                 <i className="fa-solid fa-arrow-left"></i>
@@ -6492,7 +6492,7 @@ INSTRUCTIONS:
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
                     <div className="p-4 flex-1 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                             <h2 className="text-2xl font-black text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
                             <button onClick={handleRefresh} className="text-[#00FFFF] hover:text-white transition-colors p-2">
                                 <i className={`fa-solid fa-sync-alt ${isRefreshing ? 'animate-spin' : ''}`}></i>
@@ -6807,7 +6807,7 @@ INSTRUCTIONS:
 
             return (
                 <div className="flex-1 flex flex-col relative z-10">
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 pr-[90px] lg:pr-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
                         <div className="flex items-center gap-2 overflow-hidden pr-2 flex-1 min-w-0">
                             <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors" title="Back to Rooms">
                                 <i className="fa-solid fa-arrow-left"></i>
@@ -9902,7 +9902,7 @@ INSTRUCTIONS:
                             </div>
                             
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100 partner-platform">
-                                <div className="flex justify-between items-center mb-4">
+                                <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                                     <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
                                     <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
                                 </div>
@@ -10802,7 +10802,7 @@ INSTRUCTIONS:
 
                                                     {/* Premium White/Grey Personal Notes UI */}
                                                     <div className="mt-8 mb-4">
-                                                        <div className="flex justify-between items-center mb-4">
+                                                        <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                                                             <h4 className="text-[15px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2.5">
                                                                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shadow-inner shadow-blue-200/50">
                                                                     <i className="fa-solid fa-pen-nib text-[#00418d] text-sm"></i>
@@ -11295,7 +11295,7 @@ INSTRUCTIONS:
                         return (
                             <div className="pb-safe animate-in fade-in bg-gray-50 dark:bg-gray-950 min-h-screen flex flex-col">
                                 {/* Header */}
-                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between shadow-sm">
+                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 pr-[90px] lg:pr-4 flex items-center justify-between shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => setShowScoreSummary(true)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
                                         <div>
@@ -11405,7 +11405,7 @@ INSTRUCTIONS:
                         if (activePracticeBatch?.type === 'jee') {
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
-                                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                                    <div className="flex items-center gap-3 mb-6 relative z-10 pr-[90px] lg:pr-0">
                                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch?.name)}</h2>
                                     </div>
@@ -11422,7 +11422,7 @@ INSTRUCTIONS:
                         if (activePracticeBatch?.type === 'others') {
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
-                                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                                    <div className="flex items-center gap-3 mb-6 relative z-10 pr-[90px] lg:pr-0">
                                         <button onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
@@ -11785,7 +11785,7 @@ INSTRUCTIONS:
                                                 </div>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
                                         </div>
@@ -11923,7 +11923,7 @@ INSTRUCTIONS:
                             if (customGeneratorMode === 'full' || customGeneratorMode === 'half') {
                                 return (
                                     <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                        <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">{customGeneratorMode === 'full' ? 'Full Length Configuration' : 'Half Length Configuration'}</h2>
                                         </div>
@@ -12023,7 +12023,7 @@ INSTRUCTIONS:
 
                                 return (
                                     <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                        <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Generate DPP</h2>
                                         </div>
@@ -12101,11 +12101,11 @@ INSTRUCTIONS:
 
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                    <div className="flex items-center gap-3 mb-6">
+                                    <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeMode(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Custom Generator</h2>
                                     </div>
-                                    <div className="flex justify-between items-center mb-4">
+                                    <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                                         <h3 className="font-bold text-gray-500 uppercase tracking-widest text-xs">Create Setup</h3>
                                         <button onClick={() => setCustomGeneratorMode('history')} className="text-blue-500 text-sm font-bold flex items-center gap-1 hover:text-blue-600"><i className="fa-solid fa-clock-rotate-left"></i> My Tests</button>
                                     </div>
@@ -12140,7 +12140,7 @@ INSTRUCTIONS:
                         }
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex items-center gap-3 mb-6">
+                                <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                     <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch?.name)}</h2>
                                 </div>
