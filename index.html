@@ -7572,6 +7572,7 @@ INSTRUCTIONS:
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
             const bubbleRef = useRef(null);
+            const visorRef = useRef(null);
 
             // Three.js Initialization
             useEffect(() => {
@@ -8416,16 +8417,19 @@ INSTRUCTIONS:
                             // Screen space tracking for UI to follow 3D bones perfectly
                             const headBone = model.getObjectByName('head');
                             if (headBone && bubbleRef.current) {
-                                const headPos = new THREE.Vector3();
-                                headBone.getWorldPosition(headPos);
-                                headPos.y += 0.2; // Slight offset above head
-                                headPos.project(threeRef.current.camera);
+                                const topBone = model.getObjectByName('head_leaf') || headBone;
+                                const topPos = new THREE.Vector3();
+                                topBone.getWorldPosition(topPos);
+                                if (topBone.name === 'head') topPos.y += 0.3; // Fallback padding if no head_leaf
+                                else topPos.y += 0.1; // Slight offset above head_leaf
+                                
+                                topPos.project(threeRef.current.camera);
                                 
                                 // Map NDC to 300x300 canvas
-                                const canvasY = (-(headPos.y * 0.5) + 0.5) * 300;
+                                const topCanvasY = (-(topPos.y * 0.5) + 0.5) * 300;
                                 
                                 // Calculate true distance to top of viewport
-                                const screenHeadY = (p.y - 300) + canvasY;
+                                const screenHeadY = (p.y - 300) + topCanvasY;
                                 const needsFlip = screenHeadY < 150;
                                 
                                 if (p.lastFlipState !== needsFlip) {
@@ -8439,9 +8443,28 @@ INSTRUCTIONS:
                                     bubbleRef.current.style.transformOrigin = 'top center';
                                 } else {
                                     bubbleRef.current.style.top = 'auto';
-                                    bubbleRef.current.style.bottom = `${300 - canvasY + 20}px`;
+                                    // Added 50px extra padding to guarantee it never overlaps the head!
+                                    bubbleRef.current.style.bottom = `${300 - topCanvasY + 50}px`;
                                     bubbleRef.current.style.transformOrigin = 'bottom center';
                                 }
+                            }
+
+                            // Holographic AR Emotion Visor tracking
+                            if (headBone && visorRef.current) {
+                                const facePos = new THREE.Vector3();
+                                headBone.getWorldPosition(facePos);
+                                facePos.y += 0.15; // Move up from neck to face middle
+                                
+                                // Push slightly towards camera so it stays in front of the geometry
+                                const camDir = new THREE.Vector3();
+                                threeRef.current.camera.getWorldDirection(camDir);
+                                facePos.add(camDir.multiplyScalar(-0.1));
+
+                                facePos.project(threeRef.current.camera);
+                                const faceCanvasX = (facePos.x * 0.5 + 0.5) * 300;
+                                const faceCanvasY = (-(facePos.y * 0.5) + 0.5) * 300;
+                                
+                                visorRef.current.style.transform = `translate(${faceCanvasX - 30}px, ${faceCanvasY - 20}px)`;
                             }
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
@@ -8660,6 +8683,25 @@ INSTRUCTIONS:
                                 {emotion === 'sleepy' && '💤'}
                             </div>
                         )}
+
+                        {/* Holographic AR Emotion Visor */}
+                        <div 
+                            ref={visorRef}
+                            className={`absolute top-0 left-0 w-[60px] h-[40px] z-10 pointer-events-none flex items-center justify-center transition-opacity duration-300 ${visible && emotion !== 'idle' ? 'opacity-100' : 'opacity-0'}`}
+                        >
+                            <div className="bg-black/80 border-[1.5px] border-cyan-400 rounded-lg w-full h-full shadow-[0_0_15px_rgba(34,211,238,0.8)] flex items-center justify-center text-cyan-300 font-bold text-lg tracking-widest overflow-hidden">
+                                {emotion === 'happy' && '^_^'}
+                                {emotion === 'angry' && '>_<'}
+                                {emotion === 'sad' && 'T_T'}
+                                {emotion === 'surprised' && 'O_O'}
+                                {(emotion === 'confused' || emotion === 'thinking') && 'O_o'}
+                                {emotion === 'writing' && '-_-'}
+                                {emotion === 'talking' && '^o^'}
+                                {emotion === 'water' && '0_o'}
+                                {emotion === 'love' && '♥_♥'}
+                                {emotion === 'sleepy' && '-_- zZ'}
+                            </div>
+                        </div>
 
                         <div 
                             ref={bubbleRef}
