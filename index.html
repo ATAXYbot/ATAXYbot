@@ -7963,12 +7963,7 @@ INSTRUCTIONS:
                                     p.state = 'falling';
                                 }
                                 
-                                // Auto scroll logic if target is offscreen
-                                if (dist > 300 && p.vy > 0 && rect.bottom > window.innerHeight) {
-                                    window.scrollBy({ top: 10, behavior: 'auto' });
-                                } else if (dist > 300 && p.vy < 0 && rect.top < 0) {
-                                    window.scrollBy({ top: -10, behavior: 'auto' });
-                                }
+                                // Removed auto scroll logic from physics loop
                             }
                         } else {
                             p.vy += 0.6; // Gravity
@@ -8648,10 +8643,21 @@ INSTRUCTIONS:
                 return 'none';
             };
 
+            useEffect(() => {
+                if (tourTargetId) {
+                    setTimeout(() => {
+                        const targetEl = document.getElementById(tourTargetId);
+                        if (targetEl) {
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100); 
+                }
+            }, [tourTargetId]);
+
             return (
                 <div 
                     ref={widgetRef}
-                    className={`fixed z-[10000] top-0 left-0 pointer-events-none transition-opacity duration-300`}
+                    className={`fixed z-[4000000] top-0 left-0 pointer-events-none transition-opacity duration-300`}
                 >
                     <style>{`
                         @keyframes proceduralWalk {
