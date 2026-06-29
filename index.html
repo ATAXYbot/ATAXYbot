@@ -7565,6 +7565,7 @@ INSTRUCTIONS:
             
             const [emotion, setEmotion] = useState('idle'); 
             const [visible, setVisible] = useState(false);
+            const [isBubbleFlipped, setIsBubbleFlipped] = useState(false);
             const [renderState, setRenderState] = useState('falling');
             const [facing, setFacing] = useState(1); 
             const [availableAnims, setAvailableAnims] = useState([]);
@@ -8330,10 +8331,20 @@ INSTRUCTIONS:
                             
                             // GIANT MODE for important notices!
                             const pMsg = p.partnerMessage;
+                            let isGiant = false;
                             if (pMsg && pMsg.type && pMsg.type !== 'chatter') {
                                 currentTargetScale = baseScale * 1.8; // Almost double size for important alerts!
+                                isGiant = true;
                             } else if (p.isPointerDown || p.isDragging) {
                                 currentTargetScale = baseScale * 1.15; // Slightly larger when grabbed
+                            }
+                            
+                            // Safe area bubble flip logic
+                            const bubbleHeight = isGiant ? 280 : 150;
+                            const needsFlip = p.y - bubbleHeight - 50 < 0;
+                            if (p.lastFlipState !== needsFlip) {
+                                p.lastFlipState = needsFlip;
+                                setIsBubbleFlipped(needsFlip);
                             }
 
                             if (model) {
@@ -8538,7 +8549,7 @@ INSTRUCTIONS:
                             }, 500);
                         }}
                         ></div>
-                        <div className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom flex flex-col gap-3 ${(partnerMessage && partnerMessage.type !== 'chatter') ? 'bottom-[280px]' : 'bottom-[150px]'} ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        <div className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom flex flex-col gap-3 ${isBubbleFlipped ? 'top-[40px]' : ((partnerMessage && partnerMessage.type !== 'chatter') ? 'bottom-[280px]' : 'bottom-[150px]')} ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
                             <div className="flex justify-end">
                                 <button 
@@ -8555,7 +8566,7 @@ INSTRUCTIONS:
                                     {partnerMessage?.type === 'chatter' ? 'Got it' : 'OK'}
                                 </button>
                             </div>
-                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
+                            <div className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45 ${isBubbleFlipped ? '-top-2 border-t border-l border-gray-100 dark:border-gray-700' : '-bottom-2 border-b border-r border-gray-100 dark:border-gray-700'}`}></div>
                         </div>
                         <div 
                             className="relative flex flex-col items-center drop-shadow-xl pointer-events-none" 
