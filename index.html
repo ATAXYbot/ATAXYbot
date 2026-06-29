@@ -67,6 +67,11 @@
 
     <style>
         :root {
+            --safe-top: max(var(--tg-content-safe-area-inset-top, var(--tg-safe-area-inset-top, env(safe-area-inset-top, 24px))), 12px);
+            --safe-bottom: max(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 24px)), 12px);
+        }
+
+        :root {
             /* LIGHT MODE TOKENS ("Strategic Clarity") */
             --color-ataxy-bg-primary: #FBFBFB;
             --color-ataxy-surface: #F5F5F5;
@@ -7517,7 +7522,7 @@ INSTRUCTIONS:
             const threeRef = useRef(null);
             const physicsRef = useRef({
                 x: 100,
-                y: -200, 
+                y: 0, 
                 vx: 0,
                 vy: 0,
                 isGrounded: false,
@@ -13059,7 +13064,7 @@ INSTRUCTIONS:
                                             
                                             <button onClick={() => { resetDeepState(); setCurrentTab('chats'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chats' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Chats</span></button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 relative overflow-hidden rounded-xl ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}>
-                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none rounded-xl"></div>
+                                                
                                                 <i className="fa-solid fa-layer-group text-[20px] relative z-10"></i><span className="text-[10px] font-bold uppercase tracking-wider relative z-10">Practice</span>
                                             </button>
                                             <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
