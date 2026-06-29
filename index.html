@@ -7676,7 +7676,7 @@ INSTRUCTIONS:
                 if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
                     setVisible(true);
                     
-                    setEmotion(partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking'));
+                    setEmotion(partnerMessage.emotion || (partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking')));
                     
                     if (partnerMessage.type === 'chatter') {
                         const options = ['Got it!', 'Cool', 'Nice!', 'Okay', 'Right on!'];
@@ -7702,10 +7702,30 @@ INSTRUCTIONS:
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
                 
                 const chatterPhrases = {
-                    'mia_cheer': ["You're doing amazing!", "Keep that energy up!", "Woohoo, let's crush these exams!", "Remember to take deep breaths!"],
-                    'prof_oak': ["Consistency is the key to mastery.", "Patience, young scholar.", "A focused mind achieves great things.", "Review your mistakes carefully."],
-                    'chief_commander': ["No slacking! Back to work!", "Discipline equals success!", "Focus! Don't let me catch you dozing!", "Push harder! You can do this!"],
-                    'serena_health': ["Don't forget to drink water!", "Sit up straight, posture matters!", "Take a quick stretch break soon.", "Your health is just as important as your studies."]
+                    'mia_cheer': [
+                        {text: "You're doing amazing!", emotion: 'happy'},
+                        {text: "Keep that energy up!", emotion: 'happy'},
+                        {text: "Woohoo, let's crush these exams!", emotion: 'happy'},
+                        {text: "Remember to take deep breaths!", emotion: 'sad'}
+                    ],
+                    'prof_oak': [
+                        {text: "Consistency is the key to mastery.", emotion: 'thinking'},
+                        {text: "Patience, young scholar.", emotion: 'thinking'},
+                        {text: "A focused mind achieves great things.", emotion: 'talking'},
+                        {text: "Review your mistakes carefully.", emotion: 'sad'}
+                    ],
+                    'chief_commander': [
+                        {text: "No slacking! Back to work!", emotion: 'angry'},
+                        {text: "Discipline equals success!", emotion: 'angry'},
+                        {text: "Focus! Don't let me catch you dozing!", emotion: 'surprised'},
+                        {text: "Push harder! You can do this!", emotion: 'happy'}
+                    ],
+                    'serena_health': [
+                        {text: "Don't forget to drink water!", emotion: 'water'},
+                        {text: "Sit up straight, posture matters!", emotion: 'talking'},
+                        {text: "Take a quick stretch break soon.", emotion: 'sleepy'},
+                        {text: "Your health is just as important as your studies.", emotion: 'love'}
+                    ]
                 };
                 
                 const chatterInterval = setInterval(() => {
@@ -7716,9 +7736,9 @@ INSTRUCTIONS:
                         
                         // Live Context Reading
                         if (currentTab === 'practice') {
-                            if (Math.random() > 0.5) dynamicPhrase = "Solving MCQs? Don't forget to review your mistakes!";
+                            if (Math.random() > 0.5) dynamicPhrase = {text: "Solving MCQs? Don't forget to review your mistakes!", emotion: 'thinking'};
                         } else if (currentTab === 'profile') {
-                            if (Math.random() > 0.5) dynamicPhrase = "Checking your stats? Keep grinding and you'll hit Rank 1!";
+                            if (Math.random() > 0.5) dynamicPhrase = {text: "Checking your stats? Keep grinding and you'll hit Rank 1!", emotion: 'happy'};
                         } else if (currentTab === 'home') {
                             const targetsStr = localStorage.getItem('ataxy_daily_targets');
                             if (targetsStr) {
@@ -7727,20 +7747,20 @@ INSTRUCTIONS:
                                     const pending = targets.filter(t => !t.completed);
                                     if (pending.length > 0) {
                                         const t = pending[Math.floor(Math.random() * pending.length)];
-                                        dynamicPhrase = `Hey! Are you working on "${t.text}"? Keep at it!`;
+                                        dynamicPhrase = {text: `Hey! Are you working on "${t.text}"? Keep at it!`, emotion: 'thinking'};
                                     } else {
-                                        dynamicPhrase = `All targets complete! You are doing amazing!`;
+                                        dynamicPhrase = {text: `All targets complete! You are doing amazing!`, emotion: 'love'};
                                     }
                                 } catch(e){}
                             }
                         }
                         
                         if (dynamicPhrase && Math.random() > 0.3) {
-                            setPartnerMessage({ type: 'chatter', text: dynamicPhrase });
+                            setPartnerMessage({ type: 'chatter', text: dynamicPhrase.text, emotion: dynamicPhrase.emotion });
                         } else {
                             const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
                             const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                            setPartnerMessage({ type: 'chatter', text: randomPhrase });
+                            setPartnerMessage({ type: 'chatter', text: randomPhrase.text, emotion: randomPhrase.emotion });
                         }
                     }
                 }, 15000); 
@@ -8254,7 +8274,26 @@ INSTRUCTIONS:
 
                     if (threeRef.current && threeRef.current.mixer) {
                         const dt = threeRef.current.clock.getDelta();
+                        const time = threeRef.current.clock.getElapsedTime();
                         threeRef.current.mixer.update(dt);
+
+                        // Procedural Head Animation (Anime Emotion Engine)
+                        const headBone = threeRef.current.scene.getObjectByName('head');
+                        if (headBone && !p.isDragging && (p.state === 'idle' || p.state === 'sit_idle')) {
+                            if (p.emotion === 'happy') {
+                                headBone.rotation.x += Math.sin(time * 8) * 0.1;
+                            } else if (p.emotion === 'angry') {
+                                headBone.rotation.y += Math.sin(time * 25) * 0.15;
+                                headBone.rotation.x += 0.1;
+                            } else if (p.emotion === 'confused' || p.emotion === 'writing' || p.emotion === 'thinking') {
+                                headBone.rotation.z -= 0.25;
+                            } else if (p.emotion === 'sad') {
+                                headBone.rotation.x += 0.4;
+                            } else if (p.emotion === 'surprised') {
+                                headBone.rotation.x -= 0.3;
+                            }
+                        }
+
                         threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
                         
                         let targetAnim = 'idle';
@@ -8553,6 +8592,22 @@ INSTRUCTIONS:
                             }, 500);
                         }}
                         ></div>
+                        {/* Anime Emotion Particles Overlay */}
+                        {emotion !== 'idle' && emotion !== 'talking' && (
+                            <div 
+                                className={`absolute right-[40px] text-4xl z-30 pointer-events-none drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${emotion === 'angry' ? 'animate-pulse' : 'animate-bounce'}`}
+                                style={{ top: (partnerMessage && partnerMessage.type !== 'chatter') ? '20px' : '100px' }}
+                            >
+                                {emotion === 'angry' && '💢'}
+                                {emotion === 'sad' && '⛈️'}
+                                {emotion === 'happy' && '✨'}
+                                {emotion === 'surprised' && '❗'}
+                                {(emotion === 'confused' || emotion === 'thinking' || emotion === 'writing') && '❔'}
+                                {emotion === 'love' && '❤️'}
+                                {emotion === 'sleepy' && '💤'}
+                            </div>
+                        )}
+
                         <div 
                             style={{ 
                                 top: isBubbleFlipped ? '310px' : 'auto', 
