@@ -8806,37 +8806,102 @@ INSTRUCTIONS:
         // ==========================================
         function App() {
             // --- TOUR GUIDE STATE ---
-            const TOUR_STEPS = [
-                { targetId: null, tab: 'home', text: 'Welcome to ATAXY! I am your AI Mentor. Let me give you a deep tour of the app!' },
+            const getTourSteps = () => [
+                { targetId: null, tab: 'home', text: 'Welcome to ATAXY! I am your AI Mentor. Sit back, I am going to take over your screen for an extreme deep tour!' },
                 { targetId: 'nav-btn-home', tab: 'home', text: 'This is your Home dashboard.' },
-                { targetId: 'tour-target-input', tab: 'home', text: 'Here you can log your daily study targets with exact timeframes.' },
-                { targetId: 'tour-target-list', tab: 'home', text: 'Your pending and completed targets will show up here.' },
-                { targetId: 'tour-ai-analytics', tab: 'home', text: 'Our AI analyzes your consistency and predicts your potential Rank here!' },
-                { targetId: 'nav-btn-mentor', tab: 'home', text: 'Click this hero button anytime to chat with me 24/7.' },
+                { targetId: 'tour-ai-analytics', tab: 'home', text: 'Let me show you the Performance Analyser!' },
+                { 
+                    targetId: 'tour-ai-analytics', 
+                    tab: 'home', 
+                    text: 'I am opening it for you right now...', 
+                    action: () => setShowDetailedAnalyzer(true) 
+                },
+                { 
+                    targetId: null, 
+                    tab: 'home', 
+                    text: 'Here you can see your consistency graph, weakest subjects, and your predicted Rank!',
+                },
+                { 
+                    targetId: 'nav-btn-mentor', 
+                    tab: 'home', 
+                    text: 'Click the ATAXY Mentor button anytime to chat with me.',
+                    action: () => setShowDetailedAnalyzer(false)
+                },
+                { 
+                    targetId: null, 
+                    tab: 'home', 
+                    text: 'I can solve your doubts, explain concepts, and give you study plans 24/7!',
+                    action: () => setCurrentTab('ai')
+                },
                 { targetId: 'nav-btn-vc', tab: 'vc', text: 'Let\'s check out the Voice Rooms (VC) tab.' },
-                { targetId: 'tour-vc-list', tab: 'vc', text: 'You can join public study rooms here to study live with others.' },
-                { targetId: 'tour-vc-create', tab: 'vc', text: 'Or click here to create your own private room and invite friends!' },
-                { targetId: 'nav-btn-chats', tab: 'chats', text: 'Moving on to the Chats section...' },
-                { targetId: 'tour-chats-global', tab: 'chats', text: 'This is the Global Community where you can chat with all ATAXY users.' },
-                { targetId: 'tour-chats-private', tab: 'chats', text: 'And your private DMs and study group chats will appear in this list.' },
                 { targetId: 'nav-btn-practice', tab: 'questions', text: 'Now for the most important part: The Practice tab!' },
-                { targetId: 'tour-practice-subjects', tab: 'questions', text: 'Select your subject (Physics, Chemistry, etc.) to access PYQs and NCERT questions.' },
-                { targetId: 'tour-practice-mock', tab: 'questions', text: 'You can also let AI generate custom mock tests for you here!' },
-                { targetId: 'nav-btn-profile', tab: 'profile', text: 'Finally, your Profile.' },
-                { targetId: 'tour-profile-stats', tab: 'profile', text: 'Track your overall accuracy, target completion rate, and current streak.' },
-                { targetId: 'tour-profile-heatmap', tab: 'profile', text: 'This heatmap visualizes your daily consistency over the year.' },
-                { targetId: 'tour-profile-settings', tab: 'profile', text: 'Customize your profile and app settings here.' },
-                { targetId: null, tab: 'home', text: 'You are all set! Let\'s dominate your exams! 🚀' }
+                { targetId: 'tour-practice-subjects', tab: 'questions', text: 'Let\'s dive inside the NEET Bank course!' },
+                { 
+                    targetId: 'tour-practice-subjects', 
+                    tab: 'questions', 
+                    text: 'Opening NEET Bank...', 
+                    action: () => {
+                        const neetBatch = SATHEE_DATA?.batches?.neet?.[0];
+                        if (neetBatch) setActivePracticeBatch(neetBatch);
+                    }
+                },
+                { 
+                    targetId: null, 
+                    tab: 'questions', 
+                    text: 'Here you have Physics, Chemistry, and Biology modules.' 
+                },
+                { targetId: 'tour-practice-mock', tab: 'questions', text: 'You can also let AI generate custom mock tests! Let\'s open it.', action: () => resetDeepState() },
+                { 
+                    targetId: null, 
+                    tab: 'questions', 
+                    text: 'In the Custom Test Generator, you can select specific topics, number of questions, and difficulty level.',
+                    action: () => setCustomGeneratorMode('generator')
+                },
+                { 
+                    targetId: null, 
+                    tab: 'questions', 
+                    text: 'Once you generate a test, the active quiz screen looks like this!',
+                    action: () => {
+                        setCustomGeneratorMode('history');
+                        const dummyChapter = { name: "Tour Demo Quiz", isCustomTest: true, id: "tour_dummy" };
+                        setActivePracticeChapter(dummyChapter);
+                        setPracticeSelectedTopic("Demo");
+                        setShowQuiz(true);
+                        // Mocking some loaded questions so the quiz screen renders safely
+                        // Use a global mock to avoid React undefined errors in quiz render
+                        window.tourMockQuestions = [{ id: 'q1', text: 'Demo Question 1?', options: ['A','B','C','D'] }];
+                    }
+                },
+                { 
+                    targetId: null, 
+                    tab: 'questions', 
+                    text: 'You have a timer at the top, a grid of questions, and you can bookmark difficult ones.' 
+                },
+                { targetId: 'nav-btn-profile', tab: 'profile', text: 'After submitting, you get a detailed analysis in your Profile.', action: () => resetDeepState() },
+                { 
+                    targetId: 'tour-profile-stats', 
+                    tab: 'profile', 
+                    text: 'Let\'s open your Full Analytics!', 
+                    action: () => setShowAnalyticsModal(true)
+                },
+                { 
+                    targetId: null, 
+                    tab: 'profile', 
+                    text: 'Here you can review every single test attempt, check your mistakes, and read AI explanations!' 
+                },
+                { targetId: null, tab: 'home', text: 'You are all set! Let\'s dominate your exams! 🚀', action: () => resetDeepState() }
             ];
             
             const [tourStep, setTourStep] = React.useState(() => localStorage.getItem('ataxy_tour_completed') === 'true' ? -1 : 0);
             
             const handleTourNext = () => {
+                const steps = getTourSteps();
                 const nextStep = tourStep + 1;
-                if (nextStep >= TOUR_STEPS.length) {
+                if (nextStep >= steps.length) {
                     setTourStep(-1);
                     localStorage.setItem('ataxy_tour_completed', 'true');
                     setPartnerMessage({ type: 'chatter', text: "Tour completed! Let's crack it!" });
+                    resetDeepState();
                     setCurrentTab('home');
                 } else {
                     setTourStep(nextStep);
@@ -8847,15 +8912,20 @@ INSTRUCTIONS:
                 const handleCancelTour = () => {
                     setTourStep(-1);
                     localStorage.setItem('ataxy_tour_completed', 'true');
+                    resetDeepState();
                 };
                 window.addEventListener('ataxy_cancel_tour', handleCancelTour);
                 return () => window.removeEventListener('ataxy_cancel_tour', handleCancelTour);
             }, []);
             React.useEffect(() => {
-                if (tourStep > -1 && tourStep < TOUR_STEPS.length) {
-                    const step = TOUR_STEPS[tourStep];
+                const steps = getTourSteps();
+                if (tourStep > -1 && tourStep < steps.length) {
+                    const step = steps[tourStep];
                     if (currentTab !== step.tab) {
                         setCurrentTab(step.tab);
+                    }
+                    if (step.action) {
+                        try { step.action(); } catch (e) { console.error("Tour action error", e); }
                     }
                     setTimeout(() => {
                         setPartnerMessage({ type: 'tour', text: step.text, emotion: 'happy' });
@@ -9012,7 +9082,7 @@ INSTRUCTIONS:
                 else if (currentTab !== 'home') setCurrentTab('home');
             };
 
-            const resetDeepState = () => {
+            function resetDeepState() {
                 setShowAnalyticsModal(false);
                 setHistoryViewType(null);
                 setShowQuiz(false);
@@ -10372,7 +10442,7 @@ INSTRUCTIONS:
                     if (activePracticeChapter) {
                         if (activePracticeChapter.isCustomTest) {
                             const selectedTopic = practiceSelectedTopic;
-                            let displayedQuestions = loadedQuestions;
+                            let displayedQuestions = window.tourMockQuestions && activePracticeChapter?.id === 'tour_dummy' ? window.tourMockQuestions : loadedQuestions;
 
                             if (!displayedQuestions || displayedQuestions.length === 0) return <div className="text-white text-center p-10">Loading test...</div>;
 
@@ -13168,7 +13238,7 @@ INSTRUCTIONS:
             return (
                 <VoiceRoomErrorBoundary>
                     <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
-                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} currentTab={currentTab} showQuiz={showQuiz} tourStep={tourStep} tourTargetId={tourStep > -1 ? TOUR_STEPS[tourStep].targetId : null} onTourNext={handleTourNext} />
+                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} currentTab={currentTab} showQuiz={showQuiz} tourStep={tourStep} tourTargetId={tourStep > -1 ? getTourSteps()[tourStep].targetId : null} onTourNext={handleTourNext} />
                     <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
