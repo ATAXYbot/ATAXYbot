@@ -391,7 +391,6 @@
         }
       }
     </script>
-    <script type="module" src="npc_engine.js"></script>
     <script type="text/babel" data-presets="react-classic" data-type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -7625,6 +7624,8 @@ INSTRUCTIONS:
                         animMap.idle = animMap['Idle_Loop'] || gltf.animations[0];
                         animMap.walk = animMap['Walk_Loop'] || animMap.idle;
                         animMap.fall = animMap['Jump_Loop'] || animMap['Flying Forward'] || animMap.idle;
+                        animMap.climb = animMap['ClimbUp_1m_RM'] || animMap.walk;
+                        animMap.drag = animMap['Levitate Idle'] || animMap.fall;
                         animMap.write = animMap['Idle_TalkingPhone_Loop'] || animMap.idle;
                         animMap.talk = animMap['Idle_Talking_Loop'] || animMap.idle;
                         animMap.hit = animMap['Hit_Knockback'] || animMap.idle;
@@ -7705,13 +7706,25 @@ INSTRUCTIONS:
 
                 const handlePointerMove = (e) => {
                     const p = physicsRef.current;
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const deltaX = clientX - (p.lastMouseX || clientX);
+                    const deltaY = clientY - (p.lastMouseY || clientY);
+                    
                     if (p.isDragging) {
-                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                        p.mouseVx = clientX - p.lastMouseX;
-                        p.mouseVy = clientY - p.lastMouseY;
+                        p.mouseVx = deltaX;
+                        p.mouseVy = deltaY;
                         p.x = clientX;
                         p.y = clientY;
+                    } else if (p.isPointerDown) {
+                        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                            clearTimeout(p.longPressTimer);
+                            // Rotate character
+                            p.targetRotationY = (p.targetRotationY || 0) + deltaX * 0.01;
+                        }
+                    }
+                    
+                    if (p.isPointerDown || p.isDragging) {
                         p.lastMouseX = clientX;
                         p.lastMouseY = clientY;
                     }
@@ -7719,6 +7732,8 @@ INSTRUCTIONS:
 
                 const handlePointerUp = (e) => {
                     const p = physicsRef.current;
+                    clearTimeout(p.longPressTimer);
+                    p.isPointerDown = false;
                     if (p.isDragging) {
                         p.isDragging = false;
                         p.vx = p.mouseVx * 1.5;
@@ -7726,6 +7741,9 @@ INSTRUCTIONS:
                         p.isGrounded = false;
                         setEmotion('idle');
                         playSyntheticSound('throw');
+                    } else {
+                        // Snap back rotation slowly if dropped without dragging
+                        p.targetRotationY = 0;
                     }
                 };
 
@@ -8040,7 +8058,9 @@ INSTRUCTIONS:
                         if (previewAnim) {
                             targetAnim = previewAnim;
                         } else {
-                            if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
+                            if (p.isDragging) targetAnim = 'drag';
+                            else if (p.state === 'climbing') targetAnim = 'climb';
+                            else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
                             else if (p.state === 'walking') targetAnim = 'walk';
                             else if (p.state === 'fallen') targetAnim = 'hit';
                         }
@@ -8066,6 +8086,11 @@ INSTRUCTIONS:
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
                                 if (p.state === 'idle') targetRotation = 0; // face forward when idle or talking
+                                if (p.targetRotationY !== undefined) {
+                                    targetRotation = p.targetRotationY;
+                                    // Smoothly lerp back to 0 if not holding
+                                    if (!p.isPointerDown) p.targetRotationY = THREE.MathUtils.lerp(p.targetRotationY, 0, 0.1);
+                                }
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
                                 model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
                             }
@@ -8197,15 +8222,19 @@ INSTRUCTIONS:
                         className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%] cursor-grab active:cursor-grabbing`} 
                         style={{ zIndex: 10050 }}
                         onPointerDown={(e) => {
-                            
                             const p = physicsRef.current;
-                            p.isDragging = true;
+                            p.isPointerDown = true;
                             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                             p.lastMouseX = clientX;
                             p.lastMouseY = clientY;
-                            setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
+                            
+                            p.longPressTimer = setTimeout(() => {
+                                p.isDragging = true;
+                                setEmotion('angry');
+                                setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
+                                if (navigator.vibrate) navigator.vibrate(50);
+                            }, 500);
                         }}
                     >
                         <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
