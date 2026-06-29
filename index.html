@@ -7855,17 +7855,36 @@ INSTRUCTIONS:
                         
                         
                         // Viewport Loss Recovery
-                        if (p.y < -200 || p.y > window.innerHeight + 200) {
-                            p.y = 50; // Just inside the top of the screen
-                            p.vy = 5; // Fall down
+                        if (isNaN(p.y) || isNaN(p.x)) {
+                            p.y = window.innerHeight / 2;
+                            p.x = window.innerWidth / 2;
+                            p.vy = 0;
+                        } else if (p.y < -50) {
+                            // Scrolled up too far, drop down from ceiling
+                            p.y = -40;
+                            p.vy = 5; 
                             p.x = window.innerWidth / 2;
                             p.groundTarget = null;
                             p.isGrounded = false;
                             p.brainState = 'hurt';
                             p.hurtTimer = now;
-                            p.state = 'hit';
+                            p.state = 'fall';
                             setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Wait for me!!' });
+                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
+                            try { playSyntheticSound('throw'); } catch(e){}
+                        } else if (p.y > window.innerHeight + 50) {
+                            // Scrolled down too far, jump up from floor
+                            p.y = window.innerHeight + 40;
+                            p.vy = -18; // Massive jump up
+                            p.x = window.innerWidth / 2;
+                            p.groundTarget = null;
+                            p.isGrounded = false;
+                            p.brainState = 'hurt';
+                            p.hurtTimer = now;
+                            p.state = 'jump_start';
+                            setEmotion('angry');
+                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
+                            try { playSyntheticSound('throw'); } catch(e){}
                         }
                         
                         
@@ -8048,16 +8067,34 @@ INSTRUCTIONS:
                                 const elapsed = now - p.knockoutTimer;
                                 if (elapsed < 3000) {
                                     p.state = 'dizzy';
-                                } else if (elapsed < 4000) {
+                                    if (!p.playedDizzySound) {
+                                        try { playSyntheticSound('throw'); } catch(e){}
+                                        p.playedDizzySound = true;
+                                    }
+                                } else if (elapsed < 4500) {
                                     p.state = 'knockout';
+                                    if (!p.playedFallSound) {
+                                        try { playSyntheticSound('hit'); } catch(e){}
+                                        p.playedFallSound = true;
+                                        p.groundTarget = null;
+                                        p.isGrounded = false;
+                                        p.vy = 0; // Drop to floor
+                                    }
                                 } else if (elapsed < 10000) {
                                     p.state = 'sleeping';
                                 } else if (elapsed < 11500) {
                                     p.state = 'wake';
+                                    if (!p.playedWakeSound) {
+                                        try { playSyntheticSound('throw'); } catch(e){}
+                                        p.playedWakeSound = true;
+                                    }
                                 } else {
                                     p.brainState = 'wander';
                                     p.state = 'idle';
                                     p.hitCount = 0;
+                                    p.playedDizzySound = false;
+                                    p.playedFallSound = false;
+                                    p.playedWakeSound = false;
                                 }
                             } else if (p.brainState === 'hurt') {
                                 const elapsed = now - p.hurtTimer;
@@ -8199,7 +8236,9 @@ INSTRUCTIONS:
                         else if (p.vx < -0.1) p.facing = -1;
                     }
                     if (widgetRef.current) {
-                        widgetRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
+                        const safeX = isNaN(p.x) ? window.innerWidth / 2 : p.x;
+                        const safeY = isNaN(p.y) ? window.innerHeight / 2 : p.y;
+                        widgetRef.current.style.transform = `translate(${safeX}px, ${safeY}px)`;
                     }
 
                     if (threeRef.current && threeRef.current.mixer) {
@@ -8414,6 +8453,7 @@ INSTRUCTIONS:
                         onPointerDown={(e) => {
                             const p = physicsRef.current;
                             p.isPointerDown = true;
+                            p.pointerDownTime = Date.now();
                             if (p.brainState === 'sitting' || p.brainState === 'hurt') {
                                 p.brainState = 'wander';
                                 p.sitExitTimer = null;
@@ -8443,11 +8483,13 @@ INSTRUCTIONS:
                                 height: '300px',
                                 cursor: 'grab'
                             }}
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 const p = physicsRef.current;
-                                p.hitCount = (p.hitCount || 0) + 1;
+                                if (p.isDragging) return; // Prevent triggering if they were dragging
                                 
+                                // TAP DETECTED!
+                                p.hitCount = (p.hitCount || 0) + 1;
                                 if (p.hitCount >= 4) {
                                     // Knockout!
                                     p.brainState = 'knockout';
@@ -8455,6 +8497,9 @@ INSTRUCTIONS:
                                     p.knockoutTimer = Date.now();
                                     p.vx = 0;
                                     p.hitCount = 0;
+                                    p.playedDizzySound = false;
+                                    p.playedFallSound = false;
+                                    p.playedWakeSound = false;
                                     setEmotion('angry');
                                     setPartnerMessage({type:'chatter', text:'Ugh... so dizzy...'});
                                 } else {
@@ -8462,13 +8507,11 @@ INSTRUCTIONS:
                                     p.state = 'hit_tap';
                                     p.hitTimer = Date.now();
                                     setEmotion('angry');
-                                    p.vx = Math.random() > 0.5 ? 5 : -5; 
-                                    p.vy = -5; // Small knockback
-                                    p.isGrounded = false; 
+                                    p.vx = Math.random() > 0.5 ? 2 : -2; // Pushback
                                     const painText = ['Ouch!', 'Hey!', 'Stop hitting me!', 'Ow!'];
                                     setPartnerMessage({type:'chatter', text: painText[Math.floor(Math.random() * painText.length)]}); 
+                                    try { playSyntheticSound('hit'); } catch(err){}
                                 }
-                                // Reset hit counter if no hits after 3 seconds
                                 clearTimeout(p.hitClearTimer);
                                 p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
                             }}
