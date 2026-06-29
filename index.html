@@ -8310,6 +8310,9 @@ INSTRUCTIONS:
                                 offsetX = 0.4;
                             } else if (p.emotion === 'surprised') {
                                 offsetX = -0.3;
+                            } else if (p.emotion === 'talking') {
+                                // Small, fast head bobs to simulate talking energy (since no jaw bone exists)
+                                offsetX = (Math.sin(time * 25) * 0.04) + 0.05;
                             }
                             
                             // Apply new offset and store
