@@ -7989,7 +7989,7 @@ INSTRUCTIONS:
                                             p.groundTarget = platforms[i];
                                             landed = true;
                                             
-                                            if (impactVy > 15) {
+                                            if (impactVy > 15 && p.brainState !== 'knockout') {
                                                 p.brainState = 'hurt';
                                                 p.state = 'hit';
                                                 p.hurtTimer = now;
@@ -8012,7 +8012,7 @@ INSTRUCTIONS:
                                 p.isGrounded = true;
                                 p.groundTarget = null;
                                 
-                                if (impactVy > 15) {
+                                if (impactVy > 15 && p.brainState !== 'knockout') {
                                     p.brainState = 'hurt';
                                     p.state = 'hit';
                                     p.hurtTimer = now;
@@ -8459,9 +8459,19 @@ INSTRUCTIONS:
                         }
                     `}</style>
                     <div 
-                        className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%] cursor-grab active:cursor-grabbing`} 
+                        className={`relative flex flex-col items-center group pointer-events-none transition-transform duration-500 translate-x-[-50%] translate-y-[-100%]`} 
                         style={{ zIndex: 10050 }}
-                        onPointerDown={(e) => {
+                    >
+                        {/* Precise Hitbox */}
+                        <div 
+                            className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-auto cursor-grab active:cursor-grabbing"
+                            style={{
+                                width: '120px',
+                                height: '220px',
+                                touchAction: 'none',
+                                zIndex: 10060
+                            }}
+                            onPointerDown={(e) => {
                             const p = physicsRef.current;
                             p.isPointerDown = true;
                             p.pointerDownTime = Date.now();
@@ -8511,19 +8521,17 @@ INSTRUCTIONS:
                                 if (navigator.vibrate) navigator.vibrate(50);
                             }, 500);
                         }}
-                    >
-                        <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        ></div>
+                        <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
                             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                         </div>
                         <div 
-                            className="relative flex flex-col items-center drop-shadow-xl" 
+                            className="relative flex flex-col items-center drop-shadow-xl pointer-events-none" 
                             style={{ 
                                 transformOrigin: 'bottom center',
                                 width: '300px',
                                 height: '300px',
-                                cursor: 'grab',
-                                touchAction: 'none'
                             }}
                         >
                             <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
