@@ -8538,8 +8538,23 @@ INSTRUCTIONS:
                             }, 500);
                         }}
                         ></div>
-                        <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        <div className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom flex flex-col gap-3 ${(partnerMessage && partnerMessage.type !== 'chatter') ? 'bottom-[280px]' : 'bottom-[150px]'} ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
+                            <div className="flex justify-end">
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setVisible(false);
+                                        setTimeout(() => {
+                                            if (physicsRef.current) physicsRef.current.partnerMessage = null;
+                                            setPartnerMessage(null);
+                                        }, 300);
+                                    }}
+                                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 px-4 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors active:scale-95"
+                                >
+                                    {partnerMessage?.type === 'chatter' ? 'Got it' : 'OK'}
+                                </button>
+                            </div>
                             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                         </div>
                         <div 
