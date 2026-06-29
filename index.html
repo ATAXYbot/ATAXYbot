@@ -7571,6 +7571,7 @@ INSTRUCTIONS:
             const [facing, setFacing] = useState(1); 
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
+            const bubbleRef = useRef(null);
 
             // Three.js Initialization
             useEffect(() => {
@@ -7693,7 +7694,16 @@ INSTRUCTIONS:
                         setBubbleBtnText('OK');
                     }
                     
-                    // Messages now stay indefinitely until explicitly dismissed by the user clicking 'OK' or 'Got it'
+                    if (partnerMessage.type === 'chatter') {
+                        const timer = setTimeout(() => {
+                            setVisible(false);
+                            setTimeout(() => {
+                                if (physicsRef.current) physicsRef.current.partnerMessage = null;
+                                setPartnerMessage(null);
+                            }, 300);
+                        }, 5000);
+                        return () => clearTimeout(timer);
+                    }
                 }
             }, [partnerMessage, partnerConfig]);
 
@@ -8381,15 +8391,36 @@ INSTRUCTIONS:
                                 currentTargetScale = baseScale * 1.15; // Slightly larger when grabbed
                             }
                             
-                            // Safe area bubble flip logic
-                            // Offset is 280 (giant) or 150 (normal). Bubble itself is ~120px, plus 30px padding.
-                            const totalRequiredSpace = (isGiant ? 280 : 150) + 150; 
-                            const needsFlip = p.y < totalRequiredSpace;
-                            if (p.lastFlipState !== needsFlip) {
-                                p.lastFlipState = needsFlip;
-                                setIsBubbleFlipped(needsFlip);
+                            // Screen space tracking for UI to follow 3D bones perfectly
+                            const headBone = model.getObjectByName('head');
+                            if (headBone && bubbleRef.current) {
+                                const headPos = new THREE.Vector3();
+                                headBone.getWorldPosition(headPos);
+                                headPos.y += 0.2; // Slight offset above head
+                                headPos.project(threeRef.current.camera);
+                                
+                                // Map NDC to 300x300 canvas
+                                const canvasY = (-(headPos.y * 0.5) + 0.5) * 300;
+                                
+                                // Calculate true distance to top of viewport
+                                const screenHeadY = (p.y - 300) + canvasY;
+                                const needsFlip = screenHeadY < 150;
+                                
+                                if (p.lastFlipState !== needsFlip) {
+                                    p.lastFlipState = needsFlip;
+                                    setIsBubbleFlipped(needsFlip);
+                                }
+                                
+                                if (needsFlip) {
+                                    bubbleRef.current.style.top = '310px';
+                                    bubbleRef.current.style.bottom = 'auto';
+                                    bubbleRef.current.style.transformOrigin = 'top center';
+                                } else {
+                                    bubbleRef.current.style.top = 'auto';
+                                    bubbleRef.current.style.bottom = `${300 - canvasY + 20}px`;
+                                    bubbleRef.current.style.transformOrigin = 'bottom center';
+                                }
                             }
-
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
                                 if (p.state === 'idle' || p.state === 'sit_idle' || p.state === 'sit_enter' || p.state === 'knockout' || p.state === 'sleeping') targetRotation = 0;
@@ -8609,29 +8640,33 @@ INSTRUCTIONS:
                         )}
 
                         <div 
+                            ref={bubbleRef}
                             style={{ 
-                                top: isBubbleFlipped ? '310px' : 'auto', 
-                                bottom: isBubbleFlipped ? 'auto' : ((partnerMessage && partnerMessage.type !== 'chatter') ? '280px' : '150px'),
-                                transformOrigin: isBubbleFlipped ? 'top center' : 'bottom center'
+                                top: 'auto', 
+                                bottom: '150px',
+                                transformOrigin: 'bottom center',
+                                zIndex: 10070
                             }}
-                            className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 flex flex-col gap-3 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+                            className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 flex flex-col gap-3 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
                         >
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
-                            <div className="flex justify-end">
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setVisible(false);
-                                        setTimeout(() => {
-                                            if (physicsRef.current) physicsRef.current.partnerMessage = null;
-                                            setPartnerMessage(null);
-                                        }, 300);
-                                    }}
-                                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 px-4 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors active:scale-95"
-                                >
-                                    {bubbleBtnText}
-                                </button>
-                            </div>
+                            {partnerMessage?.type !== 'chatter' && (
+                                <div className="flex justify-end">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setVisible(false);
+                                            setTimeout(() => {
+                                                if (physicsRef.current) physicsRef.current.partnerMessage = null;
+                                                setPartnerMessage(null);
+                                            }, 300);
+                                        }}
+                                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 px-4 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors active:scale-95"
+                                    >
+                                        {bubbleBtnText}
+                                    </button>
+                                </div>
+                            )}
                             <div className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45 ${isBubbleFlipped ? '-top-2 border-t border-l border-gray-100 dark:border-gray-700' : '-bottom-2 border-b border-r border-gray-100 dark:border-gray-700'}`}></div>
                         </div>
                         <div 
