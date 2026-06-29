@@ -7565,6 +7565,7 @@ INSTRUCTIONS:
             
             const [emotion, setEmotion] = useState('idle'); 
             const [visible, setVisible] = useState(false);
+            const [bubbleBtnText, setBubbleBtnText] = useState('OK');
             const [isBubbleFlipped, setIsBubbleFlipped] = useState(false);
             const [renderState, setRenderState] = useState('falling');
             const [facing, setFacing] = useState(1); 
@@ -7675,22 +7676,24 @@ INSTRUCTIONS:
                 if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
                     setVisible(true);
                     
-                    const isImportant = partnerMessage.type === 'missed_target' || partnerMessage.type === 'reminder' || partnerMessage.requireAcknowledge;
-                    
-                    
                     setEmotion(partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking'));
                     
-                    if (isImportant) return; // Wait for Got It button
+                    if (partnerMessage.type === 'chatter') {
+                        const options = ['Got it!', 'Cool', 'Nice!', 'Okay', 'Right on!'];
+                        setBubbleBtnText(options[Math.floor(Math.random() * options.length)]);
+                    } else if (partnerMessage.type === 'missed_target') {
+                        setBubbleBtnText('I will do it now!');
+                    } else if (partnerMessage.type === 'water') {
+                        setBubbleBtnText('Glug glug!');
+                    } else if (partnerMessage.type === 'greeting') {
+                        setBubbleBtnText('Let\'s go!');
+                    } else if (partnerMessage.type === 'added_target') {
+                        setBubbleBtnText('Awesome!');
+                    } else {
+                        setBubbleBtnText('OK');
+                    }
                     
-                    const t = setTimeout(() => {
-                        setVisible(false);
-                        
-                        setTimeout(() => {
-                            setPartnerMessage(null);
-                            setEmotion('idle');
-                        }, 500); 
-                    }, Math.max(6000, partnerMessage.text.length * 70)); 
-                    return () => clearTimeout(t);
+                    // Messages now stay indefinitely until explicitly dismissed by the user clicking 'OK' or 'Got it'
                 }
             }, [partnerMessage, partnerConfig]);
 
@@ -8340,8 +8343,9 @@ INSTRUCTIONS:
                             }
                             
                             // Safe area bubble flip logic
-                            const bubbleHeight = isGiant ? 280 : 150;
-                            const needsFlip = p.y - bubbleHeight - 50 < 0;
+                            // Offset is 280 (giant) or 150 (normal). Bubble itself is ~120px, plus 30px padding.
+                            const totalRequiredSpace = (isGiant ? 280 : 150) + 150; 
+                            const needsFlip = p.y < totalRequiredSpace;
                             if (p.lastFlipState !== needsFlip) {
                                 p.lastFlipState = needsFlip;
                                 setIsBubbleFlipped(needsFlip);
@@ -8549,7 +8553,14 @@ INSTRUCTIONS:
                             }, 500);
                         }}
                         ></div>
-                        <div className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom flex flex-col gap-3 ${isBubbleFlipped ? 'top-[40px]' : ((partnerMessage && partnerMessage.type !== 'chatter') ? 'bottom-[280px]' : 'bottom-[150px]')} ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        <div 
+                            style={{ 
+                                top: isBubbleFlipped ? '310px' : 'auto', 
+                                bottom: isBubbleFlipped ? 'auto' : ((partnerMessage && partnerMessage.type !== 'chatter') ? '280px' : '150px'),
+                                transformOrigin: isBubbleFlipped ? 'top center' : 'bottom center'
+                            }}
+                            className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 flex flex-col gap-3 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+                        >
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
                             <div className="flex justify-end">
                                 <button 
@@ -8563,7 +8574,7 @@ INSTRUCTIONS:
                                     }}
                                     className="bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 px-4 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors active:scale-95"
                                 >
-                                    {partnerMessage?.type === 'chatter' ? 'Got it' : 'OK'}
+                                    {bubbleBtnText}
                                 </button>
                             </div>
                             <div className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45 ${isBubbleFlipped ? '-top-2 border-t border-l border-gray-100 dark:border-gray-700' : '-bottom-2 border-b border-r border-gray-100 dark:border-gray-700'}`}></div>
