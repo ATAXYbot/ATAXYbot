@@ -8325,11 +8325,14 @@ INSTRUCTIONS:
                             const baseScale = threeRef.current.baseScale || 1;
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
-                                if (p.state === 'idle') targetRotation = 0; // face forward when idle or talking
-                                if (p.targetRotationY !== undefined) {
-                                    targetRotation = p.targetRotationY;
-                                    // Smoothly lerp back to 0 if not holding
-                                    if (!p.isPointerDown) p.targetRotationY = THREE.MathUtils.lerp(p.targetRotationY, 0, 0.1);
+                                if (p.state === 'idle' || p.state === 'sit_idle' || p.state === 'sit_enter' || p.state === 'knockout' || p.state === 'sleeping') targetRotation = 0;
+                                
+                                if (p.isPointerDown || p.isDragging) {
+                                    if (p.targetRotationY !== undefined) {
+                                        targetRotation = p.targetRotationY;
+                                    }
+                                } else {
+                                    p.targetRotationY = undefined;
                                 }
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
                                 model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
@@ -8534,7 +8537,7 @@ INSTRUCTIONS:
                                 height: '300px',
                             }}
                         >
-                            <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
+                            <canvas ref={canvasRef} style={{ pointerEvents: 'none', filter: 'drop-shadow(0px 8px 6px rgba(0,0,0,0.4))' }}></canvas>
                         </div>
                         
 
