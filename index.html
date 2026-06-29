@@ -7598,7 +7598,7 @@ INSTRUCTIONS:
                     const size = box.getSize(new THREE.Vector3());
                     
                     // Auto-scale to a comfortable height for the camera
-                    const targetHeight = 1.3; 
+                    const targetHeight = 0.9; // Decreased base size
                     const baseScale = targetHeight / size.y;
                     
                     model.scale.setScalar(baseScale);
@@ -7606,7 +7606,7 @@ INSTRUCTIONS:
                     // Center the model on X and Z to fix off-screen exports, but keep feet grounded on Y
                     const scaledBox = new THREE.Box3().setFromObject(model);
                     const center = scaledBox.getCenter(new THREE.Vector3());
-                    model.position.set(-center.x, -0.65, -center.z); // -0.65 to ground it relative to 1.3 height
+                    model.position.set(-center.x, -0.45, -center.z); // -0.45 to ground it relative to 0.9 height
                     scene.add(model);
                     
                     if (threeRef.current) threeRef.current.baseScale = baseScale;
@@ -7745,8 +7745,11 @@ INSTRUCTIONS:
             }, [partnerConfig, emotion, setPartnerMessage, currentTab]);
             
             useEffect(() => {
-                if (physicsRef.current) physicsRef.current.emotion = emotion;
-            }, [emotion]);
+                if (physicsRef.current) {
+                    physicsRef.current.emotion = emotion;
+                    physicsRef.current.partnerMessage = partnerMessage;
+                }
+            }, [emotion, partnerMessage]);
 
             useEffect(() => {
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
@@ -8323,6 +8326,16 @@ INSTRUCTIONS:
                         if (threeRef.current.scene.children.length > 2) {
                             const model = threeRef.current.scene.children[2];
                             const baseScale = threeRef.current.baseScale || 1;
+                            let currentTargetScale = baseScale;
+                            
+                            // GIANT MODE for important notices!
+                            const pMsg = p.partnerMessage;
+                            if (pMsg && pMsg.type && pMsg.type !== 'chatter') {
+                                currentTargetScale = baseScale * 1.8; // Almost double size for important alerts!
+                            } else if (p.isPointerDown || p.isDragging) {
+                                currentTargetScale = baseScale * 1.15; // Slightly larger when grabbed
+                            }
+
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
                                 if (p.state === 'idle' || p.state === 'sit_idle' || p.state === 'sit_enter' || p.state === 'knockout' || p.state === 'sleeping') targetRotation = 0;
@@ -8335,7 +8348,7 @@ INSTRUCTIONS:
                                     p.targetRotationY = undefined;
                                 }
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
-                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
+                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, currentTargetScale, 0.1));
                             }
                         }
                     }
