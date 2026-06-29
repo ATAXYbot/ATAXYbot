@@ -8572,6 +8572,26 @@ INSTRUCTIONS:
                                 }
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
                                 model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, currentTargetScale, 0.1));
+
+                                // Procedural Pointing Animation Override
+                                if (tourStep > -1 && p.state === 'greet') {
+                                    const arm = model.getObjectByName('mixamorigRightArm') || model.getObjectByName('RightArm') || model.getObjectByName('DEF-upper_arm.R') || model.getObjectByName('arm_r');
+                                    const forearm = model.getObjectByName('mixamorigRightForeArm') || model.getObjectByName('RightForeArm') || model.getObjectByName('DEF-forearm.R') || model.getObjectByName('forearm_r');
+                                    const hand = model.getObjectByName('mixamorigRightHand') || model.getObjectByName('RightHand') || model.getObjectByName('DEF-hand.R') || model.getObjectByName('hand_r');
+                                    
+                                    if (arm) {
+                                        // Force arm to point downwards towards the button
+                                        arm.rotation.x = Math.PI / 1.5; 
+                                        arm.rotation.z = -Math.PI / 6; 
+                                    }
+                                    if (forearm) {
+                                        forearm.rotation.x = 0; // Straighten elbow completely
+                                        forearm.rotation.z = 0;
+                                    }
+                                    if (hand) {
+                                        hand.rotation.x = 0; // Straighten hand
+                                    }
+                                }
                             }
                             if (visible) {
                                 threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
