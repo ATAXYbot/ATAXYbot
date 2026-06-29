@@ -7657,6 +7657,7 @@ INSTRUCTIONS:
                         animMap.hit_tap = animMap.pool_hit;
                         animMap.dizzy = animMap['Dizzy'] || animMap.idle;
                         animMap.knockout = animMap['Death01'] || animMap.idle;
+                        animMap.greet = animMap['Greeting'] || animMap.idle;
                         
                         if (!animMap.idle) animMap.idle = gltf.animations[0];
                         if (!animMap.walk) animMap.walk = animMap.idle;
@@ -7789,7 +7790,82 @@ INSTRUCTIONS:
             useEffect(() => {
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
                 
-                let animationFrameId;
+                const handleGlobalPointerDown = (e) => {
+                    // Ignore clicks on HTML UI elements (like chat bubble buttons)
+                    if (e.target.closest && (e.target.closest('button') || e.target.closest('.chat-bubble') || e.target.closest('input') || e.target.closest('textarea'))) return;
+                    if (!threeRef.current || !threeRef.current.scene || !canvasRef.current) return;
+                    const p = physicsRef.current;
+                    if (p.brainState === 'knockout') return;
+                    
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    
+                    const rect = canvasRef.current.getBoundingClientRect();
+                    if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+                        const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+                        
+                        const raycaster = new THREE.Raycaster();
+                        raycaster.setFromCamera(new THREE.Vector2(x, y), threeRef.current.camera);
+                        
+                        if (threeRef.current.scene.children.length > 2) {
+                            const model = threeRef.current.scene.children[2];
+                            const intersects = raycaster.intersectObject(model, true);
+                            const hit = intersects.find(i => i.object.isMesh || i.object.isSkinnedMesh);
+                            
+                            if (hit) {
+                                // Hit the 3D model!
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                p.isPointerDown = true;
+                                p.pointerDownTime = Date.now();
+                                
+                                if (p.brainState === 'sitting' || p.brainState === 'hurt') {
+                                    p.brainState = 'wander';
+                                    p.sitExitTimer = null;
+                                }
+                                
+                                // INSTANT HIT REACTION
+                                p.hitCount = (p.hitCount || 0) + 1;
+                                if (p.hitCount >= 4) {
+                                    p.brainState = 'knockout';
+                                    p.state = 'dizzy'; 
+                                    p.knockoutTimer = Date.now();
+                                    p.vx = 0;
+                                    p.hitCount = 0;
+                                    p.playedDizzySound = false;
+                                    p.playedFallSound = false;
+                                    p.playedWakeSound = false;
+                                    setEmotion('angry');
+                                    setPartnerMessage({type:'chatter', text:'Ugh... knocking me out...'});
+                                } else {
+                                    p.brainState = 'hit_tap';
+                                    p.state = 'hit_tap';
+                                    p.hitTimer = Date.now();
+                                    setEmotion('angry');
+                                    setPartnerMessage({type:'chatter', text:['Ouch!', 'Hey!', 'Stop that!', 'Why?'][Math.floor(Math.random()*4)]});
+                                    p.vx = (Math.random() - 0.5) * 4; 
+                                }
+                                
+                                p.dragOffsetX = p.x - clientX;
+                                p.dragOffsetY = p.y - clientY;
+                                p.lastMouseX = clientX;
+                                p.lastMouseY = clientY;
+                                
+                                clearTimeout(p.hitClearTimer);
+                                p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
+                                
+                                p.longPressTimer = setTimeout(() => {
+                                    p.isDragging = true;
+                                    setEmotion('angry');
+                                    setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
+                                    if (navigator.vibrate) navigator.vibrate(50);
+                                }, 500);
+                            }
+                        }
+                    }
+                };
 
                 const handlePointerMove = (e) => {
                     const p = physicsRef.current;
@@ -7806,7 +7882,6 @@ INSTRUCTIONS:
                     } else if (p.isPointerDown) {
                         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                             clearTimeout(p.longPressTimer);
-                            // Rotate character
                             p.targetRotationY = (p.targetRotationY || 0) + deltaX * 0.01;
                         }
                     }
@@ -7827,7 +7902,6 @@ INSTRUCTIONS:
                         setEmotion('idle');
                         playSyntheticSound('throw');
                         
-                        // Nearest Button Targeting
                         const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
                         let nearest = null;
                         let minDist = Infinity;
@@ -7854,11 +7928,14 @@ INSTRUCTIONS:
                             p.vy = p.mouseVy * 1.5;
                         }
                     } else {
-                        // Snap back rotation slowly if dropped without dragging
                         p.targetRotationY = 0;
                     }
                 };
 
+                // Use capture phase for pointerdown to intercept Raycaster hits before React UI
+                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
+                document.addEventListener('touchstart', handleGlobalPointerDown, { capture: true, passive: false });
+                
                 window.addEventListener('pointermove', handlePointerMove);
                 window.addEventListener('pointerup', handlePointerUp);
                 window.addEventListener('touchmove', handlePointerMove, { passive: false });
@@ -7984,11 +8061,13 @@ INSTRUCTIONS:
                                     setEmotion('angry');
                                     p.state = 'angry';
                                     p.vx = 0;
-                                    setPartnerMessage({ type: 'chatter', text: `You are LATE for "${lateTarget.text}"! Go complete it NOW!` });
+                                    setPartnerMessage({ type: 'target_alert', text: `You are LATE! It is past time for "${lateTarget.text}"! Go complete it NOW!` });
                                 } else if (pendingTarget && p.brainState !== 'angry' && p.brainState !== 'tour' && Math.random() < 0.2) {
                                     setEmotion('talking');
                                     p.state = 'greet';
-                                    setPartnerMessage({ type: 'chatter', text: `Reminder: You should be working on "${pendingTarget.text}" right now!` });
+                                    p.brainState = 'wander'; 
+                                    p.brainTimer = now;
+                                    setPartnerMessage({ type: 'target_alert', text: `Hello! Just a reminder: You should be working on "${pendingTarget.text}" right now!` });
                                 }
                             } catch(e) {}
                         }
@@ -8357,6 +8436,7 @@ INSTRUCTIONS:
                             else if (p.state === 'knockout') targetAnim = 'knockout';
                             else if (p.state === 'sleeping') targetAnim = 'sleeping';
                             else if (p.state === 'wake') targetAnim = 'wake';
+                            else if (p.state === 'greet') targetAnim = 'greet';
                             else if (p.state === 'jumping' && p.vy < 0) targetAnim = 'jump_start';
                             else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
                             else if (p.state === 'walking') targetAnim = 'walk';
@@ -8493,12 +8573,12 @@ INSTRUCTIONS:
                 };
 
                 animationFrameId = requestAnimationFrame(loop);
+                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
+                document.addEventListener('touchstart', handleGlobalPointerDown, true);
                 return () => {
                     cancelAnimationFrame(animationFrameId);
-                    window.removeEventListener('pointermove', handlePointerMove);
-                    window.removeEventListener('pointerup', handlePointerUp);
-                    window.removeEventListener('touchmove', handlePointerMove);
-                    window.removeEventListener('touchend', handlePointerUp);
+                    document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
+                    document.removeEventListener('touchstart', handleGlobalPointerDown, true);
                 };
             }, [partnerConfig, currentTab, visible, showQuiz]);
 
@@ -8611,66 +8691,6 @@ INSTRUCTIONS:
                         className={`relative flex flex-col items-center group pointer-events-none transition-transform duration-500 translate-x-[-50%] translate-y-[-100%]`} 
                         style={{ zIndex: 10050 }}
                     >
-                        {/* Precise Hitbox */}
-                        <div 
-                            className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-auto cursor-grab active:cursor-grabbing"
-                            style={{
-                                width: '120px',
-                                height: '220px',
-                                touchAction: 'none',
-                                zIndex: 10060
-                            }}
-                            onPointerDown={(e) => {
-                            const p = physicsRef.current;
-                            p.isPointerDown = true;
-                            p.pointerDownTime = Date.now();
-                            if (p.brainState === 'knockout') return; // Ignore hits if already knocked out!
-                            if (p.brainState === 'sitting' || p.brainState === 'hurt') {
-                                p.brainState = 'wander';
-                                p.sitExitTimer = null;
-                            }
-                            
-                            // INSTANT HIT REACTION
-                            p.hitCount = (p.hitCount || 0) + 1;
-                            if (p.hitCount >= 4) {
-                                p.brainState = 'knockout';
-                                p.state = 'dizzy';
-                                p.knockoutTimer = Date.now();
-                                p.vx = 0;
-                                p.hitCount = 0;
-                                p.playedDizzySound = false;
-                                p.playedFallSound = false;
-                                p.playedWakeSound = false;
-                                setEmotion('angry');
-                                setPartnerMessage({type:'chatter', text:'Ugh... so dizzy...'});
-                            } else {
-                                p.brainState = 'hit_tap';
-                                p.state = 'hit_tap';
-                                p.hitTimer = Date.now();
-                                setEmotion('angry');
-                                p.vx = Math.random() > 0.5 ? 2 : -2;
-                                const painText = ['Ouch!', 'Hey!', 'Stop hitting me!', 'Ow!'];
-                                setPartnerMessage({type:'chatter', text: painText[Math.floor(Math.random() * painText.length)]}); 
-                                try { playSyntheticSound('hit'); } catch(err){}
-                            }
-                            clearTimeout(p.hitClearTimer);
-                            p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
-                            
-                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                            p.lastMouseX = clientX;
-                            p.lastMouseY = clientY;
-                            p.dragOffsetX = p.x - clientX;
-                            p.dragOffsetY = p.y - clientY;
-                            
-                            p.longPressTimer = setTimeout(() => {
-                                p.isDragging = true;
-                                setEmotion('angry');
-                                setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
-                                if (navigator.vibrate) navigator.vibrate(50);
-                            }, 500);
-                        }}
-                        ></div>
                         {/* Anime Emotion Particles Overlay */}
                         {emotion !== 'idle' && emotion !== 'talking' && (
                             <div 
