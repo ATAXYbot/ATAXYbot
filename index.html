@@ -7947,6 +7947,8 @@ INSTRUCTIONS:
                                 // Hover 140px above the element
                                 const targetY = rect.top - 140;
                                 
+                                const dist = Math.hypot(targetX - p.x, targetY - p.y);
+                                
                                 p.vx += (targetX - p.x) * 0.05;
                                 p.vy += (targetY - p.y) * 0.05;
                                 
@@ -7955,7 +7957,11 @@ INSTRUCTIONS:
                                 p.vy *= 0.8;
                                 
                                 p.isGrounded = false;
-                                p.state = 'falling';
+                                if (dist < 15) {
+                                    p.state = 'greet';
+                                } else {
+                                    p.state = 'falling';
+                                }
                             }
                         } else {
                             p.vy += 0.6; // Gravity
