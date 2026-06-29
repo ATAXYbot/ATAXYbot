@@ -7607,6 +7607,14 @@ INSTRUCTIONS:
                     
                     model.scale.setScalar(baseScale);
                     
+                    // Create an invisible capsule hitbox so Raycaster is 100% reliable (SkinnedMesh raycasting hits the T-pose, not the animated pose)
+                    const hitGeo = new THREE.CylinderGeometry(0.35 * size.y, 0.35 * size.y, size.y, 8);
+                    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); // invisible but raycastable
+                    const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+                    hitMesh.position.y = size.y / 2;
+                    hitMesh.name = "RaycastHitbox";
+                    model.add(hitMesh);
+                    
                     // Center the model on X and Z to fix off-screen exports, but keep feet grounded on Y
                     const scaledBox = new THREE.Box3().setFromObject(model);
                     const center = scaledBox.getCenter(new THREE.Vector3());
