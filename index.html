@@ -7763,8 +7763,8 @@ INSTRUCTIONS:
                     if (p.isDragging) {
                         p.mouseVx = deltaX;
                         p.mouseVy = deltaY;
-                        p.x = clientX;
-                        p.y = clientY;
+                        p.x = clientX + (p.dragOffsetX || 0);
+                        p.y = clientY + (p.dragOffsetY || 0);
                     } else if (p.isPointerDown) {
                         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                             clearTimeout(p.longPressTimer);
@@ -8254,7 +8254,14 @@ INSTRUCTIONS:
                         if (previewAnim) {
                             targetAnim = previewAnim;
                         } else {
-                            if (p.isDragging) targetAnim = 'drag';
+                            if (p.isDragging) {
+                                if (!p.dragAnimTimer || Date.now() - p.dragAnimTimer > 1500) {
+                                    const pool = ['Levitate Idle', 'Flying Forward', 'Flying Forward Super', 'Swim_Idle_Loop', 'Swim_Fwd_Loop', 'Shivering', 'Roll', 'Backflip', 'Zombie_Idle_Loop', 'Defend', 'Tired Hunched', 'Idle_Shield_Break', 'Crawl'];
+                                    p.currentDragAnim = pool[Math.floor(Math.random() * pool.length)];
+                                    p.dragAnimTimer = Date.now();
+                                }
+                                targetAnim = p.currentDragAnim || 'drag';
+                            }
                             else if (p.state === 'climbing') targetAnim = 'climb';
                             else if (p.state === 'sit_enter') targetAnim = 'sit_enter';
                             else if (p.state === 'sit_idle') {
@@ -8494,6 +8501,8 @@ INSTRUCTIONS:
                             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                             p.lastMouseX = clientX;
                             p.lastMouseY = clientY;
+                            p.dragOffsetX = p.x - clientX;
+                            p.dragOffsetY = p.y - clientY;
                             
                             p.longPressTimer = setTimeout(() => {
                                 p.isDragging = true;
