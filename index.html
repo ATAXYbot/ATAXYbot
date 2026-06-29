@@ -7914,12 +7914,8 @@ INSTRUCTIONS:
                 window.addEventListener('touchend', handlePointerUp);
 
                 const loop = () => {
-                    if (!visible || (currentTab === 'questions' && showQuiz)) {
+                    if (!visible) {
                         if (widgetRef.current) widgetRef.current.style.opacity = '0';
-                        if (currentTab === 'questions' && showQuiz) {
-                            animationFrameId = requestAnimationFrame(loop);
-                            return;
-                        }
                     } else {
                         if (widgetRef.current) widgetRef.current.style.opacity = '1';
                     }
