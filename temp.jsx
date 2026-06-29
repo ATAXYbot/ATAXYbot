@@ -6824,7 +6824,7 @@ INSTRUCTIONS:
             const [msg, setMsg] = useState('');
             const [isTyping, setIsTyping] = useState(false);
             const [chats, setChats] = useState([
-                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, a mentor to help all the students. I can help you solve Physics, Chemistry, and Biology doubts. Ask me anything!" }
+                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your perfectly intelligent AI mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" }
             ]);
             const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
             const chatEndRef = useRef(null);
@@ -6844,45 +6844,15 @@ INSTRUCTIONS:
                 setMsg('');
                 setIsTyping(true);
 
-                let success = false;
-                let attempts = 0;
-                const maxAttempts = 6; // Queue up to 6 times (1 minute)
-                let finalResponse = "Connection error with ATAXY Mentor.";
-                let finalAudio = null;
+                const systemContext = `You are ATAXY, a highly intelligent and capable AI mentor. Your goal is to help the user with absolutely anything they need perfectly and intelligently. You are an expert in all subjects, life advice, general knowledge, and any task requested. Be engaging, extremely helpful, and provide detailed, accurate, and perfect responses.`;
 
-                while (attempts < maxAttempts && !success) {
-                    try {
-                        const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
-                        const res = await fetch(proxyUrl, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ query_text: userMsg })
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            finalResponse = data.text_response || "Sorry, I couldn't process that.";
-                            finalAudio = data.audio_base64;
-                            success = true;
-                        } else {
-                            const errorData = await res.json().catch(() => ({}));
-                            if (res.status === 500 || res.status === 400) {
-                                finalResponse = `Server Error: ${errorData.error || res.statusText}`;
-                                success = true; // Stop retrying on hard errors
-                            }
-                        }
-                    } catch (err) {
-                        console.warn(`Chat attempt ${attempts + 1} failed. Retrying...`);
-                    }
-                    if (!success) {
-                        attempts++;
-                        if (attempts < maxAttempts) await new Promise(r => setTimeout(r, 10000));
-                    }
+                try {
+                    const aiReply = await fetchGeminiSecure(userMsg, chats, systemContext);
+                    setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiReply.explanation, audio: aiReply.audio }]);
+                } catch (err) {
+                    setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: "I am currently receiving a very high volume of requests. Please try again in a minute!", audio: null }]);
                 }
-
-                if (!success) finalResponse = "I am currently receiving a very high volume of requests. Please try again in a minute!";
-
-                setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: finalResponse, audio: finalAudio }]);
-
+                
                 setIsTyping(false);
             };
 
@@ -7202,12 +7172,14 @@ INSTRUCTIONS:
             
             const [emotion, setEmotion] = useState('idle'); 
             const [visible, setVisible] = useState(false);
+            const [bubbleBtnText, setBubbleBtnText] = useState('OK');
+            const [isBubbleFlipped, setIsBubbleFlipped] = useState(false);
             const [renderState, setRenderState] = useState('falling');
             const [facing, setFacing] = useState(1); 
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
-
-            
+            const bubbleRef = useRef(null);
+            const visorRef = useRef(null);
 
             // Three.js Initialization
             useEffect(() => {
@@ -7237,15 +7209,23 @@ INSTRUCTIONS:
                     const size = box.getSize(new THREE.Vector3());
                     
                     // Auto-scale to a comfortable height for the camera
-                    const targetHeight = 1.3; 
+                    const targetHeight = 0.9; // Decreased base size
                     const baseScale = targetHeight / size.y;
                     
                     model.scale.setScalar(baseScale);
                     
+                    // Create an invisible capsule hitbox so Raycaster is 100% reliable (SkinnedMesh raycasting hits the T-pose, not the animated pose)
+                    const hitGeo = new THREE.CylinderGeometry(0.55 * size.y, 0.55 * size.y, size.y * 1.1, 8);
+                    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); // invisible but raycastable
+                    const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+                    hitMesh.position.y = size.y / 2;
+                    hitMesh.name = "RaycastHitbox";
+                    model.add(hitMesh);
+                    
                     // Center the model on X and Z to fix off-screen exports, but keep feet grounded on Y
                     const scaledBox = new THREE.Box3().setFromObject(model);
                     const center = scaledBox.getCenter(new THREE.Vector3());
-                    model.position.set(-center.x, -0.65, -center.z); // -0.65 to ground it relative to 1.3 height
+                    model.position.set(-center.x, -0.45, -center.z); // -0.45 to ground it relative to 0.9 height
                     scene.add(model);
                     
                     if (threeRef.current) threeRef.current.baseScale = baseScale;
@@ -7263,16 +7243,36 @@ INSTRUCTIONS:
                         animMap.idle = animMap['Idle_Loop'] || gltf.animations[0];
                         animMap.walk = animMap['Walk_Loop'] || animMap.idle;
                         animMap.fall = animMap['Jump_Loop'] || animMap['Flying Forward'] || animMap.idle;
+                        animMap.climb = animMap['ClimbUp_1m_RM'] || animMap.walk;
+                        animMap.drag = animMap['Levitate Idle'] || animMap.fall;
                         animMap.write = animMap['Idle_TalkingPhone_Loop'] || animMap.idle;
                         animMap.talk = animMap['Idle_Talking_Loop'] || animMap.idle;
                         animMap.hit = animMap['Hit_Knockback'] || animMap.idle;
-                        // Advanced Brain Animations
-                        animMap.listening = animMap['Idle Listening'] || animMap.idle;
-                        animMap.nod = animMap['Head Nod'] || animMap.idle;
+                        animMap.sit_enter = animMap['Sitting_Enter'] || animMap.idle;
+                        animMap.sit_idle = animMap['Sitting_Idle_Loop'] || animMap.idle;
+                        animMap.sit_exit = animMap['Sitting_Exit'] || animMap.idle;
+                        animMap.sleeping = animMap['Sleeping'] || animMap.idle;
+                        animMap.wake = animMap['LayToIdle'] || animMap.idle;
+                        animMap.jump_start = animMap['Jump_Start'] || animMap.fall;
+                        animMap.jump_land = animMap['Jump_Land'] || animMap.idle;
+                        // Advanced Brain Animations & Pools
+                        animMap.pool_idle = ['Idle_Loop', 'Idle_FoldArms_Loop', 'Idle Listening', 'Tired Hunched', 'Shivering'];
+                        animMap.pool_happy = ['Victory', 'Victory Fist Pump', 'Dance Charleston', 'Dance Body Roll', 'Jumping Jacks', 'Backflip'];
+                        animMap.pool_angry = ['Angry', 'Reject', 'Defend', 'Sword_Attack'];
+                        animMap.pool_talk = ['Idle_Talking_Loop', 'Idle_TalkingPhone_Loop'];
+                        animMap.pool_hit = ['Hit_Head', 'Hit_Chest', 'Hit_Knockback'];
+                        
+                        // Expressive mapping
+                        animMap.expr_angry = animMap.pool_angry;
+                        animMap.expr_happy = animMap.pool_happy;
+                        animMap.expr_talk = animMap.pool_talk;
+                        animMap.expr_confused = ['Confused', 'Idle Listening'];
+                        animMap.expr_idle = animMap.pool_idle;
+                        animMap.sit_talk = animMap['Sitting_Talking_Loop'] || animMap.sit_idle;
+                        animMap.hit_tap = animMap.pool_hit;
+                        animMap.dizzy = animMap['Dizzy'] || animMap.idle;
+                        animMap.knockout = animMap['Death01'] || animMap.idle;
                         animMap.greet = animMap['Greeting'] || animMap.idle;
-                        animMap.victory = animMap['Victory'] || animMap.idle;
-                        animMap.confused = animMap['Confused'] || animMap.idle;
-                        animMap.yes = animMap['Yes'] || animMap.idle;
                         
                         if (!animMap.idle) animMap.idle = gltf.animations[0];
                         if (!animMap.walk) animMap.walk = animMap.idle;
@@ -7294,22 +7294,33 @@ INSTRUCTIONS:
                 if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
                     setVisible(true);
                     
-                    const isImportant = partnerMessage.type === 'missed_target' || partnerMessage.type === 'reminder' || partnerMessage.requireAcknowledge;
+                    setEmotion(partnerMessage.emotion || (partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking')));
                     
+                    if (partnerMessage.type === 'chatter') {
+                        const options = ['Got it!', 'Cool', 'Nice!', 'Okay', 'Right on!'];
+                        setBubbleBtnText(options[Math.floor(Math.random() * options.length)]);
+                    } else if (partnerMessage.type === 'missed_target') {
+                        setBubbleBtnText('I will do it now!');
+                    } else if (partnerMessage.type === 'water') {
+                        setBubbleBtnText('Glug glug!');
+                    } else if (partnerMessage.type === 'greeting') {
+                        setBubbleBtnText('Let\'s go!');
+                    } else if (partnerMessage.type === 'added_target') {
+                        setBubbleBtnText('Awesome!');
+                    } else {
+                        setBubbleBtnText('OK');
+                    }
                     
-                    setEmotion(partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking'));
-                    
-                    if (isImportant) return; // Wait for Got It button
-                    
-                    const t = setTimeout(() => {
-                        setVisible(false);
-                        
-                        setTimeout(() => {
-                            setPartnerMessage(null);
-                            setEmotion('idle');
-                        }, 500); 
-                    }, Math.max(6000, partnerMessage.text.length * 70)); 
-                    return () => clearTimeout(t);
+                    if (partnerMessage.type === 'chatter') {
+                        const timer = setTimeout(() => {
+                            setVisible(false);
+                            setTimeout(() => {
+                                if (physicsRef.current) physicsRef.current.partnerMessage = null;
+                                setPartnerMessage(null);
+                            }, 300);
+                        }, 5000);
+                        return () => clearTimeout(timer);
+                    }
                 }
             }, [partnerMessage, partnerConfig]);
 
@@ -7318,38 +7329,178 @@ INSTRUCTIONS:
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
                 
                 const chatterPhrases = {
-                    'mia_cheer': ["You're doing amazing!", "Keep that energy up!", "Woohoo, let's crush these exams!", "Remember to take deep breaths!"],
-                    'prof_oak': ["Consistency is the key to mastery.", "Patience, young scholar.", "A focused mind achieves great things.", "Review your mistakes carefully."],
-                    'chief_commander': ["No slacking! Back to work!", "Discipline equals success!", "Focus! Don't let me catch you dozing!", "Push harder! You can do this!"],
-                    'serena_health': ["Don't forget to drink water!", "Sit up straight, posture matters!", "Take a quick stretch break soon.", "Your health is just as important as your studies."]
+                    'mia_cheer': [
+                        {text: "You're doing amazing!", emotion: 'happy'},
+                        {text: "Keep that energy up!", emotion: 'happy'},
+                        {text: "Woohoo, let's crush these exams!", emotion: 'happy'},
+                        {text: "Remember to take deep breaths!", emotion: 'sad'}
+                    ],
+                    'prof_oak': [
+                        {text: "Consistency is the key to mastery.", emotion: 'thinking'},
+                        {text: "Patience, young scholar.", emotion: 'thinking'},
+                        {text: "A focused mind achieves great things.", emotion: 'talking'},
+                        {text: "Review your mistakes carefully.", emotion: 'sad'}
+                    ],
+                    'chief_commander': [
+                        {text: "No slacking! Back to work!", emotion: 'angry'},
+                        {text: "Discipline equals success!", emotion: 'angry'},
+                        {text: "Focus! Don't let me catch you dozing!", emotion: 'surprised'},
+                        {text: "Push harder! You can do this!", emotion: 'happy'}
+                    ],
+                    'serena_health': [
+                        {text: "Don't forget to drink water!", emotion: 'water'},
+                        {text: "Sit up straight, posture matters!", emotion: 'talking'},
+                        {text: "Take a quick stretch break soon.", emotion: 'sleepy'},
+                        {text: "Your health is just as important as your studies.", emotion: 'love'}
+                    ]
                 };
                 
                 const chatterInterval = setInterval(() => {
                     // Only chatter if visible, grounded, and not already talking
                     const p = physicsRef.current;
-                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.6) {
-                        const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
-                        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                        setPartnerMessage({ type: 'chatter', text: randomPhrase });
+                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.4) {
+                        let dynamicPhrase = null;
+                        
+                        // Live Context Reading
+                        if (currentTab === 'practice') {
+                            if (Math.random() > 0.5) dynamicPhrase = {text: "Solving MCQs? Don't forget to review your mistakes!", emotion: 'thinking'};
+                        } else if (currentTab === 'profile') {
+                            if (Math.random() > 0.5) dynamicPhrase = {text: "Checking your stats? Keep grinding and you'll hit Rank 1!", emotion: 'happy'};
+                        } else if (currentTab === 'home') {
+                            const targetsStr = localStorage.getItem('ataxy_daily_targets');
+                            if (targetsStr) {
+                                try {
+                                    const targets = JSON.parse(targetsStr);
+                                    const pending = targets.filter(t => !t.completed);
+                                    if (pending.length > 0) {
+                                        const t = pending[Math.floor(Math.random() * pending.length)];
+                                        dynamicPhrase = {text: `Hey! Are you working on "${t.text}"? Keep at it!`, emotion: 'thinking'};
+                                    } else {
+                                        dynamicPhrase = {text: `All targets complete! You are doing amazing!`, emotion: 'love'};
+                                    }
+                                } catch(e){}
+                            }
+                        }
+                        
+                        if (dynamicPhrase && Math.random() > 0.3) {
+                            setPartnerMessage({ type: 'chatter', text: dynamicPhrase.text, emotion: dynamicPhrase.emotion });
+                        } else {
+                            const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
+                            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                            setPartnerMessage({ type: 'chatter', text: randomPhrase.text, emotion: randomPhrase.emotion });
+                        }
                     }
                 }, 15000); 
 
                 return () => clearInterval(chatterInterval);
-            }, [partnerConfig, emotion, setPartnerMessage]);
+            }, [partnerConfig, emotion, setPartnerMessage, currentTab]);
+            
+            useEffect(() => {
+                if (physicsRef.current) {
+                    physicsRef.current.emotion = emotion;
+                    physicsRef.current.partnerMessage = partnerMessage;
+                }
+            }, [emotion, partnerMessage]);
+
             useEffect(() => {
                 if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
                 
                 let animationFrameId;
+                
+                const handleGlobalPointerDown = (e) => {
+                    // Ignore clicks on HTML UI elements (like chat bubble buttons)
+                    if (e.target.closest && (e.target.closest('button') || e.target.closest('.chat-bubble') || e.target.closest('input') || e.target.closest('textarea'))) return;
+                    if (!threeRef.current || !threeRef.current.scene || !canvasRef.current) return;
+                    const p = physicsRef.current;
+                    if (p.brainState === 'knockout') return;
+                    
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    
+                    const rect = canvasRef.current.getBoundingClientRect();
+                    if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+                        const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+                        
+                        const raycaster = new THREE.Raycaster();
+                        raycaster.setFromCamera(new THREE.Vector2(x, y), threeRef.current.camera);
+                        
+                        const intersects = raycaster.intersectObjects(threeRef.current.scene.children, true);
+                        const hit = intersects.find(i => i.object.name === 'RaycastHitbox' || i.object.isSkinnedMesh);
+                        
+                        if (hit) {
+                                // Hit the 3D model!
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                p.isPointerDown = true;
+                                p.pointerDownTime = Date.now();
+                                
+                                if (p.brainState === 'sitting' || p.brainState === 'hurt') {
+                                    p.brainState = 'wander';
+                                    p.sitExitTimer = null;
+                                }
+                                
+                                // INSTANT HIT REACTION
+                                p.hitCount = (p.hitCount || 0) + 1;
+                                if (p.hitCount >= 4) {
+                                    p.brainState = 'knockout';
+                                    p.state = 'dizzy'; 
+                                    p.knockoutTimer = Date.now();
+                                    p.vx = 0;
+                                    p.hitCount = 0;
+                                    p.playedDizzySound = false;
+                                    p.playedFallSound = false;
+                                    p.playedWakeSound = false;
+                                    setEmotion('angry');
+                                    setPartnerMessage({type:'chatter', text:'Ugh... knocking me out...'});
+                                } else {
+                                    p.brainState = 'hit_tap';
+                                    p.state = 'hit_tap';
+                                    p.hitTimer = Date.now();
+                                    setEmotion('angry');
+                                    setPartnerMessage({type:'chatter', text:['Ouch!', 'Hey!', 'Stop that!', 'Why?'][Math.floor(Math.random()*4)]});
+                                    p.vx = (Math.random() - 0.5) * 4; 
+                                }
+                                
+                                p.dragOffsetX = p.x - clientX;
+                                p.dragOffsetY = p.y - clientY;
+                                p.lastMouseX = clientX;
+                                p.lastMouseY = clientY;
+                                
+                                clearTimeout(p.hitClearTimer);
+                                p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
+                                
+                                p.longPressTimer = setTimeout(() => {
+                                    p.isDragging = true;
+                                    setEmotion('angry');
+                                    setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
+                                    if (navigator.vibrate) navigator.vibrate(50);
+                                }, 500);
+                            }
+                        }
+                };
 
                 const handlePointerMove = (e) => {
                     const p = physicsRef.current;
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const deltaX = clientX - (p.lastMouseX || clientX);
+                    const deltaY = clientY - (p.lastMouseY || clientY);
+                    
                     if (p.isDragging) {
-                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                        p.mouseVx = clientX - p.lastMouseX;
-                        p.mouseVy = clientY - p.lastMouseY;
-                        p.x = clientX;
-                        p.y = clientY;
+                        p.mouseVx = deltaX;
+                        p.mouseVy = deltaY;
+                        p.x = clientX + (p.dragOffsetX || 0);
+                        p.y = clientY + (p.dragOffsetY || 0);
+                    } else if (p.isPointerDown) {
+                        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                            clearTimeout(p.longPressTimer);
+                            p.targetRotationY = (p.targetRotationY || 0) + deltaX * 0.01;
+                        }
+                    }
+                    
+                    if (p.isPointerDown || p.isDragging) {
                         p.lastMouseX = clientX;
                         p.lastMouseY = clientY;
                     }
@@ -7357,16 +7508,47 @@ INSTRUCTIONS:
 
                 const handlePointerUp = (e) => {
                     const p = physicsRef.current;
+                    clearTimeout(p.longPressTimer);
+                    p.isPointerDown = false;
                     if (p.isDragging) {
                         p.isDragging = false;
-                        p.vx = p.mouseVx * 1.5;
-                        p.vy = p.mouseVy * 1.5;
                         p.isGrounded = false;
                         setEmotion('idle');
                         playSyntheticSound('throw');
+                        
+                        const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
+                        let nearest = null;
+                        let minDist = Infinity;
+                        
+                        platforms.forEach(el => {
+                            const rect = el.getBoundingClientRect();
+                            if (rect.height > 0 && rect.width > 0 && rect.top > 150 && rect.bottom < window.innerHeight) {
+                                const cX = rect.left + rect.width / 2;
+                                const cY = rect.top;
+                                const dist = Math.hypot(cX - p.x, cY - p.y);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    nearest = rect;
+                                }
+                            }
+                        });
+                        
+                        if (nearest && minDist < 300) {
+                            const flightFrames = 30;
+                            p.vx = (nearest.left + nearest.width / 2 - p.x) / flightFrames;
+                            p.vy = (nearest.top - p.y - 0.5 * 0.6 * flightFrames * flightFrames) / flightFrames;
+                        } else {
+                            p.vx = p.mouseVx * 1.5;
+                            p.vy = p.mouseVy * 1.5;
+                        }
+                    } else {
+                        p.targetRotationY = 0;
                     }
                 };
 
+                // Use capture phase for pointerdown to intercept Raycaster hits before React UI
+                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
+                
                 window.addEventListener('pointermove', handlePointerMove);
                 window.addEventListener('pointerup', handlePointerUp);
                 window.addEventListener('touchmove', handlePointerMove, { passive: false });
@@ -7401,13 +7583,36 @@ INSTRUCTIONS:
                         
                         
                         // Viewport Loss Recovery
-                        if (p.y < -200 || p.y > window.innerHeight + 200) {
-                            p.y = -50;
-                            p.vy = 0;
+                        if (isNaN(p.y) || isNaN(p.x)) {
+                            p.y = window.innerHeight / 2;
                             p.x = window.innerWidth / 2;
+                            p.vy = 0;
+                        } else if (p.y < -50) {
+                            // Scrolled up too far, drop down from ceiling
+                            p.y = -40;
+                            p.vy = 5; 
+                            p.x = window.innerWidth / 2;
+                            p.groundTarget = null;
+                            p.isGrounded = false;
+                            p.brainState = 'hurt';
+                            p.hurtTimer = now;
+                            p.state = 'fall';
                             setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Wait for me!!' });
-                            // playSyntheticSound('throw'); // Swoosh sound
+                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
+                            try { playSyntheticSound('throw'); } catch(e){}
+                        } else if (p.y > window.innerHeight + 50) {
+                            // Scrolled down too far, jump up from floor
+                            p.y = window.innerHeight + 40;
+                            p.vy = -18; // Massive jump up
+                            p.x = window.innerWidth / 2;
+                            p.groundTarget = null;
+                            p.isGrounded = false;
+                            p.brainState = 'hurt';
+                            p.hurtTimer = now;
+                            p.state = 'jump_start';
+                            setEmotion('angry');
+                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
+                            try { playSyntheticSound('throw'); } catch(e){}
                         }
                         
                         
@@ -7469,25 +7674,27 @@ INSTRUCTIONS:
                                     setEmotion('angry');
                                     p.state = 'angry';
                                     p.vx = 0;
-                                    setPartnerMessage({ type: 'chatter', text: `You are LATE for "${lateTarget.text}"! Go complete it NOW!` });
+                                    setPartnerMessage({ type: 'target_alert', text: `You are LATE! It is past time for "${lateTarget.text}"! Go complete it NOW!` });
                                 } else if (pendingTarget && p.brainState !== 'angry' && p.brainState !== 'tour' && Math.random() < 0.2) {
                                     setEmotion('talking');
                                     p.state = 'greet';
-                                    setPartnerMessage({ type: 'chatter', text: `Reminder: You should be working on "${pendingTarget.text}" right now!` });
+                                    p.brainState = 'wander'; 
+                                    p.brainTimer = now;
+                                    setPartnerMessage({ type: 'target_alert', text: `Hello! Just a reminder: You should be working on "${pendingTarget.text}" right now!` });
                                 }
                             } catch(e) {}
                         }
 
                         // Physics / Collision
                         if (p.vy >= 0) {
-                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
                             let landed = false;
                             
                             // Check if still on the tracked groundTarget
                             if (p.isGrounded && p.groundTarget) {
                                 const rect = p.groundTarget.getBoundingClientRect();
                                 // Check if button is still visible on screen and character is within its X bounds
-                                if (rect.height > 0 && rect.width > 0 && p.x > rect.left && p.x < rect.right) {
+                                if (rect.height > 0 && rect.width > 0 && rect.top > 150 && p.x > rect.left && p.x < rect.right) {
                                     p.y = rect.top; // Glue to it during scroll!
                                     p.vy = 0;
                                     landed = true;
@@ -7499,13 +7706,29 @@ INSTRUCTIONS:
                             if (!landed) {
                                 for (let i = 0; i < platforms.length; i++) {
                                     const rect = platforms[i].getBoundingClientRect();
+                                    if (rect.height === 0 || rect.width === 0) continue;
+                                    if (rect.width > window.innerWidth * 0.8) continue; // Ignore full width elements
+                                    if (rect.top < 150) continue; // Ignore top headers
+                                    
                                     if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
                                         if (p.x > rect.left && p.x < rect.right) {
+                                            const impactVy = p.vy;
                                             p.y = rect.top;
                                             p.vy = 0;
                                             p.isGrounded = true;
                                             p.groundTarget = platforms[i];
                                             landed = true;
+                                            
+                                            if (impactVy > 15 && p.brainState !== 'knockout') {
+                                                p.brainState = 'hurt';
+                                                p.state = 'hit';
+                                                p.hurtTimer = now;
+                                                setEmotion('angry');
+                                            } else if (Math.random() < 0.2) {
+                                                p.brainState = 'sitting';
+                                                p.state = 'sit_enter';
+                                                p.sitTimer = now;
+                                            }
                                             break;
                                         }
                                     }
@@ -7513,10 +7736,18 @@ INSTRUCTIONS:
                             }
 
                             if (!landed && p.y >= window.innerHeight - 10) {
+                                const impactVy = p.vy;
                                 p.y = window.innerHeight - 10;
                                 p.vy = 0;
                                 p.isGrounded = true;
                                 p.groundTarget = null;
+                                
+                                if (impactVy > 15 && p.brainState !== 'knockout') {
+                                    p.brainState = 'hurt';
+                                    p.state = 'hit';
+                                    p.hurtTimer = now;
+                                    setEmotion('angry');
+                                }
                             } else if (!landed) {
                                 p.isGrounded = false;
                             }
@@ -7558,6 +7789,79 @@ INSTRUCTIONS:
                                 if (now - p.brainTimer > 8000) {
                                     p.brainState = 'wander';
                                 }
+                            } else if (p.brainState === 'hit_tap') {
+                                const elapsed = now - p.hitTimer;
+                                if (elapsed < 1000) {
+                                    p.state = 'hit_tap';
+                                } else {
+                                    p.brainState = 'wander';
+                                    p.state = 'idle';
+                                }
+                            } else if (p.brainState === 'knockout') {
+                                const elapsed = now - p.knockoutTimer;
+                                if (elapsed < 3000) {
+                                    p.state = 'dizzy';
+                                    if (!p.playedDizzySound) {
+                                        try { playSyntheticSound('throw'); } catch(e){}
+                                        p.playedDizzySound = true;
+                                    }
+                                } else if (elapsed < 4500) {
+                                    p.state = 'knockout';
+                                    if (!p.playedFallSound) {
+                                        try { playSyntheticSound('hit'); } catch(e){}
+                                        p.playedFallSound = true;
+                                        p.groundTarget = null;
+                                        p.isGrounded = false;
+                                        p.vy = 0; // Drop to floor
+                                    }
+                                } else if (elapsed < 10000) {
+                                    p.state = 'sleeping';
+                                } else if (elapsed < 11500) {
+                                    p.state = 'wake';
+                                    if (!p.playedWakeSound) {
+                                        try { playSyntheticSound('throw'); } catch(e){}
+                                        p.playedWakeSound = true;
+                                    }
+                                } else {
+                                    p.brainState = 'wander';
+                                    p.state = 'idle';
+                                    p.hitCount = 0;
+                                    p.playedDizzySound = false;
+                                    p.playedFallSound = false;
+                                    p.playedWakeSound = false;
+                                }
+                            } else if (p.brainState === 'hurt') {
+                                const elapsed = now - p.hurtTimer;
+                                if (elapsed < 1000) {
+                                    p.state = 'hit';
+                                } else if (elapsed < 4000) {
+                                    p.state = 'sleeping';
+                                    setEmotion('idle');
+                                } else if (elapsed < 5500) {
+                                    p.state = 'wake';
+                                } else {
+                                    p.brainState = 'wander';
+                                    p.state = 'idle';
+                                }
+                            } else if (p.brainState === 'sitting') {
+                                p.vx = 0; // Stop sliding
+                                const elapsed = now - p.sitTimer;
+                                if (elapsed < 1000) {
+                                    p.state = 'sit_enter';
+                                } else if (p.sitExitTimer) {
+                                    p.state = 'sit_exit';
+                                    if (now - p.sitExitTimer > 1000) {
+                                        p.brainState = 'wander';
+                                        p.state = 'idle';
+                                        p.sitExitTimer = null;
+                                    }
+                                } else {
+                                    p.state = 'sit_idle';
+                                    // Stand up naturally after a long time randomly
+                                    if (elapsed > 15000 && Math.random() < 0.002) {
+                                        p.sitExitTimer = now;
+                                    }
+                                }
                             } else {
                                 // Wander & Parkour Mode
                                 if (p.brainState === 'recovering') {
@@ -7577,7 +7881,7 @@ INSTRUCTIONS:
                                     p.groundTarget = null;
                                 } else {
                                     if (now - p.walkTimer > 2000) {
-                                        if (Math.random() > 0.5) {
+                                        if (Math.random() > 0.4) {
                                             p.vx = 0;
                                             p.state = 'idle';
                                             if (Math.random() > 0.2) {
@@ -7586,30 +7890,29 @@ INSTRUCTIONS:
                                             }
                                         } else {
                                             // Advanced UI Parkour / Pathfinding
-                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"]');
+                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
                                             let jumpTarget = null;
                                             
-                                            if (platforms.length > 0 && Math.random() > 0.4) {
+                                            if (platforms.length > 0) {
                                                 const visiblePlatforms = Array.from(platforms).filter(el => {
                                                     const r = el.getBoundingClientRect();
-                                                    return r.height > 0 && r.width > 0 && r.top > 0 && r.bottom < window.innerHeight;
+                                                    return r.height > 0 && r.width > 0 && r.top > 150 && r.bottom < window.innerHeight;
                                                 });
                                                 
-                                                // Mountain Climbing: Find platforms HIGHER than current position (smaller Y)
+                                                // Intelligent Climbing: Find platforms HIGHER than current position (smaller Y)
                                                 const higherPlatforms = visiblePlatforms.filter(el => {
                                                     const r = el.getBoundingClientRect();
-                                                    return r.top < p.y - 40; // At least 40px higher
+                                                    return r.top < p.y - 20; // At least 20px higher
                                                 });
                                                 
                                                 if (higherPlatforms.length > 0) {
-                                                    // Pick the lowest of the higher platforms to climb step-by-step
+                                                    // Pick the lowest of the higher platforms to climb step-by-step like a human
                                                     higherPlatforms.sort((a,b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
                                                     jumpTarget = higherPlatforms[0]; // Nearest one going up
                                                 } else {
                                                     // Reached the top or no higher platforms! Wander or jump down
                                                     jumpTarget = visiblePlatforms[Math.floor(Math.random() * visiblePlatforms.length)];
                                                 }
-
                                             }
                                             
                                             if (jumpTarget) {
@@ -7617,14 +7920,23 @@ INSTRUCTIONS:
                                                 const tX = rect.left + rect.width / 2;
                                                 const tY = rect.top;
                                                 
-                                                // Parkour leap
+                                                // Perfectly intelligent parkour leap physics
                                                 const dx = tX - p.x;
                                                 const dy = tY - p.y;
                                                 
                                                 if (Math.abs(dy) > 20) {
-                                                    // Need to jump up or down
-                                                    p.vy = -16;
-                                                    p.vx = (dx / 40); // 40 frames flight time approx
+                                                    // Need to jump up or down. Calculate exact arc.
+                                                    // Gravity is 0.6 per frame.
+                                                    // y = y0 + vy*t + 0.5*g*t^2 => vy = (dy - 0.5*g*t^2) / t
+                                                    // Since g is added before y update, we use a slightly modified discrete math,
+                                                    // but continuous approximation works perfectly for UI bounding boxes.
+                                                    const flightFrames = 45; // Fixed flight time of 45 frames (~0.75 seconds)
+                                                    
+                                                    // Exact required velocity to land on tY in flightFrames
+                                                    let reqVy = (dy - 0.5 * 0.6 * flightFrames * flightFrames) / flightFrames;
+                                                    
+                                                    p.vy = reqVy;
+                                                    p.vx = dx / flightFrames; 
                                                     p.isGrounded = false;
                                                     p.groundTarget = null;
                                                     p.lastJump = now;
@@ -7658,31 +7970,124 @@ INSTRUCTIONS:
                         else if (p.vx < -0.1) p.facing = -1;
                     }
                     if (widgetRef.current) {
-                        widgetRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
+                        const safeX = isNaN(p.x) ? window.innerWidth / 2 : p.x;
+                        const safeY = isNaN(p.y) ? window.innerHeight / 2 : p.y;
+                        widgetRef.current.style.transform = `translate(${safeX}px, ${safeY}px)`;
                     }
 
                     if (threeRef.current && threeRef.current.mixer) {
                         const dt = threeRef.current.clock.getDelta();
+                        const time = threeRef.current.clock.getElapsedTime();
                         threeRef.current.mixer.update(dt);
+
+                        // Procedural Head Animation (Anime Emotion Engine)
+                        const headBone = threeRef.current.scene.getObjectByName('head');
+                        if (headBone && !p.isDragging && (p.state === 'idle' || p.state === 'sit_idle')) {
+                            // Revert previous frame's offset
+                            if (headBone.userData.lastOffsetX !== undefined) {
+                                headBone.rotation.x -= headBone.userData.lastOffsetX;
+                                headBone.rotation.y -= headBone.userData.lastOffsetY;
+                                headBone.rotation.z -= headBone.userData.lastOffsetZ;
+                            }
+                            
+                            let offsetX = 0, offsetY = 0, offsetZ = 0;
+                            if (p.emotion === 'happy') {
+                                offsetX = Math.sin(time * 8) * 0.1;
+                            } else if (p.emotion === 'angry') {
+                                offsetY = Math.sin(time * 25) * 0.15;
+                                offsetX = 0.1;
+                            } else if (p.emotion === 'confused' || p.emotion === 'writing' || p.emotion === 'thinking') {
+                                offsetZ = -0.25;
+                            } else if (p.emotion === 'sad') {
+                                offsetX = 0.4;
+                            } else if (p.emotion === 'surprised') {
+                                offsetX = -0.3;
+                            } else if (p.emotion === 'talking') {
+                                // Small, fast head bobs to simulate talking energy (since no jaw bone exists)
+                                offsetX = (Math.sin(time * 25) * 0.04) + 0.05;
+                            }
+                            
+                            // Apply new offset and store
+                            headBone.rotation.x += offsetX;
+                            headBone.rotation.y += offsetY;
+                            headBone.rotation.z += offsetZ;
+                            
+                            headBone.userData.lastOffsetX = offsetX;
+                            headBone.userData.lastOffsetY = offsetY;
+                            headBone.userData.lastOffsetZ = offsetZ;
+                        } else if (headBone && headBone.userData.lastOffsetX !== undefined) {
+                            headBone.rotation.x -= headBone.userData.lastOffsetX;
+                            headBone.rotation.y -= headBone.userData.lastOffsetY;
+                            headBone.rotation.z -= headBone.userData.lastOffsetZ;
+                            headBone.userData.lastOffsetX = undefined;
+                        }
+
                         threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
                         
                         let targetAnim = 'idle';
                         if (previewAnim) {
                             targetAnim = previewAnim;
                         } else {
-                            if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
+                            if (p.isDragging) {
+                                if (!p.dragAnimTimer || Date.now() - p.dragAnimTimer > 1500) {
+                                    const pool = ['Levitate Idle', 'Flying Forward', 'Flying Forward Super', 'Swim_Idle_Loop', 'Swim_Fwd_Loop', 'Shivering', 'Roll', 'Backflip', 'Zombie_Idle_Loop', 'Defend', 'Tired Hunched', 'Idle_Shield_Break', 'Crawl'];
+                                    p.currentDragAnim = pool[Math.floor(Math.random() * pool.length)];
+                                    p.dragAnimTimer = Date.now();
+                                }
+                                targetAnim = p.currentDragAnim || 'drag';
+                            }
+                            else if (p.state === 'climbing') targetAnim = 'climb';
+                            else if (p.state === 'sit_enter') targetAnim = 'sit_enter';
+                            else if (p.state === 'sit_idle') {
+                                if (p.emotion === 'talking') targetAnim = 'sit_talk';
+                                else targetAnim = 'sit_idle';
+                            }
+                            else if (p.state === 'sit_exit') targetAnim = 'sit_exit';
+                            else if (p.state === 'hit') targetAnim = 'hit';
+                            else if (p.state === 'hit_tap') targetAnim = 'hit_tap';
+                            else if (p.state === 'dizzy') targetAnim = 'dizzy';
+                            else if (p.state === 'knockout') targetAnim = 'knockout';
+                            else if (p.state === 'sleeping') targetAnim = 'sleeping';
+                            else if (p.state === 'wake') targetAnim = 'wake';
+                            else if (p.state === 'greet') targetAnim = 'greet';
+                            else if (p.state === 'jumping' && p.vy < 0) targetAnim = 'jump_start';
+                            else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
                             else if (p.state === 'walking') targetAnim = 'walk';
                             else if (p.state === 'fallen') targetAnim = 'hit';
+                            else if (p.state === 'idle') {
+                                if (p.emotion === 'angry') targetAnim = 'expr_angry';
+                                else if (p.emotion === 'happy') targetAnim = 'expr_happy';
+                                else if (p.emotion === 'talking') targetAnim = 'expr_talk';
+                                else if (p.emotion === 'writing' || p.emotion === 'thinking') targetAnim = 'expr_confused';
+                                else targetAnim = 'expr_idle';
+                            }
+                            else targetAnim = p.state;
                         }
                         
                         if (threeRef.current.currentAnimState !== targetAnim) {
-                            const clip = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
+                            let clipRef = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
+                            if (Array.isArray(clipRef)) {
+                                clipRef = threeRef.current.animMap[clipRef[Math.floor(Math.random() * clipRef.length)]];
+                            }
+                            const clip = clipRef || threeRef.current.animMap.idle;
+
                             if (clip) {
                                 const nextAction = threeRef.current.mixer.clipAction(clip);
-                                if (threeRef.current.currentAction) {
+                                
+                                // Prevent continuous looping of transitional and expressive animations
+                                const nonLooping = ['sit_enter', 'sit_exit', 'hit', 'hit_tap', 'knockout', 'wake', 'jump_start', 'jump_land', 'sleeping', 'expr_angry', 'expr_happy', 'expr_talk', 'expr_confused', 'sit_talk'];
+                                if (nonLooping.includes(targetAnim)) {
+                                    nextAction.setLoop(THREE.LoopOnce, 1);
+                                    nextAction.clampWhenFinished = true;
+                                } else {
+                                    nextAction.setLoop(THREE.LoopRepeat, Infinity);
+                                    nextAction.clampWhenFinished = false;
+                                }
+
+                                if (threeRef.current.currentAction && threeRef.current.currentAction !== nextAction) {
                                     nextAction.reset().fadeIn(0.2).play();
                                     threeRef.current.currentAction.fadeOut(0.2);
-                                } else {
+                                } else if (!threeRef.current.currentAction) {
                                     nextAction.play();
                                 }
                                 threeRef.current.currentAction = nextAction;
@@ -7693,11 +8098,83 @@ INSTRUCTIONS:
                         if (threeRef.current.scene.children.length > 2) {
                             const model = threeRef.current.scene.children[2];
                             const baseScale = threeRef.current.baseScale || 1;
+                            let currentTargetScale = baseScale;
+                            
+                            // GIANT MODE for important notices!
+                            const pMsg = p.partnerMessage;
+                            let isGiant = false;
+                            if (pMsg && pMsg.type && pMsg.type !== 'chatter') {
+                                currentTargetScale = baseScale * 1.8; // Almost double size for important alerts!
+                                isGiant = true;
+                            } else if (p.isPointerDown || p.isDragging) {
+                                currentTargetScale = baseScale * 1.15; // Slightly larger when grabbed
+                            }
+                            
+                            // Screen space tracking for UI to follow 3D bones perfectly
+                            const headBone = model.getObjectByName('head');
+                            if (headBone && bubbleRef.current) {
+                                const topBone = model.getObjectByName('head_leaf') || headBone;
+                                const topPos = new THREE.Vector3();
+                                topBone.getWorldPosition(topPos);
+                                if (topBone.name === 'head') topPos.y += 0.3; // Fallback padding if no head_leaf
+                                else topPos.y += 0.1; // Slight offset above head_leaf
+                                
+                                topPos.project(threeRef.current.camera);
+                                
+                                // Map NDC to 300x300 canvas
+                                const topCanvasY = (-(topPos.y * 0.5) + 0.5) * 300;
+                                
+                                // Calculate true distance to top of viewport
+                                const screenHeadY = (p.y - 300) + topCanvasY;
+                                const needsFlip = screenHeadY < 150;
+                                
+                                if (p.lastFlipState !== needsFlip) {
+                                    p.lastFlipState = needsFlip;
+                                    setIsBubbleFlipped(needsFlip);
+                                }
+                                
+                                if (needsFlip) {
+                                    bubbleRef.current.style.top = '310px';
+                                    bubbleRef.current.style.bottom = 'auto';
+                                    bubbleRef.current.style.transformOrigin = 'top center';
+                                } else {
+                                    bubbleRef.current.style.top = 'auto';
+                                    // Added 50px extra padding to guarantee it never overlaps the head!
+                                    bubbleRef.current.style.bottom = `${300 - topCanvasY + 50}px`;
+                                    bubbleRef.current.style.transformOrigin = 'bottom center';
+                                }
+                            }
+
+                            // Holographic AR Emotion Visor tracking
+                            if (headBone && visorRef.current) {
+                                const facePos = new THREE.Vector3();
+                                headBone.getWorldPosition(facePos);
+                                facePos.y += 0.15; // Move up from neck to face middle
+                                
+                                // Push slightly towards camera so it stays in front of the geometry
+                                const camDir = new THREE.Vector3();
+                                threeRef.current.camera.getWorldDirection(camDir);
+                                facePos.add(camDir.multiplyScalar(-0.1));
+
+                                facePos.project(threeRef.current.camera);
+                                const faceCanvasX = (facePos.x * 0.5 + 0.5) * 300;
+                                const faceCanvasY = (-(facePos.y * 0.5) + 0.5) * 300;
+                                
+                                visorRef.current.style.transform = `translate(${faceCanvasX - 30}px, ${faceCanvasY - 20}px)`;
+                            }
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
-                                if (p.state === 'idle') targetRotation = 0; // face forward when idle or talking
+                                if (p.state === 'idle' || p.state === 'sit_idle' || p.state === 'sit_enter' || p.state === 'knockout' || p.state === 'sleeping') targetRotation = 0;
+                                
+                                if (p.isPointerDown || p.isDragging) {
+                                    if (p.targetRotationY !== undefined) {
+                                        targetRotation = p.targetRotationY;
+                                    }
+                                } else {
+                                    p.targetRotationY = undefined;
+                                }
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
-                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, baseScale, 0.1));
+                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, currentTargetScale, 0.1));
                             }
                         }
                     }
@@ -7709,12 +8186,10 @@ INSTRUCTIONS:
                 };
 
                 animationFrameId = requestAnimationFrame(loop);
+                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
                 return () => {
                     cancelAnimationFrame(animationFrameId);
-                    window.removeEventListener('pointermove', handlePointerMove);
-                    window.removeEventListener('pointerup', handlePointerUp);
-                    window.removeEventListener('touchmove', handlePointerMove);
-                    window.removeEventListener('touchend', handlePointerUp);
+                    document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
                 };
             }, [partnerConfig, currentTab, visible, showQuiz]);
 
@@ -7824,54 +8299,67 @@ INSTRUCTIONS:
                         }
                     `}</style>
                     <div 
-                        className={`relative flex flex-col items-center group pointer-events-auto transition-transform duration-500 translate-x-[-50%] translate-y-[-100%] cursor-grab active:cursor-grabbing`} 
+                        className={`relative flex flex-col items-center group pointer-events-none transition-transform duration-500 translate-x-[-50%] translate-y-[-100%]`} 
                         style={{ zIndex: 10050 }}
-                        onPointerDown={(e) => {
-                            
-                            const p = physicsRef.current;
-                            p.isDragging = true;
-                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                            p.lastMouseX = clientX;
-                            p.lastMouseY = clientY;
-                            setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
-                        }}
                     >
-                        <div onClick={() => setVisible(false)} className={`absolute bottom-[280px] left-1/2 -translate-x-1/2 z-20 min-w-[200px] max-w-[280px] text-sm cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 origin-bottom ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                        {/* Anime Emotion Particles Overlay */}
+                        {emotion !== 'idle' && emotion !== 'talking' && (
+                            <div 
+                                className={`absolute right-[40px] text-4xl z-30 pointer-events-none drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${emotion === 'angry' ? 'animate-pulse' : 'animate-bounce'}`}
+                                style={{ top: (partnerMessage && partnerMessage.type !== 'chatter') ? '20px' : '100px' }}
+                            >
+                                {emotion === 'angry' && '💢'}
+                                {emotion === 'sad' && '⛈️'}
+                                {emotion === 'happy' && '✨'}
+                                {emotion === 'surprised' && '❗'}
+                                {(emotion === 'confused' || emotion === 'thinking' || emotion === 'writing') && '❔'}
+                                {emotion === 'love' && '❤️'}
+                                {emotion === 'sleepy' && '💤'}
+                            </div>
+                        )}
+
+                        <div 
+                            ref={bubbleRef}
+                            style={{ 
+                                top: 'auto', 
+                                bottom: '150px',
+                                transformOrigin: 'bottom center',
+                                zIndex: 10070
+                            }}
+                            className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 flex flex-col gap-3 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+                        >
                             <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
-                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
+                            {partnerMessage?.type !== 'chatter' && (
+                                <div className="flex justify-end">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setVisible(false);
+                                            setTimeout(() => {
+                                                if (physicsRef.current) physicsRef.current.partnerMessage = null;
+                                                setPartnerMessage(null);
+                                            }, 300);
+                                        }}
+                                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 px-4 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors active:scale-95"
+                                    >
+                                        {bubbleBtnText}
+                                    </button>
+                                </div>
+                            )}
+                            <div className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45 ${isBubbleFlipped ? '-top-2 border-t border-l border-gray-100 dark:border-gray-700' : '-bottom-2 border-b border-r border-gray-100 dark:border-gray-700'}`}></div>
                         </div>
                         <div 
-                            className="relative flex flex-col items-center drop-shadow-xl" 
+                            className="relative flex flex-col items-center drop-shadow-xl pointer-events-none" 
                             style={{ 
                                 transformOrigin: 'bottom center',
                                 width: '300px',
                                 height: '300px',
-                                cursor: 'grab'
-                            }}
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
-                                setEmotion('happy'); 
-                                physicsRef.current.vy = -12; 
-                                physicsRef.current.isGrounded = false; 
-                                setPartnerMessage({type:'chatter', text:'Hahaha that tickles!'}); 
-                                playSyntheticSound('boing'); 
                             }}
                         >
-                            <canvas ref={canvasRef} style={{ pointerEvents: 'none' }}></canvas>
+                            <canvas ref={canvasRef} style={{ pointerEvents: 'none', filter: 'drop-shadow(0px 8px 6px rgba(0,0,0,0.4))' }}></canvas>
                         </div>
                         
-                        {availableAnims.length > 0 && (
-                            <div className="absolute top-0 right-[-150px] bg-black/80 text-white text-[10px] p-2 rounded max-h-[300px] overflow-y-auto z-50 pointer-events-auto flex flex-col gap-1 w-[140px] shadow-xl">
-                                <div className="font-bold text-xs mb-1 text-blue-400">Animation Debugger</div>
-                                <button onClick={(e) => { e.stopPropagation(); setPreviewAnim(null); }} className={`text-left hover:bg-white/20 p-1 rounded transition-colors ${!previewAnim ? 'bg-blue-600 font-bold' : ''}`}>⚡ Auto (Physics)</button>
-                                <div className="w-full h-px bg-white/20 my-1"></div>
-                                {availableAnims.map(a => (
-                                    <button key={a} onClick={(e) => { e.stopPropagation(); setPreviewAnim(a); }} className={`text-left hover:bg-white/20 p-1 rounded truncate transition-colors ${previewAnim === a ? 'bg-blue-500 font-bold' : ''}`} title={a}>{a}</button>
-                                ))}
-                            </div>
-                        )}
+
 
                         
                     </div>

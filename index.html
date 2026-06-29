@@ -7572,7 +7572,6 @@ INSTRUCTIONS:
             const [availableAnims, setAvailableAnims] = useState([]);
             const [previewAnim, setPreviewAnim] = useState(null);
             const bubbleRef = useRef(null);
-            const visorRef = useRef(null);
 
             // Three.js Initialization
             useEffect(() => {
@@ -7608,7 +7607,7 @@ INSTRUCTIONS:
                     model.scale.setScalar(baseScale);
                     
                     // Create an invisible capsule hitbox so Raycaster is 100% reliable (SkinnedMesh raycasting hits the T-pose, not the animated pose)
-                    const hitGeo = new THREE.CylinderGeometry(0.35 * size.y, 0.35 * size.y, size.y, 8);
+                    const hitGeo = new THREE.CylinderGeometry(0.55 * size.y, 0.55 * size.y, size.y * 1.1, 8);
                     const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); // invisible but raycastable
                     const hitMesh = new THREE.Mesh(hitGeo, hitMat);
                     hitMesh.position.y = size.y / 2;
@@ -7818,12 +7817,10 @@ INSTRUCTIONS:
                         const raycaster = new THREE.Raycaster();
                         raycaster.setFromCamera(new THREE.Vector2(x, y), threeRef.current.camera);
                         
-                        if (threeRef.current.scene.children.length > 2) {
-                            const model = threeRef.current.scene.children[2];
-                            const intersects = raycaster.intersectObject(model, true);
-                            const hit = intersects.find(i => i.object.isMesh || i.object.isSkinnedMesh);
-                            
-                            if (hit) {
+                        const intersects = raycaster.intersectObjects(threeRef.current.scene.children, true);
+                        const hit = intersects.find(i => i.object.name === 'RaycastHitbox' || i.object.isSkinnedMesh);
+                        
+                        if (hit) {
                                 // Hit the 3D model!
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -7874,7 +7871,6 @@ INSTRUCTIONS:
                                 }, 500);
                             }
                         }
-                    }
                 };
 
                 const handlePointerMove = (e) => {
@@ -7944,7 +7940,6 @@ INSTRUCTIONS:
 
                 // Use capture phase for pointerdown to intercept Raycaster hits before React UI
                 document.addEventListener('pointerdown', handleGlobalPointerDown, true);
-                document.addEventListener('touchstart', handleGlobalPointerDown, { capture: true, passive: false });
                 
                 window.addEventListener('pointermove', handlePointerMove);
                 window.addEventListener('pointerup', handlePointerUp);
@@ -8542,23 +8537,6 @@ INSTRUCTIONS:
                                 }
                             }
 
-                            // Holographic AR Emotion Visor tracking
-                            if (headBone && visorRef.current) {
-                                const facePos = new THREE.Vector3();
-                                headBone.getWorldPosition(facePos);
-                                facePos.y += 0.15; // Move up from neck to face middle
-                                
-                                // Push slightly towards camera so it stays in front of the geometry
-                                const camDir = new THREE.Vector3();
-                                threeRef.current.camera.getWorldDirection(camDir);
-                                facePos.add(camDir.multiplyScalar(-0.1));
-
-                                facePos.project(threeRef.current.camera);
-                                const faceCanvasX = (facePos.x * 0.5 + 0.5) * 300;
-                                const faceCanvasY = (-(facePos.y * 0.5) + 0.5) * 300;
-                                
-                                visorRef.current.style.transform = `translate(${faceCanvasX - 30}px, ${faceCanvasY - 20}px)`;
-                            }
                             if (model) {
                                 let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
                                 if (p.state === 'idle' || p.state === 'sit_idle' || p.state === 'sit_enter' || p.state === 'knockout' || p.state === 'sleeping') targetRotation = 0;
@@ -8573,24 +8551,24 @@ INSTRUCTIONS:
                                 model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
                                 model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, currentTargetScale, 0.1));
                             }
+                            
+                            threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
                         }
                     }
 
                     setRenderState(prev => prev !== p.state ? p.state : prev);
                     setFacing(prev => prev !== p.facing ? p.facing : prev);
-                    
-                    animationFrameId = requestAnimationFrame(loop);
-                };
+                        
+                        animationFrameId = requestAnimationFrame(loop);
+                    };
 
-                animationFrameId = requestAnimationFrame(loop);
-                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
-                document.addEventListener('touchstart', handleGlobalPointerDown, true);
-                return () => {
-                    cancelAnimationFrame(animationFrameId);
-                    document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
-                    document.removeEventListener('touchstart', handleGlobalPointerDown, true);
-                };
-            }, [partnerConfig, currentTab, visible, showQuiz]);
+                    animationFrameId = requestAnimationFrame(loop);
+                    document.addEventListener('pointerdown', handleGlobalPointerDown, true);
+                    return () => {
+                        cancelAnimationFrame(animationFrameId);
+                        document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
+                    };
+                }, [partnerConfig, currentTab, visible, showQuiz]);
 
             if (!partnerConfig.enabled || partnerConfig.character === 'none') return null;
 
