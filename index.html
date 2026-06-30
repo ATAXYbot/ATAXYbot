@@ -815,18 +815,20 @@
         const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch (e) { } };
 
         const setCloudData = (key, val) => {
-            const strVal = JSON.stringify(val);
+            const strVal = typeof val === 'string' ? val : JSON.stringify(val);
+            try { localStorage.setItem(key, strVal); } catch (e) {} // Always save locally first for fast access
             try {
                 if (window.Telegram?.WebApp?.CloudStorage && window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
                     window.Telegram.WebApp.CloudStorage.setItem(key, strVal, (err) => {
-                        if (err) { try { localStorage.setItem(key, strVal); } catch (e) { } }
+                        if (err) console.error('CloudStorage save error:', err);
                     });
-                } else {
-                    localStorage.setItem(key, strVal);
                 }
-            } catch (e) {
-                try { localStorage.setItem(key, strVal); } catch (err) { }
-            }
+            } catch (e) { console.error(e); }
+        };
+
+        const saveDmToStorage = (uid, history) => {
+            safeSetItem('dms_' + uid, JSON.stringify(history));
+            setCloudData('cloud_dms_' + uid, Array.isArray(history) ? history.slice(-3) : []);
         };
 
         const getCloudData = (key) => new Promise(resolve => {
@@ -3214,26 +3216,43 @@ Student Doubt: ${prompt}`
                     setPendingRequests(p);
                     setSentRequests(sr);
 
+                    // LocalStorage DMs
+                    const loadedDms = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && k.startsWith('dms_')) {
+                            try { loadedDms[k.replace('dms_', '')] = JSON.parse(localStorage.getItem(k)); } catch (e) { }
+                        }
+                    }
+
                     if (window.Telegram?.WebApp?.CloudStorage) {
                         window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
                             if (keys) {
-                                const dmKeys = keys.filter(k => k.startsWith('dms_'));
-                                window.Telegram.WebApp.CloudStorage.getItems(dmKeys, (err, vals) => {
-                                    const loadedDms = {};
-                                    dmKeys.forEach(k => { try { loadedDms[k.replace('dms_', '')] = JSON.parse(vals[k]); } catch (e) { } });
+                                const cloudDmKeys = keys.filter(k => k.startsWith('cloud_dms_'));
+                                window.Telegram.WebApp.CloudStorage.getItems(cloudDmKeys, (err, vals) => {
+                                    cloudDmKeys.forEach(k => { 
+                                        try { 
+                                            const uid = k.replace('cloud_dms_', '');
+                                            const cloudMsgs = JSON.parse(vals[k]); 
+                                            if (Array.isArray(cloudMsgs)) {
+                                                const localMsgs = loadedDms[uid] || [];
+                                                // Merge and deduplicate by id
+                                                const mergedMap = new Map();
+                                                localMsgs.forEach(m => mergedMap.set(m.id || m.time, m));
+                                                cloudMsgs.forEach(m => mergedMap.set(m.id || m.time, m));
+                                                const mergedArr = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
+                                                loadedDms[uid] = mergedArr;
+                                                safeSetItem('dms_' + uid, JSON.stringify(mergedArr));
+                                            }
+                                        } catch (e) { } 
+                                    });
                                     setDms(loadedDms);
                                 });
+                            } else {
+                                setDms(loadedDms);
                             }
                         });
                     } else {
-                        // LocalStorage fallback already handled via getCloudData partially, but for iteration:
-                        const loadedDms = {};
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const k = localStorage.key(i);
-                            if (k && k.startsWith('dms_')) {
-                                try { loadedDms[k.replace('dms_', '')] = JSON.parse(localStorage.getItem(k)); } catch (e) { }
-                            }
-                        }
                         setDms(loadedDms);
                     }
                 };
@@ -3289,7 +3308,7 @@ Student Doubt: ${prompt}`
                                 senderName, senderPhoto, status: 'received'
                             };
                             const updatedHistory = [...history, newMsg];
-                            setCloudData('dms_' + senderId, updatedHistory);
+                            saveDmToStorage(senderId, updatedHistory);
                             return { ...currDms, [senderId]: updatedHistory };
                         });
                         return currFriends;
@@ -3316,7 +3335,7 @@ Student Doubt: ${prompt}`
                             return m;
                         });
                         if (changed) {
-                            setCloudData('dms_' + chatUserId, updated);
+                            saveDmToStorage(chatUserId, updated);
                             return { ...currDms, [chatUserId]: updated };
                         }
                         return currDms;
@@ -3332,7 +3351,7 @@ Student Doubt: ${prompt}`
                             updated = history.map(m => m.id === data.msgId ? { ...m, text: data.text, isEdited: true } : m);
                         }
                         if (updated) {
-                            setCloudData('dms_' + senderId, updated);
+                            saveDmToStorage(senderId, updated);
                             return { ...currDms, [senderId]: updated };
                         }
                         return currDms;
@@ -3588,7 +3607,7 @@ Student Doubt: ${prompt}`
                 setDms(prev => {
                     const newDms = { ...prev };
                     delete newDms[targetId];
-                    setCloudData('dms_' + targetId, []);
+                    saveDmToStorage(targetId, []);
                     return newDms;
                 });
             };
@@ -3606,7 +3625,7 @@ Student Doubt: ${prompt}`
                         updated = history.map(m => m.id === msgId ? { ...m, text, isEdited: true } : m);
                     }
                     if (updated) {
-                        setCloudData('dms_' + targetId, updated);
+                        saveDmToStorage(targetId, updated);
                         return { ...prev, [targetId]: updated };
                     }
                     return prev;
@@ -3617,7 +3636,7 @@ Student Doubt: ${prompt}`
                 setDms(prev => {
                     const history = prev[targetId] || [];
                     const updated = history.filter(m => m.id !== msgId);
-                    setCloudData('dms_' + targetId, updated);
+                    saveDmToStorage(targetId, updated);
                     return { ...prev, [targetId]: updated };
                 });
             };
@@ -3642,7 +3661,7 @@ Student Doubt: ${prompt}`
                 const updatedHistory = [...history, newMsg];
 
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
-                setCloudData('dms_' + targetId, updatedHistory);
+                saveDmToStorage(targetId, updatedHistory);
 
                 const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo };
                 sendDirectMessage(targetId, payload);
@@ -3660,7 +3679,7 @@ Student Doubt: ${prompt}`
                         return m;
                     });
                     if (changed) {
-                        setCloudData('dms_' + targetId, updated);
+                        saveDmToStorage(targetId, updated);
                         sendDirectMessage(targetId, { type: 'MESSAGE_STATUS', status: 'read', targetId: currentUserId });
                         return { ...curr, [targetId]: updated };
                     }
@@ -7248,11 +7267,33 @@ INSTRUCTIONS:
         const AIMentorView = ({ onBack }) => {
             const [msg, setMsg] = useState('');
             const [isTyping, setIsTyping] = useState(false);
-            const [chats, setChats] = useState([
-                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your perfectly intelligent AI mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" }
-            ]);
+            const defaultChat = { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your perfectly intelligent AI mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" };
+            const [chats, setChats] = useState([defaultChat]);
             const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
             const chatEndRef = useRef(null);
+
+            useEffect(() => {
+                const initChats = async () => {
+                    const saved = await getCloudData('ataxy_mentor_chats');
+                    if (saved && Array.isArray(saved) && saved.length > 0) {
+                        setChats(saved);
+                    }
+                };
+                initChats();
+            }, []);
+
+            useEffect(() => {
+                let currentChats = [...chats];
+                // Telegram CloudStorage max value size is 4096. Truncate to ~3900 characters safely.
+                while (JSON.stringify(currentChats).length > 3900 && currentChats.length > 1) {
+                    if (currentChats[0].id === 1) {
+                        currentChats.splice(1, 1); // Keep the welcome message, drop the oldest user/ai message
+                    } else {
+                        currentChats.shift();
+                    }
+                }
+                setCloudData('ataxy_mentor_chats', currentChats);
+            }, [chats]);
 
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, isTyping]);
 
@@ -9526,7 +9567,7 @@ INSTRUCTIONS:
             }));
             const [partnerMessage, setPartnerMessage] = useState(null); 
 
-            useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
+            useEffect(() => { setCloudData('ataxy_targets', targetsData); }, [targetsData]);
             useEffect(() => { safeSetItem('ataxy_global_timer', JSON.stringify(globalTimer)); }, [globalTimer]);
             useEffect(() => { safeSetItem('ataxy_study_partner_cfg', JSON.stringify(studyPartnerConfig)); }, [studyPartnerConfig]);
             useEffect(() => { safeSetItem('ataxy_study_partner_state', JSON.stringify(studyPartnerState)); }, [studyPartnerState]);
@@ -9685,9 +9726,33 @@ INSTRUCTIONS:
                     }
                 }
             }, [isVerified, tgUser]);
-            useEffect(() => { safeSetItem('ataxy_practice_perf', JSON.stringify(practiceAttempts)); }, [practiceAttempts]);
-            useEffect(() => { safeSetItem('ataxy_practice_review', JSON.stringify(practiceReview)); }, [practiceReview]);
-            useEffect(() => { safeSetItem('ataxy_practice_visited', JSON.stringify(practiceVisited)); }, [practiceVisited]);
+            useEffect(() => { setCloudData('ataxy_practice_perf', practiceAttempts); }, [practiceAttempts]);
+            useEffect(() => { setCloudData('ataxy_practice_review', practiceReview); }, [practiceReview]);
+            useEffect(() => { setCloudData('ataxy_practice_visited', practiceVisited); }, [practiceVisited]);
+            
+            // Cloud Initialization for Core Data
+            useEffect(() => {
+                const syncCoreData = async () => {
+                    const perf = await getCloudData('ataxy_practice_perf');
+                    if (perf && Object.keys(perf).length > 0) setPracticeAttempts(perf);
+                    
+                    const review = await getCloudData('ataxy_practice_review');
+                    if (review && review.length > 0) setPracticeReview(review);
+                    
+                    const visited = await getCloudData('ataxy_practice_visited');
+                    if (visited && visited.length > 0) setPracticeVisited(visited);
+                    
+                    const targets = await getCloudData('ataxy_targets');
+                    if (targets && Object.keys(targets).length > 0) setTargetsData(targets);
+                    
+                    const bkmk = await getCloudData('ataxy_bookmarks');
+                    if (bkmk && bkmk.length > 0) setBookmarks(bkmk);
+                    
+                    const notes = await getCloudData('ataxy_question_notes');
+                    if (notes && Object.keys(notes).length > 0) setQuestionNotes(notes);
+                };
+                syncCoreData();
+            }, []);
 
             useEffect(() => {
                 if (currentTab === 'practice' && showQuiz) {
@@ -9702,8 +9767,8 @@ INSTRUCTIONS:
                     }
                 }
             }, [currentTab, showQuiz, currentQuestionIndex, practiceSelectedTopic, questionFilter, loadedQuestions, practiceVisited]);
-            useEffect(() => { safeSetItem('ataxy_bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
-            useEffect(() => { safeSetItem('ataxy_question_notes', JSON.stringify(questionNotes)); }, [questionNotes]);
+            useEffect(() => { setCloudData('ataxy_bookmarks', bookmarks); }, [bookmarks]);
+            useEffect(() => { setCloudData('ataxy_question_notes', questionNotes); }, [questionNotes]);
 
             // 🟢 Load QBank on Mount
             useEffect(() => {
