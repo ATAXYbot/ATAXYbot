@@ -3505,6 +3505,12 @@ Student Doubt: ${prompt}`
             const acceptFriendRequest = (senderPayload) => {
                 try {
                     const senderId = String(senderPayload.id);
+                    
+                    if (Array.isArray(friends) && friends.length >= 120) {
+                        safeAlert("You have hit the limit of 120 friends. Please delete some friends to add new ones.");
+                        return;
+                    }
+
                     setFriends(prev => {
                         const prevArray = Array.isArray(prev) ? prev : [];
                         if (prevArray.some(f => String(f.id || f) === senderId)) return prevArray;
