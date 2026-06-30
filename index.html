@@ -7573,7 +7573,7 @@ INSTRUCTIONS:
                             <AtaxyLogo className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-800 shadow-sm" />
                             <div>
                                 <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY Mentor</h2>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium tracking-wide">Powered by Gemini</p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium tracking-wide">Powered by ATAXY</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
@@ -9603,6 +9603,12 @@ INSTRUCTIONS:
             };
 
             const [currentTab, setCurrentTab] = useState('home');
+            const previousTabRef = useRef('home');
+            useEffect(() => {
+                if (currentTab !== 'ai') {
+                    previousTabRef.current = currentTab;
+                }
+            }, [currentTab]);
             const [vcChatOpen, setVcChatOpen] = useState(false);
             const [activePracticeBatch, setActivePracticeBatch] = useState(null);
 
@@ -13683,7 +13689,7 @@ INSTRUCTIONS:
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
-                                    {currentTab === 'ai' && <AIMentorView onBack={() => setCurrentTab('home')} />}
+                                    {currentTab === 'ai' && <AIMentorView onBack={() => setCurrentTab(previousTabRef.current || 'home')} />}
                                     {/* Voice Room Tab logic moved to VC Official Room */}
                                     {currentTab === 'questions' && renderQuestionsView()}
                                     {currentTab === 'profile' && renderProfileView()}
