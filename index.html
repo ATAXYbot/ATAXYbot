@@ -1799,7 +1799,7 @@ Student Doubt: ${prompt}`
         // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests, onNavigate }) => {
             const [dmInput, setDmInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
             const [replyingTo, setReplyingTo] = useState(null);
@@ -2380,6 +2380,26 @@ Student Doubt: ${prompt}`
                             </div>
                         </div>
                     )}
+
+                    {/* Pinned ATAXY Mentor Button */}
+                    <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-2xl p-4 shadow-[0_10px_30px_rgba(139,92,246,0.2)] border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-colors duration-300 group flex items-center justify-between mb-4">
+                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
+                        <div className="relative z-10 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center border-2 border-purple-400/50 shadow-sm shrink-0">
+                                <i className="fa-solid fa-dna text-white text-xl animate-pulse"></i>
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-black text-base text-white tracking-wide">ATAXY Mentor</h3>
+                                    <i className="fa-solid fa-thumbtack text-[11px] text-gray-300 opacity-80 rotate-45"></i>
+                                </div>
+                                <p className="text-[10px] text-purple-200/70 font-medium">Your personal study mentor</p>
+                            </div>
+                        </div>
+                        <div className="relative z-10 text-purple-300 group-hover:text-white transition-colors">
+                            <i className="fa-solid fa-chevron-right text-sm"></i>
+                        </div>
+                    </div>
 
                     {Object.keys(dms).length === 0 && <p className="text-gray-500 text-center py-6 italic text-sm border border-gray-800 rounded-2xl border-dashed">No conversations yet.</p>}
                     {Object.entries(dms).sort(([, a], [, b]) => (b[b.length - 1]?.time || 0) - (a[a.length - 1]?.time || 0)).map(([uid, msgs]) => {
@@ -4233,7 +4253,7 @@ Student Doubt: ${prompt}`
                         <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
                             
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} />
                             </div>
                         </div>
                     );
@@ -10148,22 +10168,7 @@ INSTRUCTIONS:
                         </div>
 
                         <div className="px-5 space-y-6">
-                            {/* ATAXY Mentor Hero Button */}
-                            <div id="nav-btn-mentor" onClick={() => setCurrentTab('ai')} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-3xl p-5 shadow-[0_10px_30px_rgba(139,92,246,0.3)] border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 group flex items-center justify-between animate-pop-bounce delay-75">
-                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/30">
-                                            <i className="fa-solid fa-dna text-purple-400 animate-pulse"></i>
-                                        </div>
-                                        <h3 className="font-black text-lg tracking-wide text-purple-100">ATAXY Mentor</h3>
-                                    </div>
-                                    <p className="text-[11px] text-purple-200/70 font-medium">Your AI-powered study companion</p>
-                                </div>
-                                <div className="relative z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-purple-500 transition-colors shadow-sm">
-                                    <i className="fa-solid fa-chevron-right text-sm"></i>
-                                </div>
-                            </div>
+
                             
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100 partner-platform">
                                 <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
