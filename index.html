@@ -6249,6 +6249,12 @@ INSTRUCTIONS:
                         try { clientRef.current.removeAllListeners(); } catch (e) { }
                     }
 
+                    
+                    if (roomData.room_type === 'temporary') {
+                        // Bypass Agora entirely, use basic Supabase presence only
+                        setIsProcessing(false);
+                        return true;
+                    }
                     if (roomData.password && roomData.password !== password) {
                         safeAlert("Incorrect password!");
                         return false;
@@ -7114,12 +7120,22 @@ INSTRUCTIONS:
                 }
             };
 
+            
+            const { roomParticipants } = voiceState || { roomParticipants: [] }; 
             let displayRooms = [];
             if (dashboardFilter === 'active') {
-                displayRooms = availableRooms.filter(r => r.id !== myAdvanceRoom?.id);
+                displayRooms = availableRooms.filter(room => {
+                    if (room.id === myAdvanceRoom?.id) return false;
+                    
+                    if (room.room_type === 'advance' || room.room_type === 'permanent') {
+                        if (room.seats_occupied === 0) return false;
+                    }
+                    return true;
+                });
             } else {
-                displayRooms = []; // Mock recent/joined
+                displayRooms = [];
             }
+
 
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
@@ -7356,78 +7372,55 @@ INSTRUCTIONS:
                     }
                 }
             };
-
             const renderSeat = (seatNum, occupant, label, isLarge = false) => {
                 if (occupant && !occupant.user_id) return null; // Safe guard
                 const isOfflineHost = occupant?.is_offline_host;
                 const isMe = String(occupant?.user_id) === currentUserId;
-
-                // --- Seat Render Styling ---
+                const volume = activeSpeakers[String(occupant?.user_id)] || 0;
+                const isSpeaking = volume > 5;
                 const isHostSeat = seatNum === 0;
 
                 const baseScale = isLarge ? 1.05 : 1;
-
+                
                 const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : (isOfflineHost ? activeRoom.room_dp_url : occupant?.photo_url);
-
-                // 🛡️ SAFE MUTE CHECK: Read directly from Supabase Presence
-                let isOccupantMuted = false;
-                if (occupant && occupant.user_id) {
-                    isOccupantMuted = !!occupant.is_muted;
-                }
 
                 const isLocked = lockedSeats[seatNum];
                 const isSeatMuted = mutedSeats[seatNum];
-
-                // 🛡️ SAFE OCCUPANT NAME: Prevent ReferenceError crashes
                 const occupantName = occupant ? (isOfflineHost ? 'Host' : (occupant.user_name || "Unknown")) : (isLocked ? 'Locked' : label);
 
                 return (
-                    <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
+                    <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-1 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`} style={{ transform: `scale(${isSpeaking ? baseScale + 0.05 : baseScale})` }}>
                         {occupant ? (
-                            <div className="relative group flex items-center justify-center">
-                                {/* Layer 1 & 2: The Base Avatar and Static Highlight Ring */}
-                                {dpUrl ? (
-                                    <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-2 relative z-10 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${isHostSeat ? 'border-[#F9D33A]' : 'border-[#00FFFF]'}`} />
-                                ) : (
-                                    <div className={`rounded-full flex items-center justify-center font-black border-2 bg-gradient-to-br from-[#00FFFF] to-blue-600 relative z-10 ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-2xl'} ${isHostSeat ? 'border-[#F9D33A] text-[#010B1C] from-[#D4AF37] to-[#F9D33A]' : 'border-[#00FFFF] text-[#010B1C]'}`}>
-                                        {occupantName.charAt(0).toUpperCase()}
+                            <div className="relative weplay-voice-ring w-full aspect-square flex items-center justify-center">
+                                <div className="absolute inset-0 rounded-full border-2 border-[#ff3b8f] pointer-events-none transition-all duration-75 ease-out" style={{ transform: `scale(${volume > 0 ? 1.1 + (volume / 100) * 0.2 : 1})`, opacity: volume > 0 ? 0.4 + (volume / 100) * 0.6 : 0, boxShadow: volume > 0 ? `0 0 ${15 + (volume / 100) * 20}px rgba(255,59,143,${0.4 + (volume / 100) * 0.6})` : 'none' }}></div>
+                                <div className={`relative z-10 rounded-full flex items-center justify-center font-bold border-2 transition-all bg-[#010a17] overflow-hidden ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${isSpeaking ? 'border-[#ff3b8f]' : 'border-white/20'}`}>
+                                    {dpUrl ? <img src={dpUrl} alt="DP" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} /> : null}
+                                    <span className={`w-full h-full flex items-center justify-center ${dpUrl ? 'hidden' : 'flex'}`}>{occupantName.charAt(0).toUpperCase()}</span>
+                                </div>
+                                {((isMe ? isMuted : occupant.is_muted) || isSeatMuted) && (
+                                    <div className="absolute -bottom-0 -right-0 bg-[#010a17] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600 z-20 shadow-md">
+                                        <i className="fa-solid fa-microphone-slash text-[9px] text-red-500"></i>
                                     </div>
                                 )}
-                                {isOfflineHost && (
-                                    <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-20 overflow-hidden">
-                                        <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded-full backdrop-blur-sm">Left</span>
-                                    </div>
-                                )}
-                                {isSeatMuted ? (
-                                    <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-20">
-                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
-                                    </div>
-                                ) : ((isMe ? isMuted : isOccupantMuted) ? (
-                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border border-gray-600 shadow-md z-20">
-                                        <i className="fa-solid fa-microphone-slash text-[10px] text-gray-400"></i>
-                                    </div>
-                                ) : null)}
-                                {isLocked && (
-                                    <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
-                                        <i className="fa-solid fa-lock text-[8px] text-white"></i>
-                                    </div>
+                                {isHostSeat && (
+                                    <div className="absolute -top-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-[9px] font-black px-2 py-0.5 rounded-full z-20 shadow-sm border border-yellow-300 uppercase tracking-widest">Host</div>
                                 )}
                             </div>
                         ) : (
-                            <div className="relative group">
-                                <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/30 bg-[#021633]/50 hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
-                                    <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
+                            <div className="relative w-full aspect-square flex items-center justify-center">
+                                <div className={`rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center ${isLarge ? 'w-20 h-20' : 'w-14 h-14'}`}>
+                                    <i className={`fa-solid ${isLocked ? 'fa-lock text-white/30 text-lg' : 'fa-plus text-white/40 text-xl'}`}></i>
                                 </div>
                                 {isSeatMuted && (
-                                    <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-10">
-                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
+                                    <div className="absolute -bottom-0 -right-0 bg-[#010a17] rounded-full w-5 h-5 flex items-center justify-center border border-gray-600 z-10 shadow-md">
+                                        <i className="fa-solid fa-microphone-slash text-[9px] text-red-500"></i>
                                     </div>
                                 )}
                             </div>
                         )}
-                        <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupantName}</span>
+                        <span className="text-[10px] text-center font-bold text-white truncate max-w-full px-2 py-0.5 mt-1 bg-black/40 rounded-full shadow-sm">{occupantName}</span>
                     </div>
-                )
+                );
             };
 
             const handleUpdateMusic = (title) => {
@@ -7438,52 +7431,86 @@ INSTRUCTIONS:
             };
 
             return (
-                <div className="flex-1 flex flex-col relative z-10">
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 pr-[90px] lg:pr-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
-                        <div className="flex items-center gap-2 overflow-hidden pr-2 flex-1 min-w-0">
-                            <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors" title="Back to Rooms">
-                                <i className="fa-solid fa-arrow-left"></i>
+                <div className="flex-1 flex flex-col relative z-10 bg-[#010a17] min-h-screen overflow-hidden">
+                    {/* Immersive WePlay Blurred Background */}
+                    <div className="absolute inset-0 z-0">
+                        <img src={activeRoom.room_dp_url || "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop"} alt="bg" className="w-full h-full object-cover opacity-40 blur-xl scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#010a17]/80 to-[#010a17]"></div>
+                    </div>
+
+                    <div className="px-4 py-3 flex items-center justify-between z-10 relative pt-[calc(70px+env(safe-area-inset-top,0px))]">
+                        <div className="flex items-center gap-2">
+                            <button onClick={onMinimize} className="text-white text-xl px-2 opacity-80 hover:opacity-100 transition-opacity">
+                                <i className="fa-solid fa-chevron-down"></i>
                             </button>
-                            <div className="flex flex-col overflow-hidden min-w-0">
-                                <h2 className="text-lg sm:text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
-                                <p className="text-xs text-[#00FFFF] font-bold">
-                                    <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> {activeRoom.room_type} Room
-                                </p>
+                            <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md rounded-full pr-4 pl-1 py-1 border border-white/10">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                                    {activeRoom.room_dp_url ? <img src={activeRoom.room_dp_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-hashtag text-white/50 text-xs"></i>}
+                                </div>
+                                <div className="flex flex-col">
+                                    <h2 className="text-sm font-bold text-white leading-tight">
+                                        {activeRoom.channel_name}
+                                    </h2>
+                                    <p className="text-[10px] text-white/60 font-medium">
+                                        ID: {activeRoom.id}
+                                    </p>
+                                </div>
+                                {isHost && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && (
+                                    <button onClick={() => setShowSettingsModal(true)} className="ml-1 text-white/70 hover:text-white"><i className="fa-solid fa-gear"></i></button>
+                                )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
-                            <button onClick={() => !isProcessing && leaveRoom()} disabled={isProcessing} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
+                        <div className="flex gap-2">
+                            <div className="bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10 cursor-pointer" onClick={() => setShowParticipantsModal(true)}>
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-[10px] font-bold text-white">{(activeRoom.seats_occupied || 0) + (participants?.filter(p => p.seat_number === null || p.seat_number === undefined)?.length || 0)}</span>
+                            </div>
+                            <button onClick={() => { if (!isProcessing) leaveRoom(); }} disabled={isProcessing} className={`bg-black/30 backdrop-blur-md w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:bg-red-500/40 hover:text-red-100 transition-colors border border-white/10 ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>
+                                <i className="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                            </button>
                         </div>
                     </div>
+
                     {activeRoom.announcement && (
-                        <div className="mx-4 mt-3 p-3 bg-[#021633]/80 rounded-xl border border-[#D4AF37]/40 text-xs text-[#F9D33A] shadow-[0_0_10px_rgba(212,175,55,0.2)] backdrop-blur flex items-start gap-2 animate-in slide-in-from-top-2 z-20 relative">
+                        <div className="mx-4 mt-3 p-3 bg-black/40 rounded-xl border border-[#D4AF37]/40 text-xs text-[#F9D33A] shadow-[0_0_10px_rgba(212,175,55,0.2)] backdrop-blur flex items-start gap-2 animate-in slide-in-from-top-2 z-20 relative">
                             <i className="fa-solid fa-bullhorn mt-0.5 animate-pulse"></i>
                             <span>{activeRoom.announcement}</span>
                         </div>
                     )}
                     {currentMusic && (
-                        <div className="absolute top-[calc(64px+max(env(safe-area-inset-top),_24px))] left-1/2 -translate-x-1/2 bg-[#021633]/80 backdrop-blur-md border border-[#00FFFF]/40 rounded-full px-4 py-1.5 flex items-center gap-2 z-20 shadow-[0_0_15px_rgba(0,255,255,0.2)] w-max max-w-[90%]">
+                        <div className="absolute top-[calc(64px+max(env(safe-area-inset-top),_24px))] left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md border border-[#00FFFF]/40 rounded-full px-4 py-1.5 flex items-center gap-2 z-20 shadow-[0_0_15px_rgba(0,255,255,0.2)] w-max max-w-[90%]">
                             <i className="fa-solid fa-music text-[#00FFFF] animate-pulse text-[10px]"></i>
-                            <span className="text-[#E0F7FA] text-xs font-bold truncate">{currentMusic.title}</span>
+                            <span className="text-white text-xs font-bold truncate">{currentMusic.title}</span>
                         </div>
                     )}
-                    <div className="p-6">
-                        <div className="flex justify-center gap-8 mb-8">
-                            {renderSeat(0,
-                                participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0) ||
-                                ((activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && !participants.some(p => String(p.user_id) === String(activeRoom.host_user_id)) ? { is_offline_host: true, user_id: activeRoom.host_user_id, user_name: "Host" } : undefined),
-                                "Host", true
-                            )}
-                            {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 1), "Partner", true)}
-                        </div>
-                        <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
-                            {[2, 3, 4, 5, 6, 7, 8, 9].map(i => (
-                                <React.Fragment key={i}>
-                                    {renderSeat(i, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === i), `Seat ${i}`)}
-                                </React.Fragment>
-                            ))}
-                        </div>
+                    <div className="p-6 z-10 relative">
+                        {activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent' ? (
+                            <>
+                                <div className="flex justify-center gap-12 mb-8 mt-4">
+                                {[0, 1].map(seatNum => {
+                                    if (seatNum === 1 && !activeRoom.is_partner_seat_open) return null;
+                                    const occupant = participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === seatNum) ||
+                                    (seatNum === 0 && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && !participants.some(p => String(p.user_id) === String(activeRoom.host_user_id)) ? { is_offline_host: true, user_id: activeRoom.host_user_id, user_name: "Host" } : undefined);
+                                    return renderSeat(seatNum, occupant, seatNum === 0 ? "Take Seat" : "Partner", true);
+                                })}
+                                </div>
+                                <div className="grid grid-cols-4 gap-y-8 gap-x-2 justify-items-center px-2">
+                                {[2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+                                    <React.Fragment key={i}>
+                                        {renderSeat(i, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === i), `Seat ${i}`)}
+                                    </React.Fragment>
+                                ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-y-10 gap-x-4 justify-items-center pt-8 px-4">
+                                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                    <React.Fragment key={i}>
+                                        {renderSeat(i, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === i) || (i === 0 && activeRoom.is_offline_host_pinned ? { is_offline_host: true, user_id: activeRoom.host_user_id } : undefined), i === 0 ? "Host" : `Seat ${i}`)}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-24">

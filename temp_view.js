@@ -1,612 +1,500 @@
-            const renderQuestionsView = () => {
-                try {
-                    if (activePracticeChapter) {
-                        if (!showQuiz) {
-                            const totalQs = activePracticeChapter.topics?.reduce((acc, t) => acc + (t.questions?.length || 0), 0) || 0;
-                            return (
-                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
-                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{safeRenderText(activePracticeChapter.name)}</h2>
-                                        </div>
-                                        <button onClick={() => setConfirmClearScope({ type: 'chapter', data: activePracticeChapter })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Chapter Progress"><i className="fa-solid fa-trash-can"></i></button>
-                                    </div>
-
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5 mb-6 shadow-sm flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">Practice All Topics</h3>
-                                            <p className="text-blue-600 dark:text-blue-400 text-xs font-semibold mt-1">{totalQs} Questions Available</p>
-                                        </div>
-                                        <button
-                                            onClick={() => { if (totalQs > 0) { setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }}
-                                            disabled={totalQs === 0}
-                                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors shrink-0 ${totalQs > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/30' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
-                                        >
-                                            <i className="fa-solid fa-play ml-1"></i>
-                                        </button>
-                                    </div>
-
-                                    <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Specific Topics</h3>
-
-                                    <div className="space-y-3">
-                                        {activePracticeChapter.topics?.map((top, i) => (
-                                            <div key={i} onClick={() => { if (top.questions?.length > 0) { setPracticeSelectedTopic(top.name); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm transition-all group ${top.questions?.length > 0 ? 'cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651]' : 'opacity-60'}`}>
-                                                <div className="flex-1 mr-4">
-                                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(top.name)}</h4>
-                                                    <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{top.questions?.length || 0} Qs</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmClearScope({ type: 'topic', data: top }); }} className={`w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/40 transition-colors flex items-center justify-center shrink-0 ${top.questions?.length > 0 ? '' : 'hidden'}`} title="Clear Topic Progress">
-                                                        <i className="fa-solid fa-trash-can text-xs"></i>
-                                                    </button>
-                                                    <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-400 ${top.questions?.length > 0 ? 'group-hover:bg-[#00a651] group-hover:text-white' : ''} transition-colors flex items-center justify-center shrink-0`}>
-                                                        <i className="fa-solid fa-play ml-0.5 text-xs"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
-                            );
-                        }
-
-                        const selectedTopic = practiceSelectedTopic;
-                        const attempts = practiceAttempts;
-                        const showPalette = practiceShowPalette;
-                        const allQuestions = loadedQuestions;
-
-                        let displayedQuestions = selectedTopic ? allQuestions.filter(q => q.topicName === selectedTopic) : allQuestions;
-
-                        if (questionFilter === 'bookmarked') {
-                            displayedQuestions = displayedQuestions.filter(q => bookmarks.includes(q.id));
-                        } else if (questionFilter === 'incorrect') {
-                            displayedQuestions = displayedQuestions.filter(q => {
-                                const ansIdx = attempts[q.id];
-                                return ansIdx !== undefined && ['A', 'B', 'C', 'D'][ansIdx] !== q.correctOption;
-                            });
-                        }
-
-                        const safeQuestionIndex = Math.min(currentQuestionIndex, Math.max(0, displayedQuestions.length - 1));
-                        const currentQuestion = displayedQuestions[safeQuestionIndex] || {};
-
-                        const triggerHaptic = (type = 'light') => {
-                            try {
-                                if (window.Telegram?.WebApp?.HapticFeedback) {
-                                    if (type === 'success' && window.Telegram.WebApp.HapticFeedback.notificationOccurred) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                                    else if (type === 'error' && window.Telegram.WebApp.HapticFeedback.notificationOccurred) window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-                                    else if (window.Telegram.WebApp.HapticFeedback.impactOccurred) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                                }
-                            } catch (e) { }
-                        };
-
-                        const toggleBookmark = (qId) => {
-                            setBookmarks(prev => prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]);
-                            triggerHaptic('light');
-                        };
-
-                        const handleAttempt = (qId, optionIdx) => {
-                            const options = ['A', 'B', 'C', 'D'];
-                            const selectedOption = options[optionIdx];
-                            const isCorrect = currentQuestion && selectedOption === currentQuestion.correctOption;
-                            setPracticeAttempts({ ...attempts, [qId]: optionIdx });
-                            if (isCorrect) triggerHaptic('success');
-                            else triggerHaptic('error');
-                        };
-
-                        const handleClear = (qId) => {
-                            const newAttempts = { ...attempts };
-                            delete newAttempts[qId];
-                            setPracticeAttempts(newAttempts);
-                        };
-
-                        const handleNext = () => {
-                            if (safeQuestionIndex < displayedQuestions.length - 1) {
-                                setCurrentQuestionIndex(safeQuestionIndex + 1);
-                                setTimeout(() => {
-                                    try {
-                                        document.querySelector('[data-qa-card]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    } catch (e) {
-                                        document.querySelector('[data-qa-card]')?.scrollIntoView();
-                                    }
-                                }, 50);
-                            }
-                        };
-
-                        const handlePrevious = () => {
-                            if (safeQuestionIndex > 0) {
-                                setCurrentQuestionIndex(safeQuestionIndex - 1);
-                                setTimeout(() => {
-                                    try {
-                                        document.querySelector('[data-qa-card]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    } catch (e) {
-                                        document.querySelector('[data-qa-card]')?.scrollIntoView();
-                                    }
-                                }, 50);
-                            }
-                        };
-
-                        const scrollToQuestion = (idx) => {
-                            setPracticeShowPalette(false);
-                            setCurrentQuestionIndex(idx);
-                            setTimeout(() => {
-                                try {
-                                    document.querySelector('[data-qa-card]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                } catch (e) {
-                                    document.querySelector('[data-qa-card]')?.scrollIntoView();
-                                }
-                            }, 50);
-                        };
-
-                        if (questionsLoading) {
-                            return <GlobalLoader text="Extracting Database..." />;
-                        }
-
-                        const isAnswered = currentQuestion ? attempts[currentQuestion.id] !== undefined : false;
-                        const selectedOptionIdx = currentQuestion ? attempts[currentQuestion.id] : -1;
-                        const isCorrect = currentQuestion && isAnswered && ['A', 'B', 'C', 'D'][selectedOptionIdx] === currentQuestion.correctOption;
-
-                        return (
-                            <>
-
-                            <div className="pb-32 animate-pop-in relative min-h-screen bg-[#F3F4F6] text-gray-900 font-sans">
-                                {/* CBT Header */}
-                                <div className="px-4 py-3 flex items-center justify-between bg-[#00418d] text-white shadow-md relative z-20">
-                                    <div className="flex items-center gap-3 w-full">
-                                        <button onClick={handleBack} className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center shrink-0 transition-colors"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <div className="flex-1 overflow-hidden">
-                                            <h2 className="text-base font-bold text-white leading-tight truncate">{safeRenderText(activePracticeChapter.name)}</h2>
-                                            <p className="text-xs text-blue-100 opacity-90">Question {displayedQuestions.length > 0 ? safeQuestionIndex + 1 : 0} of {displayedQuestions.length}</p>
-                                        </div>
-                                        <div className="shrink-0 bg-black/20 px-3 py-1.5 rounded-sm border border-white/10 font-mono text-sm tracking-widest font-bold">
-                                            <PracticeTimer active={true} questionId={currentQuestion?.id} isAnswered={isAnswered} />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Optional Filters & Topic Selector */}
-                                <div className="bg-white px-4 py-2 border-b border-gray-300 shadow-sm flex items-center justify-between z-10 relative">
-                                    <div className="flex gap-2 items-center overflow-x-auto no-scrollbar flex-1 mr-2">
-                                        <select
-                                            value={practiceSelectedTopic || ""}
-                                            onChange={(e) => {
-                                                setPracticeSelectedTopic(e.target.value || null);
-                                                setCurrentQuestionIndex(0);
-                                            }}
-                                            className="border border-gray-300 rounded-sm text-xs font-semibold px-2 py-1.5 bg-gray-50 text-gray-800 outline-none hover:border-[#00418d] focus:border-[#00418d] max-w-[140px] md:max-w-[200px] shrink-0 cursor-pointer transition-colors"
-                                        >
-                                            <option value="">All Topics</option>
-                                            {activePracticeChapter.topics?.map((top, i) => (
-                                                <option key={i} value={top.name}>{top.name}</option>
-                                            ))}
-                                        </select>
-                                        <div className="h-4 w-px bg-gray-300 mx-1 shrink-0"></div>
-                                        <button onClick={() => { setQuestionFilter('all'); setCurrentQuestionIndex(0); }} className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'all' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>All Qs</button>
-                                        <button onClick={() => { setQuestionFilter('bookmarked'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'bookmarked' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Bookmarked</button>
-                                        <button onClick={() => { setQuestionFilter('incorrect'); setCurrentQuestionIndex(0); }} className={`px-3 py-1 rounded-sm text-xs font-semibold whitespace-nowrap transition-colors border ${questionFilter === 'incorrect' ? 'bg-[#00418d] text-white border-[#00418d]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Incorrect</button>
-                                    </div>
-                                    <button onClick={() => setPracticeShowPalette(true)} className="ml-2 bg-[#00418d] text-white px-3 py-1.5 rounded-sm text-xs font-bold shrink-0 shadow-sm active:scale-95 transition-transform"><i className="fa-solid fa-grip mr-1"></i> Palette</button>
-                                </div>
-
-                                {/* Question Content */}
-                                <div data-qa-card className="p-3 md:p-5 max-w-4xl mx-auto">
-                                    {displayedQuestions.length === 0 ? (
-                                        <div className="bg-white border border-gray-300 shadow-sm py-12 text-center px-4 rounded-sm mt-4">
-                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl"><i className="fa-solid fa-box-open"></i></div>
-                                            <h3 className="font-bold text-gray-900 mb-2">No questions found</h3>
-                                            <p className="text-sm text-gray-500 mb-4">Adjust your filters to see questions.</p>
-                                            <button onClick={() => { setQuestionFilter('all'); setPracticeSelectedTopic(null); }} className="bg-[#00418d] text-white font-semibold text-sm px-4 py-2 rounded-sm mt-2 transition-colors hover:bg-blue-800">Clear Filters</button>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-white border border-gray-300 shadow-md rounded-sm mt-2">
-                                            <div className="p-4 md:p-6">
-                                                <div className="flex justify-between items-start mb-3 gap-4">
-                                                    <div className="text-black text-[15px] md:text-base leading-relaxed font-medium">
-                                                        <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
+                            ) : (
+                                displayRooms.map(room => {
+                                    const isPremium = room.room_type === 'permanent' || room.room_type === 'advance';
+                                    return (
+                                        <div key={room.id} onClick={() => handleJoinClick(room)} className={`bg-[#021633] rounded-2xl p-4 transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} relative overflow-hidden group ${isPremium ? 'border-2 border-[#00FFFF] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border border-[#0AE0D0]/30 hover:border-[#00FFFF]'}`}>
+                                            {isPremium && <span className="absolute top-0 right-0 bg-[#00FFFF] text-[#010B1C] text-[9px] font-black px-2 py-1 rounded-bl-lg uppercase tracking-wider">ADVANCED LOUNGE</span>}
+                                            <div className="relative z-10 flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center font-bold text-[#010B1C] text-xl shadow-[0_0_10px_rgba(0,255,255,0.5)] overflow-hidden">
+                                                        {room.room_dp_url ? <img src={room.room_dp_url} className="w-full h-full object-cover" /> : room.channel_name.charAt(0).toUpperCase()}
                                                     </div>
-                                                    {/* Enhanced Bookmark Button */}
-                                                    <div className="shrink-0">
-                                                        <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
-                                                            <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i> 
-                                                            <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                {currentQuestion.imageUrl && (
-                                                    <div className="mb-6 rounded-sm overflow-hidden bg-white flex items-center justify-center border border-gray-200 p-2">
-                                                        <img src={currentQuestion.imageUrl} alt="Question Image" className="max-w-full max-h-[40vh] object-contain" onError={(e) => { e.target.style.display = 'none' }} />
-                                                    </div>
-                                                )}
-
-                                                {/* Options Display */}
-                                                <div className="flex flex-col border border-gray-300 rounded-sm overflow-hidden mb-6">
-                                                    {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((opt, idx) => {
-                                                        return (
-                                                            <div key={idx} className="w-full text-left flex items-stretch border-b border-gray-300 last:border-b-0 bg-white">
-                                                                <div className="w-10 flex items-center justify-center shrink-0 font-semibold text-[15px] border-r border-gray-300 bg-gray-50 text-gray-700">({idx + 1})</div>
-                                                                <div className="p-3 text-[14px] md:text-[15px] text-black w-full break-words leading-relaxed"><FormattedText text={opt} /></div>
-                                                            </div>
-                                                        );
-                                                    }) : null}
-                                                </div>
-
-                                                {/* CBT Options Selection Bar */}
-                                                <div className="flex justify-center gap-4 mb-5">
-                                                    {Array.isArray(currentQuestion.options) ? currentQuestion.options.map((_, idx) => {
-                                                        const isSelected = selectedOptionIdx === idx;
-                                                        const isCorrectChoice = ['A', 'B', 'C', 'D'][idx] === currentQuestion.correctOption;
-                                                        let btnClass = "bg-white border-gray-400 text-gray-800 hover:bg-blue-50 hover:border-blue-300";
-                                                        if (isAnswered) {
-                                                            if (isCorrectChoice) btnClass = "bg-[#1e7e34] border-[#1e7e34] text-white ring-2 ring-[#1e7e34] ring-offset-2 z-10";
-                                                            else if (isSelected) btnClass = "bg-[#c5221f] border-[#c5221f] text-white ring-2 ring-[#c5221f] ring-offset-2 z-10";
-                                                            else btnClass = "bg-gray-100 border-gray-300 text-gray-400";
-                                                        } else if (isSelected) {
-                                                            btnClass = "bg-[#00418d] border-[#00418d] text-white ring-2 ring-[#00418d] ring-offset-2 z-10";
-                                                        }
-                                                        return (
-                                                            <button
-                                                                key={`cbt-opt-${idx}`}
-                                                                disabled={isAnswered}
-                                                                onClick={() => handleAttempt(currentQuestion.id, idx)}
-                                                                className={`w-12 h-12 flex items-center justify-center border-2 rounded-full font-bold text-lg transition-all duration-200 disabled:cursor-default ${btnClass} ${!isAnswered ? 'active:scale-95 cursor-pointer shadow-sm' : ''}`}
-                                                            >
-                                                                {idx + 1}
-                                                            </button>
-                                                        );
-                                                    }) : null}
-                                                </div>
-
-                                                        {/* Premium White/Grey Personal Notes UI */}
-                                                        <div className="mt-8 mb-4">
-                                                            <div className="flex justify-between items-center mb-4">
-                                                                <h4 className="text-[15px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2.5">
-                                                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shadow-inner shadow-blue-200/50">
-                                                                        <i className="fa-solid fa-pen-nib text-[#00418d] text-sm"></i>
-                                                                    </div>
-                                                                    My Personal Notes
-                                                                </h4>
-                                                                {!(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
-                                                                    <button 
-                                                                        onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))} 
-                                                                        className="group relative px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-[#00418d] hover:border-blue-200 shadow-sm hover:shadow-md hover:shadow-blue-100 active:scale-95 overflow-hidden"
-                                                                    >
-                                                                        <div className="absolute inset-0 bg-blue-50/50 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                                                                        <i className="fa-solid fa-plus relative z-10 group-hover:rotate-90 transition-transform duration-300"></i> 
-                                                                        <span className="relative z-10">Add Note</span>
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                            {(showNoteInput[currentQuestion.id] || questionNotes[currentQuestion.id]) && (
-                                                                <div className="bg-white border border-slate-200 p-5 rounded-3xl animate-in fade-in zoom-in-95 duration-300 ease-out relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
-                                                                    {/* Subtle Top Gradient Accent */}
-                                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00418d] via-blue-400 to-[#00a651] opacity-80"></div>
-                                                                    
-                                                                    {(!showNoteInput[currentQuestion.id] && questionNotes[currentQuestion.id]) ? (
-                                                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-[15px] text-slate-700 mb-4 whitespace-pre-wrap font-medium leading-relaxed shadow-inner">
-                                                                            {questionNotes[currentQuestion.id]}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="relative mb-4 group">
-                                                                            <textarea
-                                                                                className="w-full text-[15px] p-5 border-2 border-slate-100 rounded-2xl bg-white text-slate-800 focus:outline-none focus:border-[#00418d] focus:ring-4 focus:ring-[#00418d]/10 transition-all min-h-[120px] resize-y placeholder-slate-400 font-medium shadow-sm z-10 relative"
-                                                                                placeholder="Type your brilliant thoughts here... (auto-saved)"
-                                                                                value={questionNotes[currentQuestion.id] || ''}
-                                                                                onChange={(e) => setQuestionNotes(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
-                                                                                autoFocus
-                                                                            ></textarea>
-                                                                            {/* Glowing effect on focus */}
-                                                                            <div className="absolute inset-0 rounded-2xl bg-[#00418d] opacity-0 group-focus-within:opacity-[0.03] blur-xl transition-opacity duration-500 pointer-events-none"></div>
-                                                                        </div>
-                                                                    )}
-                                                                    
-                                                                    <div className="flex justify-end gap-3 relative z-10">
-                                                                        {questionNotes[currentQuestion.id] && (
-                                                                            <button 
-                                                                                onClick={() => {
-                                                                                    const newNotes = { ...questionNotes };
-                                                                                    delete newNotes[currentQuestion.id];
-                                                                                    setQuestionNotes(newNotes);
-                                                                                    setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }));
-                                                                                }} 
-                                                                                className="text-slate-500 hover:text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 active:scale-95 border border-transparent hover:border-red-100"
-                                                                            >
-                                                                                <i className="fa-solid fa-trash-can"></i> Delete
-                                                                            </button>
-                                                                        )}
-                                                                        
-                                                                        {showNoteInput[currentQuestion.id] ? (
-                                                                            <button 
-                                                                                onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: false }))} 
-                                                                                className="bg-[#00418d] hover:bg-[#003370] text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(0,65,141,0.39)] hover:shadow-[0_6px_20px_rgba(0,65,141,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
-                                                                            >
-                                                                                <i className="fa-solid fa-check"></i> Save Note
-                                                                            </button>
-                                                                        ) : (
-                                                                            <button 
-                                                                                onClick={() => setShowNoteInput(prev => ({ ...prev, [currentQuestion.id]: true }))} 
-                                                                                className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:shadow-[0_6px_20px_rgba(15,23,42,0.23)] hover:-translate-y-0.5 flex items-center gap-2 active:scale-95"
-                                                                            >
-                                                                                <i className="fa-solid fa-pen-to-square"></i> Edit Note
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                {isAnswered && (
-                                                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm mt-6 animate-in fade-in slide-in-from-top-2">
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <i className={`fa-solid ${isCorrect ? 'fa-circle-check text-[#1e7e34]' : 'fa-circle-xmark text-[#c5221f]'} text-lg`}></i>
-                                                            <span className={`font-bold text-sm ${isCorrect ? 'text-[#1e7e34]' : 'text-[#c5221f]'}`}>
-                                                                {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
-                                                            </span>
-                                                        </div>
-                                                        {currentQuestion.explanation && currentQuestion.explanation.trim().toLowerCase() !== 'no explanation' && (
-                                                            <div className="text-sm text-gray-700 mt-2 bg-white p-3 border border-gray-200 rounded-sm">
-                                                                <span className="font-semibold text-black">Explanation:</span> <FormattedText text={currentQuestion.explanation} />
-                                                            </div>
-                                                        )}
-                                                        <div className="mt-4">
-                                                            <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
+                                                    <div>
+                                                        <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                                                            {room.channel_name}
+                                                            {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
+                                                        </h3>
+                                                        <div className="flex text-sm text-[#A4DFE6] gap-3">
+                                                            <span className="inline-flex items-center"><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {String(room.host_user_id).substring(0, 5)} {String(room.host_user_id) === "5182808926" && <VerifiedBadge className="w-3 h-3 ml-1 shrink-0" />}</span>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                            </div>
-                                    )}
-                                </div>
-
-                                
-
-                                {/* CBT Palette Slide-over Modal */}
-                                {showPalette && (
-                                    <div className="fixed inset-0 bg-black/60 z-[99999] flex flex-col justify-center items-end animate-in fade-in" onClick={() => setPracticeShowPalette(false)}>
-                                        <div className="bg-[#f0f4f7] dark:bg-gray-900 h-full w-[80vw] sm:w-[380px] shadow-2xl pb-safe flex flex-col border-l border-gray-300 dark:border-gray-800 transform transition-transform animate-in slide-in-from-right" onClick={e => e.stopPropagation()}>
-                                            <div className="bg-[#00418d] text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0">
-                                                <h3 className="font-bold text-sm uppercase tracking-wider"><i className="fa-solid fa-grip mr-2"></i> Question Palette</h3>
-                                                <button onClick={() => setPracticeShowPalette(false)} className="w-8 h-8 rounded-sm hover:bg-white/20 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark text-lg"></i></button>
-                                            </div>
-                                            <div className="p-4 bg-white border-b border-gray-300 shadow-sm flex flex-wrap justify-between gap-y-3 text-[11px] font-semibold text-gray-700 shrink-0">
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-white border border-gray-400 rounded-sm text-[10px] shadow-sm">1</div> Not Visited</div>
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-[#fce8e6] border border-[#c5221f] text-[#c5221f] rounded-bl-[10px] rounded-br-[4px] rounded-t-[4px] text-[10px] shadow-sm">2</div> Not Answered</div>
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-[#e6f4ea] border border-[#1e7e34] text-[#1e7e34] rounded-tl-[10px] rounded-tr-[4px] rounded-b-[4px] text-[10px] shadow-sm">3</div> Answered</div>
-                                                <div className="flex items-center gap-1.5 w-[48%]"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] shadow-sm">4</div> Marked for Review</div>
-                                                <div className="flex items-center gap-1.5 w-full mt-1"><div className="w-5 h-5 flex items-center justify-center bg-purple-100 border border-purple-600 text-purple-700 rounded-full text-[10px] relative shadow-sm"><div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#1e7e34] rounded-full ring-1 ring-white"></div></div> Answered & Marked for Review</div>
-                                            </div>
-                                            <div className="p-4 flex-1 overflow-y-auto bg-gray-50">
-                                                <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
-                                                    {displayedQuestions.map((q, qIdx) => {
-                                                        const isAns = attempts[q.id] !== undefined;
-                                                        const isRev = practiceReview.includes(q.id);
-
-                                                        const isCorrectAns = isAns && ['A', 'B', 'C', 'D'][attempts[q.id]] === q.correctOption;
-
-                                                        let shapeClass = "bg-white border-gray-300 text-gray-700 rounded-md shadow-sm"; // Not visited
-                                                        if (isAns && isCorrectAns) {
-                                                            shapeClass = "bg-emerald-50 border-emerald-500 text-emerald-600 rounded-md ring-1 ring-emerald-500/30 font-black shadow-sm";
-                                                        } else if (isAns && !isCorrectAns) {
-                                                            shapeClass = "bg-rose-50 border-rose-500 text-rose-600 rounded-md ring-1 ring-rose-500/30 font-black shadow-sm";
-                                                        } else if (practiceVisited.includes(q.id)) {
-                                                            shapeClass = "bg-amber-50 border-amber-400 text-amber-700 rounded-md shadow-sm";
-                                                        }
-                                                        
-                                                        if (isRev) {
-                                                            shapeClass += " !bg-purple-100 !border-purple-500 !text-purple-700 !rounded-full";
-                                                        }
-
-                                                        return (
-                                                            <button key={q.id} onClick={() => scrollToQuestion(qIdx)} className={`w-full aspect-square border flex items-center justify-center font-bold text-sm shadow-sm transition-transform hover:scale-105 active:scale-95 ${shapeClass} ${safeQuestionIndex === qIdx ? 'ring-2 ring-[#00418d] ring-offset-1' : ''}`}>
-                                                                {qIdx + 1}
-                                                                {isAns && isRev && <div className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-[#1e7e34] rounded-full ring-1 ring-white"></div>}
-                                                            </button>
-                                                        );
-                                                    })}
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full bg-[#00FFFF]/10 text-[#00FFFF] flex items-center justify-center group-hover:bg-[#00FFFF] group-hover:text-[#010B1C] transition-colors">
+                                                    <i className="fa-solid fa-arrow-right"></i>
                                                 </div>
                                             </div>
                                         </div>
+                                    )
+                                })
+                            )}
+                        </div>
+                    </div>
+                    {showCreateModal && <CreateRoomModal onClose={() => setShowCreateModal(false)} onCreate={createRoom} />}
+                    {selectedRoomToJoin && <JoinRoomModal room={selectedRoomToJoin} onClose={() => setSelectedRoomToJoin(null)} onJoin={joinRoom} />}
+                </div>
+            );
+        };
+
+        const RoomSettingsModal = ({ activeRoom, onClose, onSave, currentMusic, onUpdateMusic }) => {
+            const [name, setName] = useState(activeRoom.channel_name);
+            const [password, setPassword] = useState(activeRoom.password || '');
+            const [requireMic, setRequireMic] = useState(activeRoom.require_mic_request || false);
+            const [musicTitle, setMusicTitle] = useState(currentMusic?.title || '');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!name.trim()) return;
+                setIsSubmitting(true);
+                const success = await onSave(name, password, requireMic);
+                setIsSubmitting(false);
+                if (success) onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+                    <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(0,255,255,0.2)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-white mb-4"><i className="fa-solid fa-sliders mr-2 text-[#00FFFF]"></i>Room Settings</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                <input required type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password <span className="text-gray-500 font-normal lowercase">(Optional)</span></label>
+                                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Leave blank for public" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Mic Requests</label>
+                                <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3">
+                                    <span className="text-white text-sm">Require permission to speak</span>
+                                    <button type="button" onClick={() => setRequireMic(!requireMic)} className={`w-12 h-6 rounded-full transition-colors ${requireMic ? 'bg-[#00FFFF]' : 'bg-gray-600'} flex items-center px-1`}>
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${requireMic ? 'translate-x-6' : ''}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Currently Playing (Music)</label>
+                                <div className="flex gap-2">
+                                    <input type="text" value={musicTitle} onChange={e => setMusicTitle(e.target.value)} placeholder="e.g. Lofi Study Beats" className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <button type="button" onClick={() => onUpdateMusic(musicTitle)} className="bg-[#00FFFF]/20 text-[#00FFFF] border border-[#00FFFF]/50 px-4 rounded-xl font-bold hover:bg-[#00FFFF] hover:text-[#010B1C] transition-colors shadow-[0_0_10px_rgba(0,255,255,0.2)]">Set</button>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button type="button" onClick={onClose} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isSubmitting ? 'Saving...' : 'Save'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
+            const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => { }, mutedSeats = {}, setMutedSeats = () => { }, isProcessing, currentMusic, setCurrentMusic } = voiceState;
+            const [showActionModal, setShowActionModal] = useState(null);
+            const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [showRequestsModal, setShowRequestsModal] = useState(false);
+            const [chatInput, setChatInput] = useState('');
+            const [pendingImage, setPendingImage] = useState(null);
+            const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+
+            useEffect(() => {
+                const handleBackEvent = (e) => {
+                    if (showActionModal) { e.preventDefault(); setShowActionModal(null); }
+                    else if (showParticipantsModal) { e.preventDefault(); setShowParticipantsModal(false); }
+                    else if (showSettingsModal) { e.preventDefault(); setShowSettingsModal(false); }
+                    else if (showRequestsModal) { e.preventDefault(); setShowRequestsModal(false); }
+                    else if (fullScreenImage) { e.preventDefault(); setFullScreenImage(null); }
+                    else if (pendingInvite) { e.preventDefault(); setPendingInvite(null); }
+                    else if (selectedProfileUser) { e.preventDefault(); setSelectedProfileUser(null); }
+                };
+                window.addEventListener('ataxy_back_requested', handleBackEvent);
+                return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
+            }, [showActionModal, showParticipantsModal, showSettingsModal, showRequestsModal, fullScreenImage, pendingInvite, selectedProfileUser]);
+
+            const currentUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
+            const isHost = String(activeRoom.host_user_id) === currentUserId;
+            const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
+            const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
+            const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
+            const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
+            const effectiveMutedUI = isMuted || mySeatMuted;
+
+            const handleAvatarClick = (userObj) => {
+                if (!userObj || typeof userObj !== 'object') return;
+                setSelectedProfileUser(userObj);
+            };
+
+            const handleSeatClick = (seatNum, occupant) => {
+                if (occupant) {
+                    handleAvatarClick(occupant);
+                } else {
+                    if (isHost) {
+                        if (seatNum !== 0) {
+                            setShowActionModal({ type: 'empty_seat_host', seatNum });
+                        }
+                    } else if (isSpeaker) {
+                        if (lockedSeats[seatNum]) {
+                            safeAlert("This seat is locked by the host.");
+                            return;
+                        }
+                        if (activeRoom.host_user_id === 'no_host') {
+                            safeAlert("There is no active host in this room. You cannot switch seats.");
+                            return;
+                        }
+                        safeConfirm(`Are you sure you want to change to Seat ${seatNum}?`, () => {
+                            takeSeat(seatNum);
+                        });
+                    } else {
+                        if (lockedSeats[seatNum]) {
+                            safeAlert("This seat is locked by the host.");
+                            return;
+                        }
+                        if (activeRoom.host_user_id === 'no_host') {
+                            safeAlert("There is no active host in this room. You cannot take a seat.");
+                            return;
+                        }
+                        if (activeRoom.require_mic_request) {
+                            if (micRequests.some(r => String(r.uid) === currentUserId)) {
+                                safeAlert("Your request is already pending host approval.");
+                                return;
+                            }
+                            const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                            sendBroadcast('request_seat', { uid: currentUserId, name: tgData.first_name, seatNum: seatNum });
+                            safeAlert("Requested to speak. Waiting for host approval.");
+                        } else {
+                            takeSeat(seatNum);
+                        }
+                    }
+                }
+            };
+
+            const renderSeat = (seatNum, occupant, label, isLarge = false) => {
+                if (occupant && !occupant.user_id) return null; // Safe guard
+                const isOfflineHost = occupant?.is_offline_host;
+                const isMe = String(occupant?.user_id) === currentUserId;
+
+                // --- Seat Render Styling ---
+                const isHostSeat = seatNum === 0;
+
+                const baseScale = isLarge ? 1.05 : 1;
+
+                const dpUrl = isMe ? (window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || tgUser.photo_url) : (isOfflineHost ? activeRoom.room_dp_url : occupant?.photo_url);
+
+                // 🛡️ SAFE MUTE CHECK: Read directly from Supabase Presence
+                let isOccupantMuted = false;
+                if (occupant && occupant.user_id) {
+                    isOccupantMuted = !!occupant.is_muted;
+                }
+
+                const isLocked = lockedSeats[seatNum];
+                const isSeatMuted = mutedSeats[seatNum];
+
+                // 🛡️ SAFE OCCUPANT NAME: Prevent ReferenceError crashes
+                const occupantName = occupant ? (isOfflineHost ? 'Host' : (occupant.user_name || "Unknown")) : (isLocked ? 'Locked' : label);
+
+                return (
+                    <div onClick={() => handleSeatClick(seatNum, occupant)} className={`flex flex-col items-center gap-2 cursor-pointer transition-transform hover:-translate-y-1 hover:scale-105 ${isLarge ? 'w-24' : 'w-16'}`}>
+                        {occupant ? (
+                            <div className="relative group flex items-center justify-center">
+                                {/* Layer 1 & 2: The Base Avatar and Static Highlight Ring */}
+                                {dpUrl ? (
+                                    <img src={dpUrl} alt={occupantName} className={`rounded-full object-cover border-2 relative z-10 ${isLarge ? 'w-20 h-20 text-2xl' : 'w-14 h-14 text-xl'} ${isHostSeat ? 'border-[#F9D33A]' : 'border-[#00FFFF]'}`} />
+                                ) : (
+                                    <div className={`rounded-full flex items-center justify-center font-black border-2 bg-gradient-to-br from-[#00FFFF] to-blue-600 relative z-10 ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-2xl'} ${isHostSeat ? 'border-[#F9D33A] text-[#010B1C] from-[#D4AF37] to-[#F9D33A]' : 'border-[#00FFFF] text-[#010B1C]'}`}>
+                                        {occupantName.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                {isOfflineHost && (
+                                    <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-20 overflow-hidden">
+                                        <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded-full backdrop-blur-sm">Left</span>
+                                    </div>
+                                )}
+                                {isSeatMuted ? (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-20">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
+                                    </div>
+                                ) : ((isMe ? isMuted : isOccupantMuted) ? (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border border-gray-600 shadow-md z-20">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-gray-400"></i>
+                                    </div>
+                                ) : null)}
+                                {isLocked && (
+                                    <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
+                                        <i className="fa-solid fa-lock text-[8px] text-white"></i>
                                     </div>
                                 )}
                             </div>
-                                {/* CBT Bottom Bar */}
-                                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom,_12px)]">
-                                    <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-between items-center">
-                                        <div className="flex gap-2 flex-1 md:flex-none">
-                                            <button onClick={() => handleClear(currentQuestion?.id)} className="flex-1 md:flex-none bg-white border border-gray-400 text-gray-800 hover:bg-gray-50 text-[10px] sm:text-xs font-semibold px-2 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
-                                                Clear<span className="hidden sm:inline"> Response</span>
-                                            </button>
-                                            <button onClick={() => {
-                                                if (currentQuestion) setPracticeReview(prev => prev.includes(currentQuestion.id) ? prev : [...prev, currentQuestion.id]);
-                                                handleNext();
-                                            }} className="flex-1 md:flex-none bg-orange-500 border border-orange-600 text-white hover:bg-orange-600 text-[10px] sm:text-xs font-semibold px-2 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
-                                                Review & Next
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-2 flex-1 md:flex-none justify-end mt-2 md:mt-0 w-full md:w-auto">
-                                            <button onClick={handlePrevious} disabled={safeQuestionIndex === 0} className="flex-1 md:flex-none bg-white border border-gray-400 text-gray-800 hover:bg-gray-50 disabled:opacity-50 text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
-                                                &lt;&lt; Back
-                                            </button>
-                                            <button onClick={() => {
-                                                if (currentQuestion && practiceReview.includes(currentQuestion.id)) setPracticeReview(prev => prev.filter(id => id !== currentQuestion.id));
-                                                handleNext();
-                                            }} disabled={safeQuestionIndex >= displayedQuestions.length - 1} className="flex-1 md:flex-none bg-[#1ea020] border border-[#187f1a] text-white hover:bg-[#187f1a] disabled:opacity-50 text-[10px] sm:text-xs font-semibold px-4 sm:px-6 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
-                                                Save & Next &gt;&gt;
-                                            </button>
-                                        </div>
-                                    </div>
+                        ) : (
+                            <div className="relative group">
+                                <div className={`rounded-full border-2 border-dashed ${isLocked ? 'border-red-500/40 bg-red-500/10' : 'border-[#0AE0D0]/30 bg-[#021633]/50 hover:bg-[#0AE0D0]/20 hover:border-[#0AE0D0]/80'} flex items-center justify-center ${isLarge ? 'w-20 h-20 text-3xl' : 'w-14 h-14 text-xl'} transition-all duration-300 shadow-[inset_0_0_10px_rgba(0,255,255,0.1)]`}>
+                                    <i className={`fa-solid ${isLocked ? 'fa-lock text-red-400/50' : 'fa-plus text-[#0AE0D0]/40'}`}></i>
                                 </div>
-                            </>
-                        );
-                    }
-
-                    if (activePracticeSubject) {
-                        return (
-                            <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex justify-between items-center mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeSubject.name)}</h2>
-                                    </div>
-                                    <button onClick={() => setConfirmClearScope({ type: 'subject', data: activePracticeSubject })} className="shrink-0 w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Clear Subject Progress"><i className="fa-solid fa-trash-can"></i></button>
-                                </div>
-                                <h3 className="font-semibold text-[#00a651] mb-3 uppercase tracking-wider text-xs bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 inline-block px-2 py-1 rounded-md">Chapter Selection</h3>
-                                <div className="space-y-3">
-                                    {activePracticeSubject.chapters && activePracticeSubject.chapters.length > 0 ? (
-                                        activePracticeSubject.chapters.map((chap, i) => (
-                                            <div key={i} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
-                                                <div>
-                                                    <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(chap.name)}</h4>
-                                                    <p className="text-[10px] font-semibold text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 inline-block px-2 py-0.5 rounded-sm">{chap.topics?.length || 0} Topics</p>
-                                                </div>
-                                                <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-[#00a651] transition-colors"></i>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-gray-500 text-center mt-8">No chapters available</p>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    if (activePracticeFile) {
-                        return (
-                            <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeFile.name)} Subjects</h2>
-                                </div>
-
-                                {qbankError && (
-                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-5 shadow-sm text-sm text-red-800 dark:text-red-200">
-                                        <div className="font-bold flex items-center gap-2 mb-2">
-                                            <i className="fa-solid fa-cloud"></i> Network Issue
-                                        </div>
-                                        <p className="mb-2 opacity-90">{qbankError}</p>
+                                {isSeatMuted && (
+                                    <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-10">
+                                        <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
                                     </div>
                                 )}
+                            </div>
+                        )}
+                        <span className="text-[11px] text-center font-bold text-[#E0F7FA] truncate w-full px-1 drop-shadow-md">{occupantName}</span>
+                    </div>
+                )
+            };
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    {(() => {
-                                        const activeData = activePracticeBatch && activePracticeBatch.sourceTable
-                                            ? (qbankDataByTable[activePracticeBatch.sourceTable] || [])
-                                            : qbankData;
-                                        return activeData.length > 0 ? activeData.map(sub => (
-                                            <div key={sub.id} onClick={() => setActivePracticeSubject(sub)} className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center text-center group">
-                                                <span className="text-4xl mb-3 group-hover:-translate-y-1 transition-transform duration-300">{sub.icon}</span>
-                                                <h3 className="font-bold text-gray-800 dark:text-gray-200 mt-2 group-hover:text-[#00a651] transition-colors">{safeRenderText(sub.name)}</h3>
-                                                <p className="text-[10px] text-gray-500 mt-1">{sub.chapters?.length || 0} Chapters</p>
+            const handleUpdateMusic = (title) => {
+                const payload = title ? { title, isPlaying: true } : null;
+                sendBroadcast('music_status', payload);
+                setCurrentMusic(payload);
+                safeAlert(title ? "Music status updated!" : "Music status cleared.");
+            };
+
+            return (
+                <div className="flex-1 flex flex-col relative z-10">
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 pr-[90px] lg:pr-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
+                        <div className="flex items-center gap-2 overflow-hidden pr-2 flex-1 min-w-0">
+                            <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors" title="Back to Rooms">
+                                <i className="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div className="flex flex-col overflow-hidden min-w-0">
+                                <h2 className="text-lg sm:text-xl font-black text-[#E0F7FA] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)] truncate">{activeRoom.channel_name}</h2>
+                                <p className="text-xs text-[#00FFFF] font-bold">
+                                    <span className="w-2 h-2 inline-block rounded-full bg-[#00FFFF] animate-pulse mr-1"></span> {activeRoom.room_type} Room
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={() => setShowParticipantsModal(true)} className="bg-[#0AE0D0]/10 text-[#0AE0D0] border border-[#0AE0D0]/30 hover:bg-[#0AE0D0]/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"><i className="fa-solid fa-users"></i> {participants.length}</button>
+                            <button onClick={() => !isProcessing && leaveRoom()} disabled={isProcessing} className={`bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] transition-colors ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>Leave</button>
+                        </div>
+                    </div>
+                    {activeRoom.announcement && (
+                        <div className="mx-4 mt-3 p-3 bg-[#021633]/80 rounded-xl border border-[#D4AF37]/40 text-xs text-[#F9D33A] shadow-[0_0_10px_rgba(212,175,55,0.2)] backdrop-blur flex items-start gap-2 animate-in slide-in-from-top-2 z-20 relative">
+                            <i className="fa-solid fa-bullhorn mt-0.5 animate-pulse"></i>
+                            <span>{activeRoom.announcement}</span>
+                        </div>
+                    )}
+                    {currentMusic && (
+                        <div className="absolute top-[calc(64px+max(env(safe-area-inset-top),_24px))] left-1/2 -translate-x-1/2 bg-[#021633]/80 backdrop-blur-md border border-[#00FFFF]/40 rounded-full px-4 py-1.5 flex items-center gap-2 z-20 shadow-[0_0_15px_rgba(0,255,255,0.2)] w-max max-w-[90%]">
+                            <i className="fa-solid fa-music text-[#00FFFF] animate-pulse text-[10px]"></i>
+                            <span className="text-[#E0F7FA] text-xs font-bold truncate">{currentMusic.title}</span>
+                        </div>
+                    )}
+                    <div className="p-6">
+                        <div className="flex justify-center gap-8 mb-8">
+                            {renderSeat(0,
+                                participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 0) ||
+                                ((activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && !participants.some(p => String(p.user_id) === String(activeRoom.host_user_id)) ? { is_offline_host: true, user_id: activeRoom.host_user_id, user_name: "Host" } : undefined),
+                                "Host", true
+                            )}
+                            {activeRoom.is_partner_seat_open && renderSeat(1, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === 1), "Partner", true)}
+                        </div>
+                        <div className="grid grid-cols-4 gap-y-6 gap-x-4 justify-items-center">
+                            {[2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+                                <React.Fragment key={i}>
+                                    {renderSeat(i, participants.find(p => p.seat_number !== null && p.seat_number !== undefined && Number(p.seat_number) === i), `Seat ${i}`)}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-gradient-to-t from-[#021633] to-[#010B1C] mt-2 rounded-t-3xl border-t border-[#0AE0D0]/20 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-end overflow-hidden pb-24">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-2 flex flex-col pointer-events-auto overscroll-contain">
+                            <div className="flex flex-col gap-2 mt-auto pb-2">
+                                {chatMessages.map((msg, idx) => {
+                                    if (msg.isSystem) {
+                                        return (
+                                            <div key={msg.id || idx} className={`bg-[#0AE0D0]/10 border border-[#0AE0D0]/20 rounded-full px-3 py-1 text-[10px] w-fit mx-auto text-[#A4DFE6] italic flex items-center gap-1.5 shadow-sm animate-in fade-in zoom-in duration-300 ${msg.type === 'entry' ? 'bg-gradient-to-r from-[#00FFFF]/20 to-blue-500/20 text-[#00FFFF] border-[#00FFFF]/40 shadow-[0_0_10px_rgba(0,255,255,0.2)] font-bold' : ''}`}>
+                                                <i className={`fa-solid ${msg.type === 'entry' ? 'fa-plane-arrival' : 'fa-shoe-prints'}`}></i> {msg.text}
                                             </div>
-                                        )) : (
-                                            <p className="text-sm text-gray-500 text-center col-span-2 py-8">Loading subjects...</p>
                                         );
-                                    })()}
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    if (activePracticeBatch) {
-                        if (activePracticeBatch.type === 'jee') {
-                            return (
-                                <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeBatch.name)}</h2>
-                                    </div>
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center -mt-20">
-                                        <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-4 animate-pulse-soft border border-blue-500/30">
-                                            <i className="fa-solid fa-rocket text-4xl text-blue-500 animate-pop-bounce delay-150"></i>
-                                        </div>
-                                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Coming Soon!</h3>
-                                        <p className="text-sm text-gray-500 max-w-[250px] mx-auto">We are working hard to bring you the best JEE questions. Stay tuned!</p>
-                                    </div>
-                                </div>
-                            );
-                        }
-                    
-                        return (
-                            <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <button onClick={handleBack} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{safeRenderText(activePracticeBatch.name)}</h2>
-                                </div>
-                                <div className="space-y-3">
-                                    {activePracticeBatch.files.map((file, i) => (
-                                        <div key={i} onClick={() => setActivePracticeFile(file)} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex items-center gap-4 shadow-sm cursor-pointer hover:border-[#00a651] dark:hover:border-[#00a651] transition-all group">
-                                            <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-[#00a651] flex items-center justify-center text-lg"><i className="fa-solid fa-file-alt"></i></div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-base text-gray-800 dark:text-gray-200 group-hover:text-[#00a651] transition-colors">{safeRenderText(file.name)}</h3>
-                                                <p className="text-xs text-gray-500">Practice Module</p>
-                                            </div>
-                                            <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-[#00a651] transition-colors"></i>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    const PRACTICE_BATCHES = [
-                        { id: 'pb_neet_bank', name: 'NEET Bank', type: 'neet', sourceTable: 'basic_mathmatics_&_vector', files: [{ id: 'pf_basic_math_1', name: 'Basic Math' }] },
-                        { id: 'pb_jee_bank', name: 'JEE Bank', type: 'jee', sourceTable: 'coming_soon', files: [] },
-                        { id: 'pb_checking', name: 'Checking', type: 'checking', sourceTable: 'Raceee_testttingg_checkinggg', files: [{ id: 'pf_race', name: 'Race' }] }
-                    ];
-
-                    return (
-                        <div className="pb-24 pt-6 px-5 animate-in fade-in min-h-screen">
-                            <div className="flex justify-between items-center mb-6">
-                                <div className="flex items-center gap-3">
-                                    <AtaxyLogo className="w-10 h-10 rounded-full shadow-md border border-gray-200" />
-                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-wider">ATAXY BANK</h2>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                {PRACTICE_BATCHES.map(batch => {
-                                    let bgClass = '';
-                                    let iconClass = '';
-                                    let iconName = '';
-                                    
-                                    if (batch.type === 'neet') {
-                                        bgClass = 'bg-gradient-to-br from-[#00a651] to-[#008c44] border border-[#008c44]/50 shadow-[0_8px_20px_rgba(0,166,81,0.3)] text-white';
-                                        iconClass = 'text-green-800/30';
-                                        iconName = 'fa-stethoscope';
-                                    } else if (batch.type === 'jee') {
-                                        bgClass = 'bg-gradient-to-br from-[#00418d] to-[#002f6c] border border-[#00418d]/50 shadow-[0_8px_20px_rgba(0,65,141,0.3)] text-white';
-                                        iconClass = 'text-blue-900/40';
-                                        iconName = 'fa-microchip';
-                                    } else {
-                                        bgClass = 'bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-950 border border-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)] text-white';
-                                        iconClass = 'text-white/5';
-                                        iconName = 'fa-vial';
                                     }
+
+                                    const senderName = msg?.user_name || msg?.userName || "User";
+                                    const senderPhoto = msg?.user_avatar || msg?.userAvatar || msg?.photo_url || msg?.photoUrl || null;
+                                    const senderId = msg?.user_id || msg?.userId || "unknown";
 
                                     return (
-                                        <div key={batch.id} onClick={() => setActivePracticeBatch(batch)} className={`p-6 rounded-3xl cursor-pointer hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 relative overflow-hidden ${bgClass}`}>
-                                            <div className="relative z-10">
-                                                <h3 className="text-xl font-black mb-1 text-white">{batch.name}</h3>
-                                                <p className={`text-xs font-medium ${batch.type === 'jee' ? 'text-blue-200' : batch.type === 'neet' ? 'text-green-100' : 'text-gray-400'}`}>
-                                                    {batch.type === 'jee' ? 'Launching Soon' : `${batch.files.length} Modules Available`}
-                                                </p>
+                                        <div key={msg.id || idx} className="flex items-end gap-2 max-w-[85%] animate-in fade-in slide-in-from-bottom-2">
+                                            <div
+                                                className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer shadow-sm"
+                                                onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: senderId, user_name: senderName, photo_url: senderPhoto }); }}
+                                            >
+                                                {senderPhoto ? <img src={senderPhoto} className="w-full h-full object-cover" /> : senderName.charAt(0).toUpperCase()}
                                             </div>
-                                            <i className={`fa-solid ${iconName} ${iconClass} absolute -right-4 -bottom-4 text-6xl`}></i>
+                                            <div className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-2 text-sm w-fit shadow-sm">
+                                                <span className="font-bold text-[#A4DFE6] cursor-pointer hover:underline text-[10px] block mb-0.5 leading-none" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: senderId, user_name: senderName, photo_url: senderPhoto }); }}>{senderName}</span>
+                                                <span className="text-white break-words whitespace-pre-wrap leading-tight">{msg.text || msg.message}</span>
+                                                {(msg.imageUrl || msg.image_url) && (
+                                                    <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(msg.imageUrl || msg.image_url)}>
+                                                        <img src={msg.imageUrl || msg.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
                             </div>
                         </div>
-                    );
-                } catch (err) {
-                    return (
-                        <div className="min-h-screen bg-red-600 text-white flex flex-col items-center justify-center p-10 z-[9999999] relative">
-                            <h1 className="text-5xl font-black mb-4"><i className="fa-solid fa-bomb"></i> UI CRASH</h1>
-                            <p className="text-xl font-bold mb-4">Please screenshot this!</p>
-                            <div className="bg-red-900/50 p-4 rounded-xl text-left w-full overflow-auto max-h-[50vh] font-mono text-sm break-words shadow-inner">
-                                <p><strong>Message:</strong> {String(err.message)}</p>
-                                <p className="mt-4"><strong>Stack:</strong> {String(err.stack)}</p>
+                        {audience.length > 0 && (
+                            <div className="flex gap-3 pt-2 border-t border-[#0AE0D0]/20 overflow-x-auto no-scrollbar pb-1">
+                                {audience.map(p => {
+                                    const uName = p.user_name || "Unknown";
+                                    return (
+                                        <div key={p.user_id || Math.random()} className="flex flex-col items-center gap-1 shrink-0 w-12 cursor-pointer" title={uName} onClick={(e) => { e.stopPropagation(); handleAvatarClick(p); }}>
+                                            {p.photo_url ? (
+                                                <img src={p.photo_url} alt={uName} className="w-8 h-8 rounded-full object-cover border border-[#0AE0D0]/30" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center border border-[#0AE0D0]/30 text-[#00FFFF] font-bold text-[12px]">
+                                                    {uName.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <span className="text-[8px] text-[#A4DFE6] truncate w-full text-center">{uName.split(' ')[0]}</span>
+                                        </div>
+                                    )
+                                })}
                             </div>
-                            <button onClick={() => { setActivePracticeChapter(null); setShowQuiz(false); }} className="mt-8 bg-white text-red-600 px-6 py-3 rounded-xl font-black shadow-lg active:scale-95 transition-transform">Go Back</button>
+                        )}
+                    </div>
+
+                    <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex flex-col gap-2 z-20 pb-safe-bottom">
+                        {/* Pending Image Preview Overlay */}
+                        {pendingImage && (
+                            <div className="w-full bg-[#021633] border border-[#0AE0D0]/50 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-[#00FFFF]/30">
+                                        <img src={pendingImage} className="max-w-full max-h-full object-cover" />
+                                    </div>
+                                    <span className="text-xs font-bold text-[#A4DFE6]">Image selected</span>
+                                </div>
+                                <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex gap-2 items-center w-full">
+                            {/* LEFT: Speaker & Mic Options */}
+                            <button onClick={toggleSpeaker} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
+                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
+                            </button>
+
+                            <button onClick={() => {
+                                if (isProcessing) return;
+                                if (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined) {
+                                    toggleMute();
+                                } else if (isHost) {
+                                    takeSeat(0);
+                                } else {
+                                    safeAlert('Take a seat to use the mic!');
+                                }
+                            }} disabled={isProcessing} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${!isSpeaker ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : effectiveMutedUI ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'} ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}>
+                                <i className={`fa-solid ${effectiveMutedUI || !isSpeaker ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
+                            </button>
+
+                            {/* MIDDLE: Input Bar with Embedded Image Upload Icon */}
+                            <div className="flex-1 relative flex items-center min-w-[80px]">
+                                <button onClick={() => document.getElementById('chat-image-upload').click()} className="absolute left-3 text-[#A4DFE6] hover:text-[#00FFFF] transition-colors z-10">
+                                    <i className="fa-solid fa-image text-sm"></i>
+                                </button>
+                                <input type="file" id="chat-image-upload" accept="image/*" className="hidden" onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                        const img = new Image();
+                                        img.onload = () => {
+                                            const canvas = document.createElement('canvas');
+                                            let width = img.width, height = img.height;
+                                            const maxDim = 800; // Aggressive compression for live websockets
+                                            if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                                            else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                                            canvas.width = width; canvas.height = height;
+                                            const ctx = canvas.getContext('2d');
+                                            ctx.drawImage(img, 0, 0, width, height);
+                                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                                            setPendingImage(compressedBase64);
+                                        };
+                                        img.src = ev.target.result;
+                                    };
+                                    reader.readAsDataURL(file);
+                                    e.target.value = ''; // Reset input
+                                }} />
+                                <input
+                                    value={chatInput} onChange={e => setChatInput(e.target.value)}
+                                    placeholder="Message room..."
+                                    className="w-full bg-[#021633] border border-[#0AE0D0]/30 rounded-full pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF]"
+                                    onKeyDown={(e) => { if (e.key === 'Enter' && (chatInput.trim() || pendingImage)) { sendChat(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }}
+                                />
+                            </div>
+
+                            {/* RIGHT: Send Button & Settings */}
+                            <button onClick={() => { if (chatInput.trim() || pendingImage) { sendChat(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className="w-9 h-9 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center hover:bg-[#00d8d8] shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors">
+                                <i className="fa-solid fa-paper-plane text-sm"></i>
+                            </button>
+
+                            {isHost && (
+                                <button onClick={() => setShowSettingsModal(true)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-[#A4DFE6] hover:bg-[#A4DFE6]/20 transition-colors bg-transparent">
+                                    <i className="fa-solid fa-sliders text-sm"></i>
+                                </button>
+                            )}
                         </div>
-                    );
-                }
-            };
+                    </div>
+
+                    {isHost && micRequests.length > 0 && (
+                        <button onClick={() => setShowRequestsModal(true)} className="absolute bottom-20 right-4 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-[0_0_15px_rgba(255,0,0,0.5)] animate-bounce flex items-center gap-1.5 z-30">
+                            <i className="fa-solid fa-hand"></i> {micRequests.length} Requests
+                        </button>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'self' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { stepDown(); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Move to Audience</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'host_target' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal.occupant?.user_name || showActionModal.occupant?.name || "User"}</h3>
+                                <div className="flex flex-col gap-3">
+                                    {showActionModal.occupant.is_muted ? (
+                                        <button onClick={() => { sendHostAction('unmute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white rounded-xl font-bold transition-colors border border-green-500/50">Unmute Microphone</button>
+                                    ) : (
+                                        <button onClick={() => { sendHostAction('mute', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl font-bold transition-colors border border-orange-500/50">Mute Microphone</button>
+                                    )}
+                                    <button onClick={() => {
+                                        const isSeatMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted: isSeatMuted });
+                                        setMutedSeats(prev => ({ ...prev, [showActionModal.seatNum]: isSeatMuted }));
+                                        setShowActionModal(null);
+                                    }} className={`py-3 rounded-xl font-bold transition-colors border ${mutedSeats[showActionModal.seatNum] ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
+                                        {mutedSeats[showActionModal.seatNum] ? 'Unmute Seat' : 'Mute Seat'}
+                                    </button>
+                                    <button onClick={() => { sendHostAction('assign_mod', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Assign Admin/Mod</button>
+                                    <button onClick={() => { sendHostAction('lift_user', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
+                                    <button onClick={() => { sendHostAction('kick', showActionModal.occupant.user_id); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
+                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showActionModal && showActionModal.type === 'empty_seat_host' && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat {showActionModal.seatNum}</h3>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.seatNum }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
+                                    <button onClick={() => {
+                                        const isSeatMuted = !mutedSeats[showActionModal.seatNum];
+                                        sendBroadcast('seat_mute', { seatNum: showActionModal.seatNum, isMuted: isSeatMuted });
