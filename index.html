@@ -8417,23 +8417,38 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "The Question Practice section contains thousands of highly categorized PYQs and modules. Let's open a module!", btn: "Open Module", targetSelector: '#btn-question-practice', action: 'open_practice_module',
+                    text: "The Question Practice section contains thousands of highly categorized PYQs and modules. Let's check it out!", btn: "Open Practice", targetSelector: '#btn-question-practice', action: 'click',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
-                    text: "This is the learning interface. Try clicking an answer!", btn: "Click a random answer", targetSelector: '.demo-quiz-option', action: 'select_wrong_practice',
+                    text: "Here, everything is highly categorized by subject and chapter. Let's open a subject!", btn: "Select Subject", targetSelector: '#demo-subject-card', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "Now we can see all the chapters in this subject. Let's select one!", btn: "Select Chapter", targetSelector: '#demo-chapter-card', action: 'click',
+                    logoX: 125, logoY: 125, logoSize: 22
+                },
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
+                    text: "You can also select specific question types. Let's try 'All combined' to launch the module!", btn: "Open Module", targetSelector: '#demo-question-type-card', action: 'open_practice_module',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
+                    text: "This is the learning interface. Try clicking an answer!", btn: "Click a random answer", targetSelector: '#demo-practice-option', action: 'select_wrong_practice',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 6,
-                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '.demo-mentor-btn',
+                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '#tour-ask-mentor',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 // 3. CUSTOM TEST GENERATOR
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
-                    text: "Now, let's check out the Tests tab to see the Custom Test Generator.", btn: "Open Tests", targetSelector: '#tab-tests', action: 'click',
+                    text: "Now, let's check out the Tests tab to see the Custom Test Generator.", btn: "Open Tests", targetSelector: '#btn-custom-generator', action: 'click',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
@@ -8443,7 +8458,7 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
-                    text: "We are in a live test. Try clicking an answer.", btn: "Answer", targetSelector: '.demo-quiz-option', action: 'select_wrong',
+                    text: "We are in a live test. Try clicking an answer.", btn: "Answer", targetSelector: '#demo-custom-option', action: 'select_wrong',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
@@ -8534,14 +8549,8 @@ INSTRUCTIONS:
                 if (current.action === 'click' && current.targetSelector) {
                     const el = document.querySelector(current.targetSelector);
                     if (el) el.click();
-                } else if (current.action === 'generate_demo') {
-                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'generate' }));
-                } else if (current.action === 'select_wrong') {
-                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'wrong' }));
-                } else if (current.action === 'submit_demo') {
-                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'submit' }));
-                } else if (current.action === 'cleanup_demo') {
-                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'cleanup' }));
+                } else if (current.action) {
+                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: current.action }));
                 }
 
                 setVisible(false);
@@ -8718,20 +8727,17 @@ INSTRUCTIONS:
             };
 
             if (action === 'open_practice_module') {
-                setActivePracticeChapter(practiceMockTest);
-                setLoadedQuestions(practiceMockTest.questions);
+                // DO NOT overwrite activePracticeChapter and loadedQuestions! Use the real ones!
                 setCurrentTab('questions');
-                setShowQuiz(true); // REQUIRED TO OPEN QUIZ UI
-                setTimeout(() => {
-                    const el = document.querySelector('[data-qa-card] .w-full.text-left.p-3');
-                    if (el) el.classList.add('demo-quiz-option');
-                }, 1000);
+                setShowQuiz(true); 
             } else if (action === 'select_wrong_practice') {
-                setPracticeAttempts(prev => ({ ...prev, 'p1': 0 }));
-                setTimeout(() => {
-                    const el = document.querySelector('.fa-user-graduate');
-                    if (el) el.parentElement.classList.add('demo-mentor-btn');
-                }, 500);
+                setPracticeAttempts(prev => {
+                    if (!window.__loadedQs || window.__loadedQs.length === 0) return prev;
+                    const firstQ = window.__loadedQs[0];
+                    let wrongIdx = 0;
+                    if (firstQ.correctOption === 'A') wrongIdx = 1;
+                    return { ...prev, [firstQ.id]: wrongIdx };
+                });
             } else if (action === 'generate_demo') {
                 setActivePracticeChapter(null);
                 setCinematicDemoTest(demoTest);
@@ -10646,7 +10652,7 @@ React.useEffect(() => {
                                             }
 
                                             return (
-                                                <div key={i} onClick={() => { if (qCount > 0) { setActiveQuestionType(type); setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden ${qCount > 0 ? 'cursor-pointer hover:-translate-y-1 ' + (isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10') : 'opacity-50 grayscale'}`}>
+                                                <div key={i} id={i === 0 ? "demo-question-type-card" : ""} onClick={() => { if (qCount > 0) { setActiveQuestionType(type); setPracticeSelectedTopic(null); setCurrentQuestionIndex(0); setShowQuiz(true); } }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden ${qCount > 0 ? 'cursor-pointer hover:-translate-y-1 ' + (isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10') : 'opacity-50 grayscale'}`}>
                                                     <div className="flex-1 mr-4">
                                                         <h4 className={`font-black text-lg text-white transition-colors drop-shadow-sm ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-gray-300'}`}>{type}</h4>
                                                         {type !== 'All combined' && (
@@ -11132,7 +11138,7 @@ React.useEffect(() => {
                                 <div className="space-y-3">
                                     {activePracticeSubject.chapters && activePracticeSubject.chapters.length > 0 ? (
                                         activePracticeSubject.chapters.map((chap, i) => (
-                                            <div key={i} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden cursor-pointer hover:-translate-y-1 ${isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10'}`}>
+                                            <div key={i} id={i === 0 ? "demo-chapter-card" : ""} onClick={() => { setActivePracticeChapter(chap); setShowQuiz(false); }} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 group relative overflow-hidden cursor-pointer hover:-translate-y-1 ${isNeet ? 'hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(0,65,141,0.5)]' : isJee ? 'hover:border-cyan-500/50 hover:bg-cyan-900/30 hover:shadow-[0_15px_40px_rgba(6,182,212,0.3)]' : 'hover:border-white/30 hover:bg-white/10'}`}>
                                                 <div>
                                                     <h4 className={`font-black text-lg text-white transition-colors drop-shadow-sm ${isNeet ? 'group-hover:text-blue-300' : isJee ? 'group-hover:text-cyan-300' : 'group-hover:text-gray-300'}`}>{safeRenderText(chap.name)}</h4>
                                                     <p className={`text-[10px] font-black uppercase tracking-widest mt-2 inline-block px-2.5 py-1 rounded-md border backdrop-blur-sm ${isNeet ? 'text-blue-200 bg-blue-900/30 border-blue-500/20 group-hover:bg-blue-500/20' : isJee ? 'text-cyan-200 bg-cyan-900/30 border-cyan-500/20 group-hover:bg-cyan-500/20' : 'text-gray-300 bg-white/5 border-white/10'}`}>{chap.topics?.length || 0} Topics</p>
@@ -13125,10 +13131,12 @@ React.useEffect(() => {
 
             const showTopNav = currentTab === 'home' || currentTab === 'profile' || (currentTab === 'vc' && !vcChatOpen);
 
+            window.__loadedQs = loadedQuestions;
+
             return (
                 <VoiceRoomErrorBoundary>
                     <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
-                    {showCoCTutorial && <CinematicDemoEngine onComplete={handleTourComplete} />}
+                    {!showSplash && showCoCTutorial && <CinematicDemoEngine onComplete={handleTourComplete} />}
 
                     <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
