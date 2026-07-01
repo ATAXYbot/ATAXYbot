@@ -9271,7 +9271,7 @@ React.useEffect(() => {
 
                     if (!foundMissed) {
                         if (todayTargets.length === 0) {
-                            const lastEmptyNag = studyPartnerState.lastEmptyNagTime || 0;
+                            const lastEmptyNag = parseInt(localStorage.getItem('ataxy_last_empty_nag') || '0', 10);
                             // Nag about setting targets every few seconds for demonstration
                             if (Date.now() - lastEmptyNag > 12 * 60 * 60 * 1000) {
                                 triggerBrainMessage({ 
@@ -9280,7 +9280,7 @@ React.useEffect(() => {
                                     actionText: 'Set Targets',
                                     requireAcknowledge: true
                                 }, true);
-                                setStudyPartnerState(prev => ({ ...prev, lastEmptyNagTime: Date.now() }));
+                                localStorage.setItem('ataxy_last_empty_nag', Date.now().toString()); setStudyPartnerState(prev => ({ ...prev, lastEmptyNagTime: Date.now() }));
                             }
                         } else {
                             const lastWater = studyPartnerState.lastWaterTime || Date.now();
@@ -10047,7 +10047,7 @@ React.useEffect(() => {
                 </div>
                 
                 <div className="flex flex-col items-end justify-between h-full gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget(t); }} className="text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget(t); }} className="text-blue-500 md:text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
                             <i className="fa-solid fa-pen text-sm"></i>
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); deleteTarget(t.id); }} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
