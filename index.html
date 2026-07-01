@@ -8336,7 +8336,7 @@ INSTRUCTIONS:
         // ==========================================
         // 🟢 CHROMA KEY COMPONENT (Real-time Background Removal)
         // ==========================================
-        const ChromaImage = ({ src, alt, className, spriteIndex = 0 }) => {
+        const ChromaImage = ({ src, alt, className, spriteIndex = 0, gridSize = 4 }) => {
             const canvasRef = React.useRef(null);
             React.useEffect(() => {
                 const img = new Image();
@@ -8344,18 +8344,19 @@ INSTRUCTIONS:
                 img.onload = () => {
                     const canvas = canvasRef.current;
                     if (!canvas) return;
-                    const frameWidth = img.width / 2;
-                    const frameHeight = img.height / 2;
+                    const frameWidth = img.width / gridSize;
+                    const frameHeight = img.height / gridSize;
                     canvas.width = frameWidth;
                     canvas.height = frameHeight;
                     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    const col = spriteIndex % 2;
-                    const row = Math.floor(spriteIndex / 2);
+                    const col = spriteIndex % gridSize;
+                    const row = Math.floor(spriteIndex / gridSize);
                     ctx.drawImage(img, col * frameWidth, row * frameHeight, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imgData.data;
                     for (let i = 0; i < data.length; i += 4) {
                         const r = data[i]; const g = data[i+1]; const b = data[i+2];
+                        // Green screen keying
                         if (g > 150 && r < 140 && b < 140) {
                             const dist = Math.abs(g - 255) + r + b;
                             if (dist < 100) data[i+3] = 0;
@@ -8364,7 +8365,7 @@ INSTRUCTIONS:
                     }
                     ctx.putImageData(imgData, 0, 0);
                 };
-            }, [src, spriteIndex]);
+            }, [src, spriteIndex, gridSize]);
             return <canvas ref={canvasRef} className={className} title={alt} />;
         };
 
@@ -8378,9 +8379,9 @@ INSTRUCTIONS:
                 {
                     character: 'female',
                     name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet.png',
-                    spriteIndex: 0,
-                    text: "Welcome to ATAXY! I'm ASENA, your AI Mentor. Let's get you started!",
+                    img: 'assets/characters/mia_spritesheet_16.png',
+                    spriteIndex: 0, // Neutral
+                    text: "Welcome to ATAXY! I'm ASENA, your AI Mentor. Let's get you started on a quick tour!",
                     btn: "Let's go!",
                     targetSelector: null,
                     pos: 'center'
@@ -8388,32 +8389,65 @@ INSTRUCTIONS:
                 {
                     character: 'male',
                     name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet.png',
-                    spriteIndex: 1, // pointing
-                    text: "This is the Home tab. Here you can see your 7-Day momentum and Dominator Verdict!",
-                    btn: "Got it!",
-                    targetSelector: '#nav-btn-home',
+                    img: 'assets/characters/jack_spritesheet_16.png',
+                    spriteIndex: 2, // Pointing Right
+                    text: "Here is your Global Chat. You can talk to students from all over the world!",
+                    btn: "Click to open Chats",
+                    targetSelector: '#nav-btn-chats',
+                    action: 'click', // clicks it before going to next step
                     pos: 'bottom'
                 },
                 {
                     character: 'female',
                     name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet.png',
-                    spriteIndex: 1, // pointing
-                    text: "Access thousands of questions and PYQs directly from the Practice tab.",
-                    btn: "Awesome!",
+                    img: 'assets/characters/mia_spritesheet_16.png',
+                    spriteIndex: 8, // Hyped
+                    text: "Wow! Look at all these global rooms. You can easily find a study partner!",
+                    btn: "Cool!",
+                    targetSelector: null,
+                    pos: 'center'
+                },
+                {
+                    character: 'male',
+                    name: 'ATAXY',
+                    img: 'assets/characters/jack_spritesheet_16.png',
+                    spriteIndex: 3, // Pointing Left
+                    text: "Now let's check out the Practice tab for thousands of PYQs.",
+                    btn: "Click Practice!",
                     targetSelector: '#nav-btn-practice',
+                    action: 'click',
                     pos: 'bottom'
                 },
                 {
                     character: 'male',
                     name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet.png',
-                    spriteIndex: 3, // hyped
-                    text: "Are you ready to crack your exams and dominate?",
-                    btn: "Bring it on!",
+                    img: 'assets/characters/jack_spritesheet_16.png',
+                    spriteIndex: 5, // Strict
+                    text: "This is where the real grind happens. Stay consistent and you will crush your targets!",
+                    btn: "I will!",
                     targetSelector: null,
                     pos: 'center'
+                },
+                {
+                    character: 'female',
+                    name: 'ASENA',
+                    img: 'assets/characters/mia_spritesheet_16.png',
+                    spriteIndex: 2, // Pointing Right
+                    text: "Finally, let's head back to the Home tab.",
+                    btn: "Go Home",
+                    targetSelector: '#nav-btn-home', // Go back home first
+                    action: 'click',
+                    pos: 'bottom'
+                },
+                {
+                    character: 'female',
+                    name: 'ASENA',
+                    img: 'assets/characters/mia_spritesheet_16.png',
+                    spriteIndex: 4, // Clicking/Action
+                    text: "Tap the ATAXY Mentor button whenever you are stuck on a concept. I will be right there!",
+                    btn: "Got it!",
+                    targetSelector: '#tour-ask-mentor',
+                    pos: 'top' // Appears at the bottom pointing up
                 }
             ];
 
@@ -8444,6 +8478,11 @@ INSTRUCTIONS:
             }, [step, windowSize]);
 
             const handleNext = () => {
+                if (current.action === 'click' && current.targetSelector) {
+                    const el = document.querySelector(current.targetSelector);
+                    if (el) el.click();
+                }
+
                 setVisible(false);
                 setTimeout(() => {
                     if (step < tutorialData.length - 1) {
@@ -8463,6 +8502,11 @@ INSTRUCTIONS:
                 const charX = Math.max(20, Math.min(windowSize.w - 300, targetRect.left + (targetRect.width/2) - 150));
                 charStyle = { bottom: `${windowSize.h - targetRect.top + 20}px`, left: `${charX}px` };
                 bubbleStyle = { bottom: `${windowSize.h - targetRect.top + 260}px`, left: `${charX + 10}px` };
+            } else if (current.pos === 'top' && targetRect) {
+                // Character stands below the target element pointing up
+                const charX = Math.max(20, Math.min(windowSize.w - 300, targetRect.left + (targetRect.width/2) - 150));
+                charStyle = { top: `${targetRect.bottom + 20}px`, left: `${charX}px` };
+                bubbleStyle = { top: `${targetRect.bottom + 280}px`, left: `${charX + 10}px` };
             } else if (current.pos === 'center') {
                 charStyle = { bottom: '-20px', right: current.character === 'female' ? 'auto' : '-10px', left: current.character === 'female' ? '-10px' : 'auto' };
                 bubbleStyle = { bottom: '60%', right: current.character === 'female' ? 'auto' : '16px', left: current.character === 'female' ? '16px' : 'auto' };
@@ -8489,7 +8533,7 @@ INSTRUCTIONS:
                         style={current.pos === 'center' ? bubbleStyle : { ...bubbleStyle, transform: 'none' }}
                     >
                         {/* Tail */}
-                        <div className={`absolute -bottom-4 ${current.character === 'female' || current.pos === 'bottom' ? 'left-8 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-8 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
+                        <div className={`absolute -bottom-4 ${current.character === 'female' || current.pos === 'bottom' || current.pos === 'top' ? 'left-8 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-8 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
                         <p className="font-black text-gray-800 text-[15px] leading-snug mb-4 tracking-tight">{current.text}</p>
                         <button onClick={handleNext} className="w-full bg-gradient-to-b from-[#84cc16] to-[#65a30d] hover:from-[#a3e635] hover:to-[#84cc16] text-white font-black uppercase tracking-wider py-2.5 rounded-xl shadow-[0_4px_0_#4d7c0f] active:shadow-none active:translate-y-1 transition-all border border-[#a3e635]">
                             {current.btn}
@@ -8508,7 +8552,7 @@ INSTRUCTIONS:
                             }
                         `}</style>
                         <div style={{ animation: 'characterBreathe 3s ease-in-out infinite', position: 'relative' }}>
-                            <ChromaImage src={current.img} alt={current.name} spriteIndex={current.spriteIndex} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
+                            <ChromaImage src={current.img} alt={current.name} spriteIndex={current.spriteIndex} gridSize={4} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
                             
                             {/* chest logo overlay */}
                             <div className={`absolute ${current.character === 'female' ? 'top-[42%] left-[62%]' : 'top-[38%] left-[58%]'} transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10`}>
@@ -8520,7 +8564,55 @@ INSTRUCTIONS:
             );
         };
 
-        function App() {
+        
+        const StrictMentorIntervention = ({ targetText, character, onAcknowledge }) => {
+            const isFemale = character === 'female' || character === 'none' || !character; // Default to Asena
+            const img = isFemale ? 'assets/characters/mia_spritesheet_16.png' : 'assets/characters/jack_spritesheet_16.png';
+            const name = isFemale ? 'ASENA' : 'ATAXY';
+            const spriteIndex = 6; // Furious Anger sprite
+
+            return (
+                <div className="fixed inset-0 z-[9999999] flex items-center justify-center bg-red-950/90 backdrop-blur-md pointer-events-auto overflow-hidden animate-in fade-in duration-300">
+                    {/* Massive character staring down at you */}
+                    <div className="absolute bottom-0 w-[400px] sm:w-[500px] left-1/2 transform -translate-x-1/2 pointer-events-none drop-shadow-2xl opacity-90">
+                        <style>{`
+                            @keyframes angryShake {
+                                0%, 100% { transform: translateY(0) scale(1) translateX(0); }
+                                25% { transform: translateY(-5px) scale(1.02) translateX(-3px); }
+                                75% { transform: translateY(5px) scale(0.98) translateX(3px); }
+                            }
+                        `}</style>
+                        <div style={{ animation: 'angryShake 0.5s ease-in-out infinite', position: 'relative' }}>
+                            <ChromaImage src={img} alt={name} spriteIndex={spriteIndex} gridSize={4} className="w-full h-auto object-contain drop-shadow-[0_25px_25px_rgba(255,0,0,0.5)] scale-110 origin-bottom" />
+                            
+                            {/* Chest Logo */}
+                            <div className={`absolute ${isFemale ? 'top-[42%] left-[62%]' : 'top-[38%] left-[58%]'} transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12`}>
+                                <AtaxyLogo className="w-full h-full rounded-full shadow-[0_0_20px_red] border-2 border-red-500" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Strict Message Panel */}
+                    <div className="relative z-20 w-[90%] max-w-[400px] bg-[#0A0000] border-4 border-red-600 rounded-3xl p-6 shadow-[0_0_50px_rgba(255,0,0,0.6)] flex flex-col items-center text-center animate-in zoom-in slide-in-from-bottom-10 duration-500 mt-[20vh]">
+                        <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-3xl text-white mb-4 shadow-[0_0_30px_red] animate-pulse">
+                            <i className="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <h2 className="text-3xl font-black text-white uppercase tracking-widest mb-2 drop-shadow-[0_0_10px_red]">{name} IS FURIOUS!</h2>
+                        <p className="text-red-400 font-bold mb-1 uppercase tracking-wider text-sm">Target Missed</p>
+                        <div className="bg-red-950/50 border border-red-800/50 w-full p-4 rounded-xl mb-6">
+                            <p className="text-white font-black text-xl">"{targetText}"</p>
+                        </div>
+                        <p className="text-gray-300 mb-8 font-semibold leading-relaxed">
+                            You have crossed the time limit! What are you going to do now? How will you cover this up? Your daily momentum is dying!
+                        </p>
+                        <button onClick={onAcknowledge} className="w-full bg-gradient-to-b from-red-500 to-red-800 hover:from-red-400 hover:to-red-700 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_6px_0_#7f1d1d] active:shadow-none active:translate-y-1 transition-all border border-red-400">
+                            I WILL COMPLETE IT NOW!
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+function App() {
             // --- TOUR GUIDE STATE ---
 
 
@@ -8529,6 +8621,7 @@ INSTRUCTIONS:
             const [partnerMessage, setPartnerMessage] = React.useState(null);
             const [studyPartnerConfig, setStudyPartnerConfig] = React.useState({ enabled: false, character: 'none', hasSeenOnboarding: true });
             const [studyPartnerState, setStudyPartnerState] = React.useState({});
+            const [strictIntervention, setStrictIntervention] = React.useState(null);
 
             const [showCoCTutorial, setShowCoCTutorial] = React.useState(() => localStorage.getItem('ataxy_coc_tutorial_completed') !== 'true');
 
