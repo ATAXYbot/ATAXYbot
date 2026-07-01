@@ -8336,7 +8336,7 @@ INSTRUCTIONS:
         // ==========================================
         // 🟢 CHROMA KEY COMPONENT (Real-time Background Removal)
         // ==========================================
-        const ChromaImage = ({ src, alt, className, spriteIndex = 0, gridSize = 4 }) => {
+        const ChromaImage = ({ src, alt, className, spriteIndex = 0, gridSize = 4, logoSrc = null, logoX = 0, logoY = 0, logoSize = 40 }) => {
             const canvasRef = React.useRef(null);
             React.useEffect(() => {
                 const img = new Image();
@@ -8352,24 +8352,40 @@ INSTRUCTIONS:
                     const col = spriteIndex % gridSize;
                     const row = Math.floor(spriteIndex / gridSize);
                     ctx.drawImage(img, col * frameWidth, row * frameHeight, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const data = imgData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i]; const g = data[i+1]; const b = data[i+2];
-                        // Green screen keying
-                        if (g > 150 && r < 140 && b < 140) {
-                            const dist = Math.abs(g - 255) + r + b;
-                            if (dist < 100) data[i+3] = 0;
-                            else data[i+3] = Math.max(0, data[i+3] - (255 - dist));
+                    
+                    const processKeying = () => {
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imgData.data;
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i]; const g = data[i+1]; const b = data[i+2];
+                            const diff = Math.max(g - r, g - b);
+                            if (diff > 15) {
+                                data[i+3] = 0;
+                            }
                         }
+                        ctx.putImageData(imgData, 0, 0);
+                    };
+
+                    if (logoSrc) {
+                        const logoImg = new Image();
+                        logoImg.src = logoSrc;
+                        logoImg.onload = () => {
+                            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                            ctx.shadowBlur = 4;
+                            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+                            ctx.shadowBlur = 0;
+                            processKeying();
+                        };
+                        logoImg.onerror = processKeying;
+                    } else {
+                        processKeying();
                     }
-                    ctx.putImageData(imgData, 0, 0);
                 };
-            }, [src, spriteIndex, gridSize]);
+            }, [src, spriteIndex, gridSize, logoSrc, logoX, logoY, logoSize]);
             return <canvas ref={canvasRef} className={className} title={alt} />;
         };
 
-        const CoCTutorialOverlay = ({ onComplete }) => {
+        const CinematicDemoEngine = ({ onComplete }) => {
             const [step, setStep] = React.useState(0);
             const [visible, setVisible] = React.useState(false);
             const [targetRect, setTargetRect] = React.useState(null);
@@ -8377,128 +8393,69 @@ INSTRUCTIONS:
 
             const tutorialData = [
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 0,
-                    text: "Welcome to ATAXY! I'm ASENA. Let me give you a complete deep-dive tour!",
-                    btn: "Start Tour",
-                    targetSelector: null
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 0,
+                    text: "Welcome to ATAXY! I'm ASENA. Let me give you a complete deep-dive tour!", btn: "Start Cinematic Tour", targetSelector: null,
+                    logoX: 135, logoY: 130, logoSize: 25 
                 },
                 {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 2, // Will dynamically adjust left/right
-                    text: "First, let's head into the Practice tab. This is your core hub.",
-                    btn: "Let's Open Practice",
-                    targetSelector: '#nav-btn-practice',
-                    action: 'click'
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "First, let's head into the Practice tab. This is your core hub.", btn: "Open Practice", targetSelector: '#nav-btn-practice', action: 'click',
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 2,
-                    text: "Here are your Batches. Let's jump into the NEET Bank!",
-                    btn: "Enter NEET Bank",
-                    targetSelector: '#batch-neet-bank',
-                    action: 'click'
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
+                    text: "Here are your Batches. Let's jump into the NEET Bank!", btn: "Enter NEET Bank", targetSelector: '#batch-neet-bank', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 2,
-                    text: "The Question Practice section contains thousands of highly categorized PYQs and modules.",
-                    btn: "Got it!",
-                    targetSelector: '#btn-question-practice'
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "The Question Practice section contains thousands of highly categorized PYQs and modules.", btn: "Got it!", targetSelector: '#btn-question-practice',
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 2,
-                    text: "Let's check out the Tests tab where you can generate full-length CBT tests.",
-                    btn: "Open Tests",
-                    targetSelector: '#tab-tests',
-                    action: 'click'
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
+                    text: "Let's check out the Tests tab where you can generate full-length CBT tests.", btn: "Open Tests", targetSelector: '#tab-tests', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 8,
-                    text: "This Custom Test Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!).",
-                    btn: "Wow!",
-                    targetSelector: '#btn-generate-test'
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 8,
+                    text: "This Custom Test Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!). Let's generate a demo test!", btn: "Generate Demo Test", targetSelector: '#btn-generate-test', action: 'generate_demo',
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 4,
-                    text: "After you submit a test, you can use the Target Weakness feature to instantly generate a DPP of your weakest topics!",
-                    btn: "Amazing",
-                    targetSelector: null
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
+                    text: "Look at this! We are in a live test. Try clicking an answer.", btn: "Click a random answer", targetSelector: '.demo-quiz-option', action: 'select_wrong',
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 2,
-                    text: "Now, let's head to your ME tab to check your stats.",
-                    btn: "Open Me Tab",
-                    targetSelector: '#nav-btn-profile',
-                    action: 'click'
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 6,
+                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '.demo-mentor-btn', action: 'submit_demo',
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 5,
-                    text: "This is your Daily Targets board. You must set your daily goals here.",
-                    btn: "Okay",
-                    targetSelector: '#tour-target-list'
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 8,
+                    text: "After you submit, the Target Weakness feature analyzes your mistakes and instantly generates a DPP of your weakest topics! (Demo test auto-deleted)", btn: "Amazing", targetSelector: null, action: 'cleanup_demo',
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 6,
-                    text: "If you set a target and miss the time limit, I WILL get extremely angry and block the app until you finish it!",
-                    btn: "I promise I won't be late!",
-                    targetSelector: null
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "You can find all your saved tests and analyses right here in the Test History section.", btn: "Check History", targetSelector: '#btn-test-history',
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 2,
-                    text: "Feeling stuck? Jump into the Chats tab to ask us any doubt directly.",
-                    btn: "Open Chats",
-                    targetSelector: '#nav-btn-chats',
-                    action: 'click'
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 5,
+                    text: "Now, let's head to your ME tab to check your stats.", btn: "Open Me Tab", targetSelector: '#nav-btn-profile', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 8,
-                    text: "Finally, check out Voice Rooms! You can join interactive group studies and make friends with batchmates here.",
-                    btn: "Open Voice Rooms",
-                    targetSelector: '#nav-btn-vc',
-                    action: 'click'
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "Feeling stuck? Jump into the Chats tab to ask us any doubt directly.", btn: "Open Chats", targetSelector: '#nav-btn-chats', action: 'click',
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 1,
-                    text: "That's everything! Head back Home and start your preparation. We believe in you!",
-                    btn: "Go Home & Finish",
-                    targetSelector: '#nav-btn-home',
-                    action: 'click'
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 1,
+                    text: "That's everything! Head back Home and start your preparation. We believe in you!", btn: "Go Home & Finish", targetSelector: '#nav-btn-home', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
                 }
             ];
 
@@ -8518,7 +8475,10 @@ INSTRUCTIONS:
                         if (el) {
                             setTargetRect(el.getBoundingClientRect());
                         } else {
-                            setTargetRect(null);
+                            setTimeout(() => {
+                                const retryEl = document.querySelector(current.targetSelector);
+                                setTargetRect(retryEl ? retryEl.getBoundingClientRect() : null);
+                            }, 500);
                         }
                     } else {
                         setTargetRect(null);
@@ -8532,6 +8492,14 @@ INSTRUCTIONS:
                 if (current.action === 'click' && current.targetSelector) {
                     const el = document.querySelector(current.targetSelector);
                     if (el) el.click();
+                } else if (current.action === 'generate_demo') {
+                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'generate' }));
+                } else if (current.action === 'select_wrong') {
+                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'wrong' }));
+                } else if (current.action === 'submit_demo') {
+                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'submit' }));
+                } else if (current.action === 'cleanup_demo') {
+                    window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: 'cleanup' }));
                 }
 
                 setVisible(false);
@@ -8544,71 +8512,54 @@ INSTRUCTIONS:
                 }, 400);
             };
 
-            // FOOLPROOF HOVER POINTING
             let charStyle = { bottom: '-20px', left: '50%', transform: 'translateX(-50%)' };
             let bubbleStyle = { bottom: '380px', left: '50%', transform: 'translateX(-50%)' };
             let tailClass = 'left-1/2 -translate-x-1/2 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[20px] border-t-white';
             let finalSpriteIndex = current.spriteIndex;
-            let finalTop = 0; // Fix ReferenceError
+            let finalTop = 0;
             
             if (targetRect) {
                 const charW = windowSize.w < 640 ? 260 : 320;
                 const charH = charW;
-                
-                // Finger offsets
                 const fingerYOffset = charH * 0.4;
-                // Sprite 3 = Pointing Right (finger is on the right)
                 const fingerRightXOffset = charW * 0.80; 
-                // Sprite 2 = Pointing Left (finger is on the left)
                 const fingerLeftXOffset = charW * 0.20; 
                 
-                // We want the finger tip to touch the TOP CENTER of the target button
                 const targetCenterX = targetRect.left + (targetRect.width / 2);
                 const targetTop = targetRect.top - 10;
                 
                 let rightPointLeft = targetCenterX - fingerRightXOffset;
                 let rightPointTop = targetTop - fingerYOffset;
-                
                 let leftPointLeft = targetCenterX - fingerLeftXOffset;
                 let leftPointTop = targetTop - fingerYOffset;
                 
                 let useRightPoint = true;
-                if (rightPointLeft < 0) {
-                    useRightPoint = false; // off left screen, must point left
-                } else if (leftPointLeft + charW > windowSize.w) {
-                    useRightPoint = true; // off right screen, must point right
-                } else {
-                    // if both fit, pick the one that has more space for the bubble!
-                    useRightPoint = targetCenterX > windowSize.w / 2;
-                }
+                if (rightPointLeft < 0) useRightPoint = false;
+                else if (leftPointLeft + charW > windowSize.w) useRightPoint = true;
+                else useRightPoint = targetCenterX > windowSize.w / 2;
                 
                 let finalLeft = useRightPoint ? rightPointLeft : leftPointLeft;
                 finalTop = useRightPoint ? rightPointTop : leftPointTop;
                 
-                // CLAMP SO IT DOESN'T GO OFF SCREEN!
                 finalTop = Math.max(0, Math.min(windowSize.h - charH, finalTop));
                 finalLeft = Math.max(0, Math.min(windowSize.w - charW, finalLeft));
 
                 charStyle = { left: `${finalLeft}px`, top: `${finalTop}px` };
                 finalSpriteIndex = useRightPoint ? 3 : 2; 
 
-                // Bubble goes above or below based on space
                 if (finalTop > windowSize.h / 2) {
-                    // Bubble Above
                     bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, bottom: `${windowSize.h - finalTop + 10}px` };
                     tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white';
                 } else {
-                    // Bubble Below
                     bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, top: `${finalTop + charH + 10}px` };
                     tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-b-[20px] border-b-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-b-[20px] border-b-white';
                 }
             } else {
-                if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 0; // Neutral if center
+                if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 0; 
             }
 
             return (
-                <div className="fixed inset-0 z-[9999999] pointer-events-auto overflow-hidden">
-                    {/* Spotlight Overlay */}
+                <div className="fixed inset-0 z-[9999999] pointer-events-none overflow-hidden">
                     <div 
                         className="absolute rounded-2xl transition-all duration-500 pointer-events-none"
                         style={{
@@ -8621,7 +8572,6 @@ INSTRUCTIONS:
                         }}
                     />
                     
-                    {/* Make the spotlight hole clickable to advance the tutorial automatically! */}
                     {targetRect && visible && (
                         <div 
                             className="absolute z-20 cursor-pointer pointer-events-auto flex items-center justify-center animate-pulse"
@@ -8639,26 +8589,20 @@ INSTRUCTIONS:
                         </div>
                     )}
 
-                    {/* Speech Bubble */}
                     <div 
                         className={`absolute w-[280px] sm:w-[320px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-500 border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20 flex flex-col items-center text-center pointer-events-auto`}
                         style={targetRect ? bubbleStyle : { ...bubbleStyle, transform: 'translateX(-50%)' }}
                     >
-                        {/* Tail */}
                         <div className={`absolute ${finalTop > windowSize.h / 2 ? '-bottom-4' : '-top-4'} ${tailClass} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
-                        
                         <p className="font-black text-gray-800 text-[16px] leading-snug mb-5 tracking-tight w-full">{current.text}</p>
-                        
                         <button onClick={handleNext} className="w-full bg-gradient-to-b from-[#84cc16] to-[#65a30d] hover:from-[#a3e635] hover:to-[#84cc16] text-white font-black uppercase tracking-wider py-3 rounded-xl shadow-[0_4px_0_#4d7c0f] active:shadow-none active:translate-y-1 transition-all border border-[#a3e635]">
                             {current.btn}
                         </button>
-
                         <button onClick={onComplete} className="mt-3 text-gray-400 hover:text-gray-600 text-[11px] font-bold uppercase tracking-widest underline transition-colors w-full">
                             Skip Tour
                         </button>
                     </div>
 
-                    {/* Character Cutout with Logo */}
                     <div 
                         className={`absolute w-[260px] sm:w-[320px] transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}
                         style={targetRect ? charStyle : { ...charStyle, transform: 'translateX(-50%)' }}
@@ -8670,12 +8614,7 @@ INSTRUCTIONS:
                             }
                         `}</style>
                         <div style={{ animation: 'characterBreathe 3s ease-in-out infinite', position: 'relative' }}>
-                            <ChromaImage src={current.img} alt={current.name} spriteIndex={finalSpriteIndex} gridSize={4} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
-                            
-                            {/* Adjusted chest logo overlay coordinates for the pocket */}
-                            <div className={`absolute ${current.character === 'female' ? 'top-[60%] left-[65%]' : 'top-[60%] left-[65%]'} transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10`}>
-                                <AtaxyLogo className="w-full h-full rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.4)] border border-[#00FFFF]/50 mix-blend-normal" />
-                            </div>
+                            <ChromaImage src={current.img} alt={current.name} spriteIndex={finalSpriteIndex} gridSize={4} logoSrc="assets/logo.png" logoX={current.logoX} logoY={current.logoY} logoSize={current.logoSize} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
                         </div>
                     </div>
                 </div>
@@ -8706,7 +8645,60 @@ INSTRUCTIONS:
             };
 
             // SATHEE Back-Navigation State Restoration
-            React.useEffect(() => {
+            
+    const [cinematicDemoTest, setCinematicDemoTest] = React.useState(null);
+
+    React.useEffect(() => {
+        const handleCinematicDemo = (e) => {
+            const action = e.detail;
+            if (action === 'generate') {
+                const demoTest = {
+                    id: 'cinematic_demo_1',
+                    name: 'Demo Test - Do Not Save',
+                    type: 'full',
+                    questions: [
+                        { id: 'q1', text: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Endoplasmic Reticulum'], correct: 1, explanation: 'Mitochondria generates ATP.' },
+                        { id: 'q2', text: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], correct: 1, explanation: 'Mars appears red due to iron oxide.' }
+                    ],
+                    totalMarks: 8,
+                    isNeetPattern: true,
+                    config: {}
+                };
+                setCinematicDemoTest(demoTest);
+                setActivePracticeMode('tests');
+                // Fake starting the test
+                setActiveQuiz({
+                    questions: demoTest.questions,
+                    answers: {},
+                    startTime: Date.now(),
+                    totalMarks: demoTest.totalMarks,
+                    testId: demoTest.id,
+                    testName: demoTest.name,
+                    config: demoTest.config
+                });
+                setActiveQuestionIndex(0);
+                setTimeout(() => {
+                    const el = document.querySelector('.quiz-option-0');
+                    if (el) el.classList.add('demo-quiz-option');
+                }, 1000);
+            } else if (action === 'wrong') {
+                setActiveQuiz(prev => ({ ...prev, answers: { ...prev.answers, 0: 0 } })); // Selected wrong answer (Nucleus instead of Mitochondria)
+                setTimeout(() => {
+                    const el = document.querySelector('.ask-mentor-btn');
+                    if (el) el.classList.add('demo-mentor-btn');
+                }, 500);
+            } else if (action === 'submit') {
+                submitQuiz(); // Normal submit will generate analysis
+            } else if (action === 'cleanup') {
+                // Delete the fake test from history
+                setGeneratedTestsHistory(prev => prev.filter(t => t.id !== 'cinematic_demo_1'));
+                setCinematicDemoTest(null);
+            }
+        };
+        window.addEventListener('cinematic_demo_action', handleCinematicDemo);
+        return () => window.removeEventListener('cinematic_demo_action', handleCinematicDemo);
+    }, []);
+React.useEffect(() => {
                 const returnType = sessionStorage.getItem('ataxy_return_type');
                 const returnExamId = sessionStorage.getItem('ataxy_return_exam');
                 const returnSectionId = sessionStorage.getItem('ataxy_return_section');
@@ -13054,7 +13046,7 @@ INSTRUCTIONS:
             return (
                 <VoiceRoomErrorBoundary>
                     <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
-                    {showCoCTutorial && <CoCTutorialOverlay onComplete={handleTourComplete} />}
+                    {showCoCTutorial && <CinematicDemoEngine onComplete={handleTourComplete} />}
 
                     <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
