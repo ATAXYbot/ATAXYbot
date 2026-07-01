@@ -2827,7 +2827,7 @@ Student Doubt: ${prompt}`
 
                     {/* Pinned ATAXY Mentor Button */}
                     <div className="px-3 pt-4 mb-2">
-                        <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-2xl p-4 shadow-lg border border-purple-500/40 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-all duration-300 group flex items-center justify-between hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                        <div id="nav-btn-mentor" onClick={() => { window.dispatchEvent(new CustomEvent('open_ataxy_mentor')); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-2xl p-4 shadow-lg border border-purple-500/40 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-all duration-300 group flex items-center justify-between hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
                             <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
                             <div className="relative z-10 flex items-center gap-4">
                                 <div className="w-[56px] h-[56px] rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-[2px] border-2 border-purple-400/60 shadow-[0_0_15px_rgba(168,85,247,0.5)] shrink-0 animate-pulse">
@@ -8004,8 +8004,8 @@ INSTRUCTIONS:
                 setIsTyping(false);
             };
 
-            return (
-                <div className="pb-[calc(180px_+_env(safe-area-inset-bottom,_0px))] animate-in fade-in flex flex-col h-full bg-white dark:bg-gray-950 relative">
+            return ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[4000000] animate-in fade-in zoom-in-95 flex flex-col bg-white dark:bg-gray-950 md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
 
                     {/* Sidebar Drawer */}
                     {isDrawerOpen && (
@@ -8141,7 +8141,7 @@ INSTRUCTIONS:
                             </form>
                         </div>
                     </div>
-                </div>
+                </div>, document.body
             );
         };
 
@@ -8763,6 +8763,14 @@ INSTRUCTIONS:
         };
 
         function App() {
+            const [showAIMentor, setShowAIMentor] = useState(false);
+            
+            useEffect(() => {
+                const handleOpenMentor = () => setShowAIMentor(true);
+                window.addEventListener('open_ataxy_mentor', handleOpenMentor);
+                return () => window.removeEventListener('open_ataxy_mentor', handleOpenMentor);
+            }, []);
+            
             // --- TOUR GUIDE STATE ---
 
 
@@ -13564,7 +13572,7 @@ return (
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
-                                    {currentTab === 'ai' && <AIMentorView onBack={() => setCurrentTab(previousTabRef.current || 'home')} />}
+                                    {showAIMentor && <AIMentorView onBack={() => setShowAIMentor(false)} />}
                                     {/* Voice Room Tab logic moved to VC Official Room */}
                                     {currentTab === 'questions' && renderQuestionsView()}
                                     {currentTab === 'profile' && renderProfileView()}
