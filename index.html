@@ -10451,7 +10451,7 @@ React.useEffect(() => {
                 </div>
                 
                 <div className="flex flex-col items-end justify-between h-full gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget(t); }} className="text-blue-500 md:text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget({ ...t, _date: todayStr }); }} className="text-blue-500 md:text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
                             <i className="fa-solid fa-pen text-sm"></i>
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); deleteTarget(t.id); }} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
@@ -10511,8 +10511,10 @@ React.useEffect(() => {
                                         <div className="flex gap-3 justify-end mt-2">
                                             <button onClick={() => setEditingTarget(null)} className="px-5 py-2.5 rounded-xl font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
                                             <button onClick={() => {
-                                                const u = targetsData[selectedDate].map(t => t.id === editingTarget.id ? editingTarget : t);
-                                                setTargetsData({ ...targetsData, [selectedDate]: u });
+                                                const tDate = editingTarget._date || selectedDate || todayStr;
+                                                const currentList = targetsData[tDate] || [];
+                                                const u = currentList.map(t => t.id === editingTarget.id ? editingTarget : t);
+                                                setTargetsData({ ...targetsData, [tDate]: u });
                                                 setEditingTarget(null);
                                             }} className="px-5 py-2.5 bg-[#0AE0D0] text-[#010714] font-black rounded-xl hover:scale-105 active:scale-95 transition-transform shadow-[0_0_15px_rgba(10,224,208,0.4)]">Save Changes</button>
                                         </div>
