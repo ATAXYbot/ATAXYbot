@@ -8393,16 +8393,18 @@ INSTRUCTIONS:
             const [windowSize, setWindowSize] = React.useState({ w: window.innerWidth, h: window.innerHeight });
 
             const tutorialData = [
+                // 1. INTRO
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 0,
                     text: "Welcome to ATAXY! I'm your mentor ATAXY. Let me give you a complete deep-dive tour of the app!", btn: "Next", targetSelector: null,
-                    logoX: 125, logoY: 125, logoSize: 22 
+                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 0,
                     text: "And I'm ASENA! Together, we will guide you through every powerful feature. Let's begin!", btn: "Start Cinematic Tour", targetSelector: null,
                     logoX: 135, logoY: 130, logoSize: 25
                 },
+                // 2. QUESTION PRACTICE
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
                     text: "First, let's head into the Practice tab. This is your core hub.", btn: "Open Practice", targetSelector: '#nav-btn-practice', action: 'click',
@@ -8410,44 +8412,56 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
-                    text: "Here are your Batches. Let's jump into the NEET Bank!", btn: "Enter NEET Bank", targetSelector: '#batch-neet-bank', action: 'click',
+                    text: "Here are your Batches. Let's jump right into the NEET Bank!", btn: "Enter NEET Bank", targetSelector: '#batch-neet-bank', action: 'click',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "The Question Practice section contains thousands of highly categorized PYQs and modules.", btn: "Got it!", targetSelector: '#btn-question-practice',
-                    logoX: 125, logoY: 125, logoSize: 22
-                },
-                {
-                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
-                    text: "Let's check out the Tests tab where you can generate full-length CBT tests.", btn: "Open Tests", targetSelector: '#tab-tests', action: 'click',
-                    logoX: 135, logoY: 130, logoSize: 25
-                },
-                {
-                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 8,
-                    text: "This Custom Test Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!). Let's generate a demo test!", btn: "Generate Demo Test", targetSelector: '#btn-generate-test', action: 'generate_demo',
+                    text: "The Question Practice section contains thousands of highly categorized PYQs and modules. Let's open a module!", btn: "Open Module", targetSelector: '#btn-question-practice', action: 'open_practice_module',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
-                    text: "Look at this! We are in a live test. Try clicking an answer.", btn: "Click a random answer", targetSelector: '.demo-quiz-option', action: 'select_wrong',
+                    text: "This is the learning interface. Try clicking an answer!", btn: "Click a random answer", targetSelector: '.demo-quiz-option', action: 'select_wrong_practice',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 6,
-                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '.demo-mentor-btn', action: 'submit_demo',
+                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '.demo-mentor-btn',
+                    logoX: 125, logoY: 125, logoSize: 22
+                },
+                // 3. CUSTOM TEST GENERATOR
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
+                    text: "Now, let's check out the Tests tab to see the Custom Test Generator.", btn: "Open Tests", targetSelector: '#tab-tests', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 8,
+                    text: "This Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!). You can select specific chapters and topics. Let's generate a demo test!", btn: "Generate Demo Test", targetSelector: '#btn-generate-test', action: 'generate_demo',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
-                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 8,
-                    text: "After you submit, the Target Weakness feature analyzes your mistakes and instantly generates a DPP of your weakest topics! (Demo test auto-deleted)", btn: "Amazing", targetSelector: null, action: 'cleanup_demo',
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
+                    text: "We are in a live test. Try clicking an answer.", btn: "Answer", targetSelector: '.demo-quiz-option', action: 'select_wrong',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "You can find all your saved tests and analyses right here in the Test History section.", btn: "Check History", targetSelector: '#btn-test-history',
+                    text: "Now let's submit it to see the detailed analytics!", btn: "Submit", targetSelector: '.demo-mentor-btn', action: 'submit_demo',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 8,
+                    text: "This is your detailed analysis. See the 'Target Weakness' option? It analyzes your mistakes and instantly generates a DPP of your weakest topics!", btn: "Amazing", targetSelector: null, action: 'cleanup_demo',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "You can find all your saved tests right here in the Test History section.", btn: "Check History", targetSelector: '#btn-test-history',
+                    logoX: 125, logoY: 125, logoSize: 22
+                },
+                // 4. ME TAB (ANALYTICS)
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 5,
                     text: "Now, let's head to your ME tab to check your stats.", btn: "Open Me Tab", targetSelector: '#nav-btn-profile', action: 'click',
@@ -8455,12 +8469,34 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "Feeling stuck? Jump into the Chats tab to ask us any doubt directly.", btn: "Open Chats", targetSelector: '#nav-btn-chats', action: 'click',
+                    text: "Here, you can review your Wrong Questions, Bookmarks, and Notes. You can even generate a Target Weakness DPP right from your bookmarks!", btn: "Got it", targetSelector: '.fa-bookmark',
+                    logoX: 125, logoY: 125, logoSize: 22
+                },
+                // 5. CHATS TAB
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
+                    text: "Feeling stuck? Let's jump into the Chats tab.", btn: "Open Chats", targetSelector: '#nav-btn-chats', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
+                    text: "Here is the main ATAXY Mentor chat. You can ask us any doubt directly, and we'll break it down for you instantly!", btn: "Awesome", targetSelector: null,
+                    logoX: 125, logoY: 125, logoSize: 22
+                },
+                // 6. HOME TAB (DAILY TARGETS)
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
+                    text: "Finally, let's head back to the Home tab.", btn: "Go Home", targetSelector: '#nav-btn-home', action: 'click',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 8,
+                    text: "This is where you set your Daily Target recommendations. You add your tasks here, and we'll keep track of everything!", btn: "Next", targetSelector: '#tour-target-input',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 1,
-                    text: "That's everything! Head back Home and start your preparation. We believe in you!", btn: "Go Home & Finish", targetSelector: '#nav-btn-home', action: 'click',
+                    text: "Even if you are late, we will constantly recall, remind, and motivate you to complete your targets until they are checked off. We won't let you fall behind!", btn: "Finish Tour", targetSelector: null,
                     logoX: 135, logoY: 130, logoSize: 25
                 }
             ];
@@ -8610,7 +8646,7 @@ INSTRUCTIONS:
                     </div>
 
                     <div 
-                        className={`absolute w-[260px] sm:w-[320px] transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}
+                        className={`absolute w-[260px] sm:w-[320px] transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-50 pointer-events-none drop-shadow-2xl`}
                         style={targetRect ? charStyle : { ...charStyle, transform: 'translateX(-50%)' }}
                     >
                         <style>{`
@@ -8657,19 +8693,48 @@ INSTRUCTIONS:
     React.useEffect(() => {
         const handleCinematicDemo = (e) => {
             const action = e.detail;
-            if (action === 'generate') {
-                const demoTest = {
-                    id: 'cinematic_demo_1',
-                    name: 'Demo Test - Do Not Save',
-                    type: 'full',
-                    questions: [
-                        { id: 'q1', text: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Endoplasmic Reticulum'], correct: 1, explanation: 'Mitochondria generates ATP.' },
-                        { id: 'q2', text: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], correct: 1, explanation: 'Mars appears red due to iron oxide.' }
-                    ],
-                    totalMarks: 8,
-                    isNeetPattern: true,
-                    config: {}
-                };
+            
+            // Generate mock test for question practice demo
+            const practiceMockTest = {
+                name: 'Kinematics High Yield',
+                isCustomTest: false,
+                id: 'practice_demo_1',
+                questions: [
+                    { id: 'p1', question: 'A car accelerates from rest at 2 m/s². What is its velocity after 5 seconds?', options: ['5 m/s', '10 m/s', '15 m/s', '20 m/s'], correctOption: 'B', explanation: 'v = u + at = 0 + 2(5) = 10 m/s.' }
+                ]
+            };
+
+            const demoTest = {
+                id: 'cinematic_demo_1',
+                name: 'Mock Test - Do Not Save',
+                type: 'full',
+                questions: [
+                    { id: 'q1', text: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Endoplasmic Reticulum'], correct: 1, explanation: 'Mitochondria generates ATP.' },
+                    { id: 'q2', text: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], correct: 1, explanation: 'Mars appears red due to iron oxide.' }
+                ],
+                totalMarks: 8,
+                isNeetPattern: true,
+                config: {}
+            };
+
+            if (action === 'open_practice_module') {
+                setActivePracticeChapter(practiceMockTest);
+                setLoadedQuestions(practiceMockTest.questions);
+                setCurrentTab('questions');
+                setTimeout(() => {
+                    const el = document.querySelector('[data-qa-card] .w-full.text-left.p-3');
+                    if (el) el.classList.add('demo-quiz-option');
+                }, 1000);
+            } else if (action === 'select_wrong_practice') {
+                setPracticeAttempts(prev => ({ ...prev, 'p1': 0 }));
+                setTimeout(() => {
+                    const el = document.querySelector('.fa-user-graduate');
+                    if (el) el.parentElement.classList.add('demo-mentor-btn');
+                }, 500);
+            } else if (action === 'generate_demo') {
+                // Exit practice module
+                setActivePracticeChapter(null);
+                
                 setCinematicDemoTest(demoTest);
                 setActivePracticeMode('tests');
                 
@@ -8685,13 +8750,13 @@ INSTRUCTIONS:
                     const el = document.querySelector('[data-qa-card] .w-full.text-left.p-3');
                     if (el) el.classList.add('demo-quiz-option');
                 }, 1000);
-            } else if (action === 'wrong') {
+            } else if (action === 'select_wrong') {
                 setPracticeAttempts(prev => ({ ...prev, 'q1': 0 }));
                 setTimeout(() => {
                     const el = document.querySelector('.fa-user-graduate');
                     if (el) el.parentElement.classList.add('demo-mentor-btn');
                 }, 500);
-            } else if (action === 'submit') {
+            } else if (action === 'submit_demo') {
                 const finalResult = { 
                     ...cinematicDemoTest, 
                     score: -1, 
@@ -8706,7 +8771,7 @@ INSTRUCTIONS:
                 setActivePracticeChapter(null);
                 setCustomGeneratorMode('history');
                 setShowQuiz(false);
-            } else if (action === 'cleanup') {
+            } else if (action === 'cleanup_demo') {
                 setGeneratedTestsHistory(prev => prev.filter(t => t.id !== 'cinematic_demo_1'));
                 setCinematicDemoTest(null);
                 setShowScoreSummary(false);
