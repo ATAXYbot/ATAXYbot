@@ -8333,6 +8333,39 @@ INSTRUCTIONS:
         // ==========================================
         // 🚀 COC STYLE TUTORIAL SYSTEM
         // ==========================================
+                // ==========================================
+        // 🟢 CHROMA KEY COMPONENT (Real-time Background Removal)
+        // ==========================================
+        const ChromaImage = ({ src, alt, className }) => {
+            const canvasRef = React.useRef(null);
+            React.useEffect(() => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i]; const g = data[i+1]; const b = data[i+2];
+                        // Remove pure bright green
+                        if (g > 150 && r < 140 && b < 140) {
+                            // Smooth alpha falloff for anti-aliasing edges
+                            const dist = Math.abs(g - 255) + r + b;
+                            if (dist < 100) data[i+3] = 0;
+                            else data[i+3] = Math.max(0, data[i+3] - (255 - dist));
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                };
+            }, [src]);
+            return <canvas ref={canvasRef} className={className} title={alt} />;
+        };
+
         const CoCTutorialOverlay = ({ onComplete }) => {
             const [step, setStep] = React.useState(0);
             const [visible, setVisible] = React.useState(false);
@@ -8355,21 +8388,29 @@ INSTRUCTIONS:
             const tutorialData = [
                 {
                     character: 'female',
+                    name: 'Mia',
+                    img: 'assets/characters/mia_happy_3d.png',
                     text: "Welcome to ATAXY! I'm Mia, your AI Mentor. Let's get you started!",
                     btn: "Let's go!"
                 },
                 {
                     character: 'male',
+                    name: 'Jack',
+                    img: 'assets/characters/jack_confident_3d.png',
                     text: "I'm Jack. We'll help you organize your targets and practice daily.",
                     btn: "Sounds good!"
                 },
                 {
                     character: 'female',
+                    name: 'Mia',
+                    img: 'assets/characters/mia_excited_3d.png',
                     text: "You can find all your study materials and global chats right here.",
                     btn: "Awesome!"
                 },
                 {
                     character: 'male',
+                    name: 'Jack',
+                    img: 'assets/characters/jack_hyped_3d.png',
                     text: "Are you ready to crack your exams and dominate?",
                     btn: "Bring it on!"
                 }
@@ -8382,7 +8423,7 @@ INSTRUCTIONS:
                     <div className="w-full max-w-[500px] relative h-full flex flex-col justify-end overflow-hidden pb-[15%]">
                         
                         {/* Speech Bubble */}
-                        <div className={`absolute bottom-[45%] ${current.character === 'female' ? 'right-4' : 'left-4'} w-[260px] bg-white rounded-2xl p-4 shadow-2xl transition-all duration-300 transform border-[3px] border-[#e2e8f0] ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20`}>
+                        <div className={`absolute bottom-[65%] sm:bottom-[60%] ${current.character === 'female' ? 'right-4' : 'left-4'} w-[260px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 transform border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20`}>
                             {/* Speech Bubble Tail */}
                             <div className={`absolute -bottom-4 ${current.character === 'female' ? 'left-8 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-8 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
                             
@@ -8392,13 +8433,9 @@ INSTRUCTIONS:
                             </button>
                         </div>
                         
-                        {/* Character Image */}
-                        <div className={`absolute bottom-[-20px] ${current.character === 'female' ? '-left-6' : '-right-6'} w-[300px] h-[350px] transition-all duration-500 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]`}>
-                            {current.character === 'female' ? (
-                                <img src="https://api.dicebear.com/7.x/micah/svg?seed=Mia&backgroundColor=transparent&baseColor=f9c9b6&hair=full&hairColor=000000" alt="Mia" className="w-full h-full object-contain" />
-                            ) : (
-                                <img src="https://api.dicebear.com/7.x/micah/svg?seed=Jack&backgroundColor=transparent&baseColor=f9c9b6&facialHair=beard&facialHairColor=000000" alt="Jack" className="w-full h-full object-contain" />
-                            )}
+                        {/* Perfect 3D Character Cutout */}
+                        <div className={`absolute bottom-[-20px] ${current.character === 'female' ? '-left-4 sm:left-4' : '-right-4 sm:right-4'} w-[280px] sm:w-[350px] transition-all duration-500 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}>
+                            <ChromaImage src={current.img} alt={current.name} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
                         </div>
                     </div>
                 </div>
