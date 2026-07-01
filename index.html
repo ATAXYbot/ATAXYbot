@@ -10623,12 +10623,27 @@ INSTRUCTIONS:
                                         }
                                         if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
 
-                                        let correctIdx = parseInt(q.correct_answer, 10);
-                                        if (isNaN(correctIdx) && q.correct_option) {
-                                            correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                                        let correctIdx = -1;
+                                        const strVals = [q.correct_answer, q.correct, q.correct_option];
+                                        for (const val of strVals) {
+                                            if (typeof val === 'string' && ['A', 'B', 'C', 'D'].includes(val.toUpperCase().trim())) {
+                                                correctIdx = ['A', 'B', 'C', 'D'].indexOf(val.toUpperCase().trim());
+                                                break;
+                                            }
                                         }
-                                        if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
-                                        if (isNaN(correctIdx)) correctIdx = 0;
+                                        if (correctIdx === -1) {
+                                            for (const val of [q.correct_answer, q.correct]) {
+                                                const parsed = parseInt(val, 10);
+                                                if (!isNaN(parsed) && parsed >= 1 && parsed <= 4) {
+                                                    correctIdx = parsed - 1;
+                                                    break;
+                                                } else if (parsed === 0) {
+                                                    correctIdx = 0;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (correctIdx === -1) correctIdx = 0;
 
                                         topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A', 'B', 'C', 'D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A', questionType: q.question_type || q.Question_Type || q.type || 'Main module (recommended)' });
                                     });
