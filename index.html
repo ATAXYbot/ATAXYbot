@@ -3105,65 +3105,59 @@ Student Doubt: ${prompt}`
             const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
             const transitionStyle = speaking ? 'transform 400ms ease-out, opacity 200ms ease-in' : 'transform 4000ms ease-out, opacity 5000ms ease-out';
             return (
-                <div className="flex flex-col items-center gap-2 relative">
+                <div onClick={(e) => {
+                    e.stopPropagation();
+                    if (isOccupied) {
+                        if (seat && (seat.user_id || seat.userId || seat.id)) {
+                            handleAvatarClick(seat);
+                        } else {
+                            if (isHost && idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat: null });
+                        }
+                    } else {
+                        if (isHost) {
+                            if (idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat });
+                        } else if (mySeatIndex !== null) {
+                            if (!isLocked) setShowActionModal({ type: 'change_seat_self', seatNum: idx });
+                            else safeAlert("This seat is locked by the host.");
+                        } else if (!isLocked) {
+                            takeSeat(idx);
+                        } else {
+                            safeAlert("This seat is locked by the host.");
+                        }
+                    }
+                }} className={`flex flex-col items-center gap-1.5 cursor-pointer ${isHostSeat ? 'w-[84px]' : 'w-[68px]'}`} style={{ transform: `scale(${speaking ? baseScale + 0.05 : baseScale})`, transition: 'transform 0.1s ease-out' }}>
                     {isOccupied ? (
-                        <div className="relative cursor-pointer group weplay-voice-ring flex items-center justify-center" onClick={() => {
-                            if (seat && (seat.user_id || seat.userId || seat.id)) {
-                                handleAvatarClick(seat);
-                            } else {
-                                // Fallback if occupant object lacks user_id for some reason
-                                if (isHost && idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat: null });
-                            }
-                        }}>
-                            {/* Solid flowing voice glow with lingering memory fade */}
-                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${dynamicScale})`, opacity: glowOpacity * 0.5, filter: 'blur(12px)', transition: transitionStyle }}></div>
-                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${ring1Scale})`, opacity: glowOpacity * 0.6, filter: 'blur(6px)', transition: transitionStyle }}></div>
-                            <div className="absolute inset-0 rounded-full bg-[#00FFFF] pointer-events-none" style={{ transform: `scale(${ring2Scale})`, opacity: glowOpacity * 0.25, filter: 'blur(10px)', transition: transitionStyle }}></div>
-
-                            <div className={`rounded-full border-4 flex items-center justify-center font-black shadow-inner transition-transform group-hover:scale-105 bg-gradient-to-br bg-cover bg-center relative z-10 ${isHostSeat ? 'w-20 h-20 text-2xl border-[#F9D33A] from-[#D4AF37] to-[#F9D33A] text-[#010B1C] shadow-[0_0_15px_rgba(249,211,58,0.5)]' : 'w-16 h-16 text-xl border-[#00FFFF] from-[#00A7A7] to-blue-600 text-white shadow-[0_0_15px_rgba(0,255,255,0.4)]'}`} style={{ ...(seat.photo_url ? { backgroundImage: `url(${seat.photo_url})` } : {}) }}>
-                                {!seat.photo_url && (seat.user_name ? seat.user_name.substring(0, 2).toUpperCase() : seat.user_id.substring(0, 2).toUpperCase())}
+                        <div className="relative w-full aspect-square flex items-center justify-center">
+                            {/* WePlay Speaking Ripple */}
+                            <div className="absolute inset-0 rounded-full border-[3px] border-[#ff3b8f] pointer-events-none transition-all duration-75 ease-out z-0" style={{ transform: `scale(${volume > 0 ? 1.1 + (volume / 100) * 0.25 : 1})`, opacity: volume > 0 ? 0.6 + (volume / 100) * 0.4 : 0, boxShadow: volume > 0 ? `0 0 ${20 + (volume / 100) * 30}px rgba(255,59,143,${0.6 + (volume / 100) * 0.4})` : 'none' }}></div>
+                            
+                            <div className={`relative z-10 w-full h-full rounded-full flex items-center justify-center font-bold bg-[#1a1a24] overflow-hidden border-[3px] ${speaking ? 'border-[#ff3b8f]' : 'border-white'} shadow-lg`}>
+                                {seat.photo_url ? <img src={seat.photo_url} alt="DP" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} /> : null}
+                                <span className={`w-full h-full flex items-center justify-center text-white ${seat.photo_url ? 'hidden' : 'flex'} ${isHostSeat ? 'text-3xl' : 'text-2xl'}`}>{(seat.user_name ? seat.user_name : String(seat.user_id)).charAt(0).toUpperCase()}</span>
                             </div>
-                            {isHostSeat && <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#F9D33A] text-[#010B1C] text-[9px] px-2 py-0.5 rounded-full font-black border border-[#D4AF37] shadow-sm z-20">HOST</span>}
-                            {seat.is_muted_by_host ? (
-                                <div className="absolute -bottom-1 -right-1 bg-red-600 w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-[0_0_10px_rgba(255,0,0,0.6)] z-20">
-                                    <i className="fa-solid fa-microphone-slash text-[10px] text-white"></i>
+                            
+                            {(seat.is_muted_by_host || (isMe && isLocalMuted)) && (
+                                <div className="absolute -bottom-1 -right-1 bg-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-200 z-20 shadow-md">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-gray-500"></i>
                                 </div>
-                            ) : (isMe && isLocalMuted ? (
-                                <div className="absolute -bottom-1 -right-1 bg-[#010B1C] rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-600 shadow-[0_0_10px_rgba(0,0,0,0.6)] z-20">
-                                    <i className="fa-solid fa-microphone-slash text-[10px] text-red-500"></i>
-                                </div>
-                            ) : null)}
-                            {isLocked && (
-                                <div className="absolute top-0 right-0 bg-red-500 w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#010B1C] shadow-sm z-20">
-                                    <i className="fa-solid fa-lock text-[8px] text-white"></i>
-                                </div>
+                            )}
+                            {isHostSeat && (
+                                <div className="absolute -bottom-2 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black text-[9px] font-black px-2 py-0.5 rounded-full z-20 shadow-[0_2px_5px_rgba(255,215,0,0.5)] border border-white tracking-wider whitespace-nowrap">HOST</div>
                             )}
                         </div>
                     ) : (
-                        <div className={`rounded-full border-[3px] border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${isHostSeat ? 'w-[72px] h-[72px] text-2xl' : 'w-16 h-16 text-xl'} ${isLocked ? 'border-red-500/50 bg-red-500/10' : 'border-[#0AE0D0]/40 bg-[#021633]/50 hover:bg-[#0AE0D0]/20'}`} onClick={(e) => {
-                            e.stopPropagation();
-                            if (isHost) {
-                                if (idx !== 0) setShowActionModal({ type: 'empty_seat_host', idx, seat });
-                            } else if (mySeatIndex !== null) {
-                                if (!isLocked) setShowActionModal({ type: 'change_seat_self', seatNum: idx });
-                                else safeAlert("This seat is locked by the host.");
-                            } else if (!isLocked) {
-                                takeSeat(idx);
-                            } else {
-                                safeAlert("This seat is locked by the host.");
-                            }
-                        }}>
-                            <i className={`fa-solid ${isLocked ? 'fa-lock text-red-500/50' : 'fa-plus text-[#0AE0D0]/50'} ${isHostSeat ? 'text-2xl' : 'text-xl'}`}></i>
+                        <div className="relative w-full aspect-square flex items-center justify-center group">
+                            <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-white/40 bg-black/30 backdrop-blur-md group-hover:bg-white/20 group-hover:border-white transition-all z-10 flex items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]">
+                                <i className={`fa-solid ${isLocked ? 'fa-lock text-white/50 text-lg' : 'fa-plus text-white/80 text-xl drop-shadow-md'}`}></i>
+                            </div>
                             {seat && seat.is_muted_by_host && (
-                                <div className="absolute -bottom-1 -right-1 bg-[#ff0055] rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#ff88aa] shadow-[0_0_15px_#ff0055,_0_0_30px_#ff0055] z-20">
-                                    <i className="fa-solid fa-microphone-slash text-[10px] text-white font-black drop-shadow-md"></i>
+                                <div className="absolute -bottom-1 -right-1 bg-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-200 z-20 shadow-md">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-gray-500"></i>
                                 </div>
                             )}
                         </div>
                     )}
-                    <span className="text-[10px] font-bold text-[#E0F7FA] bg-[#021633] px-2 py-0.5 rounded-full border border-[#0AE0D0]/20 max-w-[80px] truncate text-center">
-                        {occupantName}
-                    </span>
+                    <span className="text-[10px] text-center font-bold text-white truncate max-w-[130%] px-2.5 py-0.5 mt-1 bg-black/50 backdrop-blur-md rounded-full shadow-md border border-white/10">{occupantName}</span>
                 </div>
             );
         };
@@ -5034,55 +5028,61 @@ Student Doubt: ${prompt}`
             };
 
             const renderActiveRoom = () => (
-                <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={() => setShowRoomMenu(false)}>
+                <div className="fixed inset-0 z-[2000000] bg-[#1A1A24] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 font-sans" onClick={() => setShowRoomMenu(false)}>
                     <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; }`}</style>
-                    {/* Header */}
-                    <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 pr-[90px] lg:pr-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+max(env(safe-area-inset-top),_24px))]">
-                        <div className="flex items-center gap-2 overflow-hidden flex-1">
-                            <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
-                                <i className="fa-solid fa-arrow-left"></i>
+                    
+                    {/* WePlay Full Screen Immersive Background */}
+                    <div className="absolute inset-0 z-0 bg-[#1A1A24]">
+                        <img src={activeRoom.host_photo || "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop"} alt="bg" className="w-full h-full object-cover opacity-80 scale-[1.05]" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90 pointer-events-none"></div>
+                        <div className="absolute inset-0 backdrop-blur-[4px] pointer-events-none"></div>
+                    </div>
+
+                    {/* WePlay Top Header */}
+                    <div className="px-4 py-3 flex items-center justify-between z-20 relative pt-[calc(30px+env(safe-area-inset-top,0px))]">
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors shadow-lg border border-white/20">
+                                <i className="fa-solid fa-chevron-left text-sm"></i>
                             </button>
-                            <div className="flex flex-col overflow-hidden min-w-0">
-                                <h2 className="font-black text-base sm:text-lg text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,255,255,0.4)] truncate">{activeRoom.room_name}</h2>
-                                <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold mt-0.5">
-                                    <span onClick={() => handleCopy(activeRoom.room_id_5_digit, 'Room ID')} className="cursor-pointer bg-[#00FFFF]/20 text-[#00FFFF] px-1.5 py-0.5 rounded border border-[#00FFFF]/50 active:scale-95 transition-transform flex items-center gap-1 shrink-0">
-                                        ID: {activeRoom.room_id_5_digit} <i className="fa-regular fa-copy text-[9px]"></i>
-                                    </span>
+                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-white/20 shadow-lg">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff3b8f] to-[#9147ff] p-[1px] flex items-center justify-center overflow-hidden shrink-0">
+                                    <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
+                                        {activeRoom.host_photo ? <img src={activeRoom.host_photo} className="w-full h-full object-cover" /> : <i className="fa-solid fa-hashtag text-white/50 text-xs"></i>}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col min-w-0 max-w-[120px]">
+                                    <span className="text-[11px] font-black text-white truncate">{activeRoom.room_name}</span>
+                                    <div className="flex items-center gap-1 opacity-80 cursor-pointer" onClick={() => handleCopy(activeRoom.room_id_5_digit, 'Room ID')}>
+                                        <i className="fa-solid fa-id-badge text-[8px] text-[#ff3b8f]"></i>
+                                        <span className="text-[9px] font-medium text-white/90 truncate">ID: {activeRoom.room_id_5_digit}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-user-plus text-sm"></i>
-                                {pendingRequests.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
-                                        {pendingRequests.length}
-                                    </span>
-                                )}
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-white/20">
+                                <i className="fa-solid fa-user-plus text-[11px]"></i>
+                                {pendingRequests.length > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#ff3b8f] rounded-full border border-black shadow-[0_0_5px_rgba(255,59,143,0.8)] animate-pulse"></span>}
                             </button>
-                            <button onClick={() => setShowParticipantsModal(true)} className="text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 px-2 py-1.5 rounded transition-colors flex items-center gap-1.5 text-xs font-bold">
-                                <i className="fa-solid fa-users"></i> {totalParticipants}/12
+                            <button onClick={() => setShowParticipantsModal(true)} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-white/20">
+                                <i className="fa-solid fa-users text-[11px]"></i>
                             </button>
-
+                            
                             <div className="relative">
-                                <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95">
-                                    <i className="fa-solid fa-ellipsis-vertical text-xl"></i>
+                                <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-white/20">
+                                    <i className="fa-solid fa-power-off text-[11px] text-[#ff3b8f]"></i>
                                 </button>
                                 {showRoomMenu && (
-                                    <div className="absolute right-0 top-full mt-3 bg-[#021633]/95 backdrop-blur-xl border border-[#0AE0D0]/30 rounded-2xl shadow-[0_10px_40px_rgba(0,255,255,0.2)] p-2 z-[3000] flex items-center gap-1 animate-in fade-in zoom-in" onClick={e => e.stopPropagation()}>
+                                    <div className="absolute right-0 top-full mt-2 bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[3000] flex flex-col gap-1 min-w-[120px] animate-in zoom-in-95 duration-100" onClick={e => e.stopPropagation()}>
                                         {isHost && (
-                                            <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex flex-col items-center justify-center p-3 hover:bg-[#00FFFF]/10 rounded-xl transition-all min-w-[70px] active:scale-95">
-                                                <i className="fa-solid fa-gear text-[#00FFFF] text-[22px] mb-1.5"></i>
-                                                <span className="text-[9px] font-bold text-[#E0F7FA] uppercase tracking-wider">Settings</span>
+                                            <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl transition-all text-left w-full active:scale-95">
+                                                <i className="fa-solid fa-gear text-white/80 w-4 text-center"></i>
+                                                <span className="text-xs font-bold text-white">Settings</span>
                                             </button>
                                         )}
-                                        <button onClick={() => { setShowRoomMenu(false); safeAlert("Room reported for review by ATAXY Admins."); }} className="flex flex-col items-center justify-center p-3 hover:bg-orange-500/10 rounded-xl transition-all min-w-[70px] active:scale-95">
-                                            <i className="fa-solid fa-flag text-orange-400 text-[22px] mb-1.5"></i>
-                                            <span className="text-[9px] font-bold text-orange-100 uppercase tracking-wider">Report</span>
-                                        </button>
-                                        <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex flex-col items-center justify-center p-3 hover:bg-red-500/10 rounded-xl transition-all min-w-[70px] active:scale-95">
-                                            <i className="fa-solid fa-arrow-right-from-bracket text-red-500 text-[22px] mb-1.5"></i>
-                                            <span className="text-[9px] font-bold text-red-100 uppercase tracking-wider">Exit</span>
+                                        <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex items-center gap-3 p-3 hover:bg-[#ff3b8f]/20 rounded-xl transition-all text-left w-full active:scale-95 group">
+                                            <i className="fa-solid fa-arrow-right-from-bracket text-[#ff3b8f] group-hover:text-red-400 w-4 text-center transition-colors"></i>
+                                            <span className="text-xs font-bold text-[#ff3b8f] group-hover:text-red-400 transition-colors">Leave Room</span>
                                         </button>
                                     </div>
                                 )}
@@ -5091,7 +5091,7 @@ Student Doubt: ${prompt}`
                     </div>
 
                     {/* Stage */}
-                    <div className="shrink-0 px-4 pt-4 pb-2">
+                    <div className="shrink-0 px-4 pt-4 pb-2 relative z-10">
                         <div className="grid grid-cols-2 gap-y-5 gap-x-4 justify-items-center">
                             {seats.map((seat, idx) => (
                                 <VCSeatNode
@@ -5111,96 +5111,83 @@ Student Doubt: ${prompt}`
                         </div>
                     </div>
 
-                    {/* Audience (Compact Horizontal Strip) */}
-                    <div className="shrink-0 mx-4 bg-[#021633]/50 border border-[#0AE0D0]/20 rounded-xl p-2 backdrop-blur shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]">
-                        <div className="flex items-center justify-between mb-2 px-1">
-                            <span className="text-[10px] font-black text-[#A4DFE6] uppercase tracking-widest"><i className="fa-solid fa-users text-[#00FFFF] mr-1"></i> Audience ({audience.length})</span>
-                            <span className="text-[9px] bg-[#010B1C] text-gray-400 px-2 py-0.5 rounded-full border border-gray-800">Listeners</span>
-                        </div>
+                    {/* WePlay Audience Strip */}
+                    <div className="mt-1 mb-2 pl-4 flex gap-3 overflow-x-auto no-scrollbar relative z-10 shrink-0">
                         {audience.length === 0 ? (
-                            <p className="text-center text-gray-500 italic py-2 font-bold text-[10px]">No audience members yet.</p>
+                            <p className="text-xs text-white/40 italic py-1 font-medium">No audience members yet.</p>
                         ) : (
-                            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 px-1">
-                                {audience.map(m => (
-                                    <div key={m.user_id} className="flex flex-col items-center gap-1.5 cursor-pointer group shrink-0 w-12" onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleAvatarClick(m);
-                                    }}>
-                                        <div className="w-8 h-8 rounded-full bg-[#010B1C] border border-[#0AE0D0]/30 flex items-center justify-center text-sm font-black text-[#00FFFF] shadow-inner group-hover:border-[#00FFFF] transition-colors bg-cover bg-center" style={m.photo_url ? { backgroundImage: `url(${m.photo_url})` } : {}}>
-                                            {!m.photo_url && (m.user_name ? m.user_name.substring(0, 2).toUpperCase() : String(m.user_id).substring(0, 2).toUpperCase())}
-                                        </div>
-                                        <span className="text-[9px] font-bold text-[#A4DFE6] truncate w-full text-center">{m.user_name || `User ${String(m.user_id).substring(0, 4)}`}</span>
+                            audience.map((a, i) => (
+                                <div key={i} onClick={(e) => { e.stopPropagation(); handleAvatarClick(a); }} className="flex flex-col items-center gap-1 cursor-pointer shrink-0 w-[42px] group">
+                                    <div className="w-[38px] h-[38px] rounded-full bg-black/40 border border-white/20 flex items-center justify-center overflow-hidden shadow-md group-hover:border-[#ff3b8f] group-hover:scale-105 transition-all">
+                                        {a.photo_url ? <img src={a.photo_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-user text-white/30 text-xs"></i>}
                                     </div>
-                                ))}
-                            </div>
+                                    <span className="text-[8px] font-medium text-white/80 truncate w-full text-center">{a.user_name || String(a.user_id).substring(0, 4)}</span>
+                                </div>
+                            ))
                         )}
                     </div>
 
-                    {/* Chat Messages */}
-                    <div className="flex-1 overflow-y-auto mx-2 sm:mx-4 mt-2 mb-2 bg-gradient-to-b from-transparent to-[#021633]/40 border border-[#0AE0D0]/10 rounded-2xl p-2 flex flex-col shadow-sm pointer-events-auto overscroll-contain">
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-1 flex flex-col">
-                            <div className="flex flex-col gap-2 mt-auto pb-2">
-                                {messages.map(m => (
-                                    <div key={m.id} className="bg-[#010B1C]/80 backdrop-blur border border-[#0AE0D0]/20 rounded-xl px-3 py-1.5 text-sm w-fit max-w-[85%] animate-in fade-in slide-in-from-bottom-2 shadow-sm">
-                                        <span className="font-bold text-[#A4DFE6] mr-2 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.userId || "unknown", user_name: m?.user_name || m?.userName || "User", photo_url: m?.image_url || m?.userAvatar }); }}>{m?.user_name || m?.userName || "User"}:</span>
-                                        <span className="text-white">{m.message}</span>
-                                        {m.image_url && (
-                                            <div className="mt-2 rounded-lg overflow-hidden border border-[#0AE0D0]/30 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(m.image_url)}>
-                                                <img src={m.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
+                    {/* WePlay Chat Messages */}
+                    <div className="flex-1 overflow-y-auto mx-4 mb-2 flex flex-col relative z-10 pointer-events-auto overscroll-contain">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pr-1 flex flex-col pb-2">
+                            <div className="mt-auto flex flex-col gap-2.5">
+                                {messages.map(m => {
+                                    const isMeMsg = (m.user_id || m.senderId) === currentUserId;
+                                    return (
+                                        <div key={m.id} className="bg-black/40 backdrop-blur-md rounded-2xl rounded-tl-sm px-4 py-2.5 w-max max-w-[85%] self-start border border-white/10 shadow-md animate-in slide-in-from-bottom-2">
+                                            <div className="flex items-center gap-2 mb-1" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.senderId || "unknown", user_name: m?.user_name || m?.senderName || "User", photo_url: m?.image_url || m?.senderPhoto }); }}>
+                                                {(m.image_url || m.senderPhoto) && <img src={m.image_url || m.senderPhoto} className="w-5 h-5 rounded-full object-cover border border-white/20" />}
+                                                <span className={`text-[11px] font-black cursor-pointer ${isMeMsg ? 'text-[#00FFFF]' : 'text-[#ff3b8f] drop-shadow-[0_0_2px_rgba(255,59,143,0.5)]'}`}>{m?.user_name || m?.senderName || "User"}</span>
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
+                                            <p className="text-sm text-white/95 break-words font-medium drop-shadow-sm">{m.message}</p>
+                                            {m.image_url && (
+                                                <div className="mt-2 rounded-lg overflow-hidden border border-white/20 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(m.image_url)}>
+                                                    <img src={m.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                                 <div ref={chatEndRef} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Bottom Interactive Bar */}
-                    <div className="shrink-0 w-full bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-2 sm:p-3 flex flex-col gap-2 z-[150] pb-[calc(8px+env(safe-area-inset-bottom,0px))]">
+                    {/* WePlay Bottom Floating Toolbar */}
+                    <div className="px-4 py-3 pb-[calc(8px+env(safe-area-inset-bottom,0px))] relative z-10 flex flex-col gap-2 shrink-0">
                         {/* Pending Image Preview Overlay */}
                         {pendingImage && (
-                            <div className="w-full bg-[#021633] border border-[#0AE0D0]/50 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2">
+                            <div className="w-full bg-black/60 border border-white/20 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom-2 backdrop-blur-md">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-[#00FFFF]/30">
+                                    <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-white/10">
                                         <img src={pendingImage} className="max-w-full max-h-full object-cover" />
                                     </div>
-                                    <span className="text-xs font-bold text-[#A4DFE6]">Image selected</span>
+                                    <span className="text-xs font-bold text-white/80">Image selected</span>
                                 </div>
                                 <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         )}
-                        <div className="flex gap-2 items-center w-full">
-                            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors border border-transparent ${isSpeakerMuted ? 'text-gray-400 bg-gray-800' : 'text-[#A4DFE6] hover:bg-[#A4DFE6]/20'}`}>
-                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
+                        <div className="flex items-center gap-3">
+                            <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim() || pendingImage) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className="flex-1 relative">
+                                <div className="bg-black/50 backdrop-blur-xl rounded-full pl-5 pr-12 py-3 flex items-center gap-3 border border-white/20 focus-within:border-[#ff3b8f]/80 focus-within:bg-black/60 transition-all shadow-[0_5px_15px_rgba(0,0,0,0.3)] w-full">
+                                    <i className="fa-regular fa-comment-dots text-white/60 text-sm"></i>
+                                    <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Say something nice..." className="bg-transparent border-none outline-none text-sm text-white placeholder-white/50 flex-1 font-medium w-full" />
+                                </div>
+                                <button type="button" onClick={() => document.getElementById('vc-chat-img').click()} className="absolute right-[46px] top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/60 hover:text-white transition-colors z-10"><i className="fa-solid fa-image text-[11px]"></i></button>
+                                <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-[#0072FF] text-[#010a17] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">
+                                    <i className="fa-solid fa-paper-plane text-[11px]"></i>
+                                </button>
+                            </form>
+                            
+                            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 backdrop-blur-xl border border-white/20 shadow-xl transition-all active:scale-90 ${isSpeakerMuted ? 'bg-black/50 text-white/30' : 'bg-white/20 text-white'}`}>
+                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-lg`}></i>
                             </button>
-
-                            <button onClick={() => {
-                                if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted);
-                                else if (isHost) takeSeat(0);
-                                else safeAlert('Take a seat to use the mic!');
-                            }} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${mySeatIndex === null && !isHost ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : (isLocalMuted || isMutedByHost) ? 'bg-red-500/20 text-red-500' : 'bg-[#00FFFF] text-[#010B1C] shadow-[0_0_10px_rgba(0,255,255,0.5)]'}`}>
-                                <i className={`fa-solid ${isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost) ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
+                            
+                            <button onClick={() => { if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else if (isHost) takeSeat(0); else safeAlert('Take a seat to use the mic!'); }} className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 backdrop-blur-xl border border-white/20 shadow-xl transition-all active:scale-90 ${(mySeatIndex === null && !isHost) ? 'bg-black/50 text-white/30' : (isLocalMuted || isMutedByHost) ? 'bg-white text-black' : 'bg-gradient-to-br from-[#ff3b8f] to-[#9147ff] text-white shadow-[0_0_20px_rgba(255,59,143,0.5)]'}`}>
+                                <i className={`fa-solid ${(isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost)) ? 'fa-microphone-slash' : 'fa-microphone'} text-lg`}></i>
                             </button>
-
-                            <div className="flex-1 relative flex items-center min-w-[80px]">
-                                <button disabled={!isHost && activeRoom.chat_disabled} onClick={() => document.getElementById('vc-chat-img').click()} className={`absolute left-3 transition-colors z-10 ${(!isHost && activeRoom.chat_disabled) ? 'text-gray-600' : 'text-[#A4DFE6] hover:text-[#00FFFF]'}`}><i className="fa-solid fa-image text-sm"></i></button>
-                                <input type="file" id="vc-chat-img" accept="image/*" className="hidden" disabled={!isHost && activeRoom.chat_disabled} onChange={(e) => {
-                                    const f = e.target.files[0]; if (!f) return;
-                                    const r = new FileReader(); r.onload = (ev) => {
-                                        const img = new Image(); img.onload = () => {
-                                            const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 800;
-                                            if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
-                                            c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
-                                            setPendingImage(c.toDataURL('image/jpeg', 0.5));
-                                        }; img.src = ev.target.result;
-                                    }; r.readAsDataURL(f); e.target.value = '';
-                                }} />
-                                <input disabled={!isHost && activeRoom.chat_disabled} value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={(!isHost && activeRoom.chat_disabled) ? "Chat disabled by host" : "Message room..."} className="w-full bg-[#021633] border border-[#0AE0D0]/30 rounded-full pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#00FFFF] disabled:opacity-50" onKeyDown={(e) => { if (e.key === 'Enter' && (chatInput.trim() || pendingImage) && !(!isHost && activeRoom.chat_disabled)) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} />
-                            </div>
-                            <button disabled={!isHost && activeRoom.chat_disabled} onClick={() => { if ((chatInput.trim() || pendingImage) && !(!isHost && activeRoom.chat_disabled)) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] transition-colors ${(!isHost && activeRoom.chat_disabled) ? 'bg-gray-700 text-gray-500' : 'bg-[#00FFFF] text-[#010B1C] hover:bg-[#00d8d8]'}`}><i className="fa-solid fa-paper-plane text-sm"></i></button>
                         </div>
                     </div>
 
