@@ -2107,6 +2107,11 @@ Student Doubt: ${prompt}`
                     };
 
                     mediaRecorder.onstop = async () => {
+                        if (mediaRecorder.isCancelled) {
+                            audioChunksRef.current = [];
+                            stream.getTracks().forEach(track => track.stop());
+                            return;
+                        }
                         if (audioChunksRef.current.length === 0) return;
                         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                         audioChunksRef.current = [];
@@ -2174,8 +2179,7 @@ Student Doubt: ${prompt}`
             const cancelRecording = () => {
                 if (mediaRecorderRef.current && isRecording) {
                     clearInterval(recordingTimerRef.current);
-                    // Clear chunks before stopping to prevent sending
-                    audioChunksRef.current = [];
+                    mediaRecorderRef.current.isCancelled = true;
                     mediaRecorderRef.current.stop();
                     setIsRecording(false);
                     setRecordingTime(0);
@@ -2405,7 +2409,7 @@ Student Doubt: ${prompt}`
                                         onContextMenu={(e) => { e.preventDefault(); setMsgMenu(m); }}
                                     >
                                         <div className={`flex items-center gap-2 w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                            <div id={`msg-bubble-${m.id}`} className={`px-2 pt-1.5 pb-1 rounded-lg text-[14px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] relative z-10 ${isMe ? 'bg-[#00508a] text-[#e9edef] rounded-tr-none ml-auto' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none mr-auto'} max-w-[85%]`}>
+                                            <div id={`msg-bubble-${m.id}`} className={`w-fit px-2 pt-1.5 pb-1 rounded-lg text-[14px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] relative z-10 ${isMe ? 'bg-[#00508a] text-[#e9edef] rounded-tr-none ml-auto' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none mr-auto'} max-w-[85%]`}>
                                                 {m.isAutoMsg && (
                                                     <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1 text-[#8696a0]`}>
                                                         <i className="fa-solid fa-robot"></i> Auto Message
@@ -2447,24 +2451,23 @@ Student Doubt: ${prompt}`
                                                         <AudioPlayer url={m.audioUrl} isMe={isMe} />
                                                     </div>
                                                 )}
-                                                <div className="flex flex-wrap items-end gap-1.5 justify-end mt-[-2px] float-right ml-3 pl-2">
-                                                    {m.text && (
-                                                        <p className={`whitespace-pre-wrap break-words leading-snug float-left mr-1 ${m.isAutoMsg ? 'italic' : ''}`} style={{wordBreak: "break-word"}}>
-                                                            {m.text}
-                                                            {m.isEdited && <span className="text-[11px] text-[#8696a0] italic ml-1">Edited</span>}
-                                                        </p>
+                                                {m.text && (
+                                                    <span className={`whitespace-pre-wrap break-words leading-snug align-middle ${m.isAutoMsg ? 'italic' : ''}`} style={{wordBreak: "break-word"}}>
+                                                        {m.text}
+                                                        {m.isEdited && <span className="text-[11px] text-[#8696a0] italic ml-1">Edited</span>}
+                                                    </span>
+                                                )}
+                                                <span className={`text-[10px] inline-flex items-center gap-1 font-medium text-[#8696a0] float-right mt-[5px] ml-3 pb-[1px]`}>
+                                                    {new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {isMe && (
+                                                        <span>
+                                                            {m.status === 'read' ? <i className="fa-solid fa-check-double text-[#53bdeb]"></i> :
+                                                                m.status === 'delivered' ? <i className="fa-solid fa-check-double text-[#8696a0]"></i> :
+                                                                    <i className="fa-solid fa-check text-[#8696a0]"></i>}
+                                                        </span>
                                                     )}
-                                                    <div className={`text-[10px] flex items-center justify-end gap-1 font-medium text-[#8696a0] translate-y-0.5 pb-0.5`}>
-                                                        {new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        {isMe && (
-                                                            <span>
-                                                                {m.status === 'read' ? <i className="fa-solid fa-check-double text-[#53bdeb]"></i> :
-                                                                    m.status === 'delivered' ? <i className="fa-solid fa-check-double text-[#8696a0]"></i> :
-                                                                        <i className="fa-solid fa-check text-[#8696a0]"></i>}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                </span>
+                                                <div className="clear-both"></div>
                                             </div>
                                         </div>
                                     </div>
