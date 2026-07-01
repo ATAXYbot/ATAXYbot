@@ -8157,31 +8157,48 @@ INSTRUCTIONS:
             }, []);
 
             React.useEffect(() => {
-                setVisible(false);
-                const timer = setTimeout(() => {
-                    if (current.targetSelector) {
-                          const el = document.querySelector(current.targetSelector);
-                          if (el) {
-                              setTargetRect(el.getBoundingClientRect());
-                              try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
-                          } else {
-                              setTimeout(() => {
-                                  const retryEl = document.querySelector(current.targetSelector);
-                                  if (retryEl) {
-                                      setTargetRect(retryEl.getBoundingClientRect());
-                                      try { retryEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
-                                  } else {
-                                      setTargetRect(null);
-                                  }
-                              }, 500);
+                  setVisible(false);
+                  let updateInterval;
+                  
+                  const startTracking = (el) => {
+                      if (updateInterval) clearInterval(updateInterval);
+                      updateInterval = setInterval(() => {
+                          const currentEl = document.querySelector(current.targetSelector);
+                          if (currentEl) {
+                              setTargetRect(currentEl.getBoundingClientRect());
                           }
-                    } else {
-                        setTargetRect(null);
-                    }
-                    setVisible(true);
-                }, 300);
-                return () => clearTimeout(timer);
-            }, [step, windowSize]);
+                      }, 16); // Track at ~60fps for buttery smooth tracking
+                  };
+
+                  const timer = setTimeout(() => {
+                      if (current.targetSelector) {
+                            const el = document.querySelector(current.targetSelector);
+                            if (el) {
+                                setTargetRect(el.getBoundingClientRect());
+                                try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+                                startTracking(el);
+                            } else {
+                                setTimeout(() => {
+                                    const retryEl = document.querySelector(current.targetSelector);
+                                    if (retryEl) {
+                                        setTargetRect(retryEl.getBoundingClientRect());
+                                        try { retryEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+                                        startTracking(retryEl);
+                                    } else {
+                                        setTargetRect(null);
+                                    }
+                                }, 500);
+                            }
+                      } else {
+                          setTargetRect(null);
+                      }
+                      setVisible(true);
+                  }, 300);
+                  return () => {
+                      clearTimeout(timer);
+                      if (updateInterval) clearInterval(updateInterval);
+                  };
+              }, [step, windowSize]);
 
             const handleNext = () => {
                 let delay = 400;
