@@ -8005,7 +8005,8 @@ INSTRUCTIONS:
             };
 
             return ReactDOM.createPortal(
-                <div className="fixed inset-0 z-[4000000] animate-in fade-in zoom-in-95 flex flex-col bg-white dark:bg-gray-950 md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
+                <div className="fixed inset-0 z-[4000000] flex flex-col bg-white dark:bg-gray-950 h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl animate-in fade-in zoom-in-95">
+                        <style>{`div.fixed.bottom-0.w-full.md\\:max-w-screen-xl.max-w-md.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
 
                     {/* Sidebar Drawer */}
                     {isDrawerOpen && (
@@ -8044,7 +8045,7 @@ INSTRUCTIONS:
                         </div>
                     )}
 
-                    <div className="fixed top-0 pt-safe-top w-full md:max-w-screen-xl max-w-md bg-white/80 dark:bg-gray-950/80 backdrop-blur-md px-4 py-3 flex items-center justify-between z-20 border-b border-gray-200/50 dark:border-gray-800/50">
+                    <div className="flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
                         <div className="flex items-center gap-3">
                             <button onClick={() => setIsDrawerOpen(true)} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center shrink-0 transition-colors">
                                 <i className="fa-solid fa-bars"></i>
@@ -8067,7 +8068,7 @@ INSTRUCTIONS:
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6 pt-[80px]">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-4">
                         {chats.map((c, i) => (
                             <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start gap-3'} animate-in fade-in slide-in-from-bottom-2`}>
                                 {c.sender === 'ai' && (
@@ -8103,8 +8104,7 @@ INSTRUCTIONS:
                         <div ref={chatEndRef} />
                     </div>
 
-                    <div className="fixed bottom-[calc(72px+var(--safe-bottom))] w-full md:max-w-screen-xl max-w-md bg-gradient-to-t from-white via-white to-transparent dark:from-gray-950 dark:via-gray-950 px-4 pb-4 pt-12 z-20 pointer-events-none">
-                        <div className="pointer-events-auto">
+                    <div className="shrink-0 p-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
                             {imageFile && (
                                 <div className="mb-3 relative inline-block animate-in zoom-in-95">
                                     <img src={imageBase64} className="h-20 w-auto rounded-xl border-2 border-white dark:border-gray-800 shadow-lg object-cover" />
@@ -8139,7 +8139,6 @@ INSTRUCTIONS:
                                     {isTyping ? <i className="fa-solid fa-circle-notch fa-spin text-lg"></i> : <i className="fa-solid fa-arrow-up text-lg"></i>}
                                 </button>
                             </form>
-                        </div>
                     </div>
                 </div>, document.body
             );
