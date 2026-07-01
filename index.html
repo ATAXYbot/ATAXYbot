@@ -3553,7 +3553,7 @@ Student Doubt: ${prompt}`
             );
         };
 
-        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab, vcChatOpen, onChatOpen, chatActions }) => {
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab, vcChatOpen, onChatOpen, chatActions, setChatActions }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
             const currentUserPhoto = tgUser?.photo_url || "";
@@ -14168,7 +14168,7 @@ INSTRUCTIONS:
                         {showTopNav && <TopNavBar />}
 
                         <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${showTopNav ? "pt-[calc(60px+var(--safe-top))]" : "pt-safe-top"}`}>
-                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} vcChatOpen={vcChatOpen} chatActions={chatActions} voiceState={voiceState} />
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} vcChatOpen={vcChatOpen} chatActions={chatActions} setChatActions={setChatActions} voiceState={voiceState} />
                             
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
