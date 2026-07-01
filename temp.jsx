@@ -42,233 +42,233 @@
                     { id: 'b_neet_lakshya', name: 'Lakshya NEET (Hindi)', medium: 'Hindi Medium', icon: 'fa-star-of-life', color: 'pink' }
                 ],
                 'sec_ssc_cgl': [
-                    { 
-                        id: 'b_ssc_cgl_rec_en', 
-                        name: 'SSC CGL 2026 RECORDED COURSE', 
+                    {
+                        id: 'b_ssc_cgl_rec_en',
+                        name: 'SSC CGL 2026 RECORDED COURSE',
                         highlight: 'RECORDED COURSE',
                         subtitle: 'Unlock your full potential with comprehensive lectures.',
                         subtitleIcon: 'fa-book-open',
-                        languageStr: 'English', 
+                        languageStr: 'English',
                         totalVideos: '208',
                         isCustomUI: true,
-                        course_reference: 'ssc-cgl-recorded-course-new-en', 
-                        language: 'en' 
+                        course_reference: 'ssc-cgl-recorded-course-new-en',
+                        language: 'en'
                     },
-                    { 
-                        id: 'b_ssc_cgl_rec_hi', 
-                        name: 'SSC CGL 2026 RECORDED COURSE', 
+                    {
+                        id: 'b_ssc_cgl_rec_hi',
+                        name: 'SSC CGL 2026 RECORDED COURSE',
                         highlight: 'RECORDED COURSE',
                         subtitle: 'Build a strong foundation for SSC CGL success.',
                         subtitleIcon: 'fa-book-open',
-                        languageStr: 'Hinglish', 
+                        languageStr: 'Hinglish',
                         totalVideos: '125',
                         isCustomUI: true,
-                        course_reference: 'ssc-cgl-recorded-course-new-hi' 
+                        course_reference: 'ssc-cgl-recorded-course-new-hi'
                     }
                 ],
                 'sec_ssc_mts': [
-                    { 
-                        id: 'b_ssc_mts_crash_en', 
-                        name: 'SSC MTS 2026 CRASH COURSE', 
+                    {
+                        id: 'b_ssc_mts_crash_en',
+                        name: 'SSC MTS 2026 CRASH COURSE',
                         highlight: 'CRASH COURSE',
                         subtitle: 'Last-minute prep? Our SSC MTS Crash Course is your secret weapon for success!',
                         subtitleIcon: 'fa-bolt',
-                        languageStr: 'Hinglish', 
+                        languageStr: 'Hinglish',
                         totalVideos: '180',
                         isCustomUI: true,
-                        course_reference: 'ssc-mts-crash-course' 
+                        course_reference: 'ssc-mts-crash-course'
                     },
-                    { 
-                        id: 'b_ssc_mts_rec_hi', 
-                        name: 'SSC MTS 2026 RECORDED COURSE', 
+                    {
+                        id: 'b_ssc_mts_rec_hi',
+                        name: 'SSC MTS 2026 RECORDED COURSE',
                         highlight: 'RECORDED COURSE',
                         subtitle: 'Master SSC MTS concepts at your own pace with detailed recorded lectures.',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'Hinglish', 
+                        languageStr: 'Hinglish',
                         totalVideos: '468',
                         isCustomUI: true,
-                        course_reference: 'ssc-mts-recorded-course-new-hi' 
+                        course_reference: 'ssc-mts-recorded-course-new-hi'
                     },
-                    { 
-                        id: 'b_ssc_mts_rec_en', 
-                        name: 'SSC MTS 2026 RECORDED COURSE', 
+                    {
+                        id: 'b_ssc_mts_rec_en',
+                        name: 'SSC MTS 2026 RECORDED COURSE',
                         highlight: 'RECORDED COURSE',
                         subtitle: 'Understand all topics clearly. SSC MTS Recorded Lectures in English.',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'English', 
+                        languageStr: 'English',
                         totalVideos: '484',
                         isCustomUI: true,
-                        course_reference: 'ssc-mts-recorded-course-new-en', 
-                        language: 'en' 
+                        course_reference: 'ssc-mts-recorded-course-new-en',
+                        language: 'en'
                     }
                 ],
                 'exam_cuet': [
-                    { 
-                        id: 'b_cuet_ug', 
-                        name: 'CUET Subject Course (UG)', 
+                    {
+                        id: 'b_cuet_ug',
+                        name: 'CUET Subject Course (UG)',
                         highlight: 'Subject Course (UG)',
                         subtitle: 'Comprehensive preparation for UG programs',
                         subtitleIcon: 'fa-user-graduate',
-                        languageStr: 'English', 
+                        languageStr: 'English',
                         totalVideos: '350+',
                         isCustomUI: true,
                         course_reference: 'cuet-ug'
                     },
-                    { 
-                        id: 'b_cuet_pg', 
-                        name: 'CUET Subject Course (PG)', 
+                    {
+                        id: 'b_cuet_pg',
+                        name: 'CUET Subject Course (PG)',
                         highlight: 'Subject Course (PG)',
                         subtitle: 'Advanced preparation for PG programs',
                         subtitleIcon: 'fa-user-graduate',
-                        languageStr: 'English', 
+                        languageStr: 'English',
                         totalVideos: '250+',
                         isCustomUI: true,
                         course_reference: 'cuet-pg'
                     }
                 ],
                 'exam_clat': [
-                    { 
-                        id: 'b_clat_2025_complete', 
-                        name: 'SATHEE CLAT UG 2025', 
+                    {
+                        id: 'b_clat_2025_complete',
+                        name: 'SATHEE CLAT UG 2025',
                         highlight: 'CLAT UG 2025',
-                        subtitle: 'Complete Course', 
+                        subtitle: 'Complete Course',
                         subtitleIcon: 'fa-graduation-cap',
-                        languageStr: 'English', 
-                        totalVideos: '190+', 
+                        languageStr: 'English',
+                        totalVideos: '190+',
                         isCustomUI: true,
-                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course&language=en#' 
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course&language=en#'
                     },
-                    { 
-                        id: 'b_clat_2025_master_en', 
-                        name: 'SATHEE CLAT UG 2025', 
+                    {
+                        id: 'b_clat_2025_master_en',
+                        name: 'SATHEE CLAT UG 2025',
                         highlight: 'CLAT UG 2025',
-                        subtitle: 'Master Course (English)', 
+                        subtitle: 'Master Course (English)',
                         subtitleIcon: 'fa-graduation-cap',
-                        languageStr: 'English', 
-                        totalVideos: '500+', 
+                        languageStr: 'English',
+                        totalVideos: '500+',
                         isCustomUI: true,
-                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-en&language=en#' 
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-en&language=en#'
                     },
-                    { 
-                        id: 'b_clat_2025_master_hi', 
-                        name: 'SATHEE CLAT UG 2025', 
+                    {
+                        id: 'b_clat_2025_master_hi',
+                        name: 'SATHEE CLAT UG 2025',
                         highlight: 'CLAT UG 2025',
-                        subtitle: 'Master Course (Hinglish)', 
+                        subtitle: 'Master Course (Hinglish)',
                         subtitleIcon: 'fa-graduation-cap',
-                        languageStr: 'Hinglish', 
-                        totalVideos: '70+', 
+                        languageStr: 'Hinglish',
+                        totalVideos: '70+',
                         isCustomUI: true,
-                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-hi&language=he#' 
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=sathee-clat-ug-2025-recorded-course-hi&language=he#'
                     },
-                    { 
-                        id: 'b_clat_2026_master', 
-                        name: 'SATHEE CLAT UG 2026', 
+                    {
+                        id: 'b_clat_2026_master',
+                        name: 'SATHEE CLAT UG 2026',
                         highlight: 'CLAT UG 2026',
-                        subtitle: 'Master Course CLAT (UG)', 
+                        subtitle: 'Master Course CLAT (UG)',
                         subtitleIcon: 'fa-graduation-cap',
-                        languageStr: 'English', 
-                        totalVideos: '200+', 
+                        languageStr: 'English',
+                        totalVideos: '200+',
                         isCustomUI: true,
-                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=2026-master-course-clat-ug-english&language=en#' 
+                        direct_link: 'https://sathee.iitk.ac.in/dashboard/courseView?course_reference=2026-master-course-clat-ug-english&language=en#'
                     }
                 ],
                 'exam_rrb': [
-                    { 
-                        id: 'b_rrb_crash_he', 
-                        name: 'SATHEE RRB GROUP D', 
+                    {
+                        id: 'b_rrb_crash_he',
+                        name: 'SATHEE RRB GROUP D',
                         highlight: 'RRB GROUP D',
-                        subtitle: 'Recorded Course', 
+                        subtitle: 'Recorded Course',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'Hinglish', 
-                        totalVideos: '188', 
+                        languageStr: 'Hinglish',
+                        totalVideos: '188',
                         isCustomUI: true,
                         course_reference: 'rrb-crash-course',
                         language: 'he'
                     },
-                    { 
-                        id: 'b_rrb_master_en', 
-                        name: 'SATHEE RRB GROUP D', 
+                    {
+                        id: 'b_rrb_master_en',
+                        name: 'SATHEE RRB GROUP D',
                         highlight: 'RRB GROUP D',
-                        subtitle: 'Recorded Course', 
+                        subtitle: 'Recorded Course',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'English', 
-                        totalVideos: '180+', 
+                        languageStr: 'English',
+                        totalVideos: '180+',
                         isCustomUI: true,
                         course_reference: '2026-master-course-rrb-group-d-english',
                         language: 'en'
                     }
                 ],
                 'exam_icar': [
-                    { 
-                        id: 'b_icar_en_669', 
-                        name: 'SATHEE ICAR AIEEA(UG)', 
+                    {
+                        id: 'b_icar_en_669',
+                        name: 'SATHEE ICAR AIEEA(UG)',
                         highlight: 'ICAR AIEEA(UG)',
-                        subtitle: 'Recorded Course English', 
+                        subtitle: 'Recorded Course English',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'English', 
-                        totalVideos: '669', 
+                        languageStr: 'English',
+                        totalVideos: '669',
                         isCustomUI: true,
                         course_reference: 'sathee-icar-aieea-recorded-course-en',
                         language: 'en'
                     },
-                    { 
-                        id: 'b_icar_en_465', 
-                        name: 'SATHEE ICAR AIEEA(UG)', 
+                    {
+                        id: 'b_icar_en_465',
+                        name: 'SATHEE ICAR AIEEA(UG)',
                         highlight: 'ICAR AIEEA(UG)',
-                        subtitle: 'Recorded Course', 
+                        subtitle: 'Recorded Course',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'English', 
-                        totalVideos: '465', 
+                        languageStr: 'English',
+                        totalVideos: '465',
                         isCustomUI: true,
                         course_reference: 'sathee-icar-aieea-ug-recorded-course',
                         language: 'en'
                     },
-                    { 
-                        id: 'b_icar_hi_209', 
-                        name: 'SATHEE ICAR AIEEA(UG)', 
+                    {
+                        id: 'b_icar_hi_209',
+                        name: 'SATHEE ICAR AIEEA(UG)',
                         highlight: 'ICAR AIEEA(UG)',
-                        subtitle: 'Recorded Course Hinglish', 
+                        subtitle: 'Recorded Course Hinglish',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'Hinglish', 
-                        totalVideos: '209', 
+                        languageStr: 'Hinglish',
+                        totalVideos: '209',
                         isCustomUI: true,
                         course_reference: 'sathee-icar-aieea-recorded-course-hi',
                         language: 'he'
                     }
                 ],
                 'exam_ibps': [
-                    { 
-                        id: 'b_ibps_en_375', 
-                        name: 'SATHEE IBPS CSA', 
+                    {
+                        id: 'b_ibps_en_375',
+                        name: 'SATHEE IBPS CSA',
                         highlight: 'IBPS CSA',
-                        subtitle: 'Master Course in English', 
+                        subtitle: 'Master Course in English',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'English', 
-                        totalVideos: '375', 
+                        languageStr: 'English',
+                        totalVideos: '375',
                         isCustomUI: true,
                         course_reference: 'sathee-ibps-master-course-english',
                         language: 'en'
                     },
-                    { 
-                        id: 'b_ibps_he_255', 
-                        name: 'SATHEE IBPS CSA', 
+                    {
+                        id: 'b_ibps_he_255',
+                        name: 'SATHEE IBPS CSA',
                         highlight: 'IBPS CSA',
-                        subtitle: 'Master Course in Hinglish', 
+                        subtitle: 'Master Course in Hinglish',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'Hinglish', 
-                        totalVideos: '255', 
+                        languageStr: 'Hinglish',
+                        totalVideos: '255',
                         isCustomUI: true,
                         course_reference: 'sathee-ibps-master-course-hindi',
                         language: 'he'
                     },
-                    { 
-                        id: 'b_ibps_en_276', 
-                        name: 'SATHEE IBPS CSA', 
+                    {
+                        id: 'b_ibps_en_276',
+                        name: 'SATHEE IBPS CSA',
                         highlight: 'IBPS CSA',
-                        subtitle: 'Recorded Course', 
+                        subtitle: 'Recorded Course',
                         subtitleIcon: 'fa-video',
-                        languageStr: 'English', 
-                        totalVideos: '276', 
+                        languageStr: 'English',
+                        totalVideos: '276',
                         isCustomUI: true,
                         course_reference: 'sathee-ibps-clerk-recorded-course',
                         language: 'en'
@@ -411,18 +411,20 @@
         const safeRemoveItem = (key) => { try { localStorage.removeItem(key); } catch (e) { } };
 
         const setCloudData = (key, val) => {
-            const strVal = JSON.stringify(val);
+            const strVal = typeof val === 'string' ? val : JSON.stringify(val);
+            try { localStorage.setItem(key, strVal); } catch (e) { } // Always save locally first for fast access
             try {
                 if (window.Telegram?.WebApp?.CloudStorage && window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
                     window.Telegram.WebApp.CloudStorage.setItem(key, strVal, (err) => {
-                        if (err) { try { localStorage.setItem(key, strVal); } catch (e) { } }
+                        if (err) console.error('CloudStorage save error:', err);
                     });
-                } else {
-                    localStorage.setItem(key, strVal);
                 }
-            } catch (e) {
-                try { localStorage.setItem(key, strVal); } catch (err) { }
-            }
+            } catch (e) { console.error(e); }
+        };
+
+        const saveDmToStorage = (uid, history) => {
+            safeSetItem('dms_' + uid, JSON.stringify(history));
+            setCloudData('cloud_dms_' + uid, Array.isArray(history) ? history.slice(-3) : []);
         };
 
         const getCloudData = (key) => new Promise(resolve => {
@@ -450,31 +452,37 @@
         // 🛡️ NATIVE TELEGRAM SAFE ALERTS & CONFIRMS
         // ==========================================
         let globalDialogSetter = null;
+        let dialogQueue = [];
+
+        const flushDialogQueue = () => {
+            if (!globalDialogSetter || dialogQueue.length === 0) return;
+            const nextDialog = dialogQueue.shift();
+            globalDialogSetter(nextDialog);
+        };
 
         const safeAlert = (msg) => {
             if (globalDialogSetter) {
                 globalDialogSetter({ type: 'alert', message: msg, isOpen: true });
+            } else if (window.Telegram?.WebApp?.showAlert) {
+                try { window.Telegram.WebApp.showAlert(msg); } catch (e) { dialogQueue.push({ type: 'alert', message: msg, isOpen: true }); }
             } else {
-                try {
-                    if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
-                    else alert(msg);
-                } catch (e) { alert(msg); }
+                dialogQueue.push({ type: 'alert', message: msg, isOpen: true });
             }
         };
 
         const safeConfirm = (msg, callback) => {
             if (globalDialogSetter) {
                 globalDialogSetter({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
-            } else {
+            } else if (window.Telegram?.WebApp?.showConfirm) {
                 try {
-                    if (window.Telegram?.WebApp?.showConfirm) {
-                        window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
-                            if (confirmed) callback();
-                        });
-                    } else {
-                        if (confirm(msg)) callback();
-                    }
-                } catch (e) { if (confirm(msg)) callback(); }
+                    window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
+                        if (confirmed) callback();
+                    });
+                } catch (e) {
+                    dialogQueue.push({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
+                }
+            } else {
+                dialogQueue.push({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
             }
         };
 
@@ -493,7 +501,7 @@
         // ==========================================
         // 🤖 SECURE AI MULTI-MODEL FALLBACK ENGINE
         // ==========================================
-        const fetchGeminiSecure = async (prompt, history = [], systemContext = "", question_id = null, selected_option = null) => {
+        const fetchGeminiSecure = async (prompt, history = [], systemContext = "", question_id = null, selected_option = null, imageBase64 = null) => {
             if (question_id && selected_option) {
                 // Task 2: Route question doubts to the new D1 Caching Proxy
                 const cacheProxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
@@ -536,11 +544,36 @@ Student Doubt: ${prompt}`
             ];
             const proxyUrl = "https://gemini-d1-proxy.thevoicesession.workers.dev";
 
-            let contents = history.map(msg => ({
-                role: msg.sender === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.text }]
-            }));
-            contents.push({ role: 'user', parts: [{ text: prompt }] });
+            let contents = history.map(msg => {
+                const parts = [];
+                if (msg.text) parts.push({ text: msg.text });
+                if (msg.image) {
+                    try {
+                        const mimeType = msg.image.split(';')[0].split(':')[1];
+                        const base64Data = msg.image.split(',')[1];
+                        if (mimeType && base64Data) {
+                            parts.push({ inlineData: { data: base64Data, mimeType: mimeType } });
+                        }
+                    } catch (e) { console.error("Error parsing history image base64", e); }
+                }
+                return { role: msg.sender === 'user' ? 'user' : 'model', parts };
+            });
+
+            const currentParts = [];
+            if (prompt) currentParts.push({ text: prompt });
+            if (imageBase64) {
+                try {
+                    const mimeType = imageBase64.split(';')[0].split(':')[1];
+                    const base64Data = imageBase64.split(',')[1];
+                    if (mimeType && base64Data) {
+                        currentParts.push({ inlineData: { data: base64Data, mimeType: mimeType } });
+                    }
+                } catch (e) { console.error("Error parsing imageBase64", e); }
+            }
+            if (currentParts.length > 0) {
+                contents.push({ role: 'user', parts: currentParts });
+            }
+
 
             let attempts = 0;
             while (attempts < 8) {
@@ -761,12 +794,16 @@ Student Doubt: ${prompt}`
 
             useEffect(() => {
                 globalDialogSetter = setDialogConfig;
+                flushDialogQueue();
                 return () => { globalDialogSetter = null; };
             }, []);
 
             if (!dialogConfig.isOpen) return null;
 
-            const handleClose = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
+            const handleClose = () => {
+                setDialogConfig(prev => ({ ...prev, isOpen: false }));
+                setTimeout(flushDialogQueue, 300);
+            };
 
             const handleConfirm = () => {
                 if (dialogConfig.onConfirm) dialogConfig.onConfirm();
@@ -989,7 +1026,7 @@ Student Doubt: ${prompt}`
                 }
             }
 
-            
+
 
             useEffect(() => {
                 let timeoutId;
@@ -1079,6 +1116,161 @@ Student Doubt: ${prompt}`
             );
         };
 
+        const VerifiedBadge = ({ className = "w-4 h-4" }) => {
+            return (
+                <div className={`relative inline-flex items-center justify-center ${className} group`} title="Official ATAXY Verified">
+                    {/* Outer glowing aura that pulses softly */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#00E5FF] to-[#8A2BE2] rounded-full blur-[4px] opacity-70 animate-pulse"></div>
+
+                    {/* The spinning starburst background */}
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full" style={{ animation: 'spin 8s linear infinite' }}>
+                        <path d="M10.5213 2.62368C11.3147 1.75255 12.6853 1.75255 13.4787 2.62368L14.4989 3.74391C14.8998 4.18418 15.4761 4.42288 16.071 4.38532L17.5845 4.2897C18.7384 4.21683 19.7832 5.26164 19.7103 6.41554L19.6147 7.92905C19.5771 8.52388 19.8158 9.10016 20.2561 9.50111L21.3763 10.5213C22.2475 11.3147 22.2475 12.6853 21.3763 13.4787L20.2561 14.4989C19.8158 14.8998 19.5771 15.4761 19.6147 16.071L19.7103 17.5845C19.7832 18.7384 18.7384 19.7832 17.5845 19.7103L16.071 19.6147C15.4761 19.5771 14.8998 19.8158 14.4989 20.2561L13.4787 21.3763C12.6853 22.2475 11.3147 22.2475 10.5213 21.3763L9.50111 20.2561C9.10016 19.8158 8.52388 19.5771 7.92905 19.6147L6.41554 19.7103C5.26164 19.7832 4.21683 18.7384 4.2897 17.5845L4.38532 16.071C4.42288 15.4761 4.18418 14.8998 3.74391 14.4989L2.62368 13.4787C1.75255 12.6853 1.75255 11.3147 2.62368 10.5213L3.74391 9.50111C4.18418 9.10016 4.42288 8.52388 4.38532 7.92905L4.2897 6.41554C4.21683 5.26164 5.26164 4.21683 6.41554 4.2897L7.92905 4.38532C8.52388 4.42288 9.10016 4.18418 9.50111 3.74391L10.5213 2.62368Z" fill="url(#verified-gradient)" />
+                        <defs>
+                            <linearGradient id="verified-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                                <stop stopColor="#00E5FF" />
+                                <stop offset="1" stopColor="#8A2BE2" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+
+
+
+                    {/* The static perfectly sharp checkmark on top */}
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full z-20">
+                        <path d="M10.17 16.58L5.22 11.63L6.63 10.22L10.17 13.76L17.37 6.56L18.78 7.97L10.17 16.58Z" fill="white" className="drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]" />
+                    </svg>
+                </div>
+            );
+        };
+
+        const UserName = ({ name, id, className = "", badgeClass = "w-[14px] h-[14px] ml-1 shrink-0" }) => (
+            <span className={`inline-flex items-center ${className}`}>
+                <span className="truncate">{name}</span>
+                {String(id) === "5182808926" && <VerifiedBadge className={badgeClass} />}
+            </span>
+        );
+
+        const AudioPlayer = ({ url, isMe }) => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [progress, setProgress] = useState(0);
+            const [duration, setDuration] = useState(0);
+            const [currentTime, setCurrentTime] = useState(0);
+            const [playbackRate, setPlaybackRate] = useState(1);
+            const audioRef = useRef(null);
+            const progressRef = useRef(null);
+
+            useEffect(() => {
+                const audio = audioRef.current;
+                if (!audio) return;
+
+                const updateProgress = () => {
+                    setProgress((audio.currentTime / audio.duration) * 100);
+                    setCurrentTime(audio.currentTime);
+                };
+                const handleEnded = () => { setIsPlaying(false); setProgress(0); setCurrentTime(0); };
+                const handleLoadedMetadata = () => {
+                    if (audio.duration !== Infinity && !isNaN(audio.duration)) {
+                        setDuration(audio.duration);
+                    }
+                };
+
+                audio.addEventListener('timeupdate', updateProgress);
+                audio.addEventListener('ended', handleEnded);
+                audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+                return () => {
+                    audio.removeEventListener('timeupdate', updateProgress);
+                    audio.removeEventListener('ended', handleEnded);
+                    audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                };
+            }, []);
+
+            const togglePlay = () => {
+                if (isPlaying) {
+                    audioRef.current.pause();
+                } else {
+                    audioRef.current.play();
+                }
+                setIsPlaying(!isPlaying);
+            };
+
+            const handleSeek = (e) => {
+                if (!duration) return;
+                const rect = progressRef.current.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                const newTime = percent * duration;
+                audioRef.current.currentTime = newTime;
+                setProgress(percent * 100);
+                setCurrentTime(newTime);
+            };
+
+            const skipForward = () => {
+                if (!duration) return;
+                const newTime = Math.min(audioRef.current.currentTime + 10, duration);
+                audioRef.current.currentTime = newTime;
+            };
+
+            const skipBackward = () => {
+                if (!duration) return;
+                const newTime = Math.max(audioRef.current.currentTime - 10, 0);
+                audioRef.current.currentTime = newTime;
+            };
+
+            const cyclePlaybackRate = () => {
+                const nextRate = playbackRate === 1 ? 1.5 : (playbackRate === 1.5 ? 2 : 1);
+                setPlaybackRate(nextRate);
+                if (audioRef.current) {
+                    audioRef.current.playbackRate = nextRate;
+                }
+            };
+
+            const formatTime = (time) => {
+                if (isNaN(time) || !isFinite(time)) return "0:00";
+                const mins = Math.floor(time / 60);
+                const secs = Math.floor(time % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            return (
+                <div className={`flex flex-col gap-1.5 p-2 rounded-2xl w-60 sm:w-64 ${isMe ? 'bg-[#00FFFF]/10 text-[#010B1C]' : 'bg-[#010B1C]/50 text-[#00FFFF]'} border ${isMe ? 'border-[#010B1C]/10' : 'border-[#00FFFF]/20'}`}>
+                    <audio ref={audioRef} src={url} preload="metadata" />
+
+                    <div className="flex items-center gap-3 px-1 mt-1">
+                        <button onClick={togglePlay} className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 ${isMe ? 'bg-[#010B1C] text-[#00FFFF]' : 'bg-[#00FFFF] text-[#010B1C]'}`}>
+                            <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} ${!isPlaying ? 'ml-0.5' : ''} text-lg`}></i>
+                        </button>
+
+                        <div className="flex-1 cursor-pointer py-2 group" ref={progressRef} onClick={handleSeek}>
+                            <div className="h-1.5 w-full rounded-full bg-black/20 overflow-visible relative flex items-center">
+                                <div className={`absolute left-0 h-1.5 rounded-full transition-all duration-100 ease-linear ${isMe ? 'bg-[#010B1C]' : 'bg-[#00FFFF]'}`} style={{ width: `${progress}%` }}></div>
+                                <div className={`absolute w-3.5 h-3.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-[0_0_5px_rgba(0,0,0,0.5)] z-10 ${isMe ? 'bg-[#010B1C]' : 'bg-[#00FFFF]'}`} style={{ left: `calc(${progress}% - 7px)` }}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between px-2 pb-1">
+                        <div className={`text-[10px] font-mono font-bold tracking-wider flex gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
+                            <span>{formatTime(currentTime)}</span>
+                            <span className="opacity-50">/</span>
+                            <span>{formatTime(duration)}</span>
+                        </div>
+
+                        <div className={`flex items-center gap-2 ${isMe ? 'text-[#010B1C]/80' : 'text-[#00FFFF]/80'}`}>
+                            <button onClick={skipBackward} className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] transition-colors ${isMe ? 'hover:bg-[#010B1C]/10' : 'hover:bg-[#00FFFF]/10'}`}>
+                                <i className="fa-solid fa-rotate-left"></i>
+                            </button>
+                            <button onClick={skipForward} className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] transition-colors ${isMe ? 'hover:bg-[#010B1C]/10' : 'hover:bg-[#00FFFF]/10'}`}>
+                                <i className="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button onClick={cyclePlaybackRate} className={`w-8 h-5 rounded-full flex items-center justify-center text-[9px] font-black transition-colors border ${isMe ? 'border-[#010B1C]/40 hover:bg-[#010B1C]/10' : 'border-[#00FFFF]/40 hover:bg-[#00FFFF]/10'}`}>
+                                {playbackRate}x
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // ==========================================
         // 🪐 GLOBAL ADDICTIVE ORBITAL LOADER
         // ==========================================
@@ -1125,7 +1317,7 @@ Student Doubt: ${prompt}`
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-[#FBFBFB] dark:bg-[#021633] border-b border-[#F0F0F0] dark:border-[#010B1C] z-[40] px-4 pr-[90px] h-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))] pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)] flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-[#FBFBFB] dark:bg-[#021633] border-b border-[#F0F0F0] dark:border-[#010B1C] z-[40] px-4 pr-[90px] h-[calc(60px+var(--safe-top))] pt-safe-top flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
                         <AtaxyLogo className="w-8 h-8 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
                         <span className="font-black text-lg tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
@@ -1318,7 +1510,7 @@ Student Doubt: ${prompt}`
                                 <div className="h-14"></div>
 
                                 {/* Name & ID */}
-                                <h3 className="text-xl font-bold text-white truncate">{safeName}</h3>
+                                <h3 className="text-xl font-bold text-white"><UserName name={safeName} id={safeId} className="max-w-[220px]" /></h3>
                                 <div className="flex items-center gap-1.5 mt-1 text-sm text-[#708499]">
                                     <span>ID: {String(safeId).substring(0, 8)}</span>
                                     <button
@@ -1393,20 +1585,203 @@ Student Doubt: ${prompt}`
         };
 
         // ==========================================
+        // EPHEMERAL IMAGE OVERLAY
+        // ==========================================
+        const EphemeralImageOverlay = ({ msg, onClose, markAsViewed }) => {
+            const [timeLeft, setTimeLeft] = useState(msg.viewLimit || null);
+
+            useEffect(() => {
+                if (markAsViewed) markAsViewed(msg.id);
+
+                if (msg.viewLimit) {
+                    const interval = setInterval(() => {
+                        setTimeLeft(prev => {
+                            if (prev <= 1) {
+                                clearInterval(interval);
+                                onClose();
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                    return () => clearInterval(interval);
+                }
+            }, []);
+
+            return ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[3000000] bg-black flex flex-col animate-in fade-in">
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-10 pt-[max(env(safe-area-inset-top),_16px)]">
+                        <button onClick={onClose} className="text-white bg-black/50 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform"><i className="fa-solid fa-arrow-left"></i></button>
+                        {timeLeft !== null ? (
+                            <div className="text-white font-mono bg-purple-500/80 px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-sm">
+                                <i className="fa-solid fa-stopwatch"></i> 00:{timeLeft.toString().padStart(2, '0')}
+                            </div>
+                        ) : (
+                            <div className="text-white font-mono bg-orange-500/80 px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-sm">
+                                <i className="fa-solid fa-eye-slash"></i> View Once
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-4 select-none" onContextMenu={e => e.preventDefault()}>
+                        <img src={msg.imageUrl} className="max-w-full max-h-full object-contain pointer-events-none" />
+                    </div>
+                </div>,
+                document.body
+            );
+        };
+
+        // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, sendDirectMessage, chatActions, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests, onNavigate, markEphemeralAsViewed }) => {
             const [dmInput, setDmInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
+            const [pendingImageMode, setPendingImageMode] = useState('normal');
             const [replyingTo, setReplyingTo] = useState(null);
             const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [ephemeralActiveMsg, setEphemeralActiveMsg] = useState(null);
             const chatEndRef = useRef(null);
+            const sendActionDebounceRef = useRef(null);
+
+            const markMessageAsViewed = (msgId) => {
+                if (!activeChatUser) return;
+                markEphemeralAsViewed(activeChatUser.id, msgId);
+                // Also broadcast the viewed status
+                sendDirectMessage(activeChatUser.id, { type: 'EPHEMERAL_VIEWED', msgId, senderId: currentUserId });
+            };
+            const notifyAction = (action) => {
+                if (!activeChatUser || !sendDirectMessage) return;
+
+                if (sendActionDebounceRef.current) {
+                    clearTimeout(sendActionDebounceRef.current);
+                }
+
+                sendDirectMessage(activeChatUser.id, { type: 'CHAT_ACTION', action, senderId: currentUserId });
+
+                if (action) {
+                    sendActionDebounceRef.current = setTimeout(() => {
+                        sendDirectMessage(activeChatUser.id, { type: 'CHAT_ACTION', action: null, senderId: currentUserId });
+                    }, 3000);
+                }
+            };
+
+            const handleDmInputChange = (e) => {
+                setDmInput(e.target.value);
+                if (e.target.value.trim().length > 0) {
+                    notifyAction('typing');
+                }
+            };
             const [showRequestsInbox, setShowRequestsInbox] = useState(false);
+            const [showFriendsList, setShowFriendsList] = useState(false);
+            const [friendsSearchQuery, setFriendsSearchQuery] = useState('');
+            const [friendToDelete, setFriendToDelete] = useState(null);
             const [showSearch, setShowSearch] = useState(false);
             const [searchInput, setSearchInput] = useState('');
             const [searchResult, setSearchResult] = useState(null);
             const [isSearching, setIsSearching] = useState(false);
             const [showChatProfile, setShowChatProfile] = useState(false);
+
+            // Voice Note State
+            const [isRecording, setIsRecording] = useState(false);
+            const [recordingTime, setRecordingTime] = useState(0);
+            const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+            const mediaRecorderRef = useRef(null);
+            const audioChunksRef = useRef([]);
+            const recordingTimerRef = useRef(null);
+
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorderRef.current = mediaRecorder;
+                    audioChunksRef.current = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunksRef.current.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        if (mediaRecorder.isCancelled) {
+                            audioChunksRef.current = [];
+                            stream.getTracks().forEach(track => track.stop());
+                            return;
+                        }
+                        if (audioChunksRef.current.length === 0) return;
+                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                        audioChunksRef.current = [];
+
+                        // Stop tracks to release mic
+                        stream.getTracks().forEach(track => track.stop());
+
+                        if (isUploadingAudio) return; // Prevent double send
+                        setIsUploadingAudio(true);
+
+                        try {
+                            const formData = new FormData();
+                            formData.append('file', audioBlob, 'voicenote.webm');
+
+                            const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (!response.ok) throw new Error('Upload failed');
+                            const result = await response.json();
+
+                            if (result.status === 'success' && result.data?.url) {
+                                const audioUrl = result.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+                                if (activeChatUser) {
+                                    sendPrivateDM(activeChatUser.id, '', null, replyingTo, audioUrl);
+                                    setReplyingTo(null);
+                                }
+                            } else {
+                                throw new Error('Invalid response from server');
+                            }
+                        } catch (err) {
+                            console.error('Audio upload error:', err);
+                            safeAlert('Failed to upload voice note. Please try again.');
+                        } finally {
+                            setIsUploadingAudio(false);
+                            setIsRecording(false);
+                            setRecordingTime(0);
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    setIsRecording(true);
+                    setRecordingTime(0);
+                    notifyAction('recording');
+
+                    recordingTimerRef.current = setInterval(() => {
+                        setRecordingTime(prev => prev + 1);
+                    }, 1000);
+
+                } catch (err) {
+                    console.error('Mic access error:', err);
+                    safeAlert('Microphone access denied. Please allow microphone permissions to send voice notes.');
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorderRef.current && isRecording) {
+                    clearInterval(recordingTimerRef.current);
+                    mediaRecorderRef.current.stop();
+                    notifyAction(null);
+                }
+            };
+
+            const cancelRecording = () => {
+                if (mediaRecorderRef.current && isRecording) {
+                    clearInterval(recordingTimerRef.current);
+                    mediaRecorderRef.current.isCancelled = true;
+                    mediaRecorderRef.current.stop();
+                    setIsRecording(false);
+                    setRecordingTime(0);
+                    notifyAction(null);
+                }
+            };
 
             // Advanced Messaging State
             const [msgMenu, setMsgMenu] = useState(null);
@@ -1417,17 +1792,19 @@ Student Doubt: ${prompt}`
 
             useEffect(() => {
                 const handleBackEvent = (e) => {
-                    if (showChatProfile) { e.preventDefault(); setShowChatProfile(false); }
+                    if (friendToDelete) { e.preventDefault(); setFriendToDelete(null); }
+                    else if (showChatProfile) { e.preventDefault(); setShowChatProfile(false); }
                     else if (fullScreenImage) { e.preventDefault(); setFullScreenImage(null); }
                     else if (msgMenu) { e.preventDefault(); setMsgMenu(null); }
                     else if (forwardMsg) { e.preventDefault(); setForwardMsg(null); }
                     else if (showRequestsInbox) { e.preventDefault(); setShowRequestsInbox(false); }
+                    else if (showFriendsList) { e.preventDefault(); setShowFriendsList(false); }
                     else if (showSearch) { e.preventDefault(); setShowSearch(false); setSearchInput(''); setSearchResult(null); }
                     else if (activeChatUser) { e.preventDefault(); setActiveChatUser(null); }
                 };
                 window.addEventListener('ataxy_back_requested', handleBackEvent);
                 return () => window.removeEventListener('ataxy_back_requested', handleBackEvent);
-            }, [showChatProfile, fullScreenImage, msgMenu, forwardMsg, showRequestsInbox, showSearch, activeChatUser]);
+            }, [showChatProfile, fullScreenImage, msgMenu, forwardMsg, showRequestsInbox, showFriendsList, showSearch, activeChatUser, friendToDelete]);
 
             const handleTouchStart = (e, m) => {
                 const touch = e.touches ? e.touches[0] : e;
@@ -1577,19 +1954,31 @@ Student Doubt: ${prompt}`
                 const canSend = isFriend || mySentCount < 3;
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#010B1C] h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
+                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#0b141a] h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
                         <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
-                        <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 shadow-md">
-                            <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
-                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
+                        <div className="flex items-center gap-3 p-4 bg-[#202c33] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 shadow-sm border-b border-[#222d34]">
+                            <button onClick={() => setActiveChatUser(null)} className="text-[#aebac1] hover:text-[#d1d7db] text-xl transition-colors w-8 h-8 flex items-center justify-center mr-1"><i className="fa-solid fa-arrow-left"></i></button>
+                            <div className="w-10 h-10 rounded-full bg-[#6a7175] flex items-center justify-center font-medium text-white overflow-hidden shrink-0 cursor-pointer" onClick={() => setShowChatProfile(true)}>
                                 {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex-1 min-w-0 flex flex-col">
-                                <h3 className="font-bold text-[#00FFFF] text-lg truncate cursor-pointer hover:underline leading-tight" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h3>
-                                <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5" onClick={() => { navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }}>ID: {activeChatUser.id}</p>
+                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                <h3 className="font-medium text-[#e9edef] text-[17px] cursor-pointer leading-tight truncate" onClick={() => setShowChatProfile(true)}>
+                                    <UserName name={activeChatUser?.name || activeChatUser?.user_name || "Unknown User"} id={activeChatUser.id} className="max-w-[150px] sm:max-w-[200px]" />
+                                </h3>
+                                {chatActions && chatActions[activeChatUser.id] ? (
+                                    <p className="text-[13px] text-[#00a0ff] font-medium flex items-center gap-1.5 mt-0.5 animate-pulse truncate">
+                                        {chatActions[activeChatUser.id] === 'typing' && <>typing...</>}
+                                        {chatActions[activeChatUser.id] === 'recording' && <>recording audio...</>}
+                                        {chatActions[activeChatUser.id] === 'selecting_image' && <>selecting image...</>}
+                                    </p>
+                                ) : (
+                                    <p className="text-[13px] text-[#8696a0] mt-0.5 truncate cursor-pointer hover:text-[#d1d7db]" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }} title={`Click to copy ID: ${activeChatUser.id}`}>
+                                        online
+                                    </p>
+                                )}
                             </div>
-                            <button onClick={() => setShowChatProfile(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95 shrink-0 ml-auto bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full">
-                                <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
+                            <button onClick={() => setShowChatProfile(true)} className="relative w-8 h-8 flex items-center justify-center text-[#aebac1] hover:text-[#d1d7db] transition-colors active:scale-95 shrink-0 ml-auto rounded-full">
+                                <i className="fa-solid fa-ellipsis-vertical text-[19px]"></i>
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
@@ -1605,7 +1994,7 @@ Student Doubt: ${prompt}`
                                 return (
                                     <div
                                         key={idx} id={`msg-${m.id}`}
-                                        className={`flex items-end gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 group mb-1`}
+                                        className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 group mb-0.5`}
                                         onTouchStart={(e) => handleTouchStart(e, m)}
                                         onTouchMove={handleTouchMove}
                                         onTouchEnd={handleTouchEnd}
@@ -1615,156 +2004,201 @@ Student Doubt: ${prompt}`
                                         onMouseLeave={handleTouchEnd}
                                         onContextMenu={(e) => { e.preventDefault(); setMsgMenu(m); }}
                                     >
-                                        {!isMe && (
-                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
-                                                {activeChatUser.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : (activeChatUser.name || 'U').charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
                                         <div className={`flex items-center gap-2 w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                            {!isMe && (
-                                                <div id={`reply-icon-${m.id}`} className="w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 opacity-0 transform scale-50 transition-none pointer-events-none">
-                                                    <i className="fa-solid fa-reply text-xs"></i>
-                                                </div>
-                                            )}
-                                            <div id={`msg-bubble-${m.id}`} className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm relative z-10 ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none ml-auto' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none mr-auto'} max-w-[85%]`}>
+                                            <div id={`msg-bubble-${m.id}`} className={`w-fit px-2 pt-1.5 pb-1 rounded-lg text-[14px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] relative z-10 ${isMe ? 'bg-[#00508a] text-[#e9edef] rounded-tr-none ml-auto' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none mr-auto'} max-w-[85%]`}>
                                                 {m.isAutoMsg && (
-                                                    <div className={`text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-1 ${isMe ? 'text-[#010B1C]/60' : 'text-[#00FFFF]/80'}`}>
+                                                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1 text-[#8696a0]`}>
                                                         <i className="fa-solid fa-robot"></i> Auto Message
                                                     </div>
                                                 )}
                                                 {m.replyTo && (
-                                                    <div className={`mb-2 p-2 rounded-lg text-xs border-l-2 opacity-80 ${isMe ? 'bg-[#00d8d8] border-[#010B1C] text-[#010B1C]' : 'bg-[#010B1C] border-[#00FFFF] text-[#A4DFE6]'}`} onClick={() => { }}>
-                                                        <p className="font-bold truncate">{m.replyTo.senderName || 'User'}</p>
-                                                        <p className="truncate">{m.replyTo.text || (m.replyTo.imageUrl ? '📷 Photo' : '')}</p>
+                                                    <div className={`mb-1.5 p-1.5 rounded text-xs border-l-[4px] bg-black/10 flex flex-col gap-0.5 ${isMe ? 'border-[#53bdeb]' : 'border-[#00a0ff]'}`} onClick={() => { }}>
+                                                        <p className={`font-semibold truncate ${isMe ? 'text-[#53bdeb]' : 'text-[#00a0ff]'}`}>{m.replyTo.senderName || 'User'}</p>
+                                                        <p className="truncate text-[#8696a0]">{m.replyTo.text || (m.replyTo.audioUrl ? '🎤 Voice Note' : (m.replyTo.imageUrl ? '📷 Photo' : ''))}</p>
                                                     </div>
                                                 )}
                                                 {m.imageUrl && (
-                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/20 cursor-pointer" onClick={() => setFullScreenImage(m.imageUrl)}>
-                                                        <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
+                                                    m.isEphemeral ? (
+                                                        <div className={`mb-1 rounded-lg overflow-hidden flex flex-col items-center justify-center gap-2 p-4 ${m.viewed ? 'bg-[#2a3942] opacity-70' : 'bg-[#2a3942] cursor-pointer'} min-w-[120px]`} onClick={() => {
+                                                            if (!m.viewed || isMe) {
+                                                                setEphemeralActiveMsg(m);
+                                                            }
+                                                        }}>
+                                                            {m.viewed ? (
+                                                                <>
+                                                                    <i className={`fa-solid fa-check text-2xl text-[#8696a0]`}></i>
+                                                                    <span className={`text-xs font-medium text-[#8696a0]`}>Opened</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <i className={`fa-solid ${m.viewLimit ? 'fa-stopwatch text-[#00a0ff]' : 'fa-eye-slash text-[#00a0ff]'} text-3xl mb-1`}></i>
+                                                                    <span className={`text-sm font-medium text-[#00a0ff]`}>View Photo</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mb-1 rounded overflow-hidden cursor-pointer -mx-1 -mt-0.5" onClick={() => setFullScreenImage(m.imageUrl)}>
+                                                            <img src={m.imageUrl} className="max-w-full max-h-[300px] object-cover" />
+                                                        </div>
+                                                    )
+                                                )}
+                                                {m.audioUrl && (
+                                                    <div className="mb-1 w-[240px]">
+                                                        <AudioPlayer url={m.audioUrl} isMe={isMe} />
                                                     </div>
                                                 )}
-                                                <p className={`whitespace-pre-wrap break-words ${m.isAutoMsg ? 'italic font-medium' : ''}`}>
-                                                    {m.text}
-                                                    {m.isEdited && <span className="text-[10px] text-[#0AE0D0] italic ml-1">(edited)</span>}
-                                                </p>
-                                                <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
+                                                {m.text && (
+                                                    <span className={`whitespace-pre-wrap break-words leading-snug align-middle ${m.isAutoMsg ? 'italic' : ''}`} style={{ wordBreak: "break-word" }}>
+                                                        {m.text}
+                                                        {m.isEdited && <span className="text-[11px] text-[#8696a0] italic ml-1">Edited</span>}
+                                                    </span>
+                                                )}
+                                                <span className={`text-[10px] inline-flex items-center gap-1 font-medium text-[#8696a0] float-right mt-[5px] ml-3 pb-[1px]`}>
                                                     {new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     {isMe && (
                                                         <span>
-                                                            {m.status === 'read' ? <i className="fa-solid fa-check-double text-blue-600"></i> :
-                                                                m.status === 'delivered' ? <i className="fa-solid fa-check-double text-gray-500"></i> :
-                                                                    <i className="fa-solid fa-check text-gray-500"></i>}
+                                                            {m.status === 'read' ? <i className="fa-solid fa-check-double text-[#53bdeb]"></i> :
+                                                                m.status === 'delivered' ? <i className="fa-solid fa-check-double text-[#8696a0]"></i> :
+                                                                    <i className="fa-solid fa-check text-[#8696a0]"></i>}
                                                         </span>
                                                     )}
-                                                </div>
+                                                </span>
+                                                <div className="clear-both"></div>
                                             </div>
-                                            {isMe && (
-                                                <div id={`reply-icon-${m.id}`} className="w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 opacity-0 transform scale-50 transition-none pointer-events-none">
-                                                    <i className="fa-solid fa-reply text-xs"></i>
-                                                </div>
-                                            )}
                                         </div>
-                                        {isMe && (
-                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto })}>
-                                                {currentUserPhoto ? <img src={currentUserPhoto} className="w-full h-full object-cover" /> : (currentUserName || 'U').charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
                                     </div>
                                 );
                             })}
                             <div ref={chatEndRef} />
                         </div>
                         {replyingTo && (
-                            <div className="mx-4 mt-2 bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="flex-1 overflow-hidden border-l-2 border-[#00FFFF] pl-2">
-                                    <p className="text-xs font-bold text-[#00FFFF] truncate">{replyingTo.senderName || (String(replyingTo.sender) === String(currentUserId) ? 'You' : 'User')}</p>
-                                    <p className="text-[10px] text-[#A4DFE6] truncate">{replyingTo.text || (replyingTo.imageUrl ? '📷 Photo' : '')}</p>
+                            <div className="mx-3 mt-2 bg-[#2a3942] rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-[4px] border-[#53bdeb] bg-black/10 p-2 rounded-r">
+                                    <p className="text-[13px] font-semibold text-[#53bdeb] truncate">{replyingTo.senderName || (String(replyingTo.sender) === String(currentUserId) ? 'You' : 'User')}</p>
+                                    <p className="text-[12px] text-[#8696a0] truncate">{replyingTo.text || (replyingTo.audioUrl ? '🎤 Voice Note' : (replyingTo.imageUrl ? '📷 Photo' : ''))}</p>
                                 </div>
-                                <button onClick={() => setReplyingTo(null)} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                                <button onClick={() => setReplyingTo(null)} className="w-10 h-10 flex items-center justify-center text-[#8696a0] hover:text-[#d1d7db] shrink-0"><i className="fa-solid fa-xmark text-lg"></i></button>
                             </div>
                         )}
                         {editingMsg && (
-                            <div className="mx-4 mt-2 bg-[#021633] border border-orange-500/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="flex-1 overflow-hidden border-l-2 border-orange-500 pl-2">
-                                    <p className="text-xs font-bold text-orange-500 truncate">Editing Message</p>
-                                    <p className="text-[10px] text-[#A4DFE6] truncate">{editingMsg.text}</p>
+                            <div className="mx-3 mt-2 bg-[#2a3942] rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-[4px] border-orange-500 bg-black/10 p-2 rounded-r">
+                                    <p className="text-[13px] font-semibold text-orange-500 truncate">Editing Message</p>
+                                    <p className="text-[12px] text-[#8696a0] truncate">{editingMsg.text}</p>
                                 </div>
-                                <button onClick={() => { setEditingMsg(null); setDmInput(''); }} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                                <button onClick={() => { setEditingMsg(null); setDmInput(''); }} className="w-10 h-10 flex items-center justify-center text-[#8696a0] hover:text-[#d1d7db] shrink-0"><i className="fa-solid fa-xmark text-lg"></i></button>
                             </div>
                         )}
                         {pendingImage && (
-                            <div className="mx-4 mt-2 w-fit bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="w-16 h-16 rounded-lg bg-black/50 overflow-hidden border border-[#00FFFF]/30 relative">
+                            <div className="mx-3 mt-2 w-fit bg-[#2a3942] rounded-xl p-3 flex items-center gap-4 shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="w-20 h-20 rounded-lg bg-black/50 overflow-hidden relative shrink-0">
                                     <img src={pendingImage} className="w-full h-full object-cover" />
-                                    <button onClick={() => setPendingImage(null)} className="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 rounded-bl-lg flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                    <button onClick={() => { setPendingImage(null); setPendingImageMode('normal'); notifyAction(null); }} className="absolute top-0 right-0 bg-black/60 text-white w-6 h-6 rounded-bl-lg flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <button onClick={() => setPendingImageMode('normal')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors ${pendingImageMode === 'normal' ? 'bg-[#00a0ff] text-[#111b21] font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}>Normal</button>
+                                    <button onClick={() => setPendingImageMode('view_once')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors flex items-center ${pendingImageMode === 'view_once' ? 'bg-orange-500 text-white font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}><i className="fa-solid fa-eye-slash mr-2"></i> View Once</button>
+                                    <button onClick={() => setPendingImageMode('timed')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors flex items-center ${pendingImageMode === 'timed' ? 'bg-purple-500 text-white font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}><i className="fa-solid fa-stopwatch mr-2"></i> 10s Timer</button>
                                 </div>
                             </div>
                         )}
-                        <div className="p-3 bg-[#021633] border-t border-[#0AE0D0]/30 flex gap-2 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shrink-0 items-center">
-                            <button onClick={() => document.getElementById('dm-image-upload').click()} disabled={!canSend} className="w-10 h-10 shrink-0 bg-[#0AE0D0]/10 text-[#00FFFF] rounded-full flex items-center justify-center hover:bg-[#0AE0D0]/30 transition-colors disabled:opacity-50">
-                                <i className="fa-solid fa-image"></i>
-                            </button>
-                            <input type="file" id="dm-image-upload" accept="image/*" className="hidden" onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (!file) return;
-                                const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                    const img = new Image();
-                                    img.onload = () => {
-                                        const canvas = document.createElement('canvas');
-                                        let width = img.width, height = img.height;
-                                        const maxDim = 800;
-                                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
-                                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
-                                        canvas.width = width; canvas.height = height;
-                                        const ctx = canvas.getContext('2d');
-                                        ctx.drawImage(img, 0, 0, width, height);
-                                        setPendingImage(canvas.toDataURL('image/jpeg', 0.5));
-                                    };
-                                    img.src = ev.target.result;
-                                };
-                                reader.readAsDataURL(file);
-                                e.target.value = '';
-                            }} />
-                            <input
-                                value={dmInput}
-                                onChange={(e) => setDmInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && dmInput.trim() && canSend) {
-                                        if (editingMsg) {
-                                            handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
-                                            setEditingMsg(null);
-                                        } else {
-                                            sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo);
-                                            setPendingImage(null);
-                                            setReplyingTo(null);
+                        <div className="p-2.5 bg-[#202c33] flex gap-2.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] shrink-0 items-end">
+                            {isRecording ? (
+                                <div className="flex-1 bg-[#2a3942] rounded-full px-4 py-2 flex items-center justify-between min-h-[44px]">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2.5 h-2.5 bg-[#ef4444] rounded-full animate-pulse"></div>
+                                        <span className="text-[#e9edef] font-mono text-[15px]">{Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
+                                    </div>
+                                    <button onClick={cancelRecording} className="text-[#aebac1] hover:text-[#e9edef] text-sm font-medium px-2 active:scale-95 transition-transform">Cancel</button>
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex items-center bg-[#2a3942] rounded-3xl overflow-hidden min-h-[44px]">
+                                    <button onClick={() => document.getElementById('dm-image-upload').click()} disabled={!canSend} className="w-11 h-11 shrink-0 text-[#8696a0] flex items-center justify-center hover:text-[#d1d7db] transition-colors disabled:opacity-50 rounded-full">
+                                        <i className="fa-solid fa-paperclip text-[19px]"></i>
+                                    </button>
+                                    <input type="file" id="dm-image-upload" accept="image/*" className="hidden" onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        const reader = new FileReader();
+                                        reader.onload = (ev) => {
+                                            const img = new Image();
+                                            img.onload = () => {
+                                                const canvas = document.createElement('canvas');
+                                                let width = img.width, height = img.height;
+                                                const maxDim = 800;
+                                                if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                                                else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                                                canvas.width = width; canvas.height = height;
+                                                const ctx = canvas.getContext('2d');
+                                                ctx.drawImage(img, 0, 0, width, height);
+                                                setPendingImage(canvas.toDataURL('image/jpeg', 0.5));
+                                                notifyAction('selecting_image');
+                                            };
+                                            img.src = ev.target.result;
+                                        };
+                                        reader.readAsDataURL(file);
+                                        e.target.value = '';
+                                    }} />
+                                    <textarea
+                                        value={dmInput}
+                                        onChange={handleDmInputChange}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey && dmInput.trim() && canSend) {
+                                                e.preventDefault();
+                                                if (editingMsg) {
+                                                    handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
+                                                    setEditingMsg(null);
+                                                } else {
+                                                    sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo, null, pendingImageMode);
+                                                    setPendingImage(null);
+                                                    setPendingImageMode('normal');
+                                                    notifyAction(null);
+                                                    setReplyingTo(null);
+                                                }
+                                                setDmInput('');
+                                                notifyAction(null);
+                                            }
+                                        }}
+                                        placeholder={isFriend ? "Message" : (canSend ? `Message (${3 - mySentCount} left)` : "Waiting for friend request approval")}
+                                        disabled={!canSend}
+                                        rows={Math.min(5, Math.max(1, dmInput.split('\n').length))}
+                                        className="flex-1 bg-transparent py-3 text-[#e9edef] focus:outline-none transition-colors disabled:opacity-50 text-[15px] resize-none leading-snug no-scrollbar"
+                                        style={{ maxHeight: '120px' }}
+                                    />
+                                </div>
+                            )}
+
+                            {isRecording ? (
+                                <button onClick={stopRecording} className="w-12 h-12 shrink-0 bg-[#00a0ff] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform mb-[-2px]">
+                                    <i className="fa-solid fa-paper-plane text-xl translate-x-[-1px] translate-y-[1px]"></i>
+                                </button>
+                            ) : (!dmInput.trim() && !pendingImage && canSend && !editingMsg) ? (
+                                <button onClick={startRecording} disabled={isUploadingAudio} className="w-12 h-12 shrink-0 bg-[#00a0ff] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 mb-[-2px]">
+                                    {isUploadingAudio ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-microphone text-xl"></i>}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        if (canSend && (dmInput.trim() || pendingImage)) {
+                                            if (editingMsg && dmInput.trim()) {
+                                                handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
+                                                setEditingMsg(null);
+                                            } else {
+                                                sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo, null, pendingImageMode);
+                                                setPendingImage(null);
+                                                setPendingImageMode('normal');
+                                                setReplyingTo(null);
+                                            }
+                                            setDmInput('');
+                                            notifyAction(null);
                                         }
-                                        setDmInput('');
-                                    }
-                                }}
-                                placeholder={isFriend ? "Type a message..." : (canSend ? `Type a message... (${3 - mySentCount} left)` : "Waiting for friend request approval")}
-                                disabled={!canSend}
-                                className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors disabled:opacity-50"
-                            />
-                            <button
-                                onClick={() => {
-                                    if (canSend && (dmInput.trim() || pendingImage)) {
-                                        if (editingMsg && dmInput.trim()) {
-                                            handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
-                                            setEditingMsg(null);
-                                        } else {
-                                            sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo);
-                                            setPendingImage(null);
-                                            setReplyingTo(null);
-                                        }
-                                        setDmInput('');
-                                    }
-                                }}
-                                disabled={!canSend || (!dmInput.trim() && !pendingImage)}
-                                className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
-                            >
-                                <i className="fa-solid fa-paper-plane"></i>
-                            </button>
+                                    }}
+                                    disabled={!canSend || (!dmInput.trim() && !pendingImage)}
+                                    className="w-12 h-12 shrink-0 bg-[#00a0ff] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 mb-[-2px]"
+                                >
+                                    <i className="fa-solid fa-paper-plane text-xl translate-x-[-1px] translate-y-[1px]"></i>
+                                </button>
+                            )}
                         </div>
                         {showRequestsInbox && (
                             <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
@@ -1785,8 +2219,10 @@ Student Doubt: ${prompt}`
                                                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
                                                         {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
                                                         <div className="flex flex-col">
-                                                            <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0, 8)}`}</span>
-                                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                            <span className="text-white font-bold text-sm">
+                                                                <UserName name={req.name || `User ${String(req.id).substring(0, 8)}`} id={req.id} className="max-w-[120px]" />
+                                                            </span>
+                                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5 cursor-pointer hover:text-white transition-colors flex items-center gap-1 w-fit" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(req.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {String(req.id)} <i className="fa-regular fa-copy"></i></span>
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2">
@@ -1800,6 +2236,7 @@ Student Doubt: ${prompt}`
                                 </div>
                             </div>
                         )}
+                        {ephemeralActiveMsg && <EphemeralImageOverlay msg={ephemeralActiveMsg} onClose={() => setEphemeralActiveMsg(null)} markAsViewed={markMessageAsViewed} />}
                         {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
 
                         {/* NEW: Full Screen Chat Profile Settings Modal */}
@@ -1815,8 +2252,10 @@ Student Doubt: ${prompt}`
                                         <div className="w-32 h-32 rounded-full bg-[#00FFFF]/20 border-4 border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] text-5xl overflow-hidden mb-4 shadow-[0_0_15px_rgba(0,255,255,0.3)]">
                                             {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                                         </div>
-                                        <h2 className="text-2xl font-black text-white text-center">{activeChatUser?.name || activeChatUser?.user_name || "Unknown User"}</h2>
-                                        <p className="text-[#A4DFE6] font-mono mt-1 text-sm">ID: {activeChatUser.id}</p>
+                                        <h2 className="text-2xl font-black text-white flex justify-center">
+                                            <UserName name={activeChatUser?.name || activeChatUser?.user_name || "Unknown User"} id={activeChatUser.id} badgeClass="w-5 h-5 ml-1.5 shrink-0" className="max-w-[250px]" />
+                                        </h2>
+                                        <p className="text-[#A4DFE6] font-mono mt-1 text-sm cursor-pointer hover:text-white transition-colors flex items-center justify-center gap-2 w-fit mx-auto" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {activeChatUser.id} <i className="fa-regular fa-copy"></i></p>
                                     </div>
 
                                     <div className="mt-4 bg-[#021633] border-y border-[#0AE0D0]/20 divide-y divide-[#0AE0D0]/10">
@@ -1931,17 +2370,20 @@ Student Doubt: ${prompt}`
             }
 
             return (
-                <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
-                    <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setShowSearch(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-search text-sm"></i>
+                <div className="flex-1 overflow-y-auto pb-20 h-full animate-in fade-in bg-[#111b21]">
+                    <div className="flex justify-between items-center px-4 py-3 bg-[#202c33] pr-[90px] lg:pr-4 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
+                        <h4 className="text-[#e9edef] font-bold text-[17px] lg:text-[20px]">Chats</h4>
+                        <div className="flex items-center gap-5 text-[#aebac1]">
+                            <button onClick={() => setShowSearch(true)} className="hover:text-[#d1d7db] transition-colors">
+                                <i className="fa-solid fa-search text-[18px]"></i>
                             </button>
-                            <button onClick={() => setShowRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-user-plus text-sm"></i>
+                            <button onClick={() => setShowFriendsList(true)} className="hover:text-[#d1d7db] transition-colors">
+                                <i className="fa-solid fa-users text-[18px]"></i>
+                            </button>
+                            <button onClick={() => setShowRequestsInbox(true)} className="hover:text-[#d1d7db] transition-colors relative">
+                                <i className="fa-solid fa-user-plus text-[18px]"></i>
                                 {pendingRequests.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                    <span className="absolute -top-2 -right-2 bg-[#00a0ff] text-[#111b21] text-[10px] font-bold min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full">
                                         {pendingRequests.length}
                                     </span>
                                 )}
@@ -1967,8 +2409,10 @@ Student Doubt: ${prompt}`
                                                 {searchResult.photo ? <img src={searchResult.photo} className="w-full h-full object-cover" /> : String(searchResult.name).charAt(0).toUpperCase()}
                                             </div>
                                             <div className="flex-1 overflow-hidden">
-                                                <h4 className="font-bold text-white truncate pr-2">{searchResult.name}</h4>
-                                                <p className="text-[10px] text-[#00FFFF] font-mono">ID: {searchResult.id}</p>
+                                                <h4 className="font-bold text-white pr-2">
+                                                    <UserName name={searchResult.name} id={searchResult.id} className="max-w-[150px]" />
+                                                </h4>
+                                                <p className="text-[10px] text-[#00FFFF] font-mono cursor-pointer hover:text-white transition-colors flex items-center gap-1 w-fit" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(searchResult.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {searchResult.id} <i className="fa-regular fa-copy"></i></p>
                                             </div>
                                         </div>
                                     </div>
@@ -1977,7 +2421,29 @@ Student Doubt: ${prompt}`
                         </div>
                     )}
 
-                    {Object.keys(dms).length === 0 && <p className="text-gray-500 text-center py-6 italic text-sm border border-gray-800 rounded-2xl border-dashed">No conversations yet.</p>}
+                    {/* Pinned ATAXY Mentor Button */}
+                    <div className="px-3 pt-4 mb-2">
+                        <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-2xl p-4 shadow-lg border border-purple-500/40 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-all duration-300 group flex items-center justify-between hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
+                            <div className="relative z-10 flex items-center gap-4">
+                                <div className="w-[56px] h-[56px] rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-[2px] border-2 border-purple-400/60 shadow-[0_0_15px_rgba(168,85,247,0.5)] shrink-0 animate-pulse">
+                                    <AtaxyLogo className="w-full h-full rounded-full border-2 border-gray-900/50" />
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <h3 className="font-black text-[19px] text-white tracking-wide">ATAXY Mentor</h3>
+                                        <VerifiedBadge className="w-[16px] h-[16px] shadow-sm" />
+                                    </div>
+                                    <p className="text-[13px] text-purple-200/80 font-medium">Your personal study mentor</p>
+                                </div>
+                            </div>
+                            <div className="relative z-10 text-purple-300 group-hover:text-white group-hover:translate-x-1 transition-all pr-2">
+                                <i className="fa-solid fa-chevron-right text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    {Object.keys(dms).length === 0 && <p className="text-[#8696a0] text-center py-6 text-[14px]">No chats.</p>}
                     {Object.entries(dms).sort(([, a], [, b]) => (b[b.length - 1]?.time || 0) - (a[a.length - 1]?.time || 0)).map(([uid, msgs]) => {
                         const lastMsg = msgs[msgs.length - 1];
 
@@ -2008,33 +2474,32 @@ Student Doubt: ${prompt}`
                         const unreadCount = unreadCounts[uid] || 0;
 
                         return (
-                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#021633] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors mb-3 shadow-sm group relative">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white flex items-center justify-center font-black text-xl border border-[#00FFFF]/40 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#111b21] hover:bg-[#202c33] flex items-center gap-3 cursor-pointer transition-colors group">
+                                <div className="w-[49px] h-[49px] rounded-full bg-[#6a7175] text-[#e9edef] flex items-center justify-center font-medium text-lg shrink-0 overflow-hidden ml-3">
                                     {finalPhoto ? <img src={finalPhoto} className="w-full h-full object-cover" /> : String(finalName).charAt(0).toUpperCase()}
                                 </div>
-                                <div className="flex-1 overflow-hidden">
+                                <div className="flex-1 overflow-hidden border-b border-[#222d34] h-[72px] flex flex-col justify-center pr-4">
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className={`font-bold truncate pr-2 ${unreadCount > 0 ? 'text-[#00FFFF]' : 'text-white'}`}>{finalName}</h4>
-                                        {lastMsg && <span className={`text-[9px] shrink-0 ${unreadCount > 0 ? 'text-[#00FFFF] font-bold' : 'text-gray-500'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                                        <h4 className={`text-[17px] truncate pr-2 ${unreadCount > 0 ? 'font-semibold text-[#e9edef]' : 'text-[#e9edef]'}`}>
+                                            <UserName name={finalName} id={uid} className="max-w-[140px]" />
+                                        </h4>
+                                        {lastMsg && <span className={`text-[12px] shrink-0 ${unreadCount > 0 ? 'text-[#00a0ff] font-medium' : 'text-[#8696a0]'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
                                     </div>
-                                    <p className="text-[10px] text-[#00FFFF] mb-1 font-mono">ID: {String(uid)}</p>
                                     <div className="flex justify-between items-center">
-                                        <p className={`text-xs truncate opacity-80 ${unreadCount > 0 ? 'text-white font-bold' : 'text-[#A4DFE6]'}`}>
-                                            {lastMsg ? (
-                                                <>
-                                                    {String(lastMsg.sender) === String(currentUserId) && (
-                                                        <span className="mr-1 opacity-70">
-                                                            {lastMsg.status === 'read' ? <i className="fa-solid fa-check-double text-blue-500"></i> :
-                                                                lastMsg.status === 'delivered' ? <i className="fa-solid fa-check-double"></i> :
-                                                                    <i className="fa-solid fa-check"></i>}
-                                                        </span>
-                                                    )}
-                                                    {lastMsg.text || (lastMsg.imageUrl ? '📷 Photo' : '')}
-                                                </>
-                                            ) : 'No messages'}
-                                        </p>
+                                        <div className="flex items-center gap-1 overflow-hidden">
+                                            {lastMsg && String(lastMsg.sender) === String(currentUserId) && (
+                                                <span className="text-[13px] shrink-0">
+                                                    {lastMsg.status === 'read' ? <i className="fa-solid fa-check-double text-[#53bdeb]"></i> :
+                                                        lastMsg.status === 'delivered' ? <i className="fa-solid fa-check-double text-[#8696a0]"></i> :
+                                                            <i className="fa-solid fa-check text-[#8696a0]"></i>}
+                                                </span>
+                                            )}
+                                            <p className={`text-[14px] truncate leading-tight ${unreadCount > 0 ? 'text-[#e9edef] font-medium' : 'text-[#8696a0]'}`}>
+                                                {lastMsg ? (lastMsg.text || (lastMsg.imageUrl ? '📷 Photo' : '')) : 'No messages'}
+                                            </p>
+                                        </div>
                                         {unreadCount > 0 && (
-                                            <span className="bg-[#00FFFF] text-[#010B1C] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.6)] animate-pulse">
+                                            <span className="bg-[#00a0ff] text-[#111b21] text-[12px] font-medium min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full shrink-0">
                                                 {unreadCount}
                                             </span>
                                         )}
@@ -2063,8 +2528,10 @@ Student Doubt: ${prompt}`
                                                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
                                                     {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
                                                     <div className="flex flex-col">
-                                                        <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0, 8)}`}</span>
-                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
+                                                        <span className="text-white font-bold text-sm">
+                                                            <UserName name={req.name || `User ${String(req.id).substring(0, 8)}`} id={req.id} className="max-w-[120px]" />
+                                                        </span>
+                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5 cursor-pointer hover:text-white transition-colors flex items-center gap-1 w-fit" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(req.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {String(req.id)} <i className="fa-regular fa-copy"></i></span>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -2074,6 +2541,74 @@ Student Doubt: ${prompt}`
                                             </div>
                                         ))
                                     )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showFriendsList && (
+                        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => { setShowFriendsList(false); setFriendsSearchQuery(''); }}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-users text-[#00FFFF]"></i> My Friends ({(friends || []).length}/120)</h3>
+                                    <button onClick={() => { setShowFriendsList(false); setFriendsSearchQuery(''); }} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+
+                                <div className="mb-4 relative">
+                                    <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input
+                                        type="text"
+                                        placeholder="Search friends by name..."
+                                        value={friendsSearchQuery}
+                                        onChange={(e) => setFriendsSearchQuery(e.target.value)}
+                                        className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors"
+                                    />
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                                    {(!friends || friends.length === 0) ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+                                            <i className="fa-solid fa-users-slash text-4xl mb-3 opacity-50"></i>
+                                            <p className="text-sm font-bold">No friends added yet</p>
+                                        </div>
+                                    ) : (
+                                        friends.filter(f => (f.name || '').toLowerCase().includes(friendsSearchQuery.toLowerCase()) || String(f.id).includes(friendsSearchQuery)).length === 0 ? (
+                                            <div className="text-center text-gray-500 py-4 text-sm italic">No friends match your search.</div>
+                                        ) : (
+                                            friends.filter(f => (f.name || '').toLowerCase().includes(friendsSearchQuery.toLowerCase()) || String(f.id).includes(friendsSearchQuery)).map(f => (
+                                                <div key={f.id} onClick={() => { setActiveChatUser({ id: f.id, name: f.name, photo: f.photo }); setShowFriendsList(false); setFriendsSearchQuery(''); }} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-gray-800 shadow-sm mb-2 hover:border-[#00FFFF]/50 transition-colors cursor-pointer group">
+                                                    <div className="flex items-center gap-3 pointer-events-none">
+                                                        {f.photo ? <img src={f.photo} className="w-10 h-10 rounded-full object-cover border border-purple-500/30" /> : <div className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center font-black border border-purple-500/30">{String(f.name || 'U').charAt(0).toUpperCase()}</div>}
+                                                        <div className="flex flex-col">
+                                                            <span className="text-white font-bold text-sm">
+                                                                <UserName name={f.name || `User ${String(f.id).substring(0, 8)}`} id={f.id} className="max-w-[120px]" />
+                                                            </span>
+                                                            <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5 cursor-pointer hover:text-white transition-colors flex items-center gap-1 w-fit pointer-events-auto" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(f.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {String(f.id)} <i className="fa-regular fa-copy"></i></span>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={(e) => { e.stopPropagation(); setFriendToDelete(f); }} className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors z-10 relative" title="Delete Friend">
+                                                        <i className="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {friendToDelete && (
+                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[4000] animate-in fade-in" onClick={() => setFriendToDelete(null)}>
+                            <div className="bg-[#021633] border border-[#0AE0D0]/30 rounded-2xl p-6 max-w-sm w-full shadow-[0_10px_40px_rgba(0,255,255,0.15)] flex flex-col items-center text-center animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                                <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-3xl mb-4 border border-red-500/20">
+                                    <i className="fa-solid fa-user-xmark"></i>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Remove Friend?</h3>
+                                <p className="text-gray-400 text-sm mb-6">Are you sure you want to remove <strong className="text-white">{friendToDelete.name || 'this user'}</strong> from your friends list? You won't be able to chat with them unless they add you again.</p>
+                                <div className="flex gap-3 w-full">
+                                    <button onClick={() => setFriendToDelete(null)} className="flex-1 py-3 rounded-xl bg-gray-800 text-white font-bold hover:bg-gray-700 transition-colors">Cancel</button>
+                                    <button onClick={() => { removeFriend(friendToDelete.id); setFriendToDelete(null); }} className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.4)] transition-colors">Remove</button>
                                 </div>
                             </div>
                         </div>
@@ -2559,6 +3094,7 @@ Student Doubt: ${prompt}`
         const VCFloatingWidget = ({ activeRoom, isLocalMuted, isSpeakerMuted, onRestore, toggleMute, toggleSpeaker, onExit }) => {
             const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, hasMoved: false });
             const widgetRef = useRef(null);
+            const magicFingerRef = useRef(null);
 
             const handleTouchStart = (e) => {
                 dragRef.current.isDragging = true;
@@ -2585,7 +3121,7 @@ Student Doubt: ${prompt}`
             const handleClick = () => { if (!dragRef.current.hasMoved) onRestore(); };
 
             return (
-                <div ref={widgetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onMouseDown={handleTouchStart} onMouseMove={handleTouchMove} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd} onClick={handleClick} style={{ transform: `translate3d(${dragRef.current.currentX}px, ${dragRef.current.currentY}px, 0)` }} className="fixed bottom-[120px] right-4 w-fit max-w-[220px] bg-[#021633]/95 backdrop-blur-xl border border-[#0AE0D0]/50 rounded-full p-1.5 flex items-center gap-2 shadow-[0_4px_20px_rgba(0,255,255,0.4)] z-[2000000] cursor-pointer select-none touch-none">
+                <div ref={widgetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onMouseDown={handleTouchStart} onMouseMove={handleTouchMove} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd} onClick={handleClick} style={{ transform: `translate3d(${dragRef.current.currentX}px, ${dragRef.current.currentY}px, 0)` }} className="fixed bottom-[calc(120px+var(--safe-bottom))] right-4 w-fit max-w-[220px] bg-[#021633]/95 backdrop-blur-xl border border-[#0AE0D0]/50 rounded-full p-1.5 flex items-center gap-2 shadow-[0_4px_20px_rgba(0,255,255,0.4)] z-[2000000] cursor-pointer select-none touch-none">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 flex items-center justify-center text-[#010B1C] animate-pulse shrink-0 shadow-[0_0_10px_rgba(0,255,255,0.6)]">
                         <i className="fa-solid fa-satellite-dish text-[10px]"></i>
                     </div>
@@ -2601,7 +3137,7 @@ Student Doubt: ${prompt}`
             );
         };
 
-        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab }) => {
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab, vcChatOpen, onChatOpen, chatActions, setChatActions }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
             const currentUserPhoto = tgUser?.photo_url || "";
@@ -2789,26 +3325,43 @@ Student Doubt: ${prompt}`
                     setPendingRequests(p);
                     setSentRequests(sr);
 
+                    // LocalStorage DMs
+                    const loadedDms = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && k.startsWith('dms_')) {
+                            try { loadedDms[k.replace('dms_', '')] = JSON.parse(localStorage.getItem(k)); } catch (e) { }
+                        }
+                    }
+
                     if (window.Telegram?.WebApp?.CloudStorage) {
                         window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
                             if (keys) {
-                                const dmKeys = keys.filter(k => k.startsWith('dms_'));
-                                window.Telegram.WebApp.CloudStorage.getItems(dmKeys, (err, vals) => {
-                                    const loadedDms = {};
-                                    dmKeys.forEach(k => { try { loadedDms[k.replace('dms_', '')] = JSON.parse(vals[k]); } catch (e) { } });
+                                const cloudDmKeys = keys.filter(k => k.startsWith('cloud_dms_'));
+                                window.Telegram.WebApp.CloudStorage.getItems(cloudDmKeys, (err, vals) => {
+                                    cloudDmKeys.forEach(k => {
+                                        try {
+                                            const uid = k.replace('cloud_dms_', '');
+                                            const cloudMsgs = JSON.parse(vals[k]);
+                                            if (Array.isArray(cloudMsgs)) {
+                                                const localMsgs = loadedDms[uid] || [];
+                                                // Merge and deduplicate by id
+                                                const mergedMap = new Map();
+                                                localMsgs.forEach(m => mergedMap.set(m.id || m.time, m));
+                                                cloudMsgs.forEach(m => mergedMap.set(m.id || m.time, m));
+                                                const mergedArr = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
+                                                loadedDms[uid] = mergedArr;
+                                                safeSetItem('dms_' + uid, JSON.stringify(mergedArr));
+                                            }
+                                        } catch (e) { }
+                                    });
                                     setDms(loadedDms);
                                 });
+                            } else {
+                                setDms(loadedDms);
                             }
                         });
                     } else {
-                        // LocalStorage fallback already handled via getCloudData partially, but for iteration:
-                        const loadedDms = {};
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const k = localStorage.key(i);
-                            if (k && k.startsWith('dms_')) {
-                                try { loadedDms[k.replace('dms_', '')] = JSON.parse(localStorage.getItem(k)); } catch (e) { }
-                            }
-                        }
                         setDms(loadedDms);
                     }
                 };
@@ -2859,12 +3412,16 @@ Student Doubt: ${prompt}`
                                 sender: senderId,
                                 text: data.text,
                                 imageUrl: data.imageUrl,
+                                audioUrl: data.audioUrl,
                                 replyTo: data.replyTo,
                                 time: Date.now(),
+                                isEphemeral: data.isEphemeral,
+                                viewLimit: data.viewLimit,
+                                viewed: false,
                                 senderName, senderPhoto, status: 'received'
                             };
                             const updatedHistory = [...history, newMsg];
-                            setCloudData('dms_' + senderId, updatedHistory);
+                            saveDmToStorage(senderId, updatedHistory);
                             return { ...currDms, [senderId]: updatedHistory };
                         });
                         return currFriends;
@@ -2876,6 +3433,28 @@ Student Doubt: ${prompt}`
                         sendDirectMessage(senderId, { type: 'MESSAGE_STATUS', status: 'delivered', targetId: currentUserId, msgId: data.id });
                     }
 
+                } else if (data.type === 'CHAT_ACTION') {
+                    const senderId = String(data.senderId);
+                    setChatActions(prev => {
+                        const newActions = { ...prev };
+                        if (data.action) {
+                            newActions[senderId] = data.action;
+                            // Clear action after 5s
+                            setTimeout(() => {
+                                setChatActions(current => {
+                                    if (current[senderId] === data.action) {
+                                        const updated = { ...current };
+                                        delete updated[senderId];
+                                        return updated;
+                                    }
+                                    return current;
+                                });
+                            }, 5000);
+                        } else {
+                            delete newActions[senderId];
+                        }
+                        return newActions;
+                    });
                 } else if (data.type === 'MESSAGE_STATUS') {
                     const chatUserId = String(data.targetId);
                     setDms(currDms => {
@@ -2891,10 +3470,18 @@ Student Doubt: ${prompt}`
                             return m;
                         });
                         if (changed) {
-                            setCloudData('dms_' + chatUserId, updated);
+                            saveDmToStorage(chatUserId, updated);
                             return { ...currDms, [chatUserId]: updated };
                         }
                         return currDms;
+                    });
+                } else if (data.type === 'EPHEMERAL_VIEWED') {
+                    const senderId = String(data.senderId);
+                    setDms(currDms => {
+                        const history = currDms[senderId] || [];
+                        const updated = history.map(m => m.id === data.msgId ? { ...m, viewed: true } : m);
+                        saveDmToStorage(senderId, updated);
+                        return { ...currDms, [senderId]: updated };
                     });
                 } else if (data.type === 'PRIVATE_MESSAGE_ACTION') {
                     const senderId = String(data.senderId);
@@ -2907,7 +3494,7 @@ Student Doubt: ${prompt}`
                             updated = history.map(m => m.id === data.msgId ? { ...m, text: data.text, isEdited: true } : m);
                         }
                         if (updated) {
-                            setCloudData('dms_' + senderId, updated);
+                            saveDmToStorage(senderId, updated);
                             return { ...currDms, [senderId]: updated };
                         }
                         return currDms;
@@ -3061,6 +3648,12 @@ Student Doubt: ${prompt}`
             const acceptFriendRequest = (senderPayload) => {
                 try {
                     const senderId = String(senderPayload.id);
+
+                    if (Array.isArray(friends) && friends.length >= 120) {
+                        safeAlert("You have hit the limit of 120 friends. Please delete some friends to add new ones.");
+                        return;
+                    }
+
                     setFriends(prev => {
                         const prevArray = Array.isArray(prev) ? prev : [];
                         if (prevArray.some(f => String(f.id || f) === senderId)) return prevArray;
@@ -3097,27 +3690,27 @@ Student Doubt: ${prompt}`
 
             const acceptAllFriendRequests = () => {
                 if (!pendingRequests || pendingRequests.length === 0) return;
-                
+
                 setFriends(prev => {
                     const prevArray = Array.isArray(prev) ? prev : [];
                     const newFriends = [...prevArray];
-                    
+
                     pendingRequests.forEach(req => {
                         const senderId = String(req.id);
                         if (!newFriends.some(f => String(f.id || f) === senderId)) {
                             newFriends.push({ id: senderId, name: req.name || `User ${senderId}`, photo: req.photo });
                         }
                     });
-                    
+
                     setCloudData('ataxy_friends', newFriends);
                     return newFriends;
                 });
-                
+
                 pendingRequests.forEach(req => {
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_ACCEPTED', payload: { id: currentUserId, name: currentUserName, photo: currentUserPhoto } };
                     sendDirectMessage(String(req.id), payload);
                 });
-                
+
                 setPendingRequests([]);
                 setCloudData('ataxy_pending_friends', []);
                 safeAlert(`Accepted ${pendingRequests.length} friend requests`);
@@ -3125,12 +3718,12 @@ Student Doubt: ${prompt}`
 
             const rejectAllFriendRequests = () => {
                 if (!pendingRequests || pendingRequests.length === 0) return;
-                
+
                 pendingRequests.forEach(req => {
                     const payload = { type: 'ROOM_EVENT', event: 'FRIEND_REQUEST_REJECTED', payload: { id: currentUserId } };
                     sendDirectMessage(String(req.id), payload);
                 });
-                
+
                 setPendingRequests([]);
                 setCloudData('ataxy_pending_friends', []);
                 safeAlert(`Rejected all friend requests`);
@@ -3163,8 +3756,17 @@ Student Doubt: ${prompt}`
                 setDms(prev => {
                     const newDms = { ...prev };
                     delete newDms[targetId];
-                    setCloudData('dms_' + targetId, []);
+                    saveDmToStorage(targetId, []);
                     return newDms;
+                });
+            };
+
+            const markEphemeralAsViewed = (targetId, msgId) => {
+                setDms(prev => {
+                    const history = prev[targetId] || [];
+                    const updated = history.map(m => m.id === msgId ? { ...m, viewed: true } : m);
+                    saveDmToStorage(targetId, updated);
+                    return { ...prev, [targetId]: updated };
                 });
             };
 
@@ -3181,7 +3783,7 @@ Student Doubt: ${prompt}`
                         updated = history.map(m => m.id === msgId ? { ...m, text, isEdited: true } : m);
                     }
                     if (updated) {
-                        setCloudData('dms_' + targetId, updated);
+                        saveDmToStorage(targetId, updated);
                         return { ...prev, [targetId]: updated };
                     }
                     return prev;
@@ -3192,12 +3794,12 @@ Student Doubt: ${prompt}`
                 setDms(prev => {
                     const history = prev[targetId] || [];
                     const updated = history.filter(m => m.id !== msgId);
-                    setCloudData('dms_' + targetId, updated);
+                    saveDmToStorage(targetId, updated);
                     return { ...prev, [targetId]: updated };
                 });
             };
 
-            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null) => {
+            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null, audioUrl = null, imageMode = 'normal') => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
                 const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
@@ -3207,19 +3809,25 @@ Student Doubt: ${prompt}`
                     return;
                 }
 
+                const isEphemeral = imageMode === 'view_once' || imageMode === 'timed';
+                const viewLimit = imageMode === 'timed' ? 10 : null; // 10 seconds for timed mode
+
                 const msgId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
                 const newMsg = {
-                    id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, time: Date.now(),
+                    id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, audioUrl, time: Date.now(),
                     targetName: activeChatUserRef.current?.name || `User ${targetId}`,
                     targetPhoto: activeChatUserRef.current?.photo || '',
+                    isEphemeral,
+                    viewLimit,
+                    viewed: false,
                     status: 'sent'
                 };
                 const updatedHistory = [...history, newMsg];
 
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
-                setCloudData('dms_' + targetId, updatedHistory);
+                saveDmToStorage(targetId, updatedHistory);
 
-                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo };
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo, audioUrl, isEphemeral, viewLimit };
                 sendDirectMessage(targetId, payload);
             };
 
@@ -3235,7 +3843,7 @@ Student Doubt: ${prompt}`
                         return m;
                     });
                     if (changed) {
-                        setCloudData('dms_' + targetId, updated);
+                        saveDmToStorage(targetId, updated);
                         sendDirectMessage(targetId, { type: 'MESSAGE_STATUS', status: 'read', targetId: currentUserId });
                         return { ...curr, [targetId]: updated };
                     }
@@ -3826,9 +4434,9 @@ Student Doubt: ${prompt}`
                 if (currentView === 'chats') {
                     return (
                         <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
-                            
+
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} sendDirectMessage={sendDirectMessage} chatActions={chatActions} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} markEphemeralAsViewed={markEphemeralAsViewed} />
                             </div>
                         </div>
                     );
@@ -3836,7 +4444,7 @@ Student Doubt: ${prompt}`
 
                 return (
                     <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010714] text-white space-y-0">
-                        
+
 
                         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
                             {/* Official Room Section */}
@@ -4025,7 +4633,7 @@ Student Doubt: ${prompt}`
                 <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300" onClick={() => setShowRoomMenu(false)}>
                     <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; }`}</style>
                     {/* Header */}
-                    <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+max(env(safe-area-inset-top),_24px))]">
+                    <div className="shrink-0 flex justify-between items-center p-3 sm:p-4 pr-[90px] lg:pr-4 border-b border-[#0AE0D0]/20 bg-[#021633]/80 backdrop-blur-md pt-[calc(12px+max(env(safe-area-inset-top),_24px))]">
                         <div className="flex items-center gap-2 overflow-hidden flex-1">
                             <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 mr-1 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors">
                                 <i className="fa-solid fa-arrow-left"></i>
@@ -4488,7 +5096,9 @@ Student Doubt: ${prompt}`
                                                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRoomRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
                                                     {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
                                                     <div className="flex flex-col">
-                                                        <span className="text-white font-bold text-sm truncate max-w-[120px]">{req.name || `User ${String(req.id).substring(0, 8)}`}</span>
+                                                        <span className="text-white font-bold text-sm">
+                                                            <UserName name={req.name || `User ${String(req.id).substring(0, 8)}`} id={req.id} className="max-w-[120px]" />
+                                                        </span>
                                                         <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
                                                     </div>
                                                 </div>
@@ -4614,7 +5224,7 @@ Student Doubt: ${prompt}`
                 setAiTyping(true);
 
                 const optionsArray = Array.isArray(q.options) ? q.options : ['A', 'B', 'C', 'D'];
-                const systemContext = `You are ATAXY, a mentor to help all the students, an encouraging academic tutor for NEET/JEE. You must never say you are an AI.
+                const systemContext = `You are ATAXY, a human mentor and an encouraging academic tutor for NEET/JEE. You must NEVER say you are an AI, a language model, or virtual assistant under any circumstance. Act completely human.
 The student is practicing a question and needs help.
 QUESTION CONTEXT:
 "${q.text}"
@@ -4628,8 +5238,9 @@ USER'S ANSWER: ${isAnswered ? `Option ${['A', 'B', 'C', 'D'][attemptIdx]} (${opt
 EXPLANATION GIVEN: ${q.explanation || 'None'}
 
 INSTRUCTIONS: 
-- Address the user's specific doubt concisely.
-- Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas.
+- Address the user's specific doubt perfectly without any confusion.
+- Keep your answers highly engaging, concise and strictly to the point. Do NOT write long paragraphs. Break information down into short, conversational sentences like in human chat messaging.
+- Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas if needed, but keep it brief.
 - Be encouraging, especially if they answered incorrectly.`;
 
                 const selectedOption = isAnswered ? ['A', 'B', 'C', 'D'][attemptIdx] : 'None';
@@ -4643,7 +5254,7 @@ INSTRUCTIONS:
 
             return (
                 <>
-                    <button onClick={() => setShowAIChat(!showAIChat)} className={`mt-4 w-full text-sm font-bold px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border ${showAIChat ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-gradient-to-r from-[#00418d] to-[#1e5eb0] hover:from-[#003370] hover:to-[#174c91] border-transparent text-white shadow-md'}`}>
+                    <button id="tour-ask-mentor" onClick={() => setShowAIChat(!showAIChat)} className={`mt-4 w-full text-sm font-bold px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border ${showAIChat ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-gradient-to-r from-[#00418d] to-[#1e5eb0] hover:from-[#003370] hover:to-[#174c91] border-transparent text-white shadow-md'}`}>
                         <AtaxyLogo className={`w-5 h-5 rounded-full ${showAIChat ? '' : 'border border-white/20 shadow-sm'}`} />
                         <span>{showAIChat ? 'Close Mentor' : 'Ask ATAXY Mentor'}</span>
                         {!showAIChat && <i className="fa-solid fa-sparkles ml-1 opacity-90"></i>}
@@ -4669,7 +5280,7 @@ INSTRUCTIONS:
                                 )}
                                 {aiMsgs.map((m, i) => (
                                     <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#00418d] text-white rounded-br-none' : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-bl-none'}`}>
+                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#00508a] text-[#e9edef] rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-tl-sm'}`}>
                                             <FormattedText text={m.text} />
                                             {m.sender === 'ai' && <AIAudioPlayerUI message={m} messageId={i} audioState={audioState} setAudioState={setAudioState} />}
                                         </div>
@@ -4794,7 +5405,7 @@ INSTRUCTIONS:
 
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-full">
-                    <div className="fixed top-0 pt-[24px] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                    <div className="fixed top-0 pt-safe-top w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
                             <div>
@@ -4821,7 +5432,7 @@ INSTRUCTIONS:
                         <div ref={chatEndRef} />
                     </div>
 
-                    <form onSubmit={sendMsg} className="fixed bottom-[65px] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
+                    <form onSubmit={sendMsg} className="fixed bottom-[calc(65px+var(--safe-bottom))] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
                         <input
                             value={msg}
                             onChange={e => setMsg(e.target.value)}
@@ -6037,7 +6648,7 @@ INSTRUCTIONS:
                     onTouchEnd={handleTouchEnd}
                     onClick={handleClick}
                     style={{ transform: `translate3d(${dragRef.current.currentX}px, ${dragRef.current.currentY}px, 0)` }}
-                    className="fixed bottom-[80px] right-4 w-[280px] bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] touch-none"
+                    className="fixed bottom-[calc(80px+var(--safe-bottom))] right-4 w-[280px] bg-[#021633]/95 backdrop-blur-md border border-[#00FFFF]/50 rounded-2xl p-3 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] z-[100] cursor-pointer hover:scale-[1.02] touch-none"
                 >
                     <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-8 h-8 rounded-full bg-[#00FFFF]/20 flex items-center justify-center text-[#00FFFF] animate-pulse shrink-0"><i className="fa-solid fa-volume-high text-xs"></i></div>
@@ -6099,7 +6710,7 @@ INSTRUCTIONS:
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
                     <div className="p-4 flex-1 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                             <h2 className="text-2xl font-black text-[#00FFFF] drop-shadow-[0_0_8px_rgba(0,255,255,0.4)] tracking-wide">Voice Lounges</h2>
                             <button onClick={handleRefresh} className="text-[#00FFFF] hover:text-white transition-colors p-2">
                                 <i className={`fa-solid fa-sync-alt ${isRefreshing ? 'animate-spin' : ''}`}></i>
@@ -6175,7 +6786,7 @@ INSTRUCTIONS:
                                                             {room.password && <i className="fa-solid fa-lock text-[#00FFFF] text-xs"></i>}
                                                         </h3>
                                                         <div className="flex text-sm text-[#A4DFE6] gap-3">
-                                                            <span><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {String(room.host_user_id).substring(0, 5)}</span>
+                                                            <span className="inline-flex items-center"><i className={`fa-solid fa-crown ${isPremium ? 'text-[#F9D33A]' : 'text-[#00FFFF]'} mr-1`}></i> Host ID: {String(room.host_user_id).substring(0, 5)} {String(room.host_user_id) === "5182808926" && <VerifiedBadge className="w-3 h-3 ml-1 shrink-0" />}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -6414,7 +7025,7 @@ INSTRUCTIONS:
 
             return (
                 <div className="flex-1 flex flex-col relative z-10">
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 pr-[90px] lg:pr-4 flex items-center justify-between border-b border-[#0AE0D0]/20 bg-[#010B1C]/90 backdrop-blur pt-[calc(70px+env(safe-area-inset-top,0px))]">
                         <div className="flex items-center gap-2 overflow-hidden pr-2 flex-1 min-w-0">
                             <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 hover:bg-white/20 transition-colors" title="Back to Rooms">
                                 <i className="fa-solid fa-arrow-left"></i>
@@ -6520,7 +7131,7 @@ INSTRUCTIONS:
                         )}
                     </div>
 
-                    <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex flex-col gap-2 z-20 pb-[env(safe-area-inset-bottom,_12px)]">
+                    <div className="fixed bottom-0 w-full md:max-w-screen-xl max-w-md bg-[#010B1C]/95 backdrop-blur border-t border-[#0AE0D0]/30 p-3 flex flex-col gap-2 z-20 pb-safe-bottom">
                         {/* Pending Image Preview Overlay */}
                         {pendingImage && (
                             <div className="w-full bg-[#021633] border border-[#0AE0D0]/50 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2">
@@ -6791,7 +7402,10 @@ INSTRUCTIONS:
                                             <div className="flex items-center gap-3">
                                                 {p.photo_url ? <img src={p.photo_url} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-[#00FFFF] text-[#010B1C] font-bold flex items-center justify-center">{String(p?.user_name || p?.name || 'U').charAt(0).toUpperCase()}</div>}
                                                 <div>
-                                                    <p className="text-white font-bold text-sm">{p?.user_name || p?.name || "User"} {p.user_id === activeRoom.host_user_id && <i className="fa-solid fa-crown text-yellow-400 text-xs ml-1"></i>}</p>
+                                                    <p className="text-white font-bold text-sm inline-flex items-center gap-1">
+                                                        <UserName name={p?.user_name || p?.name || "User"} id={p.user_id} className="max-w-[150px]" />
+                                                        {p.user_id === activeRoom.host_user_id && <i className="fa-solid fa-crown text-yellow-400 text-xs"></i>}
+                                                    </p>
                                                     <p className="text-[#A4DFE6] text-[10px]">{p.seat_number !== null ? `Seat ${p.seat_number}` : 'Audience'} • ID: {p.user_id}</p>
                                                 </div>
                                             </div>
@@ -6823,90 +7437,296 @@ INSTRUCTIONS:
         const AIMentorView = ({ onBack }) => {
             const [msg, setMsg] = useState('');
             const [isTyping, setIsTyping] = useState(false);
-            const [chats, setChats] = useState([
-                { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your perfectly intelligent AI mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" }
-            ]);
+            const [imageFile, setImageFile] = useState(null);
+            const [imageBase64, setImageBase64] = useState(null);
+            const fileInputRef = useRef(null);
+            const defaultChat = { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your personal study mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" };
+
+            const [sessions, setSessions] = useState([]);
+            const [activeSessionId, setActiveSessionId] = useState(null);
+            const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
             const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
             const chatEndRef = useRef(null);
 
-            useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, isTyping]);
+            const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
+            const chats = activeSession ? activeSession.chats : [defaultChat];
+
+            useEffect(() => {
+                const initChats = async () => {
+                    let localSessions = [];
+                    try {
+                        const lsData = localStorage.getItem('ataxy_mentor_sessions');
+                        if (lsData) localSessions = JSON.parse(lsData);
+                    } catch (e) { }
+
+                    if (localSessions.length > 0) {
+                        setSessions(localSessions);
+                        setActiveSessionId(localSessions[0].id);
+                    } else {
+                        // Fallback to cloud data for old single array version
+                        const saved = await getCloudData('ataxy_mentor_chats');
+                        if (saved && Array.isArray(saved) && saved.length > 0) {
+                            const newSession = { id: Date.now().toString(), title: "Previous Chat", updatedAt: Date.now(), chats: saved };
+                            setSessions([newSession]);
+                            setActiveSessionId(newSession.id);
+                        } else {
+                            const initialSession = { id: Date.now().toString(), title: "New Chat", updatedAt: Date.now(), chats: [defaultChat] };
+                            setSessions([initialSession]);
+                            setActiveSessionId(initialSession.id);
+                        }
+                    }
+                };
+                initChats();
+            }, []);
+
+            useEffect(() => {
+                if (sessions.length > 0) {
+                    try {
+                        localStorage.setItem('ataxy_mentor_sessions', JSON.stringify(sessions));
+                    } catch (e) { }
+
+                    // Sync active session to cloud stripped of images
+                    const currentActiveSession = sessions.find(s => s.id === activeSessionId);
+                    if (currentActiveSession) {
+                        let currentChats = [...currentActiveSession.chats];
+                        while (JSON.stringify(currentChats.map(c => ({ ...c, image: undefined }))).length > 3900 && currentChats.length > 1) {
+                            if (currentChats[0].id === 1) {
+                                currentChats.splice(1, 1);
+                            } else {
+                                currentChats.shift();
+                            }
+                        }
+                        setCloudData('ataxy_mentor_chats', currentChats.map(c => ({ ...c, image: undefined })));
+                    }
+                }
+            }, [sessions, activeSessionId]);
+
+            useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, isTyping, imageBase64]);
 
             useEffect(() => {
                 return () => AIAudioPlayer && AIAudioPlayer.stop ? AIAudioPlayer.stop() : null;
             }, []);
 
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    safeAlert("Please select an image file.");
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImageBase64(reader.result);
+                    setImageFile(file);
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const removeImage = () => {
+                setImageFile(null);
+                setImageBase64(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+            };
+
+            const startNewChat = () => {
+                const newSession = { id: Date.now().toString(), title: "New Chat", updatedAt: Date.now(), chats: [defaultChat] };
+                setSessions(prev => [newSession, ...prev]);
+                setActiveSessionId(newSession.id);
+                setIsDrawerOpen(false);
+            };
+
+            const deleteSession = (id) => {
+                safeConfirm("Are you sure you want to delete this chat history?", () => {
+                    setSessions(prev => {
+                        const filtered = prev.filter(s => s.id !== id);
+                        if (filtered.length === 0) {
+                            const newSession = { id: Date.now().toString(), title: "New Chat", updatedAt: Date.now(), chats: [defaultChat] };
+                            setActiveSessionId(newSession.id);
+                            return [newSession];
+                        }
+                        if (activeSessionId === id) {
+                            setActiveSessionId(filtered[0].id);
+                        }
+                        return filtered;
+                    });
+                });
+            };
+
             const sendMsg = async (e) => {
                 e.preventDefault();
-                if (!msg.trim()) return;
+                if (!msg.trim() && !imageBase64) return;
 
                 const userMsg = msg;
-                setChats(prev => [...prev, { id: Date.now(), sender: 'user', text: userMsg }]);
+                const userImage = imageBase64;
+
+                const updateSessionChats = (newChat) => {
+                    setSessions(prev => prev.map(s => {
+                        if (s.id === activeSessionId) {
+                            let title = s.title;
+                            if (title === "New Chat" && userMsg) {
+                                title = userMsg.substring(0, 30) + (userMsg.length > 30 ? "..." : "");
+                            }
+                            return { ...s, title, updatedAt: Date.now(), chats: [...s.chats, newChat] };
+                        }
+                        return s;
+                    }).sort((a, b) => b.updatedAt - a.updatedAt));
+                };
+
+                updateSessionChats({ id: Date.now(), sender: 'user', text: userMsg, image: userImage });
                 setMsg('');
+                removeImage();
                 setIsTyping(true);
 
-                const systemContext = `You are ATAXY, a highly intelligent and capable AI mentor. Your goal is to help the user with absolutely anything they need perfectly and intelligently. You are an expert in all subjects, life advice, general knowledge, and any task requested. Be engaging, extremely helpful, and provide detailed, accurate, and perfect responses.`;
+                const systemContext = `You are ATAXY, a highly intelligent human study mentor. You must NEVER say you are an AI, a language model, or a virtual assistant under any circumstance. Always act completely human. Your goal is to perfectly and accurately solve the student's doubts without any confusion. You are an expert in all subjects, life advice, and general knowledge. Keep your answers extremely engaging, conversational, and concise. Do NOT write long paragraphs. Write in short, human-like chat messages so that the student feels engaged and never bored. Break down complex topics into simple, bite-sized explanations.`;
 
                 try {
-                    const aiReply = await fetchGeminiSecure(userMsg, chats, systemContext);
-                    setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiReply.explanation, audio: aiReply.audio }]);
+                    const aiReply = await fetchGeminiSecure(userMsg, chats, systemContext, null, null, userImage);
+                    updateSessionChats({ id: Date.now(), sender: 'ai', text: aiReply.explanation, audio: aiReply.audio });
                 } catch (err) {
-                    setChats(prev => [...prev, { id: Date.now(), sender: 'ai', text: "I am currently receiving a very high volume of requests. Please try again in a minute!", audio: null }]);
+                    updateSessionChats({ id: Date.now(), sender: 'ai', text: "I am currently receiving a very high volume of requests. Please try again in a minute!", audio: null });
                 }
-                
+
                 setIsTyping(false);
             };
 
             return (
-                <div className="pb-[calc(140px_+_env(safe-area-inset-bottom,_0px))] animate-in fade-in flex flex-col h-full bg-gray-50 dark:bg-gray-950">
-                    <div className="fixed top-0 pt-[24px] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
-                        <div className="flex items-center gap-3">
-                            <button onClick={onBack} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center shrink-0 transition-colors">
-                                <i className="fa-solid fa-arrow-left"></i>
-                            </button>
-                            <AtaxyLogo className="w-10 h-10 rounded-full border border-purple-500/30 shadow-inner" />
-                            <div>
-                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY Mentor</h2>
-                                <p className="text-[10px] text-purple-500 font-bold tracking-wide">Powered by ATAXY</p>
+                <div className="pb-[calc(180px_+_env(safe-area-inset-bottom,_0px))] animate-in fade-in flex flex-col h-full bg-white dark:bg-gray-950 relative">
+
+                    {/* Sidebar Drawer */}
+                    {isDrawerOpen && (
+                        <div className="fixed inset-0 z-50 flex">
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setIsDrawerOpen(false)}></div>
+                            <div className="relative w-[280px] max-w-[80%] h-full bg-white dark:bg-[#010a17] shadow-2xl flex flex-col animate-in slide-in-from-left z-10 border-r border-gray-200 dark:border-gray-800">
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                                    <h3 className="font-bold text-gray-900 dark:text-white">Chat History</h3>
+                                    <button onClick={() => setIsDrawerOpen(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 flex items-center justify-center transition-colors">
+                                        <i className="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div className="p-3 border-b border-gray-200 dark:border-gray-800/50">
+                                    <button onClick={startNewChat} className="w-full py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-md transition-all">
+                                        <i className="fa-solid fa-plus"></i> New Chat
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                                    {sessions.length === 0 ? (
+                                        <div className="text-center text-gray-500 text-sm mt-10">No past conversations</div>
+                                    ) : (
+                                        sessions.map(s => (
+                                            <div key={s.id} onClick={() => { setActiveSessionId(s.id); setIsDrawerOpen(false); }} className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${activeSessionId === s.id ? 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border border-transparent'}`}>
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <i className="fa-regular fa-message text-gray-400 text-sm"></i>
+                                                    <span className={`text-sm truncate ${activeSessionId === s.id ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300 font-medium'}`}>{s.title}</span>
+                                                </div>
+                                                <button onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }} className="w-8 h-8 rounded-full hover:bg-red-500/20 text-gray-400 hover:text-red-500 flex items-center justify-center shrink-0 opacity-50 hover:opacity-100 group-hover:opacity-100 transition-all">
+                                                    <i className="fa-solid fa-trash-can text-xs"></i>
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
+                        </div>
+                    )}
+
+                    <div className="fixed top-0 pt-safe-top w-full md:max-w-screen-xl max-w-md bg-white/80 dark:bg-gray-950/80 backdrop-blur-md px-4 py-3 flex items-center justify-between z-20 border-b border-gray-200/50 dark:border-gray-800/50">
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setIsDrawerOpen(true)} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center shrink-0 transition-colors">
+                                <i className="fa-solid fa-bars"></i>
+                            </button>
+                            <AtaxyLogo className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-800 shadow-sm" />
+                            <div>
+                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight flex items-center gap-1.5">
+                                    ATAXY Mentor <VerifiedBadge className="w-3.5 h-3.5 shadow-sm" />
+                                </h2>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium tracking-wide">Powered by ATAXY</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button onClick={startNewChat} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center shrink-0 transition-colors" title="New Chat">
+                                <i className="fa-solid fa-pen-to-square text-lg"></i>
+                            </button>
+                            <button onClick={onBack} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center shrink-0 transition-colors">
+                                <i className="fa-solid fa-xmark text-lg"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pt-[70px]">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 pt-[80px]">
                         {chats.map((c, i) => (
-                            <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] p-3.5 rounded-2xl shadow-sm text-sm whitespace-pre-wrap leading-relaxed ${c.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
+                            <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start gap-3'} animate-in fade-in slide-in-from-bottom-2`}>
+                                {c.sender === 'ai' && (
+                                    <div className="shrink-0 pt-1">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-400 p-[2px] shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                                            <AtaxyLogo className="w-full h-full rounded-full border border-gray-900/50" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div className={`max-w-[85%] ${c.sender === 'user' ? 'bg-[#00508a] text-[#e9edef] rounded-2xl rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-2xl rounded-tl-sm'} p-3.5 shadow-sm text-[14px] whitespace-pre-wrap leading-relaxed`}>
+                                    {c.image && (
+                                        <img src={c.image} alt="User Upload" className="max-w-full h-auto rounded-xl mb-3 border border-[#e9edef]/10 shadow-sm" />
+                                    )}
                                     <FormattedText text={c?.text || ""} />
                                     {c.sender === 'ai' && <AIAudioPlayerUI message={c} messageId={c.id} audioState={audioState} setAudioState={setAudioState} />}
                                 </div>
                             </div>
                         ))}
                         {isTyping && (
-                            <div className="flex justify-start">
-                                <div className="bg-gray-900 border border-purple-500/50 p-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(168,85,247,0.2)] flex flex-col gap-3 w-[240px] relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(168,85,247,0.15),transparent)] animate-[scan_1.5s_linear_infinite]"></div>
-                                    <div className="flex items-center gap-2 relative z-10">
-                                        <div className="relative flex items-center justify-center w-6 h-6">
-                                            <div className="absolute inset-0 border-2 border-cyan-400 rounded-full animate-[spin_2s_linear_infinite] border-t-transparent"></div>
-                                            <i className="fa-solid fa-brain text-purple-400 text-[10px] animate-pulse"></i>
-                                        </div>
-                                        <span className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 uppercase tracking-widest">Ataxy Neural Net</span>
+                            <div className="flex justify-start gap-3 animate-in fade-in">
+                                <div className="shrink-0 pt-1">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-400 p-[2px] shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse">
+                                        <AtaxyLogo className="w-full h-full rounded-full border border-gray-900/50" />
                                     </div>
-                                    <div className="flex flex-col gap-1.5 relative z-10">
-                                        <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                                            <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 w-1/3 rounded-full animate-[pingPong_1s_ease-in-out_infinite_alternate]"></div>
-                                        </div>
-                                        <div className="text-[9px] text-gray-400 font-medium uppercase tracking-widest text-right animate-pulse">Synthesizing Concept...</div>
-                                    </div>
+                                </div>
+                                <div className="p-3.5 flex gap-1 items-center h-[48px]">
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></div>
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></div>
                                 </div>
                             </div>
                         )}
                         <div ref={chatEndRef} />
                     </div>
 
-                    <form onSubmit={sendMsg} className="fixed bottom-[calc(72px_+_env(safe-area-inset-bottom,_0px))] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
-                        <input value={msg} onChange={e => setMsg(e.target.value)} type="text" placeholder="Ask your doubt..." className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-0 focus:outline-none text-gray-900 dark:text-white" />
-                        <button type="submit" disabled={isTyping} className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center hover:bg-purple-700 shadow-md transition-colors"><i className="fa-solid fa-arrow-up text-sm"></i></button>
-                    </form>
+                    <div className="fixed bottom-[calc(72px+var(--safe-bottom))] w-full md:max-w-screen-xl max-w-md bg-gradient-to-t from-white via-white to-transparent dark:from-gray-950 dark:via-gray-950 px-4 pb-4 pt-12 z-20 pointer-events-none">
+                        <div className="pointer-events-auto">
+                            {imageFile && (
+                                <div className="mb-3 relative inline-block animate-in zoom-in-95">
+                                    <img src={imageBase64} className="h-20 w-auto rounded-xl border-2 border-white dark:border-gray-800 shadow-lg object-cover" />
+                                    <button onClick={removeImage} className="absolute -top-3 -right-3 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-md border-2 border-white dark:border-gray-950 hover:bg-red-600 transition-colors">
+                                        <i className="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            )}
+                            <form onSubmit={sendMsg} className="bg-gray-100 dark:bg-gray-800/90 backdrop-blur-md rounded-[28px] p-1.5 flex gap-2 shadow-sm items-end transition-all focus-within:bg-white dark:focus-within:bg-gray-800 border border-transparent focus-within:border-gray-200 dark:focus-within:border-gray-700 focus-within:shadow-md">
+                                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
+                                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-11 h-11 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 flex items-center justify-center shrink-0 transition-colors mb-0.5">
+                                    <i className="fa-solid fa-image text-[20px]"></i>
+                                </button>
+                                <textarea
+                                    value={msg}
+                                    onChange={e => {
+                                        setMsg(e.target.value);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                    }}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            sendMsg(e);
+                                        }
+                                    }}
+                                    placeholder="Ask ATAXY..."
+                                    rows={1}
+                                    className="flex-1 bg-transparent border-none px-2 py-3.5 text-[16px] focus:ring-0 focus:outline-none text-gray-900 dark:text-white resize-none max-h-[120px] placeholder-gray-500"
+                                />
+                                <button type="submit" disabled={isTyping || (!msg.trim() && !imageBase64)} className="w-11 h-11 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-30 disabled:scale-90 mb-0.5 shadow-sm hover:scale-105 active:scale-95">
+                                    {isTyping ? <i className="fa-solid fa-circle-notch fa-spin text-lg"></i> : <i className="fa-solid fa-arrow-up text-lg"></i>}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             );
         };
@@ -6991,7 +7811,7 @@ INSTRUCTIONS:
         // ==========================================
         const GlobalStatusBar = ({ isVoiceRoom }) => {
             return (
-                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md h-[max(env(safe-area-inset-top),_24px)] z-[9999999] transition-colors duration-300 ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-[#00A7A7] dark:bg-[#021633] shadow-md'}`}></div>
+                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md h-safe-top z-[9999999] transition-colors duration-300 ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-[#00A7A7] dark:bg-[#021633] shadow-md'}`}></div>
             );
         };
 
@@ -7073,7 +7893,7 @@ INSTRUCTIONS:
             const progress = (elapsed / duration) * 100;
 
             return (
-                <div className={`fixed z-[9999] top-[80px] right-4 bg-slate-900/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-64'}`}>
+                <div className={`fixed z-[9999] top-[calc(80px+var(--safe-top))] right-4 bg-slate-900/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-64'}`}>
                     {isMinimized ? (
                         <div onClick={() => setIsMinimized(false)} className="px-4 py-3 flex items-center gap-3 cursor-pointer group hover:bg-slate-800/50">
                             <i className="fa-solid fa-clock text-blue-400 group-hover:animate-spin"></i>
@@ -7106,1271 +7926,154 @@ INSTRUCTIONS:
             );
         };
 
-        // ?? STUDY PARTNER SYSTEM
         // ==========================================
-        const STUDY_PARTNERS = [
-            { id: 'mia_cheer', name: 'Mia (Female)', icon: 'fa-user-nurse', color: 'text-fuchsia-400', vibe: 'caring & energetic' },
-            { id: 'prof_oak', name: 'Oak (Male)', icon: 'fa-user-tie', color: 'text-amber-400', vibe: 'wise & encouraging' }
-        ];
-
-        const StudyPartnerWidget = ({ partnerConfig, partnerMessage, setPartnerMessage, currentTab, showQuiz }) => {
-            const widgetRef = useRef(null);
-            const canvasRef = useRef(null);
-            const threeRef = useRef(null);
-            const physicsRef = useRef({
-                x: 100,
-                y: -200, 
-                vx: 0,
-                vy: 0,
-                isGrounded: false,
-                state: 'falling',
-                facing: 1,
-                lastJump: Date.now(),
-                walkTimer: Date.now(),
-                walkDir: 1,
-                isDragging: false,
-                lastMouseX: 0,
-                lastMouseY: 0,
-                mouseVx: 0,
-                mouseVy: 0,
-                fallenTimeout: null
-            });
-            
-            const playSyntheticSound = (type) => {
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (!AudioContext) return;
-                    const ctx = new AudioContext();
-                    const osc = ctx.createOscillator();
-                    const gainNode = ctx.createGain();
-                    osc.connect(gainNode);
-                    gainNode.connect(ctx.destination);
-                    if (type === 'hit') {
-                        osc.type = 'sawtooth';
-                        osc.frequency.setValueAtTime(150, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15);
-                        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-                        osc.start(); osc.stop(ctx.currentTime + 0.15);
-                    } else if (type === 'throw') {
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(300, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.3);
-                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                        osc.start(); osc.stop(ctx.currentTime + 0.3);
-                    } else if (type === 'boing') {
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(400, ctx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.2);
-                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-                        osc.start(); osc.stop(ctx.currentTime + 0.2);
+        // 🚀 COC STYLE TUTORIAL SYSTEM
+        // ==========================================
+        // ==========================================
+        // 🟢 CHROMA KEY COMPONENT (Real-time Background Removal)
+        // ==========================================
+        const ChromaImage = ({ src, alt, className, spriteIndex = 0 }) => {
+            const canvasRef = React.useRef(null);
+            React.useEffect(() => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const frameWidth = img.width / 2;
+                    const frameHeight = img.height / 2;
+                    canvas.width = frameWidth;
+                    canvas.height = frameHeight;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    const col = spriteIndex % 2;
+                    const row = Math.floor(spriteIndex / 2);
+                    ctx.drawImage(img, col * frameWidth, row * frameHeight, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i]; const g = data[i+1]; const b = data[i+2];
+                        if (g > 150 && r < 140 && b < 140) {
+                            const dist = Math.abs(g - 255) + r + b;
+                            if (dist < 100) data[i+3] = 0;
+                            else data[i+3] = Math.max(0, data[i+3] - (255 - dist));
+                        }
                     }
-                } catch (e) { console.error("Audio block", e); }
+                    ctx.putImageData(imgData, 0, 0);
+                };
+            }, [src, spriteIndex]);
+            return <canvas ref={canvasRef} className={className} title={alt} />;
+        };
+
+        const CoCTutorialOverlay = ({ onComplete }) => {
+            const [step, setStep] = React.useState(0);
+            const [visible, setVisible] = React.useState(false);
+
+            React.useEffect(() => {
+                setTimeout(() => setVisible(true), 50);
+            }, [step]);
+
+            const handleNext = () => {
+                setVisible(false);
+                setTimeout(() => {
+                    if (step < tutorialData.length - 1) {
+                        setStep(step + 1);
+                    } else {
+                        onComplete();
+                    }
+                }, 400);
             };
-            
-            const [emotion, setEmotion] = useState('idle'); 
-            const [visible, setVisible] = useState(false);
-            const [bubbleBtnText, setBubbleBtnText] = useState('OK');
-            const [isBubbleFlipped, setIsBubbleFlipped] = useState(false);
-            const [renderState, setRenderState] = useState('falling');
-            const [facing, setFacing] = useState(1); 
-            const [availableAnims, setAvailableAnims] = useState([]);
-            const [previewAnim, setPreviewAnim] = useState(null);
-            const bubbleRef = useRef(null);
-            const visorRef = useRef(null);
 
-            // Three.js Initialization
-            useEffect(() => {
-                if (!canvasRef.current) return;
-                
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-                camera.position.set(0, 1.5, 9);
-                
-                const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true, antialias: true });
-                renderer.setSize(300, 300);
-                renderer.setPixelRatio(window.devicePixelRatio);
-                
-                const ambientLight = new THREE.AmbientLight(0xffffff, 2);
-                scene.add(ambientLight);
-                const dirLight = new THREE.DirectionalLight(0xffffff, 3);
-                dirLight.position.set(2, 5, 5);
-                scene.add(dirLight);
-                
-                const clock = new THREE.Clock();
-                let mixer;
-                
-                const loader = new GLTFLoader();
-                loader.load('character.glb', (gltf) => {
-                    const model = gltf.scene;
-                    const box = new THREE.Box3().setFromObject(model);
-                    const size = box.getSize(new THREE.Vector3());
-                    
-                    // Auto-scale to a comfortable height for the camera
-                    const targetHeight = 0.9; // Decreased base size
-                    const baseScale = targetHeight / size.y;
-                    
-                    model.scale.setScalar(baseScale);
-                    
-                    // Create an invisible capsule hitbox so Raycaster is 100% reliable (SkinnedMesh raycasting hits the T-pose, not the animated pose)
-                    const hitGeo = new THREE.CylinderGeometry(0.55 * size.y, 0.55 * size.y, size.y * 1.1, 8);
-                    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); // invisible but raycastable
-                    const hitMesh = new THREE.Mesh(hitGeo, hitMat);
-                    hitMesh.position.y = size.y / 2;
-                    hitMesh.name = "RaycastHitbox";
-                    model.add(hitMesh);
-                    
-                    // Center the model on X and Z to fix off-screen exports, but keep feet grounded on Y
-                    const scaledBox = new THREE.Box3().setFromObject(model);
-                    const center = scaledBox.getCenter(new THREE.Vector3());
-                    model.position.set(-center.x, -0.45, -center.z); // -0.45 to ground it relative to 0.9 height
-                    scene.add(model);
-                    
-                    if (threeRef.current) threeRef.current.baseScale = baseScale;
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        mixer = new THREE.AnimationMixer(model);
-                        const animNames = gltf.animations.map(a => a.name);
-                        setAvailableAnims(animNames);
-                        
-                        const animMap = {};
-                        gltf.animations.forEach(clip => {
-                            animMap[clip.name] = clip; // Exact name access
-                        });
-                        
-                        // Smart default mapping based on known animations
-                        animMap.idle = animMap['Idle_Loop'] || gltf.animations[0];
-                        animMap.walk = animMap['Walk_Loop'] || animMap.idle;
-                        animMap.fall = animMap['Jump_Loop'] || animMap['Flying Forward'] || animMap.idle;
-                        animMap.climb = animMap['ClimbUp_1m_RM'] || animMap.walk;
-                        animMap.drag = animMap['Levitate Idle'] || animMap.fall;
-                        animMap.write = animMap['Idle_TalkingPhone_Loop'] || animMap.idle;
-                        animMap.talk = animMap['Idle_Talking_Loop'] || animMap.idle;
-                        animMap.hit = animMap['Hit_Knockback'] || animMap.idle;
-                        animMap.sit_enter = animMap['Sitting_Enter'] || animMap.idle;
-                        animMap.sit_idle = animMap['Sitting_Idle_Loop'] || animMap.idle;
-                        animMap.sit_exit = animMap['Sitting_Exit'] || animMap.idle;
-                        animMap.sleeping = animMap['Sleeping'] || animMap.idle;
-                        animMap.wake = animMap['LayToIdle'] || animMap.idle;
-                        animMap.jump_start = animMap['Jump_Start'] || animMap.fall;
-                        animMap.jump_land = animMap['Jump_Land'] || animMap.idle;
-                        // Advanced Brain Animations & Pools
-                        animMap.pool_idle = ['Idle_Loop', 'Idle_FoldArms_Loop', 'Idle Listening', 'Tired Hunched', 'Shivering'];
-                        animMap.pool_happy = ['Victory', 'Victory Fist Pump', 'Dance Charleston', 'Dance Body Roll', 'Jumping Jacks', 'Backflip'];
-                        animMap.pool_angry = ['Angry', 'Reject', 'Defend', 'Sword_Attack'];
-                        animMap.pool_talk = ['Idle_Talking_Loop', 'Idle_TalkingPhone_Loop'];
-                        animMap.pool_hit = ['Hit_Head', 'Hit_Chest', 'Hit_Knockback'];
-                        
-                        // Expressive mapping
-                        animMap.expr_angry = animMap.pool_angry;
-                        animMap.expr_happy = animMap.pool_happy;
-                        animMap.expr_talk = animMap.pool_talk;
-                        animMap.expr_confused = ['Confused', 'Idle Listening'];
-                        animMap.expr_idle = animMap.pool_idle;
-                        animMap.sit_talk = animMap['Sitting_Talking_Loop'] || animMap.sit_idle;
-                        animMap.hit_tap = animMap.pool_hit;
-                        animMap.dizzy = animMap['Dizzy'] || animMap.idle;
-                        animMap.knockout = animMap['Death01'] || animMap.idle;
-                        animMap.greet = animMap['Greeting'] || animMap.idle;
-                        
-                        if (!animMap.idle) animMap.idle = gltf.animations[0];
-                        if (!animMap.walk) animMap.walk = animMap.idle;
-                        if (!animMap.fall) animMap.fall = animMap.idle;
-                        
-                        threeRef.current.animMap = animMap;
-                        threeRef.current.mixer = mixer;
-                        threeRef.current.currentAction = mixer.clipAction(animMap.idle);
-                        threeRef.current.currentAction.play();
-                    }
-                });
-                
-                threeRef.current = { scene, camera, renderer, clock, currentAnimState: 'idle' };
-                
-                return () => renderer.dispose();
-            }, []);
-
-            useEffect(() => {
-                if (partnerMessage && partnerConfig.enabled && partnerConfig.character !== 'none') {
-                    setVisible(true);
-                    
-                    setEmotion(partnerMessage.emotion || (partnerMessage.type === 'missed_target' ? 'angry' : (partnerMessage.type === 'added_target' ? 'writing' : 'talking')));
-                    
-                    if (partnerMessage.type === 'chatter') {
-                        const options = ['Got it!', 'Cool', 'Nice!', 'Okay', 'Right on!'];
-                        setBubbleBtnText(options[Math.floor(Math.random() * options.length)]);
-                    } else if (partnerMessage.type === 'missed_target') {
-                        setBubbleBtnText('I will do it now!');
-                    } else if (partnerMessage.type === 'water') {
-                        setBubbleBtnText('Glug glug!');
-                    } else if (partnerMessage.type === 'greeting') {
-                        setBubbleBtnText('Let\'s go!');
-                    } else if (partnerMessage.type === 'added_target') {
-                        setBubbleBtnText('Awesome!');
-                    } else {
-                        setBubbleBtnText('OK');
-                    }
-                    
-                    if (partnerMessage.type === 'chatter') {
-                        const timer = setTimeout(() => {
-                            setVisible(false);
-                            setTimeout(() => {
-                                if (physicsRef.current) physicsRef.current.partnerMessage = null;
-                                setPartnerMessage(null);
-                            }, 300);
-                        }, 5000);
-                        return () => clearTimeout(timer);
-                    }
+            const tutorialData = [
+                {
+                    character: 'female',
+                    name: 'ASENA',
+                    img: 'assets/characters/mia_spritesheet.png',
+                    spriteIndex: 0,
+                    text: "Welcome to ATAXY! I'm ASENA, your AI Mentor. Let's get you started!",
+                    btn: "Let's go!"
+                },
+                {
+                    character: 'male',
+                    name: 'ATAXY',
+                    img: 'assets/characters/jack_spritesheet.png',
+                    spriteIndex: 0,
+                    text: "I'm ATAXY. We'll help you organize your targets and practice daily.",
+                    btn: "Sounds good!"
+                },
+                {
+                    character: 'female',
+                    name: 'ASENA',
+                    img: 'assets/characters/mia_spritesheet.png',
+                    spriteIndex: 1,
+                    text: "You can find all your study materials and global chats right here.",
+                    btn: "Awesome!"
+                },
+                {
+                    character: 'male',
+                    name: 'ATAXY',
+                    img: 'assets/characters/jack_spritesheet.png',
+                    spriteIndex: 3,
+                    text: "Are you ready to crack your exams and dominate?",
+                    btn: "Bring it on!"
                 }
-            }, [partnerMessage, partnerConfig]);
+            ];
 
-            // Chatter Engine
-            useEffect(() => {
-                if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
-                
-                const chatterPhrases = {
-                    'mia_cheer': [
-                        {text: "You're doing amazing!", emotion: 'happy'},
-                        {text: "Keep that energy up!", emotion: 'happy'},
-                        {text: "Woohoo, let's crush these exams!", emotion: 'happy'},
-                        {text: "Remember to take deep breaths!", emotion: 'sad'}
-                    ],
-                    'prof_oak': [
-                        {text: "Consistency is the key to mastery.", emotion: 'thinking'},
-                        {text: "Patience, young scholar.", emotion: 'thinking'},
-                        {text: "A focused mind achieves great things.", emotion: 'talking'},
-                        {text: "Review your mistakes carefully.", emotion: 'sad'}
-                    ],
-                    'chief_commander': [
-                        {text: "No slacking! Back to work!", emotion: 'angry'},
-                        {text: "Discipline equals success!", emotion: 'angry'},
-                        {text: "Focus! Don't let me catch you dozing!", emotion: 'surprised'},
-                        {text: "Push harder! You can do this!", emotion: 'happy'}
-                    ],
-                    'serena_health': [
-                        {text: "Don't forget to drink water!", emotion: 'water'},
-                        {text: "Sit up straight, posture matters!", emotion: 'talking'},
-                        {text: "Take a quick stretch break soon.", emotion: 'sleepy'},
-                        {text: "Your health is just as important as your studies.", emotion: 'love'}
-                    ]
-                };
-                
-                const chatterInterval = setInterval(() => {
-                    // Only chatter if visible, grounded, and not already talking
-                    const p = physicsRef.current;
-                    if (p && p.isGrounded && emotion === 'idle' && Math.random() > 0.4) {
-                        let dynamicPhrase = null;
-                        
-                        // Live Context Reading
-                        if (currentTab === 'practice') {
-                            if (Math.random() > 0.5) dynamicPhrase = {text: "Solving MCQs? Don't forget to review your mistakes!", emotion: 'thinking'};
-                        } else if (currentTab === 'profile') {
-                            if (Math.random() > 0.5) dynamicPhrase = {text: "Checking your stats? Keep grinding and you'll hit Rank 1!", emotion: 'happy'};
-                        } else if (currentTab === 'home') {
-                            const targetsStr = localStorage.getItem('ataxy_daily_targets');
-                            if (targetsStr) {
-                                try {
-                                    const targets = JSON.parse(targetsStr);
-                                    const pending = targets.filter(t => !t.completed);
-                                    if (pending.length > 0) {
-                                        const t = pending[Math.floor(Math.random() * pending.length)];
-                                        dynamicPhrase = {text: `Hey! Are you working on "${t.text}"? Keep at it!`, emotion: 'thinking'};
-                                    } else {
-                                        dynamicPhrase = {text: `All targets complete! You are doing amazing!`, emotion: 'love'};
-                                    }
-                                } catch(e){}
-                            }
-                        }
-                        
-                        if (dynamicPhrase && Math.random() > 0.3) {
-                            setPartnerMessage({ type: 'chatter', text: dynamicPhrase.text, emotion: dynamicPhrase.emotion });
-                        } else {
-                            const phrases = chatterPhrases[partnerConfig.character] || chatterPhrases['mia_cheer'];
-                            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-                            setPartnerMessage({ type: 'chatter', text: randomPhrase.text, emotion: randomPhrase.emotion });
-                        }
-                    }
-                }, 15000); 
-
-                return () => clearInterval(chatterInterval);
-            }, [partnerConfig, emotion, setPartnerMessage, currentTab]);
-            
-            useEffect(() => {
-                if (physicsRef.current) {
-                    physicsRef.current.emotion = emotion;
-                    physicsRef.current.partnerMessage = partnerMessage;
-                }
-            }, [emotion, partnerMessage]);
-
-            useEffect(() => {
-                if (!partnerConfig.enabled || partnerConfig.character === 'none') return;
-                
-                let animationFrameId;
-                
-                const handleGlobalPointerDown = (e) => {
-                    // Ignore clicks on HTML UI elements (like chat bubble buttons)
-                    if (e.target.closest && (e.target.closest('button') || e.target.closest('.chat-bubble') || e.target.closest('input') || e.target.closest('textarea'))) return;
-                    if (!threeRef.current || !threeRef.current.scene || !canvasRef.current) return;
-                    const p = physicsRef.current;
-                    if (p.brainState === 'knockout') return;
-                    
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                    
-                    const rect = canvasRef.current.getBoundingClientRect();
-                    if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-                        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
-                        const y = -((clientY - rect.top) / rect.height) * 2 + 1;
-                        
-                        const raycaster = new THREE.Raycaster();
-                        raycaster.setFromCamera(new THREE.Vector2(x, y), threeRef.current.camera);
-                        
-                        const intersects = raycaster.intersectObjects(threeRef.current.scene.children, true);
-                        const hit = intersects.find(i => i.object.name === 'RaycastHitbox' || i.object.isSkinnedMesh);
-                        
-                        if (hit) {
-                                // Hit the 3D model!
-                                e.preventDefault();
-                                e.stopPropagation();
-                                
-                                p.isPointerDown = true;
-                                p.pointerDownTime = Date.now();
-                                
-                                if (p.brainState === 'sitting' || p.brainState === 'hurt') {
-                                    p.brainState = 'wander';
-                                    p.sitExitTimer = null;
-                                }
-                                
-                                // INSTANT HIT REACTION
-                                p.hitCount = (p.hitCount || 0) + 1;
-                                if (p.hitCount >= 4) {
-                                    p.brainState = 'knockout';
-                                    p.state = 'dizzy'; 
-                                    p.knockoutTimer = Date.now();
-                                    p.vx = 0;
-                                    p.hitCount = 0;
-                                    p.playedDizzySound = false;
-                                    p.playedFallSound = false;
-                                    p.playedWakeSound = false;
-                                    setEmotion('angry');
-                                    setPartnerMessage({type:'chatter', text:'Ugh... knocking me out...'});
-                                } else {
-                                    p.brainState = 'hit_tap';
-                                    p.state = 'hit_tap';
-                                    p.hitTimer = Date.now();
-                                    setEmotion('angry');
-                                    setPartnerMessage({type:'chatter', text:['Ouch!', 'Hey!', 'Stop that!', 'Why?'][Math.floor(Math.random()*4)]});
-                                    p.vx = (Math.random() - 0.5) * 4; 
-                                }
-                                
-                                p.dragOffsetX = p.x - clientX;
-                                p.dragOffsetY = p.y - clientY;
-                                p.lastMouseX = clientX;
-                                p.lastMouseY = clientY;
-                                
-                                clearTimeout(p.hitClearTimer);
-                                p.hitClearTimer = setTimeout(() => { p.hitCount = 0; }, 3000);
-                                
-                                p.longPressTimer = setTimeout(() => {
-                                    p.isDragging = true;
-                                    setEmotion('angry');
-                                    setPartnerMessage({ type: 'chatter', text: 'Help! Kidnapping! Put me down!' });
-                                    if (navigator.vibrate) navigator.vibrate(50);
-                                }, 500);
-                            }
-                        }
-                };
-
-                const handlePointerMove = (e) => {
-                    const p = physicsRef.current;
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                    const deltaX = clientX - (p.lastMouseX || clientX);
-                    const deltaY = clientY - (p.lastMouseY || clientY);
-                    
-                    if (p.isDragging) {
-                        p.mouseVx = deltaX;
-                        p.mouseVy = deltaY;
-                        p.x = clientX + (p.dragOffsetX || 0);
-                        p.y = clientY + (p.dragOffsetY || 0);
-                    } else if (p.isPointerDown) {
-                        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                            clearTimeout(p.longPressTimer);
-                            p.targetRotationY = (p.targetRotationY || 0) + deltaX * 0.01;
-                        }
-                    }
-                    
-                    if (p.isPointerDown || p.isDragging) {
-                        p.lastMouseX = clientX;
-                        p.lastMouseY = clientY;
-                    }
-                };
-
-                const handlePointerUp = (e) => {
-                    const p = physicsRef.current;
-                    clearTimeout(p.longPressTimer);
-                    p.isPointerDown = false;
-                    if (p.isDragging) {
-                        p.isDragging = false;
-                        p.isGrounded = false;
-                        setEmotion('idle');
-                        playSyntheticSound('throw');
-                        
-                        const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
-                        let nearest = null;
-                        let minDist = Infinity;
-                        
-                        platforms.forEach(el => {
-                            const rect = el.getBoundingClientRect();
-                            if (rect.height > 0 && rect.width > 0 && rect.top > 150 && rect.bottom < window.innerHeight) {
-                                const cX = rect.left + rect.width / 2;
-                                const cY = rect.top;
-                                const dist = Math.hypot(cX - p.x, cY - p.y);
-                                if (dist < minDist) {
-                                    minDist = dist;
-                                    nearest = rect;
-                                }
-                            }
-                        });
-                        
-                        if (nearest && minDist < 300) {
-                            const flightFrames = 30;
-                            p.vx = (nearest.left + nearest.width / 2 - p.x) / flightFrames;
-                            p.vy = (nearest.top - p.y - 0.5 * 0.6 * flightFrames * flightFrames) / flightFrames;
-                        } else {
-                            p.vx = p.mouseVx * 1.5;
-                            p.vy = p.mouseVy * 1.5;
-                        }
-                    } else {
-                        p.targetRotationY = 0;
-                    }
-                };
-
-                // Use capture phase for pointerdown to intercept Raycaster hits before React UI
-                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
-                
-                window.addEventListener('pointermove', handlePointerMove);
-                window.addEventListener('pointerup', handlePointerUp);
-                window.addEventListener('touchmove', handlePointerMove, { passive: false });
-                window.addEventListener('touchend', handlePointerUp);
-
-                const loop = () => {
-                    if (currentTab === 'questions' && showQuiz && !visible) {
-                        if (widgetRef.current) widgetRef.current.style.opacity = '0';
-                        animationFrameId = requestAnimationFrame(loop);
-                        return;
-                    } else {
-                        if (widgetRef.current) widgetRef.current.style.opacity = '1';
-                    }
-
-                    const p = physicsRef.current;
-                    const now = Date.now();
-                    
-                    if (p.isDragging) {
-                        p.state = 'jumping';
-                        p.isGrounded = false;
-                    } else {
-                        p.vy += 0.6; // Gravity
-                        if (p.vy > 20) p.vy = 20;
-                        
-                        p.x += p.vx;
-                        p.y += p.vy;
-
-                        if (p.x < 100) { p.x = 100; p.vx = 0; p.walkDir = 1; }
-                        if (p.x > window.innerWidth - 100) { p.x = window.innerWidth - 100; p.vx = 0; p.walkDir = -1; }
-
-                        p.isGrounded = false;
-                        
-                        
-                        // Viewport Loss Recovery
-                        if (isNaN(p.y) || isNaN(p.x)) {
-                            p.y = window.innerHeight / 2;
-                            p.x = window.innerWidth / 2;
-                            p.vy = 0;
-                        } else if (p.y < -50) {
-                            // Scrolled up too far, drop down from ceiling
-                            p.y = -40;
-                            p.vy = 5; 
-                            p.x = window.innerWidth / 2;
-                            p.groundTarget = null;
-                            p.isGrounded = false;
-                            p.brainState = 'hurt';
-                            p.hurtTimer = now;
-                            p.state = 'fall';
-                            setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
-                            try { playSyntheticSound('throw'); } catch(e){}
-                        } else if (p.y > window.innerHeight + 50) {
-                            // Scrolled down too far, jump up from floor
-                            p.y = window.innerHeight + 40;
-                            p.vy = -18; // Massive jump up
-                            p.x = window.innerWidth / 2;
-                            p.groundTarget = null;
-                            p.isGrounded = false;
-                            p.brainState = 'hurt';
-                            p.hurtTimer = now;
-                            p.state = 'jump_start';
-                            setEmotion('angry');
-                            setPartnerMessage({ type: 'chatter', text: 'Hey! Wait for me!' });
-                            try { playSyntheticSound('throw'); } catch(e){}
-                        }
-                        
-                        
-                        // Brain logic initialization
-                        if (typeof p.brainState === 'undefined') {
-                            p.brainState = 'wander'; 
-                            p.brainTimer = now;
-                            p.tourStep = -1;
-                            p.lastTargetCheck = 0;
-                            p.groundTarget = null;
-                            
-                            // Check localstorage for tour
-                            if (!localStorage.getItem('ataxy_tour_done')) {
-                                p.brainState = 'tour';
-                                localStorage.setItem('ataxy_tour_done', 'true');
-                            }
-                        }
-
-                        // Daily Target Deadlines AI
-                        if (now - p.lastTargetCheck > 5000) {
-                            p.lastTargetCheck = now;
-                            try {
-                                const stored = JSON.parse(localStorage.getItem('ataxy_targets') || '{}');
-                                const todayStr = new Date().toDateString();
-                                const todayTargets = stored[todayStr] || [];
-                                
-                                const currentHour = new Date().getHours();
-                                const currentMinute = new Date().getMinutes();
-                                const currentTotalMins = currentHour * 60 + currentMinute;
-                                
-                                let lateTarget = null;
-                                let pendingTarget = null;
-                                
-                                for (const t of todayTargets) {
-                                    if (!t.done && t.startTime) {
-                                        const [th, tm] = t.startTime.split(':').map(Number);
-                                        const targetTotalMins = th * 60 + tm;
-                                        
-                                        // If we are past the start time!
-                                        if (currentTotalMins >= targetTotalMins) {
-                                            let isLate = true;
-                                            if (t.endTime) {
-                                                const [eh, em] = t.endTime.split(':').map(Number);
-                                                const endTotalMins = eh * 60 + em;
-                                                if (currentTotalMins <= endTotalMins) {
-                                                    isLate = false; // we are inside the window
-                                                    if (!pendingTarget) pendingTarget = t;
-                                                }
-                                            }
-                                            
-                                            if (isLate) lateTarget = t;
-                                        }
-                                    }
-                                }
-                                
-                                if (lateTarget && p.brainState !== 'angry' && p.brainState !== 'tour') {
-                                    p.brainState = 'angry';
-                                    p.brainTimer = now;
-                                    setEmotion('angry');
-                                    p.state = 'angry';
-                                    p.vx = 0;
-                                    setPartnerMessage({ type: 'target_alert', text: `You are LATE! It is past time for "${lateTarget.text}"! Go complete it NOW!` });
-                                } else if (pendingTarget && p.brainState !== 'angry' && p.brainState !== 'tour' && Math.random() < 0.2) {
-                                    setEmotion('talking');
-                                    p.state = 'greet';
-                                    p.brainState = 'wander'; 
-                                    p.brainTimer = now;
-                                    setPartnerMessage({ type: 'target_alert', text: `Hello! Just a reminder: You should be working on "${pendingTarget.text}" right now!` });
-                                }
-                            } catch(e) {}
-                        }
-
-                        // Physics / Collision
-                        if (p.vy >= 0) {
-                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
-                            let landed = false;
-                            
-                            // Check if still on the tracked groundTarget
-                            if (p.isGrounded && p.groundTarget) {
-                                const rect = p.groundTarget.getBoundingClientRect();
-                                // Check if button is still visible on screen and character is within its X bounds
-                                if (rect.height > 0 && rect.width > 0 && rect.top > 150 && p.x > rect.left && p.x < rect.right) {
-                                    p.y = rect.top; // Glue to it during scroll!
-                                    p.vy = 0;
-                                    landed = true;
-                                } else {
-                                    p.groundTarget = null;
-                                }
-                            }
-                            
-                            if (!landed) {
-                                for (let i = 0; i < platforms.length; i++) {
-                                    const rect = platforms[i].getBoundingClientRect();
-                                    if (rect.height === 0 || rect.width === 0) continue;
-                                    if (rect.width > window.innerWidth * 0.8) continue; // Ignore full width elements
-                                    if (rect.top < 150) continue; // Ignore top headers
-                                    
-                                    if (p.y >= rect.top && (p.y - p.vy) <= rect.bottom) {
-                                        if (p.x > rect.left && p.x < rect.right) {
-                                            const impactVy = p.vy;
-                                            p.y = rect.top;
-                                            p.vy = 0;
-                                            p.isGrounded = true;
-                                            p.groundTarget = platforms[i];
-                                            landed = true;
-                                            
-                                            if (impactVy > 15 && p.brainState !== 'knockout') {
-                                                p.brainState = 'hurt';
-                                                p.state = 'hit';
-                                                p.hurtTimer = now;
-                                                setEmotion('angry');
-                                            } else if (Math.random() < 0.2) {
-                                                p.brainState = 'sitting';
-                                                p.state = 'sit_enter';
-                                                p.sitTimer = now;
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (!landed && p.y >= window.innerHeight - 10) {
-                                const impactVy = p.vy;
-                                p.y = window.innerHeight - 10;
-                                p.vy = 0;
-                                p.isGrounded = true;
-                                p.groundTarget = null;
-                                
-                                if (impactVy > 15 && p.brainState !== 'knockout') {
-                                    p.brainState = 'hurt';
-                                    p.state = 'hit';
-                                    p.hurtTimer = now;
-                                    setEmotion('angry');
-                                }
-                            } else if (!landed) {
-                                p.isGrounded = false;
-                            }
-                        }
-
-                        if (p.isGrounded && !visible) {
-                            if (p.brainState === 'tour') {
-                                // Tour State Machine
-                                const tourSteps = [
-                                    { text: "Welcome to ATAXY! I'm your AI study partner. Let me show you around!", target: null, anim: 'greet', duration: 4000 },
-                                    { text: "Up here is the Header. This is where you can see your rank and profile settings.", target: 'header', anim: 'point', duration: 4000 },
-                                    { text: "This is the Home tab! It shows your Daily Targets, progress, and 7-Day Momentum.", target: 'button:has(i.fa-rocket), a:has(i.fa-rocket)', anim: 'nod', duration: 4500 },
-                                    { text: "This is the Practice area where you can solve MCQs for NEET or JEE!", target: 'button:has(i.fa-layer-group), a:has(i.fa-layer-group)', anim: 'point', duration: 4000 },
-                                    { text: "Need help? Tap the Chat icon to talk to me about concepts or get study plans.", target: 'button:has(i.fa-comments), a:has(i.fa-comments)', anim: 'talk', duration: 4000 },
-                                    { text: "I'll be hanging around to help you out. Good luck dominating your exams!", target: null, anim: 'victory', duration: 4000 }
-                                ];
-                                
-                                if (now - p.brainTimer > (p.tourStep >= 0 ? tourSteps[p.tourStep].duration : 1000)) {
-                                    p.tourStep++;
-                                    if (p.tourStep >= tourSteps.length) {
-                                        p.brainState = 'wander';
-                                    } else {
-                                        const step = tourSteps[p.tourStep];
-                                        setPartnerMessage({ type: 'chatter', text: step.text });
-                                        p.brainTimer = now;
-                                        if (step.target) {
-                                            const targetEl = document.querySelector(step.target);
-                                            if (targetEl) {
-                                                const rect = targetEl.getBoundingClientRect();
-                                                const center = rect.left + rect.width / 2;
-                                                p.x = center; // teleport for tour
-                                                if (center > window.innerWidth / 2) p.facing = 1; else p.facing = -1;
-                                            }
-                                        }
-                                        p.state = step.anim;
-                                    }
-                                }
-                            } else if (p.brainState === 'angry') {
-                                if (now - p.brainTimer > 8000) {
-                                    p.brainState = 'wander';
-                                }
-                            } else if (p.brainState === 'hit_tap') {
-                                const elapsed = now - p.hitTimer;
-                                if (elapsed < 1000) {
-                                    p.state = 'hit_tap';
-                                } else {
-                                    p.brainState = 'wander';
-                                    p.state = 'idle';
-                                }
-                            } else if (p.brainState === 'knockout') {
-                                const elapsed = now - p.knockoutTimer;
-                                if (elapsed < 3000) {
-                                    p.state = 'dizzy';
-                                    if (!p.playedDizzySound) {
-                                        try { playSyntheticSound('throw'); } catch(e){}
-                                        p.playedDizzySound = true;
-                                    }
-                                } else if (elapsed < 4500) {
-                                    p.state = 'knockout';
-                                    if (!p.playedFallSound) {
-                                        try { playSyntheticSound('hit'); } catch(e){}
-                                        p.playedFallSound = true;
-                                        p.groundTarget = null;
-                                        p.isGrounded = false;
-                                        p.vy = 0; // Drop to floor
-                                    }
-                                } else if (elapsed < 10000) {
-                                    p.state = 'sleeping';
-                                } else if (elapsed < 11500) {
-                                    p.state = 'wake';
-                                    if (!p.playedWakeSound) {
-                                        try { playSyntheticSound('throw'); } catch(e){}
-                                        p.playedWakeSound = true;
-                                    }
-                                } else {
-                                    p.brainState = 'wander';
-                                    p.state = 'idle';
-                                    p.hitCount = 0;
-                                    p.playedDizzySound = false;
-                                    p.playedFallSound = false;
-                                    p.playedWakeSound = false;
-                                }
-                            } else if (p.brainState === 'hurt') {
-                                const elapsed = now - p.hurtTimer;
-                                if (elapsed < 1000) {
-                                    p.state = 'hit';
-                                } else if (elapsed < 4000) {
-                                    p.state = 'sleeping';
-                                    setEmotion('idle');
-                                } else if (elapsed < 5500) {
-                                    p.state = 'wake';
-                                } else {
-                                    p.brainState = 'wander';
-                                    p.state = 'idle';
-                                }
-                            } else if (p.brainState === 'sitting') {
-                                p.vx = 0; // Stop sliding
-                                const elapsed = now - p.sitTimer;
-                                if (elapsed < 1000) {
-                                    p.state = 'sit_enter';
-                                } else if (p.sitExitTimer) {
-                                    p.state = 'sit_exit';
-                                    if (now - p.sitExitTimer > 1000) {
-                                        p.brainState = 'wander';
-                                        p.state = 'idle';
-                                        p.sitExitTimer = null;
-                                    }
-                                } else {
-                                    p.state = 'sit_idle';
-                                    // Stand up naturally after a long time randomly
-                                    if (elapsed > 15000 && Math.random() < 0.002) {
-                                        p.sitExitTimer = now;
-                                    }
-                                }
-                            } else {
-                                // Wander & Parkour Mode
-                                if (p.brainState === 'recovering') {
-                                    if (now - p.brainTimer > 3000) {
-                                        p.state = 'recovering';
-                                        if (now - p.brainTimer > 5000) {
-                                            p.brainState = 'wander';
-                                            p.state = 'idle';
-                                            setEmotion('idle');
-                                        }
-                                    }
-                                } else if (now - p.lastJump > 6000 && Math.random() < 0.01) {
-                                    p.vy = -16; 
-                                    p.isGrounded = false;
-                                    p.lastJump = now;
-                                    p.state = 'jumping';
-                                    p.groundTarget = null;
-                                } else {
-                                    if (now - p.walkTimer > 2000) {
-                                        if (Math.random() > 0.4) {
-                                            p.vx = 0;
-                                            p.state = 'idle';
-                                            if (Math.random() > 0.2) {
-                                                const idles = ['idle', 'listening', 'nod', 'confused', 'yes'];
-                                                p.state = idles[Math.floor(Math.random() * idles.length)];
-                                            }
-                                        } else {
-                                            // Advanced UI Parkour / Pathfinding
-                                            const platforms = document.querySelectorAll('.partner-platform, button, a, [role="button"], input, textarea');
-                                            let jumpTarget = null;
-                                            
-                                            if (platforms.length > 0) {
-                                                const visiblePlatforms = Array.from(platforms).filter(el => {
-                                                    const r = el.getBoundingClientRect();
-                                                    return r.height > 0 && r.width > 0 && r.top > 150 && r.bottom < window.innerHeight;
-                                                });
-                                                
-                                                // Intelligent Climbing: Find platforms HIGHER than current position (smaller Y)
-                                                const higherPlatforms = visiblePlatforms.filter(el => {
-                                                    const r = el.getBoundingClientRect();
-                                                    return r.top < p.y - 20; // At least 20px higher
-                                                });
-                                                
-                                                if (higherPlatforms.length > 0) {
-                                                    // Pick the lowest of the higher platforms to climb step-by-step like a human
-                                                    higherPlatforms.sort((a,b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top);
-                                                    jumpTarget = higherPlatforms[0]; // Nearest one going up
-                                                } else {
-                                                    // Reached the top or no higher platforms! Wander or jump down
-                                                    jumpTarget = visiblePlatforms[Math.floor(Math.random() * visiblePlatforms.length)];
-                                                }
-                                            }
-                                            
-                                            if (jumpTarget) {
-                                                const rect = jumpTarget.getBoundingClientRect();
-                                                const tX = rect.left + rect.width / 2;
-                                                const tY = rect.top;
-                                                
-                                                // Perfectly intelligent parkour leap physics
-                                                const dx = tX - p.x;
-                                                const dy = tY - p.y;
-                                                
-                                                if (Math.abs(dy) > 20) {
-                                                    // Need to jump up or down. Calculate exact arc.
-                                                    // Gravity is 0.6 per frame.
-                                                    // y = y0 + vy*t + 0.5*g*t^2 => vy = (dy - 0.5*g*t^2) / t
-                                                    // Since g is added before y update, we use a slightly modified discrete math,
-                                                    // but continuous approximation works perfectly for UI bounding boxes.
-                                                    const flightFrames = 45; // Fixed flight time of 45 frames (~0.75 seconds)
-                                                    
-                                                    // Exact required velocity to land on tY in flightFrames
-                                                    let reqVy = (dy - 0.5 * 0.6 * flightFrames * flightFrames) / flightFrames;
-                                                    
-                                                    p.vy = reqVy;
-                                                    p.vx = dx / flightFrames; 
-                                                    p.isGrounded = false;
-                                                    p.groundTarget = null;
-                                                    p.lastJump = now;
-                                                    p.state = 'jumping';
-                                                } else {
-                                                    // Walk to it
-                                                    p.walkDir = (dx > 0) ? 1 : -1;
-                                                    p.vx = p.walkDir * 2.5; 
-                                                    p.state = 'walking';
-                                                }
-                                            } else {
-                                                p.walkDir = Math.random() > 0.5 ? 1 : -1;
-                                                p.vx = p.walkDir * 1.5; 
-                                                p.state = 'walking';
-                                            }
-                                        }
-                                        p.walkTimer = now;
-                                    }
-                                }
-                            }
-} else if (p.isGrounded && visible) {
-                            p.vx = 0;
-                            p.state = 'idle';
-                        } else {
-                            if (p.vy < -2) p.state = 'climbing'; 
-                            else p.state = 'jumping';
-                            p.vx = p.vx * 0.99; 
-                        }
-
-                        if (p.vx > 0.1) p.facing = 1;
-                        else if (p.vx < -0.1) p.facing = -1;
-                    }
-                    if (widgetRef.current) {
-                        const safeX = isNaN(p.x) ? window.innerWidth / 2 : p.x;
-                        const safeY = isNaN(p.y) ? window.innerHeight / 2 : p.y;
-                        widgetRef.current.style.transform = `translate(${safeX}px, ${safeY}px)`;
-                    }
-
-                    if (threeRef.current && threeRef.current.mixer) {
-                        const dt = threeRef.current.clock.getDelta();
-                        const time = threeRef.current.clock.getElapsedTime();
-                        threeRef.current.mixer.update(dt);
-
-                        // Procedural Head Animation (Anime Emotion Engine)
-                        const headBone = threeRef.current.scene.getObjectByName('head');
-                        if (headBone && !p.isDragging && (p.state === 'idle' || p.state === 'sit_idle')) {
-                            // Revert previous frame's offset
-                            if (headBone.userData.lastOffsetX !== undefined) {
-                                headBone.rotation.x -= headBone.userData.lastOffsetX;
-                                headBone.rotation.y -= headBone.userData.lastOffsetY;
-                                headBone.rotation.z -= headBone.userData.lastOffsetZ;
-                            }
-                            
-                            let offsetX = 0, offsetY = 0, offsetZ = 0;
-                            if (p.emotion === 'happy') {
-                                offsetX = Math.sin(time * 8) * 0.1;
-                            } else if (p.emotion === 'angry') {
-                                offsetY = Math.sin(time * 25) * 0.15;
-                                offsetX = 0.1;
-                            } else if (p.emotion === 'confused' || p.emotion === 'writing' || p.emotion === 'thinking') {
-                                offsetZ = -0.25;
-                            } else if (p.emotion === 'sad') {
-                                offsetX = 0.4;
-                            } else if (p.emotion === 'surprised') {
-                                offsetX = -0.3;
-                            } else if (p.emotion === 'talking') {
-                                // Small, fast head bobs to simulate talking energy (since no jaw bone exists)
-                                offsetX = (Math.sin(time * 25) * 0.04) + 0.05;
-                            }
-                            
-                            // Apply new offset and store
-                            headBone.rotation.x += offsetX;
-                            headBone.rotation.y += offsetY;
-                            headBone.rotation.z += offsetZ;
-                            
-                            headBone.userData.lastOffsetX = offsetX;
-                            headBone.userData.lastOffsetY = offsetY;
-                            headBone.userData.lastOffsetZ = offsetZ;
-                        } else if (headBone && headBone.userData.lastOffsetX !== undefined) {
-                            headBone.rotation.x -= headBone.userData.lastOffsetX;
-                            headBone.rotation.y -= headBone.userData.lastOffsetY;
-                            headBone.rotation.z -= headBone.userData.lastOffsetZ;
-                            headBone.userData.lastOffsetX = undefined;
-                        }
-
-                        threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
-                        
-                        let targetAnim = 'idle';
-                        if (previewAnim) {
-                            targetAnim = previewAnim;
-                        } else {
-                            if (p.isDragging) {
-                                if (!p.dragAnimTimer || Date.now() - p.dragAnimTimer > 1500) {
-                                    const pool = ['Levitate Idle', 'Flying Forward', 'Flying Forward Super', 'Swim_Idle_Loop', 'Swim_Fwd_Loop', 'Shivering', 'Roll', 'Backflip', 'Zombie_Idle_Loop', 'Defend', 'Tired Hunched', 'Idle_Shield_Break', 'Crawl'];
-                                    p.currentDragAnim = pool[Math.floor(Math.random() * pool.length)];
-                                    p.dragAnimTimer = Date.now();
-                                }
-                                targetAnim = p.currentDragAnim || 'drag';
-                            }
-                            else if (p.state === 'climbing') targetAnim = 'climb';
-                            else if (p.state === 'sit_enter') targetAnim = 'sit_enter';
-                            else if (p.state === 'sit_idle') {
-                                if (p.emotion === 'talking') targetAnim = 'sit_talk';
-                                else targetAnim = 'sit_idle';
-                            }
-                            else if (p.state === 'sit_exit') targetAnim = 'sit_exit';
-                            else if (p.state === 'hit') targetAnim = 'hit';
-                            else if (p.state === 'hit_tap') targetAnim = 'hit_tap';
-                            else if (p.state === 'dizzy') targetAnim = 'dizzy';
-                            else if (p.state === 'knockout') targetAnim = 'knockout';
-                            else if (p.state === 'sleeping') targetAnim = 'sleeping';
-                            else if (p.state === 'wake') targetAnim = 'wake';
-                            else if (p.state === 'greet') targetAnim = 'greet';
-                            else if (p.state === 'jumping' && p.vy < 0) targetAnim = 'jump_start';
-                            else if (p.state === 'falling' || p.state === 'jumping' || !p.isGrounded) targetAnim = 'fall';
-                            else if (p.state === 'walking') targetAnim = 'walk';
-                            else if (p.state === 'fallen') targetAnim = 'hit';
-                            else if (p.state === 'idle') {
-                                if (p.emotion === 'angry') targetAnim = 'expr_angry';
-                                else if (p.emotion === 'happy') targetAnim = 'expr_happy';
-                                else if (p.emotion === 'talking') targetAnim = 'expr_talk';
-                                else if (p.emotion === 'writing' || p.emotion === 'thinking') targetAnim = 'expr_confused';
-                                else targetAnim = 'expr_idle';
-                            }
-                            else targetAnim = p.state;
-                        }
-                        
-                        if (threeRef.current.currentAnimState !== targetAnim) {
-                            let clipRef = threeRef.current.animMap[targetAnim] || threeRef.current.animMap.idle;
-                            if (Array.isArray(clipRef)) {
-                                clipRef = threeRef.current.animMap[clipRef[Math.floor(Math.random() * clipRef.length)]];
-                            }
-                            const clip = clipRef || threeRef.current.animMap.idle;
-
-                            if (clip) {
-                                const nextAction = threeRef.current.mixer.clipAction(clip);
-                                
-                                // Prevent continuous looping of transitional and expressive animations
-                                const nonLooping = ['sit_enter', 'sit_exit', 'hit', 'hit_tap', 'knockout', 'wake', 'jump_start', 'jump_land', 'sleeping', 'expr_angry', 'expr_happy', 'expr_talk', 'expr_confused', 'sit_talk'];
-                                if (nonLooping.includes(targetAnim)) {
-                                    nextAction.setLoop(THREE.LoopOnce, 1);
-                                    nextAction.clampWhenFinished = true;
-                                } else {
-                                    nextAction.setLoop(THREE.LoopRepeat, Infinity);
-                                    nextAction.clampWhenFinished = false;
-                                }
-
-                                if (threeRef.current.currentAction && threeRef.current.currentAction !== nextAction) {
-                                    nextAction.reset().fadeIn(0.2).play();
-                                    threeRef.current.currentAction.fadeOut(0.2);
-                                } else if (!threeRef.current.currentAction) {
-                                    nextAction.play();
-                                }
-                                threeRef.current.currentAction = nextAction;
-                            }
-                            threeRef.current.currentAnimState = targetAnim;
-                        }
-                        
-                        if (threeRef.current.scene.children.length > 2) {
-                            const model = threeRef.current.scene.children[2];
-                            const baseScale = threeRef.current.baseScale || 1;
-                            let currentTargetScale = baseScale;
-                            
-                            // GIANT MODE for important notices!
-                            const pMsg = p.partnerMessage;
-                            let isGiant = false;
-                            if (pMsg && pMsg.type && pMsg.type !== 'chatter') {
-                                currentTargetScale = baseScale * 1.8; // Almost double size for important alerts!
-                                isGiant = true;
-                            } else if (p.isPointerDown || p.isDragging) {
-                                currentTargetScale = baseScale * 1.15; // Slightly larger when grabbed
-                            }
-                            
-                            // Screen space tracking for UI to follow 3D bones perfectly
-                            const headBone = model.getObjectByName('head');
-                            if (headBone && bubbleRef.current) {
-                                const topBone = model.getObjectByName('head_leaf') || headBone;
-                                const topPos = new THREE.Vector3();
-                                topBone.getWorldPosition(topPos);
-                                if (topBone.name === 'head') topPos.y += 0.3; // Fallback padding if no head_leaf
-                                else topPos.y += 0.1; // Slight offset above head_leaf
-                                
-                                topPos.project(threeRef.current.camera);
-                                
-                                // Map NDC to 300x300 canvas
-                                const topCanvasY = (-(topPos.y * 0.5) + 0.5) * 300;
-                                
-                                // Calculate true distance to top of viewport
-                                const screenHeadY = (p.y - 300) + topCanvasY;
-                                const needsFlip = screenHeadY < 150;
-                                
-                                if (p.lastFlipState !== needsFlip) {
-                                    p.lastFlipState = needsFlip;
-                                    setIsBubbleFlipped(needsFlip);
-                                }
-                                
-                                if (needsFlip) {
-                                    bubbleRef.current.style.top = '310px';
-                                    bubbleRef.current.style.bottom = 'auto';
-                                    bubbleRef.current.style.transformOrigin = 'top center';
-                                } else {
-                                    bubbleRef.current.style.top = 'auto';
-                                    // Added 50px extra padding to guarantee it never overlaps the head!
-                                    bubbleRef.current.style.bottom = `${300 - topCanvasY + 50}px`;
-                                    bubbleRef.current.style.transformOrigin = 'bottom center';
-                                }
-                            }
-
-                            // Holographic AR Emotion Visor tracking
-                            if (headBone && visorRef.current) {
-                                const facePos = new THREE.Vector3();
-                                headBone.getWorldPosition(facePos);
-                                facePos.y += 0.15; // Move up from neck to face middle
-                                
-                                // Push slightly towards camera so it stays in front of the geometry
-                                const camDir = new THREE.Vector3();
-                                threeRef.current.camera.getWorldDirection(camDir);
-                                facePos.add(camDir.multiplyScalar(-0.1));
-
-                                facePos.project(threeRef.current.camera);
-                                const faceCanvasX = (facePos.x * 0.5 + 0.5) * 300;
-                                const faceCanvasY = (-(facePos.y * 0.5) + 0.5) * 300;
-                                
-                                visorRef.current.style.transform = `translate(${faceCanvasX - 30}px, ${faceCanvasY - 20}px)`;
-                            }
-                            if (model) {
-                                let targetRotation = p.facing === 1 ? Math.PI/2 : -Math.PI/2;
-                                if (p.state === 'idle' || p.state === 'sit_idle' || p.state === 'sit_enter' || p.state === 'knockout' || p.state === 'sleeping') targetRotation = 0;
-                                
-                                if (p.isPointerDown || p.isDragging) {
-                                    if (p.targetRotationY !== undefined) {
-                                        targetRotation = p.targetRotationY;
-                                    }
-                                } else {
-                                    p.targetRotationY = undefined;
-                                }
-                                model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRotation, 0.1);
-                                model.scale.setScalar(THREE.MathUtils.lerp(model.scale.x, currentTargetScale, 0.1));
-                            }
-                        }
-                    }
-
-                    setRenderState(prev => prev !== p.state ? p.state : prev);
-                    setFacing(prev => prev !== p.facing ? p.facing : prev);
-                    
-                    animationFrameId = requestAnimationFrame(loop);
-                };
-
-                animationFrameId = requestAnimationFrame(loop);
-                document.addEventListener('pointerdown', handleGlobalPointerDown, true);
-                return () => {
-                    cancelAnimationFrame(animationFrameId);
-                    document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
-                };
-            }, [partnerConfig, currentTab, visible, showQuiz]);
-
-            if (!partnerConfig.enabled || partnerConfig.character === 'none') return null;
-
-            const partnerDef = STUDY_PARTNERS.find(p => p.id === partnerConfig.character) || STUDY_PARTNERS[1];
-            const isHidden = (currentTab === 'questions' && showQuiz) && !visible; 
-
-            let isFemale = partnerConfig.character.includes('serena') || partnerConfig.character.includes('mia');
-            let skinColor = "#fcd5ce";
-            let shirtColor = partnerDef.color.includes('rose') ? '#fb7185' : partnerDef.color.includes('amber') ? '#fbbf24' : partnerDef.color.includes('fuchsia') ? '#e879f9' : '#94a3b8';
-            let pantsColor = isFemale ? "#f1f5f9" : "#334155"; 
-            let hairColor = isFemale ? "#78350f" : "#1e293b"; 
-            
-            let faceText = "(^‿^)";
-            if (emotion === 'angry') { faceText = "(>_<)"; }
-            else if (emotion === 'talking') { faceText = "(^o^)"; }
-            else if (emotion === 'thinking' || emotion === 'writing') { faceText = "(-_-)"; }
-            else if (emotion === 'idle') { faceText = "(•‿•)"; }
-
-            const getAnimation = (part) => {
-                if (renderState === 'climbing') {
-                    if (part === 'armL') return 'proceduralClimbArmL 0.3s infinite alternate';
-                    if (part === 'armR') return 'proceduralClimbArmR 0.3s infinite alternate';
-                    if (part === 'legL') return 'proceduralClimbLeg 0.2s infinite alternate';
-                    if (part === 'legR') return 'proceduralClimbLeg 0.2s infinite alternate-reverse';
-                    return 'none';
-                }
-                if (renderState === 'walking') {
-                    if (part === 'armL') return 'proceduralLegR 0.5s infinite linear';
-                    if (part === 'armR') return 'proceduralLegL 0.5s infinite linear';
-                    if (part === 'legL') return 'proceduralLegL 0.5s infinite linear';
-                    if (part === 'legR') return 'proceduralLegR 0.5s infinite linear';
-                    if (part === 'body') return 'proceduralWalk 0.5s infinite linear';
-                }
-                if (renderState === 'jumping') {
-                    if (part === 'armL') return 'proceduralClimbArmL 1s forwards';
-                    if (part === 'armR') return 'proceduralClimbArmR 1s forwards';
-                    if (part === 'legL') return 'proceduralLegL 1s forwards';
-                }
-                if (emotion === 'happy' || emotion === 'talking') {
-                    if (part === 'armL') return 'proceduralTalk 1s infinite alternate ease-in-out';
-                    if (part === 'armR') return 'proceduralTalk 0.5s infinite alternate ease-in-out';
-                    if (part === 'body' && emotion === 'happy') return 'animate-bounce';
-                }
-                if (emotion === 'writing') {
-                    if (part === 'armR') return 'proceduralWrite 0.2s infinite alternate';
-                    if (part === 'armL') return 'proceduralTalk 1s infinite alternate';
-                    if (part === 'body') return 'animate-pulse';
-                }
-                return 'none';
-            };
+            const current = tutorialData[step];
 
             return (
-                <div 
-                    ref={widgetRef}
-                    className={`fixed z-[10000] top-0 left-0 pointer-events-none transition-opacity duration-300`}
-                >
-                    <style>{`
-                        @keyframes proceduralWalk {
-                            0% { transform: translateY(0) rotate(0deg); }
-                            25% { transform: translateY(-3px) rotate(3deg); }
-                            50% { transform: translateY(0) rotate(0deg); }
-                            75% { transform: translateY(-3px) rotate(-3deg); }
-                            100% { transform: translateY(0) rotate(0deg); }
-                        }
-                        @keyframes proceduralLegL {
-                            0% { transform: rotate(0deg); }
-                            25% { transform: rotate(40deg); }
-                            50% { transform: rotate(0deg); }
-                            75% { transform: rotate(-40deg); }
-                            100% { transform: rotate(0deg); }
-                        }
-                        @keyframes proceduralLegR {
-                            0% { transform: rotate(0deg); }
-                            25% { transform: rotate(-40deg); }
-                            50% { transform: rotate(0deg); }
-                            75% { transform: rotate(40deg); }
-                            100% { transform: rotate(0deg); }
-                        }
-                        @keyframes proceduralClimbArmL {
-                            0% { transform: rotate(150deg); }
-                            100% { transform: rotate(180deg) translateY(-5px); }
-                        }
-                        @keyframes proceduralClimbArmR {
-                            0% { transform: rotate(-150deg); }
-                            100% { transform: rotate(-180deg) translateY(-5px); }
-                        }
-                        @keyframes proceduralClimbLeg {
-                            0% { transform: rotate(20deg) translateY(0); }
-                            100% { transform: rotate(-20deg) translateY(-5px); }
-                        }
-                        @keyframes proceduralWrite {
-                            0% { transform: rotate(0deg) translate(0, 0); }
-                            100% { transform: rotate(-30deg) translate(-5px, 5px); }
-                        }
-                        @keyframes proceduralTalk {
-                            0% { transform: rotate(0deg); }
-                            25% { transform: rotate(30deg); }
-                            50% { transform: rotate(10deg); }
-                            75% { transform: rotate(40deg); }
-                            100% { transform: rotate(0deg); }
-                        }
-                        @keyframes proceduralPoint {
-                            0% { transform: rotate(-90deg) translateY(5px); }
-                            100% { transform: rotate(-90deg) translateY(5px) scale(1.1); }
-                        }
-                    `}</style>
-                    <div 
-                        className={`relative flex flex-col items-center group pointer-events-none transition-transform duration-500 translate-x-[-50%] translate-y-[-100%]`} 
-                        style={{ zIndex: 10050 }}
-                    >
-                        {/* Anime Emotion Particles Overlay */}
-                        {emotion !== 'idle' && emotion !== 'talking' && (
-                            <div 
-                                className={`absolute right-[40px] text-4xl z-30 pointer-events-none drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${emotion === 'angry' ? 'animate-pulse' : 'animate-bounce'}`}
-                                style={{ top: (partnerMessage && partnerMessage.type !== 'chatter') ? '20px' : '100px' }}
-                            >
-                                {emotion === 'angry' && '💢'}
-                                {emotion === 'sad' && '⛈️'}
-                                {emotion === 'happy' && '✨'}
-                                {emotion === 'surprised' && '❗'}
-                                {(emotion === 'confused' || emotion === 'thinking' || emotion === 'writing') && '❔'}
-                                {emotion === 'love' && '❤️'}
-                                {emotion === 'sleepy' && '💤'}
-                            </div>
-                        )}
+                <div className="fixed inset-0 z-[9999999] flex items-end justify-center pointer-events-auto bg-black/60 backdrop-blur-sm transition-opacity duration-500">
+                    <div className="w-full max-w-[500px] relative h-full flex flex-col justify-end overflow-hidden pb-[15%]">
 
-                        <div 
-                            ref={bubbleRef}
-                            style={{ 
-                                top: 'auto', 
-                                bottom: '150px',
-                                transformOrigin: 'bottom center',
-                                zIndex: 10070
-                            }}
-                            className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto min-w-[200px] max-w-[280px] text-sm bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 flex flex-col gap-3 ${visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
-                        >
-                            <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{partnerMessage?.text}</p>
-                            {partnerMessage?.type !== 'chatter' && (
-                                <div className="flex justify-end">
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setVisible(false);
-                                            setTimeout(() => {
-                                                if (physicsRef.current) physicsRef.current.partnerMessage = null;
-                                                setPartnerMessage(null);
-                                            }, 300);
-                                        }}
-                                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 px-4 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors active:scale-95"
-                                    >
-                                        {bubbleBtnText}
-                                    </button>
-                                </div>
-                            )}
-                            <div className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 transform rotate-45 ${isBubbleFlipped ? '-top-2 border-t border-l border-gray-100 dark:border-gray-700' : '-bottom-2 border-b border-r border-gray-100 dark:border-gray-700'}`}></div>
+                        {/* Speech Bubble */}
+                        <div className={`absolute bottom-[65%] sm:bottom-[60%] ${current.character === 'female' ? 'right-4' : 'left-4'} w-[260px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 transform border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20`}>
+                            {/* Speech Bubble Tail */}
+                            <div className={`absolute -bottom-4 ${current.character === 'female' ? 'left-8 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-8 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
+
+                            <p className="font-black text-gray-800 text-[15px] leading-snug mb-4 tracking-tight">{current.text}</p>
+                            <button onClick={handleNext} className="w-full bg-gradient-to-b from-[#84cc16] to-[#65a30d] hover:from-[#a3e635] hover:to-[#84cc16] text-white font-black uppercase tracking-wider py-2.5 rounded-xl shadow-[0_4px_0_#4d7c0f] active:shadow-none active:translate-y-1 transition-all border border-[#a3e635]">
+                                {current.btn}
+                            </button>
                         </div>
-                        <div 
-                            className="relative flex flex-col items-center drop-shadow-xl pointer-events-none" 
-                            style={{ 
-                                transformOrigin: 'bottom center',
-                                width: '300px',
-                                height: '300px',
-                            }}
-                        >
-                            <canvas ref={canvasRef} style={{ pointerEvents: 'none', filter: 'drop-shadow(0px 8px 6px rgba(0,0,0,0.4))' }}></canvas>
+
+                        {/* Perfect 3D Character Cutout */}
+                        <div className={`absolute bottom-[-20px] ${current.character === 'female' ? '-left-4 sm:left-4' : '-right-4 sm:right-4'} w-[280px] sm:w-[350px] transition-all duration-500 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}>
+                            <style>{`
+                                @keyframes characterBreathe {
+                                    0%, 100% { transform: translateY(0) scale(1); }
+                                    50% { transform: translateY(-8px) scale(1.02); }
+                                }
+                            `}</style>
+                            <ChromaImage src={current.img} alt={current.name} spriteIndex={current.spriteIndex} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" style={{ animation: 'characterBreathe 3s ease-in-out infinite' }} />
                         </div>
-                        
-
-
-                        
                     </div>
                 </div>
             );
         };
 
         // ==========================================
-        // 🚀 MAIN APP & NAVIGATION ROUTER
-        // ==========================================
+
         function App() {
+            // --- TOUR GUIDE STATE ---
+
+
+
+            const STUDY_PARTNERS = [];
+            const [partnerMessage, setPartnerMessage] = React.useState(null);
+            const [studyPartnerConfig, setStudyPartnerConfig] = React.useState({ enabled: false, character: 'none', hasSeenOnboarding: true });
+            const [studyPartnerState, setStudyPartnerState] = React.useState({});
+
+            const [showCoCTutorial, setShowCoCTutorial] = React.useState(() => localStorage.getItem('ataxy_coc_tutorial_completed') !== 'true');
+
+            const handleTourComplete = () => {
+                setShowCoCTutorial(false);
+                localStorage.setItem('ataxy_coc_tutorial_completed', 'true');
+            };
+
+            const resetTour = () => {
+                localStorage.removeItem('ataxy_coc_tutorial_completed');
+                setShowCoCTutorial(true);
+            };
+
             // SATHEE Back-Navigation State Restoration
             React.useEffect(() => {
                 const returnType = sessionStorage.getItem('ataxy_return_type');
@@ -8417,8 +8120,21 @@ INSTRUCTIONS:
             };
 
             const [isDarkMode, setIsDarkMode] = useState(() => safeGetStr('ataxy_theme', 'dark') === 'dark');
+            const [onlineVisibility, setOnlineVisibility] = useState(() => safeGetStr('ataxy_online_visibility', 'everyone'));
+            const [showOnlineStatusModal, setShowOnlineStatusModal] = useState(false);
             useEffect(() => {
                 const themeMeta = document.getElementById('theme-color-meta');
+
+                // Initialize Telegram Fullscreen if available
+                try {
+                    if (window.Telegram?.WebApp) {
+                        window.Telegram.WebApp.expand();
+                        if (window.Telegram.WebApp.requestFullscreen) {
+                            window.Telegram.WebApp.requestFullscreen();
+                        }
+                    }
+                } catch (e) { console.error("Telegram Init Error:", e); }
+
                 if (isDarkMode) {
                     document.documentElement.classList.add('dark');
                     safeSetItem('ataxy_theme', 'dark');
@@ -8508,7 +8224,7 @@ INSTRUCTIONS:
                 else if (currentTab !== 'home') setCurrentTab('home');
             };
 
-            const resetDeepState = () => {
+            function resetDeepState() {
                 setShowAnalyticsModal(false);
                 setHistoryViewType(null);
                 setShowQuiz(false);
@@ -8610,12 +8326,19 @@ INSTRUCTIONS:
                                 View in Practice <i className="fa-solid fa-arrow-right"></i>
                             </button>
                         </div>
-                    </div>
-                );
-            };
+                </div>
+            );
+        };
 
             const [currentTab, setCurrentTab] = useState('home');
+            const previousTabRef = useRef('home');
+            useEffect(() => {
+                if (currentTab !== 'ai') {
+                    previousTabRef.current = currentTab;
+                }
+            }, [currentTab]);
             const [vcChatOpen, setVcChatOpen] = useState(false);
+            const [chatActions, setChatActions] = useState({});
             const [activePracticeBatch, setActivePracticeBatch] = useState(null);
 
             const [activeSatheeExam, setActiveSatheeExam] = useState(null);
@@ -8858,33 +8581,24 @@ INSTRUCTIONS:
             }));
 
             // Study Partner State
-            const [studyPartnerConfig, setStudyPartnerConfig] = useState(() => safeGetJSON('ataxy_study_partner_cfg', {
-                enabled: true, character: 'mia_cheer', hasSeenOnboarding: false
-            }));
-            const [studyPartnerState, setStudyPartnerState] = useState(() => safeGetJSON('ataxy_study_partner_state', {
-                lastActive: Date.now(), waterCount: 0, lastWaterTime: Date.now(), studyMinutesToday: 0
-            }));
-            const [partnerMessage, setPartnerMessage] = useState(null); 
 
-            useEffect(() => { safeSetItem('ataxy_targets', JSON.stringify(targetsData)); }, [targetsData]);
-            useEffect(() => { safeSetItem('ataxy_global_timer', JSON.stringify(globalTimer)); }, [globalTimer]);
-            useEffect(() => { safeSetItem('ataxy_study_partner_cfg', JSON.stringify(studyPartnerConfig)); }, [studyPartnerConfig]);
             useEffect(() => { safeSetItem('ataxy_study_partner_state', JSON.stringify(studyPartnerState)); }, [studyPartnerState]);
 
             // --- STUDY PARTNER LOGIC ---
             useEffect(() => {
                 if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none') return;
-                
+
                 // 1. Onboarding
                 if (!studyPartnerConfig.hasSeenOnboarding) {
                     const partnerName = STUDY_PARTNERS.find(p => p.id === studyPartnerConfig.character)?.name.split(' ')[0] || 'Mia';
                     setTimeout(() => {
-                        setPartnerMessage({ 
-                            text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I am your omniscient study partner! I will watch everything you do, remind you of your targets, and you can even pick me up and throw me around! Let's crush some goals!`, 
-                            type: 'welcome', 
-                            requireAcknowledge: true,
-                            id: Date.now() 
-                        });
+                        // Disabled welcome message
+                        // setPartnerMessage({ 
+                        //     text: `Hi ${tgUser?.first_name || 'there'}! I'm ${partnerName}. I am your omniscient study partner! I will watch everything you do, remind you of your targets, and you can even pick me up and throw me around! Let's crush some goals!`, 
+                        //     type: 'welcome', 
+                        //     requireAcknowledge: true,
+                        //     id: Date.now() 
+                        // });
                         setStudyPartnerConfig(prev => ({ ...prev, hasSeenOnboarding: true }));
                     }, 1000);
                     return;
@@ -8916,7 +8630,7 @@ INSTRUCTIONS:
                     if (!foundMissed) {
                         const lastWater = studyPartnerState.lastWaterTime || Date.now();
                         if (Date.now() - lastWater > 2 * 60 * 60 * 1000) {
-                            setPartnerMessage({ text: `Time for a quick break! Hydrate yourself with some water.`, type: 'water', id: Date.now() });
+                            // setPartnerMessage({ text: `Time for a quick break! Hydrate yourself with some water.`, type: 'water', id: Date.now() });
                             setStudyPartnerState(prev => ({ ...prev, lastWaterTime: Date.now() }));
                         }
                     }
@@ -8932,34 +8646,34 @@ INSTRUCTIONS:
                 let greeting = "Good morning";
                 if (hour >= 12 && hour < 17) greeting = "Good afternoon";
                 else if (hour >= 17) greeting = "Good evening";
-                
+
                 setTimeout(() => {
-                    setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
+                    // setPartnerMessage({ text: `${greeting}! Ready to crush some goals today?`, type: 'greeting', id: Date.now() });
                 }, 2000);
             }, []);
 
             // 3. Global Observer Brain
             useEffect(() => {
                 if (!studyPartnerConfig.enabled || studyPartnerConfig.character === 'none') return;
-                
+
                 let lastReactionTime = 0;
-                
+
                 const handleGlobalClick = (e) => {
                     if (e.target.closest('button') && e.target.closest('button').innerText === 'Got it!') return;
-                    
+
                     const now = Date.now();
                     if (now - lastReactionTime < 15000) return; // 15 second cooldown
-                    
+
                     let reactionText = null;
                     const el = e.target;
-                    
+
                     // Specific UI interactions
                     if (el.closest('.fa-house')) reactionText = "Ah, back to the home page!";
                     else if (el.closest('.fa-user')) reactionText = "Checking out your profile?";
                     else if (el.closest('.fa-book-open')) reactionText = "Time to study some subjects!";
                     else if (el.closest('.fa-flask')) reactionText = "Ready for a quiz?";
                     else if (el.closest('.fa-trophy')) reactionText = "Let's see those leaderboard stats!";
-                    
+
                     // Generic button texts
                     const button = el.closest('button');
                     if (!reactionText && button) {
@@ -8969,13 +8683,13 @@ INSTRUCTIONS:
                         else if (txt.includes('delete') || button.innerHTML.includes('fa-trash')) reactionText = "Deleted. Poof!";
                         else if (button.innerHTML.includes('fa-play')) reactionText = "Starting the timer! Focus up!";
                     }
-                    
+
                     if (reactionText && Math.random() > 0.3) {
-                        setPartnerMessage({ type: 'chatter', text: reactionText });
+                        // setPartnerMessage({ type: 'chatter', text: reactionText });
                         lastReactionTime = now;
                     }
                 };
-                
+
                 window.addEventListener('click', handleGlobalClick, true);
                 return () => window.removeEventListener('click', handleGlobalClick, true);
             }, [studyPartnerConfig]);
@@ -9024,9 +8738,33 @@ INSTRUCTIONS:
                     }
                 }
             }, [isVerified, tgUser]);
-            useEffect(() => { safeSetItem('ataxy_practice_perf', JSON.stringify(practiceAttempts)); }, [practiceAttempts]);
-            useEffect(() => { safeSetItem('ataxy_practice_review', JSON.stringify(practiceReview)); }, [practiceReview]);
-            useEffect(() => { safeSetItem('ataxy_practice_visited', JSON.stringify(practiceVisited)); }, [practiceVisited]);
+            useEffect(() => { setCloudData('ataxy_practice_perf', practiceAttempts); }, [practiceAttempts]);
+            useEffect(() => { setCloudData('ataxy_practice_review', practiceReview); }, [practiceReview]);
+            useEffect(() => { setCloudData('ataxy_practice_visited', practiceVisited); }, [practiceVisited]);
+
+            // Cloud Initialization for Core Data
+            useEffect(() => {
+                const syncCoreData = async () => {
+                    const perf = await getCloudData('ataxy_practice_perf');
+                    if (perf && Object.keys(perf).length > 0) setPracticeAttempts(perf);
+
+                    const review = await getCloudData('ataxy_practice_review');
+                    if (review && review.length > 0) setPracticeReview(review);
+
+                    const visited = await getCloudData('ataxy_practice_visited');
+                    if (visited && visited.length > 0) setPracticeVisited(visited);
+
+                    const targets = await getCloudData('ataxy_targets');
+                    if (targets && Object.keys(targets).length > 0) setTargetsData(targets);
+
+                    const bkmk = await getCloudData('ataxy_bookmarks');
+                    if (bkmk && bkmk.length > 0) setBookmarks(bkmk);
+
+                    const notes = await getCloudData('ataxy_question_notes');
+                    if (notes && Object.keys(notes).length > 0) setQuestionNotes(notes);
+                };
+                syncCoreData();
+            }, []);
 
             useEffect(() => {
                 if (currentTab === 'practice' && showQuiz) {
@@ -9041,8 +8779,8 @@ INSTRUCTIONS:
                     }
                 }
             }, [currentTab, showQuiz, currentQuestionIndex, practiceSelectedTopic, questionFilter, loadedQuestions, practiceVisited]);
-            useEffect(() => { safeSetItem('ataxy_bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
-            useEffect(() => { safeSetItem('ataxy_question_notes', JSON.stringify(questionNotes)); }, [questionNotes]);
+            useEffect(() => { setCloudData('ataxy_bookmarks', bookmarks); }, [bookmarks]);
+            useEffect(() => { setCloudData('ataxy_question_notes', questionNotes); }, [questionNotes]);
 
             // 🟢 Load QBank on Mount
             useEffect(() => {
@@ -9137,12 +8875,27 @@ INSTRUCTIONS:
                                         }
                                         if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
 
-                                        let correctIdx = parseInt(q.correct_answer, 10);
-                                        if (isNaN(correctIdx) && q.correct_option) {
-                                            correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                                        let correctIdx = -1;
+                                        const strVals = [q.correct_answer, q.correct, q.correct_option];
+                                        for (const val of strVals) {
+                                            if (typeof val === 'string' && ['A', 'B', 'C', 'D'].includes(val.toUpperCase().trim())) {
+                                                correctIdx = ['A', 'B', 'C', 'D'].indexOf(val.toUpperCase().trim());
+                                                break;
+                                            }
                                         }
-                                        if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
-                                        if (isNaN(correctIdx)) correctIdx = 0;
+                                        if (correctIdx === -1) {
+                                            for (const val of [q.correct_answer, q.correct]) {
+                                                const parsed = parseInt(val, 10);
+                                                if (!isNaN(parsed) && parsed >= 1 && parsed <= 4) {
+                                                    correctIdx = parsed - 1;
+                                                    break;
+                                                } else if (parsed === 0) {
+                                                    correctIdx = 0;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (correctIdx === -1) correctIdx = 0;
 
                                         topicNode.questions.push({ id: q.id, text: q.question_text || q.question, imageUrl: (typeof q.image_url === 'string') ? q.image_url.replace('kwzpnupjtvfrevpwfaao.supabase.co', 'supabase-proxy.thevoicesession.workers.dev') : null, options: parsedOpts, correctOption: ['A', 'B', 'C', 'D'][correctIdx] || 'A', correct: correctIdx, explanation: q.explanation, difficulty: q.difficulty, ncert: true, accuracy: 'N/A', questionType: q.question_type || q.Question_Type || q.type || 'Main module (recommended)' });
                                     });
@@ -9179,12 +8932,27 @@ INSTRUCTIONS:
                                 }
                                 if (!Array.isArray(parsedOpts) || parsedOpts.length === 0) parsedOpts = ['A', 'B', 'C', 'D'];
 
-                                let correctIdx = parseInt(q.correct_answer, 10);
-                                if (isNaN(correctIdx) && q.correct_option) {
-                                    correctIdx = ['A', 'B', 'C', 'D'].indexOf(q.correct_option);
+                                let correctIdx = -1;
+                                const strVals = [q.correct_answer, q.correct, q.correct_option];
+                                for (const val of strVals) {
+                                    if (typeof val === 'string' && ['A', 'B', 'C', 'D'].includes(val.toUpperCase().trim())) {
+                                        correctIdx = ['A', 'B', 'C', 'D'].indexOf(val.toUpperCase().trim());
+                                        break;
+                                    }
                                 }
-                                if (isNaN(correctIdx) || correctIdx === -1) correctIdx = parseInt(q.correct || 0, 10);
-                                if (isNaN(correctIdx)) correctIdx = 0;
+                                if (correctIdx === -1) {
+                                    for (const val of [q.correct_answer, q.correct]) {
+                                        const parsed = parseInt(val, 10);
+                                        if (!isNaN(parsed) && parsed >= 1 && parsed <= 4) {
+                                            correctIdx = parsed - 1;
+                                            break;
+                                        } else if (parsed === 0) {
+                                            correctIdx = 0;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (correctIdx === -1) correctIdx = 0;
 
                                 topicNode.questions.push({
                                     id: q.id,
@@ -9325,31 +9093,31 @@ INSTRUCTIONS:
 
             const renderHomeView = () => {
                 const currentTargets = targetsData[selectedDate] || [];
-                const toggleTarget = (id) => { 
+                const toggleTarget = (id) => {
                     const target = currentTargets.find(t => t.id === id);
                     if (target && !target.done) {
                         setPartnerMessage({ type: 'chatter', text: `Awesome work completing "${target.text}"!` });
                     }
-                    const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t); 
-                    setTargetsData({ ...targetsData, [selectedDate]: u }); 
+                    const u = currentTargets.map(t => t.id === id ? { ...t, done: !t.done } : t);
+                    setTargetsData({ ...targetsData, [selectedDate]: u });
                 };
                 const removeTarget = (id) => { const u = currentTargets.filter(t => t.id !== id); setTargetsData({ ...targetsData, [selectedDate]: u }); };
-                const addTarget = (e) => { 
-                    e.preventDefault(); 
-                    if (!newTarget.trim()) return; 
-                    const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false, startTime: newTargetStartTime, endTime: newTargetEndTime }]; 
-                    setTargetsData({ ...targetsData, [selectedDate]: u }); 
-                    
+                const addTarget = (e) => {
+                    e.preventDefault();
+                    if (!newTarget.trim()) return;
+                    const u = [...currentTargets, { id: Date.now(), text: newTarget, done: false, startTime: newTargetStartTime, endTime: newTargetEndTime }];
+                    setTargetsData({ ...targetsData, [selectedDate]: u });
+
                     const timeStr = newTargetStartTime ? `at ${newTargetStartTime}` : 'for today';
-                    setPartnerMessage({ 
-                        type: 'added_target', 
+                    setPartnerMessage({
+                        type: 'added_target',
                         text: `I have noted "${newTarget}" ${timeStr}. Come back on time!`,
-                        requireAcknowledge: true 
+                        requireAcknowledge: true
                     });
-                    
-                    setNewTarget(""); 
-                    setNewTargetStartTime(""); 
-                    setNewTargetEndTime(""); 
+
+                    setNewTarget("");
+                    setNewTargetStartTime("");
+                    setNewTargetEndTime("");
                 };
 
                 // --- DEEP TARGET ANALYZER LOGIC ---
@@ -9507,35 +9275,20 @@ INSTRUCTIONS:
                         </div>
 
                         <div className="px-5 space-y-6">
-                            {/* ATAXY Mentor Hero Button */}
-                            <div onClick={() => setCurrentTab('ai')} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-3xl p-5 shadow-[0_10px_30px_rgba(139,92,246,0.3)] border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300 group flex items-center justify-between animate-pop-bounce delay-75">
-                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-400/30">
-                                            <i className="fa-solid fa-dna text-purple-400 animate-pulse"></i>
-                                        </div>
-                                        <h3 className="font-black text-lg tracking-wide text-purple-100">ATAXY Mentor</h3>
-                                    </div>
-                                    <p className="text-[11px] text-purple-200/70 font-medium">Your AI-powered study companion</p>
-                                </div>
-                                <div className="relative z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-purple-500 transition-colors shadow-sm">
-                                    <i className="fa-solid fa-chevron-right text-sm"></i>
-                                </div>
-                            </div>
-                            
+
+
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-lg shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 animate-pop-bounce delay-100 partner-platform">
-                                <div className="flex justify-between items-center mb-4">
+                                <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                                     <h3 className="font-bold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2"><i className="fa-regular fa-calendar-check text-blue-500"></i> Daily Targets</h3>
                                     <input type="date" min="2026-01-01" max="2126-12-31" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded outline-none border border-blue-100 dark:border-blue-800 cursor-pointer" />
                                 </div>
-                                <div className="space-y-2 mb-4 min-h-[60px]">
+                                <div id="tour-target-list" className="space-y-2 mb-4 min-h-[60px]">
                                     {(() => {
                                         if (currentTargets.length === 0) return <p className="text-xs text-gray-400 italic text-center py-4">No targets set. Add one below!</p>;
-                                        
+
                                         const uncompleted = currentTargets.filter(t => !t.done);
                                         const completed = currentTargets.filter(t => t.done);
-                                        
+
                                         return (
                                             <div className="space-y-3">
                                                 {uncompleted.map(t => (
@@ -9554,9 +9307,9 @@ INSTRUCTIONS:
                                                         </div>
                                                     </div>
                                                 ))}
-                                                
+
                                                 {completed.length > 0 && <div className="w-full h-px bg-gray-200 dark:bg-gray-800 my-4"></div>}
-                                                
+
                                                 {completed.map(t => (
                                                     <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 opacity-60 scale-[0.98] border border-transparent transition-all duration-300">
                                                         <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTarget(t.id)}>
@@ -9574,18 +9327,18 @@ INSTRUCTIONS:
                                     })()}
                                 </div>
                                 <form onSubmit={addTarget} className="flex flex-col sm:flex-row gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
-                                    <div className="flex-1 flex flex-col sm:flex-row gap-2">
-                                        <input 
-                                            type="text" 
-                                            value={newTarget} 
-                                            onChange={(e) => setNewTarget(e.target.value)} 
+                                    <div id="tour-target-input" className="flex-1 flex flex-col sm:flex-row gap-2">
+                                        <input
+                                            type="text"
+                                            value={newTarget}
+                                            onChange={(e) => setNewTarget(e.target.value)}
                                             onFocus={() => {
                                                 if (studyPartnerConfig.enabled && studyPartnerConfig.character !== 'none') {
                                                     setPartnerMessage({ type: 'added_target', text: "Ooo, adding a new target? Let me get my pen!" });
                                                 }
                                             }}
-                                            placeholder={`Add goal for ${selectedDate}...`} 
-                                            className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white" 
+                                            placeholder={`Add goal for ${selectedDate}...`}
+                                            className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:text-white"
                                         />
                                         <div className="flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-900 transition-all justify-center items-center">
                                             <input type="time" value={newTargetStartTime} onChange={(e) => setNewTargetStartTime(e.target.value)} className="w-auto flex-1 bg-transparent px-2 py-3 text-sm focus:outline-none dark:text-white text-center" title="Start Time" />
@@ -9604,7 +9357,7 @@ INSTRUCTIONS:
                                 const todayRate = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
 
                                 return (
-                                    <div onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-r from-gray-900 to-[#010714] dark:from-[#021633] dark:to-[#010B1C] rounded-2xl shadow-lg border border-[#0AE0D0]/20 animate-pop-bounce delay-150 relative overflow-hidden cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_20px_rgba(0,255,255,0.1)] transition-all duration-300 group flex flex-col">
+                                    <div id="tour-ai-analytics" onClick={() => setShowDetailedAnalyzer(true)} className="bg-gradient-to-r from-gray-900 to-[#010714] dark:from-[#021633] dark:to-[#010B1C] rounded-2xl shadow-lg border border-[#0AE0D0]/20 animate-pop-bounce delay-150 relative overflow-hidden cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_20px_rgba(0,255,255,0.1)] transition-all duration-300 group flex flex-col">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[70px] opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity"></div>
 
                                         <div className="flex items-center justify-between p-4 pb-3 relative z-10">
@@ -9717,6 +9470,7 @@ INSTRUCTIONS:
                                                 <div className="bg-[#010B1C]/80 rounded-xl p-3 border border-cyan-500/20 text-center">
                                                     <div className="text-lg font-black text-cyan-400">{taskClassBreakdown.mock}</div>
                                                     <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-1">Mocks / Tests</div>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -9751,7 +9505,7 @@ INSTRUCTIONS:
                                         </div>
 
                                         {/* Time-Based Completion Rates */}
-                                        <div className="grid grid-cols-3 gap-3 mb-6">
+                                        <div id="tour-profile-stats" className="grid grid-cols-3 gap-3 mb-6">
                                             <div className="bg-gradient-to-b from-[#021633] to-[#010B1C] rounded-2xl p-3 border border-blue-500/20 flex flex-col justify-center text-center shadow-lg">
                                                 <span className="text-xl font-black text-blue-400">{dailyRate}%</span>
                                                 <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-1">Daily</span>
@@ -9843,9 +9597,9 @@ INSTRUCTIONS:
                                 document.body
                             )}
                         </div>
-                    </div>
-                );
-            };
+                </div>
+            );
+        };
 
             // --- NEETPREP PRACTICE ENGINE ---
             const renderQuestionsView = () => {
@@ -9867,7 +9621,7 @@ INSTRUCTIONS:
                     if (activePracticeChapter) {
                         if (activePracticeChapter.isCustomTest) {
                             const selectedTopic = practiceSelectedTopic;
-                            let displayedQuestions = loadedQuestions;
+                            let displayedQuestions = window.tourMockQuestions && activePracticeChapter?.id === 'tour_dummy' ? window.tourMockQuestions : loadedQuestions;
 
                             if (!displayedQuestions || displayedQuestions.length === 0) return <div className="text-white text-center p-10">Loading test...</div>;
 
@@ -10372,11 +10126,12 @@ INSTRUCTIONS:
                                                             <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
                                                         </div>
                                                         {/* Enhanced Bookmark Button */}
-                                                        <div className="shrink-0">
+                                                        <div className="shrink-0 flex flex-col items-end gap-1">
                                                             <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
                                                                 <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i>
                                                                 <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
                                                             </button>
+                                                            <span className="text-[10px] text-gray-400 font-mono select-all opacity-60 hover:opacity-100 transition-opacity cursor-text mt-1 pr-1" title="Question ID">#{currentQuestion.id}</span>
                                                         </div>
                                                     </div>
                                                     {currentQuestion.imageUrl && (
@@ -10425,7 +10180,7 @@ INSTRUCTIONS:
 
                                                     {/* Premium White/Grey Personal Notes UI */}
                                                     <div className="mt-8 mb-4">
-                                                        <div className="flex justify-between items-center mb-4">
+                                                        <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                                                             <h4 className="text-[15px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2.5">
                                                                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shadow-inner shadow-blue-200/50">
                                                                     <i className="fa-solid fa-pen-nib text-[#00418d] text-sm"></i>
@@ -10624,7 +10379,7 @@ INSTRUCTIONS:
                                     )}
                                 </div>
                                 {/* CBT Bottom Bar */}
-                                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom,_12px)]">
+                                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-safe-bottom">
                                     <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-between items-center">
                                         <div className="flex gap-2 flex-1 md:flex-none">
                                             <button onClick={() => handleClear(currentQuestion?.id)} className="flex-1 md:flex-none bg-white border border-gray-400 text-gray-800 hover:bg-gray-50 text-[10px] sm:text-xs font-semibold px-2 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
@@ -10918,7 +10673,7 @@ INSTRUCTIONS:
                         return (
                             <div className="pb-safe animate-in fade-in bg-gray-50 dark:bg-gray-950 min-h-screen flex flex-col">
                                 {/* Header */}
-                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between shadow-sm">
+                                <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 p-4 pr-[90px] lg:pr-4 flex items-center justify-between shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => setShowScoreSummary(true)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"><i className="fa-solid fa-arrow-left"></i></button>
                                         <div>
@@ -10941,6 +10696,7 @@ INSTRUCTIONS:
                                                     <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm shrink-0">Q{analysisQuestionIndex + 1}</span>
                                                     {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full shrink-0">{q.subjectName}</span>}
                                                     {q.topicName && <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800 line-clamp-1" title={q.topicName}>{q.topicName}</span>}
+                                                    <span className="text-[10px] text-gray-400 font-mono dark:text-gray-600 select-all opacity-60 hover:opacity-100 transition-opacity cursor-text ml-2" title="Question ID">#{q.id}</span>
                                                 </div>
                                                 <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner shrink-0 ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                                                     {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
@@ -11028,7 +10784,7 @@ INSTRUCTIONS:
                         if (activePracticeBatch?.type === 'jee') {
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
-                                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                                    <div className="flex items-center gap-3 mb-6 relative z-10 pr-[90px] lg:pr-0">
                                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch?.name)}</h2>
                                     </div>
@@ -11045,7 +10801,7 @@ INSTRUCTIONS:
                         if (activePracticeBatch?.type === 'others') {
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen flex flex-col">
-                                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                                    <div className="flex items-center gap-3 mb-6 relative z-10 pr-[90px] lg:pr-0">
                                         <button onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
@@ -11155,7 +10911,7 @@ INSTRUCTIONS:
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                
+
                                                                 <div className="mt-auto">
                                                                     <div className="flex flex-wrap items-center gap-2 mb-2">
                                                                         <span className="font-black text-white text-base tracking-wide uppercase drop-shadow-md">
@@ -11408,7 +11164,7 @@ INSTRUCTIONS:
                                                 </div>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">My Generated Tests</h2>
                                         </div>
@@ -11546,7 +11302,7 @@ INSTRUCTIONS:
                             if (customGeneratorMode === 'full' || customGeneratorMode === 'half') {
                                 return (
                                     <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                        <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">{customGeneratorMode === 'full' ? 'Full Length Configuration' : 'Half Length Configuration'}</h2>
                                         </div>
@@ -11646,7 +11402,7 @@ INSTRUCTIONS:
 
                                 return (
                                     <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                        <div className="flex items-center gap-3 mb-6">
+                                        <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                             <button onClick={() => setCustomGeneratorMode(null)} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                             <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Generate DPP</h2>
                                         </div>
@@ -11724,11 +11480,11 @@ INSTRUCTIONS:
 
                             return (
                                 <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                    <div className="flex items-center gap-3 mb-6">
+                                    <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeMode(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                         <h2 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md tracking-tight">Custom Generator</h2>
                                     </div>
-                                    <div className="flex justify-between items-center mb-4">
+                                    <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
                                         <h3 className="font-bold text-gray-500 uppercase tracking-widest text-xs">Create Setup</h3>
                                         <button onClick={() => setCustomGeneratorMode('history')} className="text-blue-500 text-sm font-bold flex items-center gap-1 hover:text-blue-600"><i className="fa-solid fa-clock-rotate-left"></i> My Tests</button>
                                     </div>
@@ -11763,7 +11519,7 @@ INSTRUCTIONS:
                         }
                         return (
                             <div className="pb-24 pt-4 px-5 animate-in fade-in min-h-screen">
-                                <div className="flex items-center gap-3 mb-6">
+                                <div className="flex items-center gap-3 mb-6 pr-[90px] lg:pr-0">
                                     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePracticeBatch(null); }} className="w-8 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300"><i className="fa-solid fa-arrow-left"></i></button>
                                     <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight">{safeRenderText(activePracticeBatch?.name)}</h2>
                                 </div>
@@ -12025,7 +11781,7 @@ INSTRUCTIONS:
                 }[historyViewType];
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-0 pt-[24px] z-[2000000] bg-white/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-gray-200 dark:border-gray-800">
+                    <div className="fixed inset-x-0 bottom-0 top-0 pt-safe-top z-[2000000] bg-white/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-gray-200 dark:border-gray-800">
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setHistoryViewType(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
@@ -12217,7 +11973,7 @@ INSTRUCTIONS:
                 });
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-0 pt-[24px] z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                    <div className="fixed inset-x-0 bottom-0 top-0 pt-safe-top z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
                         {/* HEADER */}
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
@@ -12532,47 +12288,6 @@ INSTRUCTIONS:
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">Notes</p>
                                 </div>
                             </div>
-                            
-                            {/* Study Partner Settings */}
-                            <h3 className="font-black text-gray-800 dark:text-white text-lg mb-4 px-2 flex items-center gap-2 mt-8">
-                                <i className="fa-solid fa-user-astronaut text-rose-500"></i> Study Partner
-                            </h3>
-                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${studyPartnerConfig.enabled ? 'bg-rose-100 text-rose-500 dark:bg-rose-900/30' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'}`}>
-                                            <i className="fa-solid fa-robot"></i>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-gray-900 dark:text-white text-lg">Enable Assistant</h4>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">Your AI study companion</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setStudyPartnerConfig({...studyPartnerConfig, enabled: !studyPartnerConfig.enabled, character: studyPartnerConfig.enabled ? 'none' : 'mia_cheer'})} className={`w-14 h-8 rounded-full transition-colors flex items-center px-1 ${studyPartnerConfig.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}>
-                                        <div className="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform"></div>
-                                    </button>
-                                </div>
-                                
-                                {studyPartnerConfig.enabled && (
-                                    <div className="space-y-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Choose your partner</p>
-                                        {STUDY_PARTNERS.filter(p => p.id !== 'none').map(p => (
-                                            <div key={p.id} onClick={() => setStudyPartnerConfig({...studyPartnerConfig, character: p.id})} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${studyPartnerConfig.character === p.id ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-500 shadow-[0_4px_15px_rgba(59,130,246,0.1)]' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 ${p.color}`}>
-                                                        <i className={`fa-solid ${p.icon}`}></i>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200 block">{p.name}</span>
-                                                        <span className="text-[10px] text-gray-500 uppercase">{p.vibe}</span>
-                                                    </div>
-                                                </div>
-                                                {studyPartnerConfig.character === p.id && <i className="fa-solid fa-circle-check text-blue-500"></i>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
 
                             {/* Detailed Analytics Block */}
                             <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800/60 mb-8 transition-all duration-300 relative overflow-hidden group partner-platform">
@@ -12632,8 +12347,73 @@ INSTRUCTIONS:
                                         <div className={`w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-md ${isDarkMode ? 'translate-x-6' : ''}`}></div>
                                     </div>
                                 </div>
+                                <div className="h-px bg-gray-100 dark:bg-gray-800/60 w-full mx-auto max-w-[90%]"></div>
+                                <div className="p-5 flex items-center justify-between cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 group" onClick={() => setShowOnlineStatusModal(true)}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm transition-colors bg-teal-50 text-teal-500 border border-teal-200 dark:bg-teal-900/40 dark:border-teal-500/30">
+                                            <i className="fa-solid fa-eye group-hover:scale-110 transition-transform"></i>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white">Online Status</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Control who can see your online status</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                        <span className="text-sm font-medium capitalize">{onlineVisibility === 'everyone' ? 'Everyone' : (onlineVisibility === 'friends' ? 'My Friends' : 'Nobody')}</span>
+                                        <i className="fa-solid fa-chevron-right group-hover:translate-x-1 transition-transform"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Replay Tour */}
+                            <h3 className="font-black text-gray-800 dark:text-gray-200 text-lg mb-4 px-2 flex items-center gap-2">
+                                <i className="fa-solid fa-map-location-dot text-blue-500"></i> App Tour
+                            </h3>
+                            <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 shadow-sm">
+                                <div className="p-5 flex items-center justify-between cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 group" onClick={() => { resetTour(); window.scrollTo(0, 0); }}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm transition-colors bg-blue-50 text-blue-500 border border-blue-200 dark:bg-blue-900/40 dark:border-blue-500/30">
+                                            <i className="fa-solid fa-play group-hover:scale-110 transition-transform"></i>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white">Replay Tour</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Take a guided tour of the app</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-blue-500 text-xl group-hover:translate-x-1 transition-transform">
+                                        <i className="fa-solid fa-chevron-right"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        {showOnlineStatusModal && (
+                            <div className="fixed inset-0 z-[200000] bg-black/60 backdrop-blur-sm flex flex-col justify-end md:justify-center items-center animate-in fade-in">
+                                <div className="bg-white dark:bg-gray-900 w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-4 border border-gray-100 dark:border-gray-800">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="font-black text-gray-900 dark:text-white text-xl">Online Status</h3>
+                                        <button onClick={() => setShowOnlineStatusModal(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center hover:bg-gray-200 transition-colors active:scale-95"><i className="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">Who can see when you are online?</p>
+                                    <div className="space-y-3 mb-6">
+                                        {[
+                                            { id: 'everyone', title: 'Everyone', icon: 'fa-globe', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+                                            { id: 'friends', title: 'My Friends', icon: 'fa-user-group', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
+                                            { id: 'nobody', title: 'Nobody', icon: 'fa-user-ninja', color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/30' }
+                                        ].map(opt => (
+                                            <div key={opt.id} onClick={() => { setOnlineVisibility(opt.id); localStorage.setItem('ataxy_online_visibility', opt.id); setShowOnlineStatusModal(false); safeAlert('Online status visibility updated!'); }} className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border ${onlineVisibility === opt.id ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-500 shadow-sm' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${opt.bg} ${opt.color}`}>
+                                                        <i className={`fa-solid ${opt.icon}`}></i>
+                                                    </div>
+                                                    <span className="font-bold text-gray-900 dark:text-white">{opt.title}</span>
+                                                </div>
+                                                {onlineVisibility === opt.id && <i className="fa-solid fa-circle-check text-blue-500 text-xl"></i>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             };
@@ -12643,7 +12423,8 @@ INSTRUCTIONS:
             return (
                 <VoiceRoomErrorBoundary>
                     <GlobalTimerWidget timer={globalTimer} setTimer={setGlobalTimer} />
-                    <StudyPartnerWidget partnerConfig={studyPartnerConfig} partnerMessage={partnerMessage} setPartnerMessage={setPartnerMessage} currentTab={currentTab} showQuiz={showQuiz} />
+                    {showCoCTutorial && <CoCTutorialOverlay onComplete={handleTourComplete} />}
+
                     <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
@@ -12660,12 +12441,13 @@ INSTRUCTIONS:
 
                         {showTopNav && <TopNavBar />}
 
-                        <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${showTopNav ? "pt-[calc(60px_+_max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px))]" : "pt-[max(var(--tg-content-safe-area-inset-top,env(safe-area-inset-top)),_24px)]"}`}>
-                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
+                        <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${showTopNav ? "pt-[calc(60px+var(--safe-top))]" : "pt-safe-top"}`}>
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} vcChatOpen={vcChatOpen} chatActions={chatActions} setChatActions={setChatActions} voiceState={voiceState} />
+
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
-                                    {currentTab === 'ai' && <AIMentorView onBack={() => setCurrentTab('home')} />}
+                                    {currentTab === 'ai' && <AIMentorView onBack={() => setCurrentTab(previousTabRef.current || 'home')} />}
                                     {/* Voice Room Tab logic moved to VC Official Room */}
                                     {currentTab === 'questions' && renderQuestionsView()}
                                     {currentTab === 'profile' && renderProfileView()}
@@ -12675,17 +12457,17 @@ INSTRUCTIONS:
 
                                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
                                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
-                                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-center gap-8 sm:gap-12 md:gap-24 pb-[calc(16px_+_var(--tg-content-safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Home</span></button>
+                                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-center gap-8 sm:gap-12 md:gap-24 pb-[calc(12px+var(--safe-bottom))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
+                                            <button id="nav-btn-home" onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Home</span></button>
 
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
-                                            
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('chats'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chats' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Chats</span></button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 relative overflow-hidden rounded-xl ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}>
-                                                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite] pointer-events-none rounded-xl"></div>
+                                            <button id="nav-btn-vc" onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
+
+                                            <button id="nav-btn-chats" onClick={() => { resetDeepState(); setCurrentTab('chats'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'chats' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-comments text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Chats</span></button>
+                                            <button id="nav-btn-practice" onClick={() => { resetDeepState(); setCurrentTab('questions'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 relative overflow-hidden rounded-xl ${currentTab === 'questions' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}>
+
                                                 <i className="fa-solid fa-layer-group text-[20px] relative z-10"></i><span className="text-[10px] font-bold uppercase tracking-wider relative z-10">Practice</span>
                                             </button>
-                                            <button onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
+                                            <button id="nav-btn-profile" onClick={() => { resetDeepState(); setCurrentTab('profile'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'profile' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-regular fa-user text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Me</span></button>
                                         </div>
                                     )}
                                 </>
