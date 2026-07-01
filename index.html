@@ -2051,7 +2051,7 @@ Student Doubt: ${prompt}`
                 if (!activeChatUser) return;
                 markEphemeralAsViewed(activeChatUser.id, msgId);
                 // Also broadcast the viewed status
-                sendDirectMessage(activeChatUser.id, { type: 'EPHEMERAL_VIEWED', msgId });
+                sendDirectMessage(activeChatUser.id, { type: 'EPHEMERAL_VIEWED', msgId, senderId: currentUserId });
             };
             const notifyAction = (action) => {
                 if (!activeChatUser || !sendDirectMessage) return;
@@ -3828,8 +3828,12 @@ Student Doubt: ${prompt}`
                                 sender: senderId,
                                 text: data.text,
                                 imageUrl: data.imageUrl,
+                                audioUrl: data.audioUrl,
                                 replyTo: data.replyTo,
                                 time: Date.now(),
+                                isEphemeral: data.isEphemeral,
+                                viewLimit: data.viewLimit,
+                                viewed: false,
                                 senderName, senderPhoto, status: 'received'
                             };
                             const updatedHistory = [...history, newMsg];
@@ -3888,7 +3892,7 @@ Student Doubt: ${prompt}`
                         return currDms;
                     });
                 } else if (data.type === 'EPHEMERAL_VIEWED') {
-                    const senderId = peerId;
+                    const senderId = String(data.senderId);
                     setDms(currDms => {
                         const history = currDms[senderId] || [];
                         const updated = history.map(m => m.id === data.msgId ? { ...m, viewed: true } : m);
