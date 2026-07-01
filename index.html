@@ -2821,23 +2821,23 @@ Student Doubt: ${prompt}`
                     )}
 
                     {/* Pinned ATAXY Mentor Button */}
-                    <div className="px-3 pt-3">
-                        <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-xl p-3 shadow-md border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-colors duration-300 group flex items-center justify-between mb-2">
+                    <div className="px-3 pt-4 mb-2">
+                        <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-2xl p-4 shadow-lg border border-purple-500/40 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-all duration-300 group flex items-center justify-between hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
                             <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
-                            <div className="relative z-10 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-[2px] border border-purple-400/50 shadow-[0_0_10px_rgba(168,85,247,0.4)] shrink-0 animate-pulse">
-                                    <AtaxyLogo className="w-full h-full rounded-full border border-gray-900/50" />
+                            <div className="relative z-10 flex items-center gap-4">
+                                <div className="w-[56px] h-[56px] rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-[2px] border-2 border-purple-400/60 shadow-[0_0_15px_rgba(168,85,247,0.5)] shrink-0 animate-pulse">
+                                    <AtaxyLogo className="w-full h-full rounded-full border-2 border-gray-900/50" />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-bold text-[15px] text-white tracking-wide">ATAXY Mentor</h3>
-                                        <VerifiedBadge className="w-[12px] h-[12px] shadow-sm" />
+                                <div className="flex flex-col justify-center">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <h3 className="font-black text-[19px] text-white tracking-wide">ATAXY Mentor</h3>
+                                        <VerifiedBadge className="w-[16px] h-[16px] shadow-sm" />
                                     </div>
-                                    <p className="text-[11px] text-purple-200/70 font-medium">Your personal study mentor</p>
+                                    <p className="text-[13px] text-purple-200/80 font-medium">Your personal study mentor</p>
                                 </div>
                             </div>
-                            <div className="relative z-10 text-purple-300 group-hover:text-white transition-colors pr-2">
-                                <i className="fa-solid fa-chevron-right text-sm"></i>
+                            <div className="relative z-10 text-purple-300 group-hover:text-white group-hover:translate-x-1 transition-all pr-2">
+                                <i className="fa-solid fa-chevron-right text-lg"></i>
                             </div>
                         </div>
                     </div>
