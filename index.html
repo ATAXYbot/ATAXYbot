@@ -5678,7 +5678,7 @@ INSTRUCTIONS:
                                 )}
                                 {aiMsgs.map((m, i) => (
                                     <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#00418d] text-white rounded-br-none' : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-bl-none'}`}>
+                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#005c4b] text-[#e9edef] rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-tl-sm'}`}>
                                             <FormattedText text={m.text} />
                                             {m.sender === 'ai' && <AIAudioPlayerUI message={m} messageId={i} audioState={audioState} setAudioState={setAudioState} />}
                                         </div>
@@ -8061,9 +8061,9 @@ INSTRUCTIONS:
                                         </div>
                                     </div>
                                 )}
-                                <div className={`max-w-[85%] ${c.sender === 'user' ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-[24px] rounded-br-[8px]' : 'text-gray-800 dark:text-gray-200 bg-transparent'} p-3.5 shadow-none text-[15px] whitespace-pre-wrap leading-relaxed`}>
+                                <div className={`max-w-[85%] ${c.sender === 'user' ? 'bg-[#005c4b] text-[#e9edef] rounded-2xl rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-2xl rounded-tl-sm'} p-3.5 shadow-sm text-[14px] whitespace-pre-wrap leading-relaxed`}>
                                     {c.image && (
-                                        <img src={c.image} alt="User Upload" className="max-w-full h-auto rounded-xl mb-3 border border-gray-200 dark:border-gray-700 shadow-sm" />
+                                        <img src={c.image} alt="User Upload" className="max-w-full h-auto rounded-xl mb-3 border border-[#e9edef]/10 shadow-sm" />
                                     )}
                                     <FormattedText text={c?.text || ""} />
                                     {c.sender === 'ai' && <AIAudioPlayerUI message={c} messageId={c.id} audioState={audioState} setAudioState={setAudioState} />}
