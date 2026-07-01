@@ -8478,39 +8478,39 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 1,
-                    text: "See? It instantly analyzes your exact mistake and explains the concept step-by-step!", btn: "Awesome", targetSelector: null,
+                    text: "See? It instantly analyzes your exact mistake and explains the concept step-by-step!", btn: "Awesome", targetSelector: null, action: 'close_practice_quiz',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 // 3. CUSTOM TEST GENERATOR
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
-                    text: "Now, let's check out the Tests tab to see the Custom Test Generator.", btn: "Open Tests", targetSelector: '#btn-custom-generator', action: 'click',
+                    text: "Now, let's check out the Custom Test Generator right here.", btn: "Open Generator", targetSelector: '#btn-custom-generator', action: 'click',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 8,
-                    text: "This Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!). You can select specific chapters and topics. Let's generate a demo test!", btn: "Generate Demo Test", targetSelector: '#btn-generate-test', action: 'generate_demo',
+                    text: "This Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!). You can build full-length CBT tests or targeted DPPs. Let's select Full Length.", btn: "Select", targetSelector: '#btn-full-length-test', action: 'click',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
-                    text: "We are in a live test. Try clicking an answer.", btn: "Answer", targetSelector: '#demo-custom-option', action: 'select_wrong',
+                    text: "Here, you can select specific chapters or generate a test for the entire syllabus. Let's generate a demo test!", btn: "Generate", targetSelector: '#btn-generate-test', action: 'generate_demo',
                     logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
-                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "Now let's submit it to see the detailed analytics!", btn: "Submit", targetSelector: '.demo-mentor-btn', action: 'submit_demo',
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 1,
+                    text: "We are in a live CBT test environment. Try clicking an answer to attempt a question.", btn: "Answer", targetSelector: '#demo-custom-option', action: 'select_wrong',
                     logoX: 125, logoY: 125, logoSize: 22
+                },
+                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 2,
+                    text: "Great! Now let's submit the test to see the detailed analytics!", btn: "Submit", targetSelector: '.demo-mentor-btn', action: 'submit_demo',
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 8,
                     text: "This is your detailed analysis. See the 'Target Weakness' option? It analyzes your mistakes and instantly generates a DPP of your weakest topics!", btn: "Amazing", targetSelector: '#demo-target-weakness-btn', action: 'cleanup_demo',
                     logoX: 135, logoY: 130, logoSize: 25
-                },
-                {
-                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "You can find all your saved tests right here in the Test History section.", btn: "Check History", targetSelector: '#btn-test-history',
-                    logoX: 125, logoY: 125, logoSize: 22
                 },
                 // 4. ME TAB (ANALYTICS)
                 {
@@ -8623,41 +8623,61 @@ INSTRUCTIONS:
             let finalTop = 0;
             
             if (targetRect) {
-                const charW = windowSize.w < 640 ? 260 : 320;
-                const charH = charW;
-                const fingerYOffset = charH * 0.4;
-                const fingerRightXOffset = charW * 0.80; 
-                const fingerLeftXOffset = charW * 0.20; 
-                
-                const targetCenterX = targetRect.left + (targetRect.width / 2);
-                const targetTop = targetRect.top - 10;
-                
-                let rightPointLeft = targetCenterX - fingerRightXOffset;
-                let rightPointTop = targetTop - fingerYOffset;
-                let leftPointLeft = targetCenterX - fingerLeftXOffset;
-                let leftPointTop = targetTop - fingerYOffset;
-                
-                let useRightPoint = true;
-                if (rightPointLeft < 0) useRightPoint = false;
-                else if (leftPointLeft + charW > windowSize.w) useRightPoint = true;
-                else useRightPoint = targetCenterX > windowSize.w / 2;
-                
-                let finalLeft = useRightPoint ? rightPointLeft : leftPointLeft;
-                finalTop = useRightPoint ? rightPointTop : leftPointTop;
-                
-                finalTop = Math.max(0, Math.min(windowSize.h - charH, finalTop));
-                finalLeft = Math.max(0, Math.min(windowSize.w - charW, finalLeft));
-
-                charStyle = { left: `${finalLeft}px`, top: `${finalTop}px` };
-                finalSpriteIndex = useRightPoint ? 3 : 2; 
-
-                if (finalTop > windowSize.h / 2) {
-                    bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, bottom: `${windowSize.h - finalTop + 10}px` };
-                    tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white';
-                } else {
-                    bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, top: `${finalTop + charH + 10}px` };
-                    tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-b-[20px] border-b-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-b-[20px] border-b-white';
-                }
+                  const charW = windowSize.w < 640 ? 260 : 320;
+                  const charH = charW;
+                  // Improved finger offsets for accurate pointing
+                  const fingerYOffset = charH * 0.55; 
+                  const fingerRightXOffset = charW * 0.85; 
+                  const fingerLeftXOffset = charW * 0.15; 
+                  
+                  const targetCenterX = targetRect.left + (targetRect.width / 2);
+                  const targetTop = targetRect.top - 5;
+                  
+                  let rightPointLeft = targetRect.left - fingerRightXOffset + 20;
+                  let rightPointTop = targetTop - fingerYOffset;
+                  let leftPointLeft = targetRect.right - fingerLeftXOffset - 20;
+                  let leftPointTop = targetTop - fingerYOffset;
+                  
+                  let useRightPoint = true;
+                  // If target is on the left side of screen, character should be on the right pointing LEFT
+                  if (targetCenterX < windowSize.w / 2) {
+                      useRightPoint = false; // Point Left
+                  }
+                  
+                  // Ensure character doesn't go off screen horizontally
+                  if (!useRightPoint && leftPointLeft + charW > windowSize.w) {
+                      useRightPoint = true;
+                  } else if (useRightPoint && rightPointLeft < 0) {
+                      useRightPoint = false;
+                  }
+                  
+                  let finalLeft = useRightPoint ? rightPointLeft : leftPointLeft;
+                  finalTop = useRightPoint ? rightPointTop : leftPointTop;
+                  
+                  // DO NOT clamp finalTop at the bottom to allow accurate pointing for low targets!
+                  finalLeft = Math.max(0, Math.min(windowSize.w - charW, finalLeft));
+  
+                  charStyle = { left: `${finalLeft}px`, top: `${finalTop}px` };
+                  finalSpriteIndex = useRightPoint ? 3 : 2; 
+  
+                  let isBubbleAbove = targetRect.top > windowSize.h / 2;
+                  
+                  if (isBubbleAbove) {
+                      let calculatedBottom = windowSize.h - finalTop + 10;
+                      let targetFromBottom = windowSize.h - targetRect.top;
+                      if (calculatedBottom < targetFromBottom + 20) {
+                          calculatedBottom = targetFromBottom + 20; 
+                      }
+                      bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, bottom: `${calculatedBottom}px` };
+                      tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white';
+                  } else {
+                      let calculatedTop = finalTop + charH + 10;
+                      if (calculatedTop < targetRect.bottom + 20) {
+                          calculatedTop = targetRect.bottom + 20;
+                      }
+                      bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, top: `${calculatedTop}px` };
+                      tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-b-[20px] border-b-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-b-[20px] border-b-white';
+                  }
             } else {
                 if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 0; 
             }
@@ -8791,6 +8811,12 @@ INSTRUCTIONS:
                     if (firstQ.correctOption === 'A') wrongIdx = 1;
                     return { ...prev, [firstQ.id]: wrongIdx };
                 });
+            } else if (action === 'close_practice_quiz') {
+                setShowQuiz(false);
+                setActivePracticeChapter(null);
+                setActivePracticeSubject(null);
+                setActivePracticeMode(null);
+                setCustomGeneratorMode(null);
             } else if (action === 'generate_demo') {
                 setActivePracticeChapter(null);
                 setCinematicDemoTest(demoTest);
@@ -12253,7 +12279,7 @@ React.useEffect(() => {
                                         <button onClick={() => setCustomGeneratorMode('history')} className="text-blue-500 text-sm font-bold flex items-center gap-1 hover:text-blue-600"><i className="fa-solid fa-clock-rotate-left"></i> My Tests</button>
                                     </div>
                                     <div className="space-y-4">
-                                        <div onClick={() => { setCustomGeneratorMode('full'); setCustomGenConfig(prev => ({ ...prev, selectAllTopics: true })); }} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                                        <div id="btn-full-length-test" onClick={() => { setCustomGeneratorMode('full'); setCustomGenConfig(prev => ({ ...prev, selectAllTopics: true })); }} className="backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.1)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-900/30">
                                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30 text-blue-600 group-hover:bg-blue-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]"><i className="fa-solid fa-file-contract"></i></div>
                                             <div className="flex-1 relative z-10">
                                                 <h3 className="font-black text-xl text-gray-900 dark:text-white transition-colors drop-shadow-sm group-hover:text-blue-600 dark:group-hover:text-blue-300">Full Length Test</h3>
@@ -12304,7 +12330,7 @@ React.useEffect(() => {
                                         </div>
                                         <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-purple-500 transition-colors"></i>
                                     </div>
-                                    <div onClick={() => setActivePracticeMode('custom')} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(59,130,246,0.3)]`}>
+                                    <div id="btn-custom-generator" onClick={() => setActivePracticeMode('custom')} className={`backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.2)] cursor-pointer transition-all duration-300 group overflow-hidden relative hover:-translate-y-1 hover:border-blue-500/50 hover:bg-blue-900/30 hover:shadow-[0_15px_40px_rgba(59,130,246,0.3)]`}>
                                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-10 shadow-inner transition-all duration-500 bg-blue-900/30 border border-blue-500/30 text-blue-300 group-hover:bg-blue-500 group-hover:text-white group-hover:border-blue-400 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)]"><i className="fa-solid fa-wand-magic-sparkles"></i></div>
                                         <div className="flex-1 relative z-10">
                                             <h3 className="font-black text-xl text-white transition-colors drop-shadow-md group-hover:text-blue-300">Custom Generator</h3>
