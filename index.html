@@ -8380,54 +8380,49 @@ INSTRUCTIONS:
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 0, // Neutral
-                    text: "Welcome to ATAXY! I'm ASENA, your AI Mentor. Let me give you a complete deep-dive tour!",
+                    spriteIndex: 0,
+                    text: "Welcome to ATAXY! I'm ASENA. Let me give you a complete deep-dive tour!",
                     btn: "Let's Go!",
-                    targetSelector: null,
-                    pos: 'center'
+                    targetSelector: null
                 },
                 {
                     character: 'male',
                     name: 'ATAXY',
                     img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 2, // Pointing
+                    spriteIndex: 2, // Will dynamically adjust left/right
                     text: "First, let's head into the Practice tab. This is your core hub.",
                     btn: "Open Practice",
                     targetSelector: '#nav-btn-practice',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 },
                 {
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 2, // Pointing
+                    spriteIndex: 2,
                     text: "Here are your Batches. Let's jump into the NEET Bank!",
                     btn: "Enter NEET Bank",
                     targetSelector: '#batch-neet-bank',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 },
                 {
                     character: 'male',
                     name: 'ATAXY',
                     img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 3, // Pointing Left
+                    spriteIndex: 2,
                     text: "The Question Practice section contains thousands of highly categorized PYQs and modules.",
                     btn: "Got it!",
-                    targetSelector: '#btn-question-practice',
-                    pos: 'top'
+                    targetSelector: '#btn-question-practice'
                 },
                 {
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 2, // Pointing Right
+                    spriteIndex: 2,
                     text: "Let's check out the Tests tab where you can generate full-length CBT tests.",
                     btn: "Open Tests",
                     targetSelector: '#tab-tests',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 },
                 {
                     character: 'male',
@@ -8436,8 +8431,7 @@ INSTRUCTIONS:
                     spriteIndex: 8, // Hyped
                     text: "This Custom Test Generator is NOT AI-generated. It pulls curated, high-yield questions directly from my expert database!",
                     btn: "Wow!",
-                    targetSelector: '#btn-generate-test',
-                    pos: 'top'
+                    targetSelector: '#btn-generate-test'
                 },
                 {
                     character: 'female',
@@ -8446,19 +8440,17 @@ INSTRUCTIONS:
                     spriteIndex: 4, // Clicking/Action
                     text: "After you submit a test, you can use the Target Weakness feature to instantly generate a DPP of your weakest topics!",
                     btn: "Amazing",
-                    targetSelector: null,
-                    pos: 'center'
+                    targetSelector: null
                 },
                 {
                     character: 'male',
                     name: 'ATAXY',
                     img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 2, // Pointing Right
+                    spriteIndex: 2,
                     text: "Now, let's head to your ME tab to check your stats.",
                     btn: "Open Me Tab",
                     targetSelector: '#nav-btn-profile',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 },
                 {
                     character: 'female',
@@ -8467,8 +8459,7 @@ INSTRUCTIONS:
                     spriteIndex: 5, // Strict
                     text: "This is your Daily Targets board. You must set your daily goals here.",
                     btn: "Okay",
-                    targetSelector: '#tour-target-list',
-                    pos: 'top'
+                    targetSelector: '#tour-target-list'
                 },
                 {
                     character: 'female',
@@ -8477,19 +8468,17 @@ INSTRUCTIONS:
                     spriteIndex: 6, // Furious
                     text: "If you set a target and miss the time limit, I WILL get extremely angry and block the app until you finish it!",
                     btn: "I promise I won't be late!",
-                    targetSelector: null,
-                    pos: 'center'
+                    targetSelector: null
                 },
                 {
                     character: 'male',
                     name: 'ATAXY',
                     img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 3, // Pointing Left
-                    text: "Feeling stuck? Jump into the Chats tab to ask me any doubt directly.",
+                    spriteIndex: 2,
+                    text: "Feeling stuck? Jump into the Chats tab to ask us any doubt directly.",
                     btn: "Open Chats",
                     targetSelector: '#nav-btn-chats',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 },
                 {
                     character: 'female',
@@ -8499,8 +8488,7 @@ INSTRUCTIONS:
                     text: "Finally, check out Voice Rooms! You can join interactive group studies and make friends with batchmates here.",
                     btn: "Open Voice Rooms",
                     targetSelector: '#nav-btn-vc',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 },
                 {
                     character: 'male',
@@ -8510,8 +8498,7 @@ INSTRUCTIONS:
                     text: "That's everything! Head back Home and start your preparation. We believe in you!",
                     btn: "Go Home & Finish",
                     targetSelector: '#nav-btn-home',
-                    action: 'click',
-                    pos: 'bottom'
+                    action: 'click'
                 }
             ];
 
@@ -8557,20 +8544,31 @@ INSTRUCTIONS:
                 }, 400);
             };
 
+            // FOOLPROOF POSITIONING LOGIC
+            // Character always stands on the bottom of the screen.
             let charStyle = { bottom: '-20px', left: '50%', transform: 'translateX(-50%)' };
-            let bubbleStyle = { bottom: '50%', left: '50%', transform: 'translateX(-50%)' };
-            
-            if (current.pos === 'bottom' && targetRect) {
-                const charX = Math.max(20, Math.min(windowSize.w - 300, targetRect.left + (targetRect.width/2) - 150));
-                charStyle = { bottom: `${windowSize.h - targetRect.top + 20}px`, left: `${charX}px` };
-                bubbleStyle = { bottom: `${windowSize.h - targetRect.top + 260}px`, left: `${charX + 10}px` };
-            } else if (current.pos === 'top' && targetRect) {
-                const charX = Math.max(20, Math.min(windowSize.w - 300, targetRect.left + (targetRect.width/2) - 150));
-                charStyle = { top: `${targetRect.bottom + 20}px`, left: `${charX}px` };
-                bubbleStyle = { top: `${targetRect.bottom + 280}px`, left: `${charX + 10}px` };
-            } else if (current.pos === 'center') {
-                charStyle = { bottom: '-20px', right: current.character === 'female' ? 'auto' : '-10px', left: current.character === 'female' ? '-10px' : 'auto' };
-                bubbleStyle = { bottom: '60%', right: current.character === 'female' ? 'auto' : '16px', left: current.character === 'female' ? '16px' : 'auto' };
+            let bubbleStyle = { bottom: '380px', left: '50%', transform: 'translateX(-50%)' };
+            let tailClass = 'left-1/2 -translate-x-1/2 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[20px] border-t-white';
+            let finalSpriteIndex = current.spriteIndex;
+
+            if (targetRect) {
+                const targetOnLeft = targetRect.left < windowSize.w / 2;
+                
+                if (targetOnLeft) {
+                    // Character stands on the Right, pointing Left
+                    charStyle = { bottom: '-20px', right: '10px', left: 'auto' };
+                    bubbleStyle = { bottom: '380px', right: '20px', left: 'auto' };
+                    tailClass = 'right-[60px] border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white';
+                    if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 3; // Point Left
+                } else {
+                    // Character stands on the Left, pointing Right
+                    charStyle = { bottom: '-20px', left: '10px', right: 'auto' };
+                    bubbleStyle = { bottom: '380px', left: '20px', right: 'auto' };
+                    tailClass = 'left-[60px] border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white';
+                    if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 2; // Point Right
+                }
+            } else {
+                if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 0; // Neutral if center
             }
 
             return (
@@ -8583,7 +8581,7 @@ INSTRUCTIONS:
                             top: targetRect ? targetRect.top - 8 : windowSize.h / 2,
                             width: targetRect ? targetRect.width + 16 : 0,
                             height: targetRect ? targetRect.height + 16 : 0,
-                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.7)',
+                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.8)',
                             opacity: visible ? 1 : 0
                         }}
                     />
@@ -8591,10 +8589,10 @@ INSTRUCTIONS:
                     {/* Speech Bubble */}
                     <div 
                         className={`absolute w-[280px] sm:w-[320px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-500 border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20 flex flex-col items-center text-center`}
-                        style={current.pos === 'center' ? bubbleStyle : { ...bubbleStyle, transform: 'none' }}
+                        style={targetRect ? bubbleStyle : { ...bubbleStyle, transform: 'translateX(-50%)' }}
                     >
                         {/* Tail */}
-                        <div className={`absolute -bottom-4 ${current.character === 'female' || current.pos === 'bottom' || current.pos === 'top' ? 'left-10 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-10 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
+                        <div className={`absolute -bottom-4 ${tailClass} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
                         
                         <p className="font-black text-gray-800 text-[16px] leading-snug mb-5 tracking-tight w-full">{current.text}</p>
                         
@@ -8609,8 +8607,8 @@ INSTRUCTIONS:
 
                     {/* Character Cutout with Logo */}
                     <div 
-                        className={`absolute w-[300px] sm:w-[380px] transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}
-                        style={current.pos === 'center' ? charStyle : { ...charStyle, transform: 'none' }}
+                        className={`absolute w-[260px] sm:w-[320px] transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}
+                        style={targetRect ? charStyle : { ...charStyle, transform: 'translateX(-50%)' }}
                     >
                         <style>{`
                             @keyframes characterBreathe {
@@ -8619,10 +8617,10 @@ INSTRUCTIONS:
                             }
                         `}</style>
                         <div style={{ animation: 'characterBreathe 3s ease-in-out infinite', position: 'relative' }}>
-                            <ChromaImage src={current.img} alt={current.name} spriteIndex={current.spriteIndex} gridSize={4} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
+                            <ChromaImage src={current.img} alt={current.name} spriteIndex={finalSpriteIndex} gridSize={4} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
                             
                             {/* Adjusted chest logo overlay coordinates for the pocket */}
-                            <div className={`absolute ${current.character === 'female' ? 'top-[52%] left-[68%]' : 'top-[50%] left-[65%]'} transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11`}>
+                            <div className={`absolute ${current.character === 'female' ? 'top-[49%] left-[67%]' : 'top-[47%] left-[64%]'} transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10`}>
                                 <AtaxyLogo className="w-full h-full rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.4)] border border-[#00FFFF]/50 mix-blend-normal" />
                             </div>
                         </div>
