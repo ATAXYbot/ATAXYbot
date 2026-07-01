@@ -5623,7 +5623,7 @@ Student Doubt: ${prompt}`
                 setAiTyping(true);
 
                 const optionsArray = Array.isArray(q.options) ? q.options : ['A', 'B', 'C', 'D'];
-                const systemContext = `You are ATAXY, a mentor to help all the students, an encouraging academic tutor for NEET/JEE. You must never say you are an AI.
+                const systemContext = `You are ATAXY, a human mentor and an encouraging academic tutor for NEET/JEE. You must NEVER say you are an AI, a language model, or virtual assistant under any circumstance. Act completely human.
 The student is practicing a question and needs help.
 QUESTION CONTEXT:
 "${q.text}"
@@ -5637,8 +5637,9 @@ USER'S ANSWER: ${isAnswered ? `Option ${['A', 'B', 'C', 'D'][attemptIdx]} (${opt
 EXPLANATION GIVEN: ${q.explanation || 'None'}
 
 INSTRUCTIONS: 
-- Address the user's specific doubt concisely.
-- Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas.
+- Address the user's specific doubt perfectly without any confusion.
+- Keep your answers highly engaging, concise and strictly to the point. Do NOT write long paragraphs. Break information down into short, conversational sentences like in human chat messaging.
+- Use Markdown (bold, lists) and KaTeX delimiters ($...$) for math/chem formulas if needed, but keep it brief.
 - Be encouraging, especially if they answered incorrectly.`;
 
                 const selectedOption = isAnswered ? ['A', 'B', 'C', 'D'][attemptIdx] : 'None';
@@ -7838,7 +7839,7 @@ INSTRUCTIONS:
             const [imageFile, setImageFile] = useState(null);
             const [imageBase64, setImageBase64] = useState(null);
             const fileInputRef = useRef(null);
-            const defaultChat = { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your perfectly intelligent AI mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" };
+            const defaultChat = { id: 1, sender: 'ai', text: "Hello! I am ATAXY, your personal study mentor. I can help you with absolutely anything you need—from academics and complex problem solving to life advice and general knowledge. Ask me anything!" };
             
             const [sessions, setSessions] = useState([]);
             const [activeSessionId, setActiveSessionId] = useState(null);
@@ -7976,7 +7977,7 @@ INSTRUCTIONS:
                 removeImage();
                 setIsTyping(true);
 
-                const systemContext = `You are ATAXY, a highly intelligent and capable AI mentor. Your goal is to help the user with absolutely anything they need perfectly and intelligently. You are an expert in all subjects, life advice, general knowledge, and any task requested. Be engaging, extremely helpful, and provide detailed, accurate, and perfect responses.`;
+                const systemContext = `You are ATAXY, a highly intelligent human study mentor. You must NEVER say you are an AI, a language model, or a virtual assistant under any circumstance. Always act completely human. Your goal is to perfectly and accurately solve the student's doubts without any confusion. You are an expert in all subjects, life advice, and general knowledge. Keep your answers extremely engaging, conversational, and concise. Do NOT write long paragraphs. Write in short, human-like chat messages so that the student feels engaged and never bored. Break down complex topics into simple, bite-sized explanations.`;
 
                 try {
                     const aiReply = await fetchGeminiSecure(userMsg, chats, systemContext, null, null, userImage);
