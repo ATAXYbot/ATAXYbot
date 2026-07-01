@@ -11873,11 +11873,12 @@ INSTRUCTIONS:
                                                             <span className="font-bold mr-2 text-[#00418d]">Q{safeQuestionIndex + 1}.</span> <FormattedText text={currentQuestion.text} className="inline" />
                                                         </div>
                                                         {/* Enhanced Bookmark Button */}
-                                                        <div className="shrink-0">
+                                                        <div className="shrink-0 flex flex-col items-end gap-1">
                                                             <button onClick={() => toggleBookmark(currentQuestion.id)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm border ${bookmarks.includes(currentQuestion.id) ? 'bg-gradient-to-r from-amber-100 to-yellow-50 border-amber-300 text-amber-700 shadow-amber-200/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900'} active:scale-95 group`}>
                                                                 <i className={`fa-${bookmarks.includes(currentQuestion.id) ? 'solid text-amber-500 scale-110' : 'regular'} fa-bookmark group-hover:scale-110 transition-transform`}></i>
                                                                 <span className="hidden sm:inline">{bookmarks.includes(currentQuestion.id) ? 'Bookmarked' : 'Bookmark'}</span>
                                                             </button>
+                                                            <span className="text-[10px] text-gray-400 font-mono select-all opacity-60 hover:opacity-100 transition-opacity cursor-text mt-1 pr-1" title="Question ID">#{currentQuestion.id}</span>
                                                         </div>
                                                     </div>
                                                     {currentQuestion.imageUrl && (
@@ -12442,6 +12443,7 @@ INSTRUCTIONS:
                                                     <span className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-lg shadow-sm shrink-0">Q{analysisQuestionIndex + 1}</span>
                                                     {q.subjectName && <span className="text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full shrink-0">{q.subjectName}</span>}
                                                     {q.topicName && <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800 line-clamp-1" title={q.topicName}>{q.topicName}</span>}
+                                                    <span className="text-[10px] text-gray-400 font-mono dark:text-gray-600 select-all opacity-60 hover:opacity-100 transition-opacity cursor-text ml-2" title="Question ID">#{q.id}</span>
                                                 </div>
                                                 <span className={`text-sm font-black px-4 py-1.5 rounded-full shadow-inner shrink-0 ${isAns ? (isCorrect ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200') : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                                                     {isAns ? (isCorrect ? '+4 Marks' : '-1 Mark') : 'Unattempted (0)'}
