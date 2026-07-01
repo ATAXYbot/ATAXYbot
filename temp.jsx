@@ -5194,6 +5194,16 @@ Student Doubt: ${prompt}`
             const [aiInput, setAiInput] = useState("");
             const [aiTyping, setAiTyping] = useState(false);
             const [audioState, setAudioState] = useState({ id: null, isPaused: false, isSpeech: false });
+
+            useEffect(() => {
+                const handleDemo = (e) => {
+                    if (e.detail === 'open_mentor') {
+                        setShowAIChat(true);
+                    }
+                };
+                window.addEventListener('cinematic_demo_action', handleDemo);
+                return () => window.removeEventListener('cinematic_demo_action', handleDemo);
+            }, []);
             const chatEndRef = useRef(null);
 
             useEffect(() => {
@@ -5312,8 +5322,8 @@ INSTRUCTIONS:
                             {aiMsgs.length === 0 && (
                                 <div className="flex flex-wrap gap-2 mb-3 justify-center">
                                     <button onClick={() => handleAskAI("Can you explain this step-by-step?")} className="bg-blue-50 border border-blue-100 text-xs font-semibold px-3 py-1.5 rounded-full text-blue-700 hover:bg-blue-100 transition-colors shadow-sm">Explain step-by-step</button>
-                                    {isAnswered && attemptIdx !== q.correct && (
-                                        <button onClick={() => handleAskAI("Why is my answer wrong?")} className="bg-red-50 border border-red-100 text-xs font-semibold px-3 py-1.5 rounded-full text-red-700 hover:bg-red-100 transition-colors shadow-sm">Why is my answer wrong?</button>
+                                    {(isAnswered || window.__loadedQs) && (
+                                        <button id="demo-ask-wrong-btn" onClick={() => handleAskAI("Why is my answer wrong?")} className="bg-red-50 border border-red-100 text-xs font-semibold px-3 py-1.5 rounded-full text-red-700 hover:bg-red-100 transition-colors shadow-sm">Why is my answer wrong?</button>
                                     )}
                                 </div>
                             )}
@@ -8038,7 +8048,17 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 6,
-                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '#tour-ask-mentor',
+                    text: "Oh no, you got it wrong! But don't worry, the 'Ask ATAXY Mentor' feature is right here to explain the concept perfectly.", btn: "See Mentor", targetSelector: '#tour-ask-mentor', action: 'open_mentor',
+                    logoX: 125, logoY: 125, logoSize: 22
+                },
+                                {
+                    character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 4,
+                    text: "Now click on 'Why is my answer wrong?' to get a personalized explanation!", btn: "Ask Mentor", targetSelector: '#demo-ask-wrong-btn', action: 'ask_wrong',
+                    logoX: 135, logoY: 130, logoSize: 25
+                },
+                {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 1,
+                    text: "See? It instantly analyzes your exact mistake and explains the concept step-by-step!", btn: "Awesome", targetSelector: null,
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 // 3. CUSTOM TEST GENERATOR
@@ -8142,9 +8162,20 @@ INSTRUCTIONS:
             }, [step, windowSize]);
 
             const handleNext = () => {
+                let delay = 400;
                 if (current.action === 'click' && current.targetSelector) {
                     const el = document.querySelector(current.targetSelector);
-                    if (el) el.click();
+                    if (el) {
+                        el.click();
+                        try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+                    }
+                } else if (current.action === 'ask_wrong') {
+                    const el = document.querySelector(current.targetSelector);
+                    if (el) {
+                        el.click();
+                        try { document.getElementById('tour-ask-mentor').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e){}
+                    }
+                    delay = 7000; // Wait 7 seconds for AI response before showing next bubble
                 } else if (current.action) {
                     window.dispatchEvent(new CustomEvent('cinematic_demo_action', { detail: current.action }));
                 }
@@ -8156,7 +8187,7 @@ INSTRUCTIONS:
                     } else {
                         onComplete();
                     }
-                }, 400);
+                }, delay);
             };
 
             let charStyle = { bottom: '-20px', left: '50%', transform: 'translateX(-50%)' };
