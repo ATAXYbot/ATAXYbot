@@ -12888,11 +12888,52 @@ React.useEffect(() => {
                     return datesToShow.map(date => ({
                         date,
                         targets: targetsData[date] || []
-                    })).filter(group => group.targets.length > 0 || group.date === selectedDate);
-                };
-                
-                return (
-                    <div className="fixed inset-0 z-[3000000] bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-xl animate-in fade-in zoom-in-95 flex flex-col">
+                    })).filter(group => group.targets.length > 0 || group.date === selectedDate);                  };
+                  
+                  // Compute Dashboard Metrics
+                  const allDatesList = Object.keys(targetsData);
+                  let dailyTotal = 0, dailyDone = 0;
+                  let weeklyTotal = 0, weeklyDone = 0;
+                  let monthlyTotal = 0, monthlyDone = 0;
+                  let overallTotal = 0, overallDone = 0;
+                  
+                  const todayDateObj = new Date();
+                  todayDateObj.setHours(0,0,0,0);
+                  
+                  allDatesList.forEach(d => {
+                      const dObj = new Date(d);
+                      dObj.setHours(0,0,0,0);
+                      const diffTime = todayDateObj - dObj;
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      
+                      const targets = targetsData[d];
+                      const tTotal = targets.length;
+                      const tDone = targets.filter(t => t.done).length;
+                      
+                      overallTotal += tTotal;
+                      overallDone += tDone;
+                      
+                      if (d === todayStr) {
+                          dailyTotal += tTotal;
+                          dailyDone += tDone;
+                      }
+                      if (diffDays >= 0 && diffDays < 7) {
+                          weeklyTotal += tTotal;
+                          weeklyDone += tDone;
+                      }
+                      if (diffDays >= 0 && diffDays < 30) {
+                          monthlyTotal += tTotal;
+                          monthlyDone += tDone;
+                      }
+                  });
+                  
+                  const dRate = dailyTotal > 0 ? Math.round((dailyDone/dailyTotal)*100) : 0;
+                  const wRate = weeklyTotal > 0 ? Math.round((weeklyDone/weeklyTotal)*100) : 0;
+                  const mRate = monthlyTotal > 0 ? Math.round((monthlyDone/monthlyTotal)*100) : 0;
+                  const oRate = overallTotal > 0 ? Math.round((overallDone/overallTotal)*100) : 0;
+                  
+                  return (
+                      <div className="fixed inset-0 z-[3000000] bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-xl animate-in fade-in zoom-in-95 flex flex-col">
                         <div className="flex-none pt-[calc(env(safe-area-inset-top)+1rem)] bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
                             <div className="h-16 px-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -12919,9 +12960,33 @@ React.useEffect(() => {
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 pb-[180px]">
-                            
-                            
-                            <div className="space-y-6">
+                              
+                              {/* Compact Analytics Dashboard */}
+                              <div className="bg-gradient-to-br from-[#021633] to-[#010B1C] border border-[#0AE0D0]/20 rounded-[1.5rem] p-3 mb-5 flex justify-between items-center shadow-lg relative overflow-hidden">
+                                  <div className="absolute inset-0 bg-[#0AE0D0]/5 pointer-events-none"></div>
+                                  
+                                  {[
+                                      {label: 'Daily', rate: dRate, strokeColor: '#0AE0D0', shadowColor: 'rgba(10,224,208,0.5)'}, 
+                                      {label: 'Weekly', rate: wRate, strokeColor: '#60A5FA', shadowColor: 'rgba(96,165,250,0.5)'}, 
+                                      {label: 'Monthly', rate: mRate, strokeColor: '#818CF8', shadowColor: 'rgba(129,140,248,0.5)'}, 
+                                      {label: 'Overall', rate: oRate, strokeColor: '#C084FC', shadowColor: 'rgba(192,132,252,0.5)'}
+                                  ].map((item, idx) => (
+                                      <div key={idx} className="flex flex-col items-center gap-1 z-10">
+                                          <div className="w-[42px] h-[42px] relative shrink-0">
+                                              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                                  <path className="stroke-blue-950" strokeWidth="4" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                                  <path style={{ stroke: item.strokeColor, filter: `drop-shadow(0px 0px 3px ${item.shadowColor})` }} strokeDasharray={`${item.rate}, 100`} strokeWidth="4" strokeLinecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                              </svg>
+                                              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                                  <span className="text-[9px] font-black text-white">{item.rate}%</span>
+                                              </div>
+                                          </div>
+                                          <span className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</span>
+                                      </div>
+                                  ))}
+                              </div>
+                              
+                              <div className="space-y-6">
                                 {getFilteredTargets().length === 0 && targetPortalTab !== 'present' ? (
                                     <div className="text-center py-10 text-gray-400">
                                         <i className="fa-regular fa-calendar-xmark text-4xl mb-3 opacity-50"></i>
