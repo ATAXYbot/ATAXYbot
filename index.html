@@ -10451,7 +10451,7 @@ React.useEffect(() => {
                 </div>
                 
                 <div className="flex flex-col items-end justify-between h-full gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget({ ...t, _date: todayStr }); }} className="text-blue-500 md:text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget({ ...t, _date: todayStr }); }} className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-100">
                             <i className="fa-solid fa-pen text-sm"></i>
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); deleteTarget(t.id); }} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
@@ -13732,12 +13732,17 @@ React.useEffect(() => {
                                                                     {(t.startTime || t.endTime) && <span className={`text-[10px] font-black tracking-wider ${t.done ? 'text-gray-400' : 'text-blue-500 dark:text-blue-400'}`}><i className="fa-regular fa-clock mr-1"></i>{t.startTime || '?'} - {t.endTime || '?'}</span>}
                                                                 </div>
                                                             </div>
-                                                            <button onClick={() => {
-                                                                const updated = group.targets.filter(x => x.id !== t.id);
-                                                                setTargetsData({ ...targetsData, [group.date]: updated });
-                                                            }} className="w-8 h-8 rounded-full text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0">
-                                                                <i className="fa-solid fa-trash text-xs"></i>
-                                                            </button>
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                <button onClick={(e) => { e.stopPropagation(); setEditingTarget({ ...t, _date: group.date }); }} className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-100">
+                                                                    <i className="fa-solid fa-pen text-xs"></i>
+                                                                </button>
+                                                                <button onClick={() => {
+                                                                    const updated = group.targets.filter(x => x.id !== t.id);
+                                                                    setTargetsData({ ...targetsData, [group.date]: updated });
+                                                                }} className="w-8 h-8 rounded-full text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-colors">
+                                                                    <i className="fa-solid fa-trash text-xs"></i>
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     ))
                                                 )}
