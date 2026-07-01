@@ -2366,7 +2366,7 @@ Student Doubt: ${prompt}`
                                     <UserName name={activeChatUser?.name || activeChatUser?.user_name || "Unknown User"} id={activeChatUser.id} className="max-w-[150px] sm:max-w-[200px]" />
                                 </h3>
                                 {chatActions && chatActions[activeChatUser.id] ? (
-                                    <p className="text-[13px] text-[#00a884] font-medium flex items-center gap-1.5 mt-0.5 animate-pulse truncate">
+                                    <p className="text-[13px] text-[#00a0ff] font-medium flex items-center gap-1.5 mt-0.5 animate-pulse truncate">
                                         {chatActions[activeChatUser.id] === 'typing' && <>typing...</>}
                                         {chatActions[activeChatUser.id] === 'recording' && <>recording audio...</>}
                                         {chatActions[activeChatUser.id] === 'selecting_image' && <>selecting image...</>}
@@ -2403,15 +2403,15 @@ Student Doubt: ${prompt}`
                                         onContextMenu={(e) => { e.preventDefault(); setMsgMenu(m); }}
                                     >
                                         <div className={`flex items-center gap-2 w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                            <div id={`msg-bubble-${m.id}`} className={`px-2 pt-1.5 pb-1 rounded-lg text-[14px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] relative z-10 ${isMe ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-none ml-auto' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none mr-auto'} max-w-[85%]`}>
+                                            <div id={`msg-bubble-${m.id}`} className={`px-2 pt-1.5 pb-1 rounded-lg text-[14px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] relative z-10 ${isMe ? 'bg-[#00508a] text-[#e9edef] rounded-tr-none ml-auto' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none mr-auto'} max-w-[85%]`}>
                                                 {m.isAutoMsg && (
                                                     <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1 text-[#8696a0]`}>
                                                         <i className="fa-solid fa-robot"></i> Auto Message
                                                     </div>
                                                 )}
                                                 {m.replyTo && (
-                                                    <div className={`mb-1.5 p-1.5 rounded text-xs border-l-[4px] bg-black/10 flex flex-col gap-0.5 ${isMe ? 'border-[#53bdeb]' : 'border-[#00a884]'}`} onClick={() => { }}>
-                                                        <p className={`font-semibold truncate ${isMe ? 'text-[#53bdeb]' : 'text-[#00a884]'}`}>{m.replyTo.senderName || 'User'}</p>
+                                                    <div className={`mb-1.5 p-1.5 rounded text-xs border-l-[4px] bg-black/10 flex flex-col gap-0.5 ${isMe ? 'border-[#53bdeb]' : 'border-[#00a0ff]'}`} onClick={() => { }}>
+                                                        <p className={`font-semibold truncate ${isMe ? 'text-[#53bdeb]' : 'text-[#00a0ff]'}`}>{m.replyTo.senderName || 'User'}</p>
                                                         <p className="truncate text-[#8696a0]">{m.replyTo.text || (m.replyTo.audioUrl ? '🎤 Voice Note' : (m.replyTo.imageUrl ? '📷 Photo' : ''))}</p>
                                                     </div>
                                                 )}
@@ -2429,8 +2429,8 @@ Student Doubt: ${prompt}`
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <i className={`fa-solid ${m.viewLimit ? 'fa-stopwatch text-[#00a884]' : 'fa-eye-slash text-[#00a884]'} text-3xl mb-1`}></i>
-                                                                    <span className={`text-sm font-medium text-[#00a884]`}>View Photo</span>
+                                                                    <i className={`fa-solid ${m.viewLimit ? 'fa-stopwatch text-[#00a0ff]' : 'fa-eye-slash text-[#00a0ff]'} text-3xl mb-1`}></i>
+                                                                    <span className={`text-sm font-medium text-[#00a0ff]`}>View Photo</span>
                                                                 </>
                                                             )}
                                                         </div>
@@ -2495,7 +2495,7 @@ Student Doubt: ${prompt}`
                                     <button onClick={() => { setPendingImage(null); setPendingImageMode('normal'); notifyAction(null); }} className="absolute top-0 right-0 bg-black/60 text-white w-6 h-6 rounded-bl-lg flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <button onClick={() => setPendingImageMode('normal')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors ${pendingImageMode === 'normal' ? 'bg-[#00a884] text-[#111b21] font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}>Normal</button>
+                                    <button onClick={() => setPendingImageMode('normal')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors ${pendingImageMode === 'normal' ? 'bg-[#00a0ff] text-[#111b21] font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}>Normal</button>
                                     <button onClick={() => setPendingImageMode('view_once')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors flex items-center ${pendingImageMode === 'view_once' ? 'bg-orange-500 text-white font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}><i className="fa-solid fa-eye-slash mr-2"></i> View Once</button>
                                     <button onClick={() => setPendingImageMode('timed')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors flex items-center ${pendingImageMode === 'timed' ? 'bg-purple-500 text-white font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}><i className="fa-solid fa-stopwatch mr-2"></i> 10s Timer</button>
                                 </div>
@@ -2568,11 +2568,11 @@ Student Doubt: ${prompt}`
                             )}
                             
                             {isRecording ? (
-                                <button onClick={stopRecording} className="w-12 h-12 shrink-0 bg-[#00a884] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform mb-[-2px]">
+                                <button onClick={stopRecording} className="w-12 h-12 shrink-0 bg-[#00a0ff] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform mb-[-2px]">
                                     <i className="fa-solid fa-paper-plane text-xl translate-x-[-1px] translate-y-[1px]"></i>
                                 </button>
                             ) : (!dmInput.trim() && !pendingImage && canSend && !editingMsg) ? (
-                                <button onClick={startRecording} disabled={isUploadingAudio} className="w-12 h-12 shrink-0 bg-[#00a884] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 mb-[-2px]">
+                                <button onClick={startRecording} disabled={isUploadingAudio} className="w-12 h-12 shrink-0 bg-[#00a0ff] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 mb-[-2px]">
                                     {isUploadingAudio ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-microphone text-xl"></i>}
                                 </button>
                             ) : (
@@ -2593,7 +2593,7 @@ Student Doubt: ${prompt}`
                                         }
                                     }}
                                     disabled={!canSend || (!dmInput.trim() && !pendingImage)}
-                                    className="w-12 h-12 shrink-0 bg-[#00a884] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 mb-[-2px]"
+                                    className="w-12 h-12 shrink-0 bg-[#00a0ff] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 mb-[-2px]"
                                 >
                                     <i className="fa-solid fa-paper-plane text-xl translate-x-[-1px] translate-y-[1px]"></i>
                                 </button>
@@ -2782,7 +2782,7 @@ Student Doubt: ${prompt}`
                             <button onClick={() => setShowRequestsInbox(true)} className="hover:text-[#d1d7db] transition-colors relative">
                                 <i className="fa-solid fa-user-plus text-[18px]"></i>
                                 {pendingRequests.length > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-[#00a884] text-[#111b21] text-[10px] font-bold min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full">
+                                    <span className="absolute -top-2 -right-2 bg-[#00a0ff] text-[#111b21] text-[10px] font-bold min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full">
                                         {pendingRequests.length}
                                     </span>
                                 )}
@@ -2882,7 +2882,7 @@ Student Doubt: ${prompt}`
                                         <h4 className={`text-[17px] truncate pr-2 ${unreadCount > 0 ? 'font-semibold text-[#e9edef]' : 'text-[#e9edef]'}`}>
                                             <UserName name={finalName} id={uid} className="max-w-[140px]" />
                                         </h4>
-                                        {lastMsg && <span className={`text-[12px] shrink-0 ${unreadCount > 0 ? 'text-[#00a884] font-medium' : 'text-[#8696a0]'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                                        {lastMsg && <span className={`text-[12px] shrink-0 ${unreadCount > 0 ? 'text-[#00a0ff] font-medium' : 'text-[#8696a0]'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1 overflow-hidden">
@@ -2898,7 +2898,7 @@ Student Doubt: ${prompt}`
                                             </p>
                                         </div>
                                         {unreadCount > 0 && (
-                                            <span className="bg-[#00a884] text-[#111b21] text-[12px] font-medium min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full shrink-0">
+                                            <span className="bg-[#00a0ff] text-[#111b21] text-[12px] font-medium min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full shrink-0">
                                                 {unreadCount}
                                             </span>
                                         )}
@@ -5679,7 +5679,7 @@ INSTRUCTIONS:
                                 )}
                                 {aiMsgs.map((m, i) => (
                                     <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#005c4b] text-[#e9edef] rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-tl-sm'}`}>
+                                        <div className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm ${m.sender === 'user' ? 'bg-[#00508a] text-[#e9edef] rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-tl-sm'}`}>
                                             <FormattedText text={m.text} />
                                             {m.sender === 'ai' && <AIAudioPlayerUI message={m} messageId={i} audioState={audioState} setAudioState={setAudioState} />}
                                         </div>
@@ -8062,7 +8062,7 @@ INSTRUCTIONS:
                                         </div>
                                     </div>
                                 )}
-                                <div className={`max-w-[85%] ${c.sender === 'user' ? 'bg-[#005c4b] text-[#e9edef] rounded-2xl rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-2xl rounded-tl-sm'} p-3.5 shadow-sm text-[14px] whitespace-pre-wrap leading-relaxed`}>
+                                <div className={`max-w-[85%] ${c.sender === 'user' ? 'bg-[#00508a] text-[#e9edef] rounded-2xl rounded-br-sm' : 'bg-[#202c33] text-[#e9edef] rounded-2xl rounded-tl-sm'} p-3.5 shadow-sm text-[14px] whitespace-pre-wrap leading-relaxed`}>
                                     {c.image && (
                                         <img src={c.image} alt="User Upload" className="max-w-full h-auto rounded-xl mb-3 border border-[#e9edef]/10 shadow-sm" />
                                     )}
