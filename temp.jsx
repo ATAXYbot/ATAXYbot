@@ -8158,15 +8158,21 @@ INSTRUCTIONS:
                 setVisible(false);
                 const timer = setTimeout(() => {
                     if (current.targetSelector) {
-                        const el = document.querySelector(current.targetSelector);
-                        if (el) {
-                            setTargetRect(el.getBoundingClientRect());
-                        } else {
-                            setTimeout(() => {
-                                const retryEl = document.querySelector(current.targetSelector);
-                                setTargetRect(retryEl ? retryEl.getBoundingClientRect() : null);
-                            }, 500);
-                        }
+                          const el = document.querySelector(current.targetSelector);
+                          if (el) {
+                              setTargetRect(el.getBoundingClientRect());
+                              try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+                          } else {
+                              setTimeout(() => {
+                                  const retryEl = document.querySelector(current.targetSelector);
+                                  if (retryEl) {
+                                      setTargetRect(retryEl.getBoundingClientRect());
+                                      try { retryEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+                                  } else {
+                                      setTargetRect(null);
+                                  }
+                              }, 500);
+                          }
                     } else {
                         setTargetRect(null);
                     }
