@@ -1,10 +1,14 @@
 const fs = require('fs');
 const html = fs.readFileSync('index.html', 'utf8');
 
-const match = html.match(/<script type="text\/babel" data-presets="react-classic" data-type="module">([\s\S]*?)<\/script>/);
-if (match) {
-    fs.writeFileSync('debug.jsx', match[1], 'utf8');
-    console.log("Extracted to debug.jsx");
+const regex = /<script type="text\/babel"[^>]*>/;
+const match = html.match(regex);
+if(match) {
+    const start = match.index + match[0].length;
+    const end = html.indexOf('</script>', start);
+    const script = html.substring(start, end);
+    fs.writeFileSync('extracted.jsx', script);
+    console.log('Extracted successfully!');
 } else {
-    console.log("Could not find script tag");
+    console.log('Not found');
 }

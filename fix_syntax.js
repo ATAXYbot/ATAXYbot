@@ -1,38 +1,17 @@
 const fs = require('fs');
+let content = fs.readFileSync('index.html', 'utf8');
 
-let content = fs.readFileSync('c:/Users/risha/ATAXYbot/index.html', 'utf8');
+const targetStr = `                    // AGORA LOGIC FOR OFFICIAL ROOMS
+                    if (!clientRef.current) return;
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
 
-const targetStr = `                                                        <div className="mt-4">
-                                                            
-                                                        
-                                                        </div>
-<QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
-                                                        </div>
-                                                    </div>
-                                                )}`;
+                    const myParticipant = participants.find(p => String(p.user_id) === userIdString);
+                    const hasSeat = myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined;`;
 
-const replacementStr = `                                                        <div className="mt-4">
-                                                            <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
-                                                        </div>
-                                                    </div>
-                                                )}`;
+const replacement = `                    // AGORA LOGIC FOR OFFICIAL ROOMS
+                    if (!clientRef.current) return;`;
 
-if (content.includes(targetStr)) {
-    content = content.replace(targetStr, replacementStr);
-    fs.writeFileSync('c:/Users/risha/ATAXYbot/index.html', content, 'utf8');
-    console.log('Fixed syntax error!');
-} else {
-    // try removing the exact block matching what we see in the file
-    const searchRegex = /<div className="mt-4">\s*<\/div>\s*<QuestionAIAssistant q=\{currentQuestion\} attemptIdx=\{selectedOptionIdx\} \/>\s*<\/div>\s*<\/div>\s*\)\}/;
-    if (searchRegex.test(content)) {
-        content = content.replace(searchRegex, `<div className="mt-4">
-                                                            <QuestionAIAssistant q={currentQuestion} attemptIdx={selectedOptionIdx} />
-                                                        </div>
-                                                    </div>
-                                                )}`);
-        fs.writeFileSync('c:/Users/risha/ATAXYbot/index.html', content, 'utf8');
-        console.log('Fixed syntax error via regex!');
-    } else {
-        console.log('Could not find the exact syntax error block.');
-    }
-}
+content = content.replace(targetStr, replacement);
+fs.writeFileSync('index.html', content);
+console.log('Fixed syntax error in syncHardwareWithState');
