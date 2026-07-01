@@ -8358,9 +8358,10 @@ INSTRUCTIONS:
                         const data = imgData.data;
                         for (let i = 0; i < data.length; i += 4) {
                             const r = data[i]; const g = data[i+1]; const b = data[i+2];
-                            const diff = Math.max(g - r, g - b);
-                            if (diff > 15) {
-                                data[i+3] = 0;
+                            if (g > 150 && r < 140 && b < 140) {
+                                const dist = Math.abs(g - 255) + r + b;
+                                if (dist < 100) data[i+3] = 0;
+                                else data[i+3] = Math.max(0, data[i+3] - (255 - dist));
                             }
                         }
                         ctx.putImageData(imgData, 0, 0);
@@ -8393,9 +8394,14 @@ INSTRUCTIONS:
 
             const tutorialData = [
                 {
+                    character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 0,
+                    text: "Welcome to ATAXY! I'm your mentor ATAXY. Let me give you a complete deep-dive tour of the app!", btn: "Next", targetSelector: null,
+                    logoX: 125, logoY: 125, logoSize: 22 
+                },
+                {
                     character: 'female', name: 'ASENA', img: 'assets/characters/mia_spritesheet_16.png', spriteIndex: 0,
-                    text: "Welcome to ATAXY! I'm ASENA. Let me give you a complete deep-dive tour!", btn: "Start Cinematic Tour", targetSelector: null,
-                    logoX: 135, logoY: 130, logoSize: 25 
+                    text: "And I'm ASENA! Together, we will guide you through every powerful feature. Let's begin!", btn: "Start Cinematic Tour", targetSelector: null,
+                    logoX: 135, logoY: 130, logoSize: 25
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
@@ -8666,38 +8672,49 @@ INSTRUCTIONS:
                 };
                 setCinematicDemoTest(demoTest);
                 setActivePracticeMode('tests');
-                // Fake starting the test
-                setActiveQuiz({
-                    questions: demoTest.questions,
-                    answers: {},
-                    startTime: Date.now(),
-                    totalMarks: demoTest.totalMarks,
-                    testId: demoTest.id,
-                    testName: demoTest.name,
-                    config: demoTest.config
-                });
-                setActiveQuestionIndex(0);
+                
+                setActiveGeneratedTest({ ...demoTest, startTime: Date.now() });
+                setLoadedQuestions(demoTest.questions);
+                setActivePracticeChapter({ name: demoTest.name, isCustomTest: true });
+                setShowQuiz(true);
+                setGeneratedTestResult(null);
+                setShowScoreSummary(false);
+                setShowAnalyticsModal(false);
+
                 setTimeout(() => {
-                    const el = document.querySelector('.quiz-option-0');
+                    const el = document.querySelector('[data-qa-card] .w-full.text-left.p-3');
                     if (el) el.classList.add('demo-quiz-option');
                 }, 1000);
             } else if (action === 'wrong') {
-                setActiveQuiz(prev => ({ ...prev, answers: { ...prev.answers, 0: 0 } })); // Selected wrong answer (Nucleus instead of Mitochondria)
+                setPracticeAttempts(prev => ({ ...prev, 'q1': 0 }));
                 setTimeout(() => {
-                    const el = document.querySelector('.ask-mentor-btn');
-                    if (el) el.classList.add('demo-mentor-btn');
+                    const el = document.querySelector('.fa-user-graduate');
+                    if (el) el.parentElement.classList.add('demo-mentor-btn');
                 }, 500);
             } else if (action === 'submit') {
-                submitQuiz(); // Normal submit will generate analysis
+                const finalResult = { 
+                    ...cinematicDemoTest, 
+                    score: -1, 
+                    accuracy: 0, 
+                    attempts: { 'q1': 0 }, 
+                    questions: cinematicDemoTest.questions 
+                };
+                setGeneratedTestsHistory(prev => [finalResult, ...prev.filter(t => t.id !== finalResult.id)]);
+                setGeneratedTestResult(finalResult);
+                setShowScoreSummary(true);
+                setActiveGeneratedTest(null);
+                setActivePracticeChapter(null);
+                setCustomGeneratorMode('history');
+                setShowQuiz(false);
             } else if (action === 'cleanup') {
-                // Delete the fake test from history
                 setGeneratedTestsHistory(prev => prev.filter(t => t.id !== 'cinematic_demo_1'));
                 setCinematicDemoTest(null);
+                setShowScoreSummary(false);
             }
         };
         window.addEventListener('cinematic_demo_action', handleCinematicDemo);
         return () => window.removeEventListener('cinematic_demo_action', handleCinematicDemo);
-    }, []);
+    }, [cinematicDemoTest]);
 React.useEffect(() => {
                 const returnType = sessionStorage.getItem('ataxy_return_type');
                 const returnExamId = sessionStorage.getItem('ataxy_return_exam');
