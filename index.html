@@ -856,31 +856,37 @@
         // 🛡️ NATIVE TELEGRAM SAFE ALERTS & CONFIRMS
         // ==========================================
         let globalDialogSetter = null;
+        let dialogQueue = [];
+
+        const flushDialogQueue = () => {
+            if (!globalDialogSetter || dialogQueue.length === 0) return;
+            const nextDialog = dialogQueue.shift();
+            globalDialogSetter(nextDialog);
+        };
 
         const safeAlert = (msg) => {
             if (globalDialogSetter) {
                 globalDialogSetter({ type: 'alert', message: msg, isOpen: true });
+            } else if (window.Telegram?.WebApp?.showAlert) {
+                try { window.Telegram.WebApp.showAlert(msg); } catch (e) { dialogQueue.push({ type: 'alert', message: msg, isOpen: true }); }
             } else {
-                try {
-                    if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
-                    else alert(msg);
-                } catch (e) { alert(msg); }
+                dialogQueue.push({ type: 'alert', message: msg, isOpen: true });
             }
         };
 
         const safeConfirm = (msg, callback) => {
             if (globalDialogSetter) {
                 globalDialogSetter({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
-            } else {
+            } else if (window.Telegram?.WebApp?.showConfirm) {
                 try {
-                    if (window.Telegram?.WebApp?.showConfirm) {
-                        window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
-                            if (confirmed) callback();
-                        });
-                    } else {
-                        if (confirm(msg)) callback();
-                    }
-                } catch (e) { if (confirm(msg)) callback(); }
+                    window.Telegram.WebApp.showConfirm(msg, (confirmed) => {
+                        if (confirmed) callback();
+                    });
+                } catch (e) {
+                    dialogQueue.push({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
+                }
+            } else {
+                dialogQueue.push({ type: 'confirm', message: msg, onConfirm: callback, isOpen: true });
             }
         };
 
@@ -1192,12 +1198,16 @@ Student Doubt: ${prompt}`
 
             useEffect(() => {
                 globalDialogSetter = setDialogConfig;
+                flushDialogQueue();
                 return () => { globalDialogSetter = null; };
             }, []);
 
             if (!dialogConfig.isOpen) return null;
 
-            const handleClose = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
+            const handleClose = () => {
+                setDialogConfig(prev => ({ ...prev, isOpen: false }));
+                setTimeout(flushDialogQueue, 300);
+            };
 
             const handleConfirm = () => {
                 if (dialogConfig.onConfirm) dialogConfig.onConfirm();
@@ -7465,7 +7475,7 @@ INSTRUCTIONS:
                 const file = e.target.files[0];
                 if (!file) return;
                 if (!file.type.startsWith('image/')) {
-                    alert("Please select an image file.");
+                    safeAlert("Please select an image file.");
                     return;
                 }
                 const reader = new FileReader();
@@ -7490,7 +7500,7 @@ INSTRUCTIONS:
             };
 
             const deleteSession = (id) => {
-                if (confirm("Are you sure you want to delete this chat history?")) {
+                safeConfirm("Are you sure you want to delete this chat history?", () => {
                     setSessions(prev => {
                         const filtered = prev.filter(s => s.id !== id);
                         if (filtered.length === 0) {
@@ -7503,7 +7513,7 @@ INSTRUCTIONS:
                         }
                         return filtered;
                     });
-                }
+                });
             };
 
             const sendMsg = async (e) => {
