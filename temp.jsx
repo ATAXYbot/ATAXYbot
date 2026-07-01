@@ -8065,7 +8065,7 @@ INSTRUCTIONS:
                 },
                 {
                     character: 'male', name: 'ATAXY', img: 'assets/characters/jack_spritesheet_16.png', spriteIndex: 2,
-                    text: "Here, you can review your Wrong Questions, Bookmarks, and Notes. You can even generate a Target Weakness DPP right from your bookmarks!", btn: "Got it", targetSelector: '.fa-bookmark',
+                    text: "Here, you can review your Wrong Questions, Bookmarks, and Notes. You can even generate a Target Weakness DPP right from your bookmarks!", btn: "Got it", targetSelector: '#me-tab-bookmarks',
                     logoX: 125, logoY: 125, logoSize: 22
                 },
                 // 5. CHATS TAB
@@ -8296,7 +8296,7 @@ INSTRUCTIONS:
                 isCustomTest: false,
                 id: 'practice_demo_1',
                 questions: [
-                    { id: 'p1', question: 'A car accelerates from rest at 2 m/s². What is its velocity after 5 seconds?', options: ['5 m/s', '10 m/s', '15 m/s', '20 m/s'], correctOption: 'B', explanation: 'v = u + at = 0 + 2(5) = 10 m/s.' }
+                    { id: 'p1', question: 'A car accelerates from rest at 2 m/s².\nWhat is its velocity after 5 seconds?', options: ['5 m/s', '10 m/s', '15 m/s', '20 m/s'], correctOption: 'B', explanation: 'v = u + at = 0 + 2(5) = 10 m/s.' }
                 ]
             };
 
@@ -8317,6 +8317,7 @@ INSTRUCTIONS:
                 setActivePracticeChapter(practiceMockTest);
                 setLoadedQuestions(practiceMockTest.questions);
                 setCurrentTab('questions');
+                setShowQuiz(true); // REQUIRED TO OPEN QUIZ UI
                 setTimeout(() => {
                     const el = document.querySelector('[data-qa-card] .w-full.text-left.p-3');
                     if (el) el.classList.add('demo-quiz-option');
@@ -8328,11 +8329,10 @@ INSTRUCTIONS:
                     if (el) el.parentElement.classList.add('demo-mentor-btn');
                 }, 500);
             } else if (action === 'generate_demo') {
-                // Exit practice module
                 setActivePracticeChapter(null);
-                
                 setCinematicDemoTest(demoTest);
                 setActivePracticeMode('tests');
+                setCurrentTab('questions'); // REQUIRED TO SWITCH TO TAB WHERE activePracticeMode IS RENDERED
                 
                 setActiveGeneratedTest({ ...demoTest, startTime: Date.now() });
                 setLoadedQuestions(demoTest.questions);
@@ -12570,7 +12570,7 @@ React.useEffect(() => {
                                     <h4 className="font-black text-gray-900 dark:text-white text-3xl tracking-tight">{accuracy}<span className="text-xl text-emerald-500">%</span></h4>
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">{totalCorrect}/{totalAttempted} Correct</p>
                                 </div>
-                                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center items-center text-center cursor-pointer group active:scale-95 transition-all relative overflow-hidden" onClick={() => setHistoryViewType('bookmarks')}>
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center items-center text-center cursor-pointer group active:scale-95 transition-all relative overflow-hidden" id="me-tab-bookmarks" onClick={() => setHistoryViewType('bookmarks')}>
                                     <div className="absolute -inset-2 bg-gradient-to-br from-amber-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl blur-xl"></div>
                                     <div className="w-16 h-16 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/20 border border-amber-100 dark:border-amber-800 text-amber-500 dark:text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-3 shadow-sm group-hover:scale-110 transition-transform duration-300 transform -rotate-3 group-hover:rotate-0"><i className="fa-solid fa-bookmark"></i></div>
                                     <h4 className="font-black text-gray-900 dark:text-white text-3xl tracking-tight">{bookmarks.length}</h4>
