@@ -7582,7 +7582,7 @@ INSTRUCTIONS:
                                                     <i className="fa-regular fa-message text-gray-400 text-sm"></i>
                                                     <span className={`text-sm truncate ${activeSessionId === s.id ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300 font-medium'}`}>{s.title}</span>
                                                 </div>
-                                                <button onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }} className="w-8 h-8 rounded-full hover:bg-red-500/20 text-gray-400 hover:text-red-500 flex items-center justify-center shrink-0 md:opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }} className="w-8 h-8 rounded-full hover:bg-red-500/20 text-gray-400 hover:text-red-500 flex items-center justify-center shrink-0 opacity-50 hover:opacity-100 group-hover:opacity-100 transition-all">
                                                     <i className="fa-solid fa-trash-can text-xs"></i>
                                                 </button>
                                             </div>
