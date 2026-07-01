@@ -8371,10 +8371,77 @@ INSTRUCTIONS:
         const CoCTutorialOverlay = ({ onComplete }) => {
             const [step, setStep] = React.useState(0);
             const [visible, setVisible] = React.useState(false);
+            const [targetRect, setTargetRect] = React.useState(null);
+            const [windowSize, setWindowSize] = React.useState({ w: window.innerWidth, h: window.innerHeight });
+
+            const tutorialData = [
+                {
+                    character: 'female',
+                    name: 'ASENA',
+                    img: 'assets/characters/mia_spritesheet.png',
+                    spriteIndex: 0,
+                    text: "Welcome to ATAXY! I'm ASENA, your AI Mentor. Let's get you started!",
+                    btn: "Let's go!",
+                    targetSelector: null,
+                    pos: 'center'
+                },
+                {
+                    character: 'male',
+                    name: 'ATAXY',
+                    img: 'assets/characters/jack_spritesheet.png',
+                    spriteIndex: 1, // pointing
+                    text: "This is the Home tab. Here you can see your 7-Day momentum and Dominator Verdict!",
+                    btn: "Got it!",
+                    targetSelector: '#nav-btn-home',
+                    pos: 'bottom'
+                },
+                {
+                    character: 'female',
+                    name: 'ASENA',
+                    img: 'assets/characters/mia_spritesheet.png',
+                    spriteIndex: 1, // pointing
+                    text: "Access thousands of questions and PYQs directly from the Practice tab.",
+                    btn: "Awesome!",
+                    targetSelector: '#nav-btn-practice',
+                    pos: 'bottom'
+                },
+                {
+                    character: 'male',
+                    name: 'ATAXY',
+                    img: 'assets/characters/jack_spritesheet.png',
+                    spriteIndex: 3, // hyped
+                    text: "Are you ready to crack your exams and dominate?",
+                    btn: "Bring it on!",
+                    targetSelector: null,
+                    pos: 'center'
+                }
+            ];
+
+            const current = tutorialData[step];
 
             React.useEffect(() => {
-                setTimeout(() => setVisible(true), 50);
-            }, [step]);
+                const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            React.useEffect(() => {
+                setVisible(false);
+                const timer = setTimeout(() => {
+                    if (current.targetSelector) {
+                        const el = document.querySelector(current.targetSelector);
+                        if (el) {
+                            setTargetRect(el.getBoundingClientRect());
+                        } else {
+                            setTargetRect(null);
+                        }
+                    } else {
+                        setTargetRect(null);
+                    }
+                    setVisible(true);
+                }, 100);
+                return () => clearTimeout(timer);
+            }, [step, windowSize]);
 
             const handleNext = () => {
                 setVisible(false);
@@ -8387,74 +8454,71 @@ INSTRUCTIONS:
                 }, 400);
             };
 
-            const tutorialData = [
-                {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet.png',
-                    spriteIndex: 0,
-                    text: "Welcome to ATAXY! I'm ASENA, your AI Mentor. Let's get you started!",
-                    btn: "Let's go!"
-                },
-                {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet.png',
-                    spriteIndex: 0,
-                    text: "I'm ATAXY. We'll help you organize your targets and practice daily.",
-                    btn: "Sounds good!"
-                },
-                {
-                    character: 'female',
-                    name: 'ASENA',
-                    img: 'assets/characters/mia_spritesheet.png',
-                    spriteIndex: 1,
-                    text: "You can find all your study materials and global chats right here.",
-                    btn: "Awesome!"
-                },
-                {
-                    character: 'male',
-                    name: 'ATAXY',
-                    img: 'assets/characters/jack_spritesheet.png',
-                    spriteIndex: 3,
-                    text: "Are you ready to crack your exams and dominate?",
-                    btn: "Bring it on!"
-                }
-            ];
-
-            const current = tutorialData[step];
+            // Dynamic Positioning Logic
+            let charStyle = { bottom: '-20px', left: '50%', transform: 'translateX(-50%)' };
+            let bubbleStyle = { bottom: '50%', left: '50%', transform: 'translateX(-50%)' };
+            
+            if (current.pos === 'bottom' && targetRect) {
+                // Character stands above the bottom nav pointing down
+                const charX = Math.max(20, Math.min(windowSize.w - 300, targetRect.left + (targetRect.width/2) - 150));
+                charStyle = { bottom: `${windowSize.h - targetRect.top + 20}px`, left: `${charX}px` };
+                bubbleStyle = { bottom: `${windowSize.h - targetRect.top + 260}px`, left: `${charX + 10}px` };
+            } else if (current.pos === 'center') {
+                charStyle = { bottom: '-20px', right: current.character === 'female' ? 'auto' : '-10px', left: current.character === 'female' ? '-10px' : 'auto' };
+                bubbleStyle = { bottom: '60%', right: current.character === 'female' ? 'auto' : '16px', left: current.character === 'female' ? '16px' : 'auto' };
+            }
 
             return (
-                <div className="fixed inset-0 z-[9999999] flex items-end justify-center pointer-events-auto bg-black/60 backdrop-blur-sm transition-opacity duration-500">
-                    <div className="w-full max-w-[500px] relative h-full flex flex-col justify-end overflow-hidden pb-[15%]">
+                <div className="fixed inset-0 z-[9999999] pointer-events-auto overflow-hidden">
+                    {/* Spotlight Overlay */}
+                    <div 
+                        className="absolute rounded-2xl transition-all duration-500 pointer-events-none"
+                        style={{
+                            left: targetRect ? targetRect.left - 8 : windowSize.w / 2,
+                            top: targetRect ? targetRect.top - 8 : windowSize.h / 2,
+                            width: targetRect ? targetRect.width + 16 : 0,
+                            height: targetRect ? targetRect.height + 16 : 0,
+                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.7)',
+                            opacity: visible ? 1 : 0
+                        }}
+                    />
 
-                        {/* Speech Bubble */}
-                        <div className={`absolute bottom-[65%] sm:bottom-[60%] ${current.character === 'female' ? 'right-4' : 'left-4'} w-[260px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 transform border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20`}>
-                            {/* Speech Bubble Tail */}
-                            <div className={`absolute -bottom-4 ${current.character === 'female' ? 'left-8 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-8 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
+                    {/* Speech Bubble */}
+                    <div 
+                        className={`absolute w-[260px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-500 border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20`}
+                        style={current.pos === 'center' ? bubbleStyle : { ...bubbleStyle, transform: 'none' }}
+                    >
+                        {/* Tail */}
+                        <div className={`absolute -bottom-4 ${current.character === 'female' || current.pos === 'bottom' ? 'left-8 border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-8 border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white'} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
+                        <p className="font-black text-gray-800 text-[15px] leading-snug mb-4 tracking-tight">{current.text}</p>
+                        <button onClick={handleNext} className="w-full bg-gradient-to-b from-[#84cc16] to-[#65a30d] hover:from-[#a3e635] hover:to-[#84cc16] text-white font-black uppercase tracking-wider py-2.5 rounded-xl shadow-[0_4px_0_#4d7c0f] active:shadow-none active:translate-y-1 transition-all border border-[#a3e635]">
+                            {current.btn}
+                        </button>
+                    </div>
 
-                            <p className="font-black text-gray-800 text-[15px] leading-snug mb-4 tracking-tight">{current.text}</p>
-                            <button onClick={handleNext} className="w-full bg-gradient-to-b from-[#84cc16] to-[#65a30d] hover:from-[#a3e635] hover:to-[#84cc16] text-white font-black uppercase tracking-wider py-2.5 rounded-xl shadow-[0_4px_0_#4d7c0f] active:shadow-none active:translate-y-1 transition-all border border-[#a3e635]">
-                                {current.btn}
-                            </button>
-                        </div>
-
-                        {/* Perfect 3D Character Cutout */}
-                        <div className={`absolute bottom-[-20px] ${current.character === 'female' ? '-left-4 sm:left-4' : '-right-4 sm:right-4'} w-[280px] sm:w-[350px] transition-all duration-500 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}>
-                            <style>{`
-                                @keyframes characterBreathe {
-                                    0%, 100% { transform: translateY(0) scale(1); }
-                                    50% { transform: translateY(-8px) scale(1.02); }
-                                }
-                            `}</style>
-                            <ChromaImage src={current.img} alt={current.name} spriteIndex={current.spriteIndex} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" style={{ animation: 'characterBreathe 3s ease-in-out infinite' }} />
+                    {/* Character Cutout with Logo */}
+                    <div 
+                        className={`absolute w-[280px] sm:w-[350px] transition-all duration-500 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} z-10 pointer-events-none drop-shadow-2xl`}
+                        style={current.pos === 'center' ? charStyle : { ...charStyle, transform: 'none' }}
+                    >
+                        <style>{`
+                            @keyframes characterBreathe {
+                                0%, 100% { transform: translateY(0) scale(1); }
+                                50% { transform: translateY(-8px) scale(1.02); }
+                            }
+                        `}</style>
+                        <div style={{ animation: 'characterBreathe 3s ease-in-out infinite', position: 'relative' }}>
+                            <ChromaImage src={current.img} alt={current.name} spriteIndex={current.spriteIndex} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
+                            
+                            {/* chest logo overlay */}
+                            <div className={`absolute ${current.character === 'female' ? 'top-[42%] left-[62%]' : 'top-[38%] left-[58%]'} transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10`}>
+                                <AtaxyLogo className="w-full h-full rounded-full shadow-lg border-2 border-[#00FFFF]" />
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         };
-
-        // ==========================================
 
         function App() {
             // --- TOUR GUIDE STATE ---
