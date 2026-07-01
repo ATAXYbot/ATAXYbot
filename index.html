@@ -8909,6 +8909,65 @@ INSTRUCTIONS:
             const STUDY_PARTNERS = [];
             const [partnerMessage, setPartnerMessage] = React.useState(null);
             const [studyPartnerConfig, setStudyPartnerConfig] = React.useState({ enabled: true, character: 'ataxy', hasSeenOnboarding: true });
+            
+            // --- AUTONOMOUS CHARACTER BRAIN ---
+            const [brainMetrics, setBrainMetrics] = React.useState(() => safeGetJSON('ataxy_brain_metrics', { lastSeen: Date.now(), lastMessageTime: 0 }));
+            
+            const triggerBrainMessage = React.useCallback((msg, bypassCooldown = false) => {
+                setBrainMetrics(prev => {
+                    const now = Date.now();
+                    if (!bypassCooldown && now - prev.lastMessageTime < 60000 * 10) { 
+                        // 10 minute global cooldown to prevent flooding
+                        return prev;
+                    }
+                    setPartnerMessage(msg);
+                    const next = { ...prev, lastMessageTime: now };
+                    safeSetItem('ataxy_brain_metrics', JSON.stringify(next));
+                    return next;
+                });
+            }, []);
+
+            // 1. lastSeen Tracker
+            React.useEffect(() => {
+                const int = setInterval(() => {
+                    setBrainMetrics(prev => {
+                        const next = { ...prev, lastSeen: Date.now() };
+                        safeSetItem('ataxy_brain_metrics', JSON.stringify(next));
+                        return next;
+                    });
+                }, 10000);
+                return () => clearInterval(int);
+            }, []);
+
+            // 2. Offline / Missed Targets Checker
+            React.useEffect(() => {
+                const now = Date.now();
+                const offlineDuration = now - brainMetrics.lastSeen;
+                if (offlineDuration > 60000 * 15) { // 15+ mins offline
+                    const todayStr = getTodayStr();
+                    const todayTargets = targetsData[todayStr] || [];
+                    const missedTargets = todayTargets.filter(t => {
+                        if (t.done || !t.endTime) return false;
+                        const [h, m] = t.endTime.split(':');
+                        const targetTime = new Date();
+                        targetTime.setHours(h, m, 0, 0);
+                        return targetTime.getTime() > brainMetrics.lastSeen && targetTime.getTime() < now;
+                    });
+                    
+                    if (missedTargets.length > 0) {
+                        setTimeout(() => {
+                            triggerBrainMessage({
+                                type: 'missed_target',
+                                text: `Welcome back! You missed ${missedTargets.length} scheduled target${missedTargets.length > 1 ? 's' : ''} while you were offline. Let's get back to work!`,
+                                requireAcknowledge: true
+                            }, true); // bypass cooldown
+                        }, 2000);
+                    }
+                }
+            }, []);
+
+
+
             const [studyPartnerState, setStudyPartnerState] = React.useState({});
             const [strictIntervention, setStrictIntervention] = React.useState(null);
 
@@ -9277,6 +9336,8 @@ React.useEffect(() => {
         };
 
             const [currentTab, setCurrentTab] = useState('home');
+
+
             const previousTabRef = useRef('home');
             useEffect(() => {
                 if (currentTab !== 'ai') {
@@ -9313,6 +9374,40 @@ React.useEffect(() => {
             const [historySortOrder, setHistorySortOrder] = useState('newest');
             const [historySearchQuery, setHistorySearchQuery] = useState('');
             const [syllabusTest, setSyllabusTest] = useState(null);
+
+            // 3. Contextual Tab Transitions (Post-Session)
+            const [prevTab, setPrevTab] = React.useState(currentTab);
+            const [sessionQuestionsSolved, setSessionQuestionsSolved] = React.useState(0);
+            
+            // Increment session counter when an attempt is made
+            React.useEffect(() => {
+                if (currentTab === 'questions' && practiceAttempts) {
+                    setSessionQuestionsSolved(Object.keys(practiceAttempts).length);
+                }
+            }, [practiceAttempts]);
+
+            React.useEffect(() => {
+                if (prevTab === 'questions' && currentTab === 'home') {
+                    const diff = (practiceAttempts ? Object.keys(practiceAttempts).length : 0) - sessionQuestionsSolved;
+                    if (diff > 0) {
+                        triggerBrainMessage({
+                            type: 'chatter',
+                            text: `Great session! You just solved ${diff} question${diff > 1 ? 's' : ''}. Analyzing your mistakes and learning from them is how you build an empire piece by piece.`,
+                            requireAcknowledge: true
+                        }, true); // bypass cooldown
+                    } else {
+                        triggerBrainMessage({
+                            type: 'chatter',
+                            text: "You didn't solve any new questions this session! Consistency is key, try to at least do 5 questions next time.",
+                            requireAcknowledge: true
+                        });
+                    }
+                }
+                if (currentTab === 'questions' && practiceAttempts) {
+                    setSessionQuestionsSolved(Object.keys(practiceAttempts).length);
+                }
+                setPrevTab(currentTab);
+            }, [currentTab]);
             const [analysisQuestionIndex, setAnalysisQuestionIndex] = useState(0);
             const [analysisShowPalette, setAnalysisShowPalette] = useState(false);
             const [customGenConfig, setCustomGenConfig] = useState({ subjects: { Physics: [], Chemistry: [], Botany: [], Zoology: [] }, topics: { Physics: {}, Chemistry: {}, Botany: {}, Zoology: {} }, selectAllTopics: true, dppSubject: null, dppChapter: null, dppTopics: [], dppSelectAllTopics: false, dppCount: 10, testName: '' });
@@ -9524,6 +9619,7 @@ React.useEffect(() => {
             const [newTargetPriority, setNewTargetPriority] = useState("Medium");
             const [newTargetCategory, setNewTargetCategory] = useState("Physics"); // e.g. "16:00"
             const [showDetailedAnalyzer, setShowDetailedAnalyzer] = useState(false);
+            const [editingTarget, setEditingTarget] = useState(null);
 
             // Global Timer State
             const [globalTimer, setGlobalTimer] = useState(() => safeGetJSON('ataxy_global_timer', {
@@ -9581,14 +9677,13 @@ React.useEffect(() => {
                         if (todayTargets.length === 0) {
                             const lastEmptyNag = studyPartnerState.lastEmptyNagTime || 0;
                             // Nag about setting targets every few seconds for demonstration
-                            if (Date.now() - lastEmptyNag > 30 * 1000) {
-                                setPartnerMessage({ 
+                            if (Date.now() - lastEmptyNag > 12 * 60 * 60 * 1000) {
+                                triggerBrainMessage({ 
                                     text: "From small small bricks a whole home is formed. Just like that, piece by piece reaching towards your goal will get you there! Add daily targets to stay on track.", 
                                     type: 'empty_targets', 
                                     actionText: 'Set Targets',
-                                    requireAcknowledge: true, 
-                                    id: Date.now() 
-                                });
+                                    requireAcknowledge: true
+                                }, true);
                                 setStudyPartnerState(prev => ({ ...prev, lastEmptyNagTime: Date.now() }));
                             }
                         } else {
@@ -10356,7 +10451,10 @@ React.useEffect(() => {
                 </div>
                 
                 <div className="flex flex-col items-end justify-between h-full gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); deleteTarget(t.id); }} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                    <button onClick={(e) => { e.stopPropagation(); setEditingTarget(t); }} className="text-gray-500 hover:text-blue-500 hover:bg-blue-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                            <i className="fa-solid fa-pen text-sm"></i>
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteTarget(t.id); }} className="text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                         <i className="fa-solid fa-trash text-sm"></i>
                     </button>
                     {t.targetTime && <span className="text-[10px] text-gray-400 font-mono font-bold bg-[#010B1C]/80 px-2 py-1 rounded-md border border-gray-800"><i className="fa-regular fa-clock text-[#0AE0D0]/70 mr-1"></i>{t.targetTime}</span>}
@@ -10389,6 +10487,40 @@ React.useEffect(() => {
 
                             
 
+                            {/* Edit Target Modal */}
+                            {editingTarget && ReactDOM.createPortal(
+                                <div className="fixed inset-0 z-[3000000] flex items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setEditingTarget(null)}></div>
+                                    <div className="bg-[#010714] border border-[#0AE0D0]/30 rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl animate-in zoom-in-95 flex flex-col gap-4">
+                                        <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                                            <i className="fa-solid fa-pen-to-square text-[#0AE0D0]"></i> Edit Target
+                                        </h3>
+                                        <input type="text" value={editingTarget.text} onChange={e => setEditingTarget({...editingTarget, text: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#0AE0D0] outline-none transition-colors" placeholder="Target description..." />
+                                        
+                                        <div className="flex gap-3">
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-400 font-bold mb-1 block">Start Time</label>
+                                                <input type="time" value={editingTarget.startTime || ''} onChange={e => setEditingTarget({...editingTarget, startTime: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#0AE0D0] outline-none transition-colors" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-400 font-bold mb-1 block">End Time</label>
+                                                <input type="time" value={editingTarget.endTime || ''} onChange={e => setEditingTarget({...editingTarget, endTime: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#0AE0D0] outline-none transition-colors" />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-3 justify-end mt-2">
+                                            <button onClick={() => setEditingTarget(null)} className="px-5 py-2.5 rounded-xl font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
+                                            <button onClick={() => {
+                                                const u = targetsData[selectedDate].map(t => t.id === editingTarget.id ? editingTarget : t);
+                                                setTargetsData({ ...targetsData, [selectedDate]: u });
+                                                setEditingTarget(null);
+                                            }} className="px-5 py-2.5 bg-[#0AE0D0] text-[#010714] font-black rounded-xl hover:scale-105 active:scale-95 transition-transform shadow-[0_0_15px_rgba(10,224,208,0.4)]">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>,
+                                document.body
+                            )}
+                            
                             {/* Detailed Analyzer Modal */}
                             {showDetailedAnalyzer && ReactDOM.createPortal(
                                 <div className="fixed inset-0 z-[3000000] bg-[#010B1C]/95 backdrop-blur-xl flex flex-col w-full md:max-w-screen-xl max-w-md mx-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
