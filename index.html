@@ -1510,6 +1510,23 @@ Student Doubt: ${prompt}`
             );
         };
 
+        const VerifiedBadge = ({ className = "w-4 h-4" }) => {
+            return (
+                <div className={`relative inline-flex items-center justify-center ${className}`} title="Official ATAXY Verified">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,195,255,0.5)]">
+                        <path d="M10.5213 2.62368C11.3147 1.75255 12.6853 1.75255 13.4787 2.62368L14.4989 3.74391C14.8998 4.18418 15.4761 4.42288 16.071 4.38532L17.5845 4.2897C18.7384 4.21683 19.7832 5.26164 19.7103 6.41554L19.6147 7.92905C19.5771 8.52388 19.8158 9.10016 20.2561 9.50111L21.3763 10.5213C22.2475 11.3147 22.2475 12.6853 21.3763 13.4787L20.2561 14.4989C19.8158 14.8998 19.5771 15.4761 19.6147 16.071L19.7103 17.5845C19.7832 18.7384 18.7384 19.7832 17.5845 19.7103L16.071 19.6147C15.4761 19.5771 14.8998 19.8158 14.4989 20.2561L13.4787 21.3763C12.6853 22.2475 11.3147 22.2475 10.5213 21.3763L9.50111 20.2561C9.10016 19.8158 8.52388 19.5771 7.92905 19.6147L6.41554 19.7103C5.26164 19.7832 4.21683 18.7384 4.2897 17.5845L4.38532 16.071C4.42288 15.4761 4.18418 14.8998 3.74391 14.4989L2.62368 13.4787C1.75255 12.6853 1.75255 11.3147 2.62368 10.5213L3.74391 9.50111C4.18418 9.10016 4.42288 8.52388 4.38532 7.92905L4.2897 6.41554C4.21683 5.26164 5.26164 4.21683 6.41554 4.2897L7.92905 4.38532C8.52388 4.42288 9.10016 4.18418 9.50111 3.74391L10.5213 2.62368Z" fill="url(#verified-gradient)"/>
+                        <path d="M10.17 16.58L5.22 11.63L6.63 10.22L10.17 13.76L17.37 6.56L18.78 7.97L10.17 16.58Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="verified-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                                <stop stopColor="#00E5FF"/>
+                                <stop offset="1" stopColor="#8A2BE2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            );
+        };
+
         // ==========================================
         // 🪐 GLOBAL ADDICTIVE ORBITAL LOADER
         // ==========================================
@@ -2426,7 +2443,8 @@ Student Doubt: ${prompt}`
                             <div>
                                 <div className="flex items-center gap-2">
                                     <h3 className="font-black text-base text-white tracking-wide">ATAXY Mentor</h3>
-                                    <i className="fa-solid fa-thumbtack text-[11px] text-gray-300 opacity-80 rotate-45"></i>
+                                    <VerifiedBadge className="w-[14px] h-[14px] shadow-sm" />
+                                    <i className="fa-solid fa-thumbtack text-[11px] text-gray-300 opacity-80 rotate-45 ml-1"></i>
                                 </div>
                                 <p className="text-[10px] text-purple-200/70 font-medium">Your personal study mentor</p>
                             </div>
@@ -7572,7 +7590,9 @@ INSTRUCTIONS:
                             </button>
                             <AtaxyLogo className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-800 shadow-sm" />
                             <div>
-                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight">ATAXY Mentor</h2>
+                                <h2 className="font-bold text-gray-900 dark:text-white leading-tight flex items-center gap-1.5">
+                                    ATAXY Mentor <VerifiedBadge className="w-3.5 h-3.5 shadow-sm" />
+                                </h2>
                                 <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium tracking-wide">Powered by ATAXY</p>
                             </div>
                         </div>
