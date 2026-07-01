@@ -7964,10 +7964,24 @@ INSTRUCTIONS:
                         const data = imgData.data;
                         for (let i = 0; i < data.length; i += 4) {
                             const r = data[i]; const g = data[i+1]; const b = data[i+2];
-                            if (g > 150 && r < 140 && b < 140) {
-                                const dist = Math.abs(g - 255) + r + b;
-                                if (dist < 100) data[i+3] = 0;
-                                else data[i+3] = Math.max(0, data[i+3] - (255 - dist));
+                            
+                            const maxRB = Math.max(r, b);
+                            const greenDiff = g - maxRB;
+                            
+                            // Target luminous green screen pixels
+                            if (g > 100 && greenDiff > 10) {
+                                // Spill suppression: remove green halo by clamping green channel
+                                data[i+1] = maxRB + (greenDiff * 0.1); 
+                                
+                                // Alpha blending based on green intensity
+                                let alpha = data[i+3];
+                                if (greenDiff > 60) {
+                                    alpha = 0; // Pure background
+                                } else {
+                                    // Smoothly fade the anti-aliased edge
+                                    alpha = Math.floor(alpha * (1 - ((greenDiff - 10) / 50)));
+                                }
+                                data[i+3] = alpha;
                             }
                         }
                         ctx.putImageData(imgData, 0, 0);
