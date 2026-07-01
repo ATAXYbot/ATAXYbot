@@ -1558,14 +1558,20 @@ Student Doubt: ${prompt}`
             const [isPlaying, setIsPlaying] = useState(false);
             const [progress, setProgress] = useState(0);
             const [duration, setDuration] = useState(0);
+            const [currentTime, setCurrentTime] = useState(0);
+            const [playbackRate, setPlaybackRate] = useState(1);
             const audioRef = useRef(null);
+            const progressRef = useRef(null);
 
             useEffect(() => {
                 const audio = audioRef.current;
                 if (!audio) return;
 
-                const updateProgress = () => setProgress((audio.currentTime / audio.duration) * 100);
-                const handleEnded = () => { setIsPlaying(false); setProgress(0); };
+                const updateProgress = () => {
+                    setProgress((audio.currentTime / audio.duration) * 100);
+                    setCurrentTime(audio.currentTime);
+                };
+                const handleEnded = () => { setIsPlaying(false); setProgress(0); setCurrentTime(0); };
                 const handleLoadedMetadata = () => {
                     if (audio.duration !== Infinity && !isNaN(audio.duration)) {
                         setDuration(audio.duration);
@@ -1592,6 +1598,36 @@ Student Doubt: ${prompt}`
                 setIsPlaying(!isPlaying);
             };
 
+            const handleSeek = (e) => {
+                if (!duration) return;
+                const rect = progressRef.current.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                const newTime = percent * duration;
+                audioRef.current.currentTime = newTime;
+                setProgress(percent * 100);
+                setCurrentTime(newTime);
+            };
+
+            const skipForward = () => {
+                if (!duration) return;
+                const newTime = Math.min(audioRef.current.currentTime + 10, duration);
+                audioRef.current.currentTime = newTime;
+            };
+
+            const skipBackward = () => {
+                if (!duration) return;
+                const newTime = Math.max(audioRef.current.currentTime - 10, 0);
+                audioRef.current.currentTime = newTime;
+            };
+
+            const cyclePlaybackRate = () => {
+                const nextRate = playbackRate === 1 ? 1.5 : (playbackRate === 1.5 ? 2 : 1);
+                setPlaybackRate(nextRate);
+                if (audioRef.current) {
+                    audioRef.current.playbackRate = nextRate;
+                }
+            };
+
             const formatTime = (time) => {
                 if (isNaN(time) || !isFinite(time)) return "0:00";
                 const mins = Math.floor(time / 60);
@@ -1600,18 +1636,39 @@ Student Doubt: ${prompt}`
             };
 
             return (
-                <div className={`flex items-center gap-3 w-48 ${isMe ? 'text-[#010B1C]' : 'text-[#00FFFF]'}`}>
+                <div className={`flex flex-col gap-1.5 p-2 rounded-2xl w-60 sm:w-64 ${isMe ? 'bg-[#00FFFF]/10 text-[#010B1C]' : 'bg-[#010B1C]/50 text-[#00FFFF]'} border ${isMe ? 'border-[#010B1C]/10' : 'border-[#00FFFF]/20'}`}>
                     <audio ref={audioRef} src={url} preload="metadata" />
-                    <button onClick={togglePlay} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isMe ? 'bg-[#010B1C] text-[#00FFFF]' : 'bg-[#00FFFF] text-[#010B1C]'}`}>
-                        <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} ml-${isPlaying ? '0' : '0.5'}`}></i>
-                    </button>
-                    <div className="flex-1">
-                        <div className="h-1.5 w-full rounded-full bg-black/20 overflow-hidden relative mb-1">
-                            <div className={`absolute top-0 left-0 h-full rounded-full ${isMe ? 'bg-[#010B1C]' : 'bg-[#00FFFF]'}`} style={{ width: `${progress}%` }}></div>
+                    
+                    <div className="flex items-center gap-3 px-1 mt-1">
+                        <button onClick={togglePlay} className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md transition-transform active:scale-95 ${isMe ? 'bg-[#010B1C] text-[#00FFFF]' : 'bg-[#00FFFF] text-[#010B1C]'}`}>
+                            <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} ${!isPlaying ? 'ml-0.5' : ''} text-lg`}></i>
+                        </button>
+                        
+                        <div className="flex-1 cursor-pointer py-2 group" ref={progressRef} onClick={handleSeek}>
+                            <div className="h-1.5 w-full rounded-full bg-black/20 overflow-visible relative flex items-center">
+                                <div className={`absolute left-0 h-1.5 rounded-full transition-all duration-100 ease-linear ${isMe ? 'bg-[#010B1C]' : 'bg-[#00FFFF]'}`} style={{ width: `${progress}%` }}></div>
+                                <div className={`absolute w-3.5 h-3.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-[0_0_5px_rgba(0,0,0,0.5)] z-10 ${isMe ? 'bg-[#010B1C]' : 'bg-[#00FFFF]'}`} style={{ left: `calc(${progress}% - 7px)` }}></div>
+                            </div>
                         </div>
-                        <div className="text-[9px] font-mono opacity-80 flex justify-between">
-                            <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between px-2 pb-1">
+                        <div className={`text-[10px] font-mono font-bold tracking-wider flex gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
+                            <span>{formatTime(currentTime)}</span>
+                            <span className="opacity-50">/</span>
                             <span>{formatTime(duration)}</span>
+                        </div>
+                        
+                        <div className={`flex items-center gap-2 ${isMe ? 'text-[#010B1C]/80' : 'text-[#00FFFF]/80'}`}>
+                            <button onClick={skipBackward} className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] transition-colors ${isMe ? 'hover:bg-[#010B1C]/10' : 'hover:bg-[#00FFFF]/10'}`}>
+                                <i className="fa-solid fa-rotate-left"></i>
+                            </button>
+                            <button onClick={skipForward} className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] transition-colors ${isMe ? 'hover:bg-[#010B1C]/10' : 'hover:bg-[#00FFFF]/10'}`}>
+                                <i className="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button onClick={cyclePlaybackRate} className={`w-8 h-5 rounded-full flex items-center justify-center text-[9px] font-black transition-colors border ${isMe ? 'border-[#010B1C]/40 hover:bg-[#010B1C]/10' : 'border-[#00FFFF]/40 hover:bg-[#00FFFF]/10'}`}>
+                                {playbackRate}x
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1932,14 +1989,92 @@ Student Doubt: ${prompt}`
         };
 
         // ==========================================
+        // EPHEMERAL IMAGE OVERLAY
+        // ==========================================
+        const EphemeralImageOverlay = ({ msg, onClose, markAsViewed }) => {
+            const [timeLeft, setTimeLeft] = useState(msg.viewLimit || null);
+
+            useEffect(() => {
+                if (markAsViewed) markAsViewed(msg.id);
+
+                if (msg.viewLimit) {
+                    const interval = setInterval(() => {
+                        setTimeLeft(prev => {
+                            if (prev <= 1) {
+                                clearInterval(interval);
+                                onClose();
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                    return () => clearInterval(interval);
+                }
+            }, []);
+
+            return ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[3000000] bg-black flex flex-col animate-in fade-in">
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-10 pt-[max(env(safe-area-inset-top),_16px)]">
+                        <button onClick={onClose} className="text-white bg-black/50 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform"><i className="fa-solid fa-arrow-left"></i></button>
+                        {timeLeft !== null ? (
+                            <div className="text-white font-mono bg-purple-500/80 px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-sm">
+                                <i className="fa-solid fa-stopwatch"></i> 00:{timeLeft.toString().padStart(2, '0')}
+                            </div>
+                        ) : (
+                            <div className="text-white font-mono bg-orange-500/80 px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-sm">
+                                <i className="fa-solid fa-eye-slash"></i> View Once
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-4 select-none" onContextMenu={e => e.preventDefault()}>
+                        <img src={msg.imageUrl} className="max-w-full max-h-full object-contain pointer-events-none" />
+                    </div>
+                </div>,
+                document.body
+            );
+        };
+
+        // ==========================================
         // PERSONAL CHATS FEED INBOX
         // ==========================================
-        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests, onNavigate }) => {
+        const VCPersonalChats = ({ friends, pendingRequests, sentRequests, dms, currentUserId, currentUserName, currentUserPhoto, activeChatUser, setActiveChatUser, acceptFriendRequest, rejectFriendRequest, sendPrivateDM, sendDirectMessage, chatActions, handleAvatarClick, syncFriendStatus, markChatAsRead, deleteChatHistory, removeFriend, cancelFriendRequest, sendFriendRequest, handlePrivateAction, handleLocalDelete, acceptAllFriendRequests, rejectAllFriendRequests, onNavigate, markEphemeralAsViewed }) => {
             const [dmInput, setDmInput] = useState('');
             const [pendingImage, setPendingImage] = useState(null);
+            const [pendingImageMode, setPendingImageMode] = useState('normal');
             const [replyingTo, setReplyingTo] = useState(null);
             const [fullScreenImage, setFullScreenImage] = useState(null);
+            const [ephemeralActiveMsg, setEphemeralActiveMsg] = useState(null);
             const chatEndRef = useRef(null);
+            const sendActionDebounceRef = useRef(null);
+
+            const markMessageAsViewed = (msgId) => {
+                if (!activeChatUser) return;
+                markEphemeralAsViewed(activeChatUser.id, msgId);
+                // Also broadcast the viewed status
+                sendDirectMessage(activeChatUser.id, { type: 'EPHEMERAL_VIEWED', msgId });
+            };
+            const notifyAction = (action) => {
+                if (!activeChatUser || !sendDirectMessage) return;
+                
+                if (sendActionDebounceRef.current) {
+                    clearTimeout(sendActionDebounceRef.current);
+                }
+                
+                sendDirectMessage(activeChatUser.id, { type: 'CHAT_ACTION', action, senderId: currentUserId });
+                
+                if (action) {
+                    sendActionDebounceRef.current = setTimeout(() => {
+                        sendDirectMessage(activeChatUser.id, { type: 'CHAT_ACTION', action: null, senderId: currentUserId });
+                    }, 3000);
+                }
+            };
+
+            const handleDmInputChange = (e) => {
+                setDmInput(e.target.value);
+                if (e.target.value.trim().length > 0) {
+                    notifyAction('typing');
+                }
+            };
             const [showRequestsInbox, setShowRequestsInbox] = useState(false);
             const [showFriendsList, setShowFriendsList] = useState(false);
             const [friendsSearchQuery, setFriendsSearchQuery] = useState('');
@@ -2016,6 +2151,7 @@ Student Doubt: ${prompt}`
                     mediaRecorder.start();
                     setIsRecording(true);
                     setRecordingTime(0);
+                    notifyAction('recording');
                     
                     recordingTimerRef.current = setInterval(() => {
                         setRecordingTime(prev => prev + 1);
@@ -2031,6 +2167,7 @@ Student Doubt: ${prompt}`
                 if (mediaRecorderRef.current && isRecording) {
                     clearInterval(recordingTimerRef.current);
                     mediaRecorderRef.current.stop();
+                    notifyAction(null);
                 }
             };
 
@@ -2042,6 +2179,7 @@ Student Doubt: ${prompt}`
                     mediaRecorderRef.current.stop();
                     setIsRecording(false);
                     setRecordingTime(0);
+                    notifyAction(null);
                 }
             };
 
@@ -2223,11 +2361,19 @@ Student Doubt: ${prompt}`
                             <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => setShowChatProfile(true)}>
                                 {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex-1 min-w-0 flex flex-col">
-                                <h3 className="font-bold text-[#00FFFF] text-lg cursor-pointer hover:underline leading-tight" onClick={() => setShowChatProfile(true)}>
+                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                <h3 className="font-bold text-[#00FFFF] text-lg cursor-pointer hover:underline leading-tight truncate" onClick={() => setShowChatProfile(true)}>
                                     <UserName name={activeChatUser?.name || activeChatUser?.user_name || "Unknown User"} id={activeChatUser.id} className="max-w-[150px] sm:max-w-[200px]" />
                                 </h3>
-                                <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5 hover:text-white transition-colors flex items-center gap-1" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {activeChatUser.id} <i className="fa-regular fa-copy"></i></p>
+                                {chatActions && chatActions[activeChatUser.id] ? (
+                                    <p className="text-[11px] text-[#0AE0D0] font-semibold flex items-center gap-1.5 mt-0.5 animate-pulse truncate">
+                                        {chatActions[activeChatUser.id] === 'typing' && <><i className="fa-solid fa-pen"></i> typing...</>}
+                                        {chatActions[activeChatUser.id] === 'recording' && <><i className="fa-solid fa-microphone"></i> recording audio...</>}
+                                        {chatActions[activeChatUser.id] === 'selecting_image' && <><i className="fa-regular fa-image"></i> selecting image...</>}
+                                    </p>
+                                ) : (
+                                    <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5 hover:text-white transition-colors flex items-center gap-1 truncate" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {activeChatUser.id} <i className="fa-regular fa-copy"></i></p>
+                                )}
                             </div>
                             <button onClick={() => setShowChatProfile(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95 shrink-0 ml-auto bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full">
                                 <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
@@ -2280,9 +2426,29 @@ Student Doubt: ${prompt}`
                                                     </div>
                                                 )}
                                                 {m.imageUrl && (
-                                                    <div className="mb-2 rounded-lg overflow-hidden border border-black/20 cursor-pointer" onClick={() => setFullScreenImage(m.imageUrl)}>
-                                                        <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
-                                                    </div>
+                                                    m.isEphemeral ? (
+                                                        <div className={`mb-2 rounded-lg overflow-hidden border border-black/20 p-4 flex flex-col items-center justify-center gap-2 ${m.viewed ? (isMe ? 'bg-[#00d8d8] opacity-70' : 'bg-gray-800 opacity-60') : (isMe ? 'bg-[#00d8d8] cursor-pointer' : 'bg-[#010B1C] cursor-pointer')} min-w-[120px]`} onClick={() => {
+                                                            if (!m.viewed || isMe) {
+                                                                setEphemeralActiveMsg(m);
+                                                            }
+                                                        }}>
+                                                            {m.viewed ? (
+                                                                <>
+                                                                    <i className={`fa-solid fa-check text-2xl ${isMe ? 'text-[#010B1C]' : 'text-gray-500'}`}></i>
+                                                                    <span className={`text-xs font-bold ${isMe ? 'text-[#010B1C]' : 'text-gray-400'}`}>Opened</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <i className={`fa-solid ${m.viewLimit ? 'fa-stopwatch text-purple-500' : 'fa-eye-slash text-orange-500'} text-3xl mb-1`}></i>
+                                                                    <span className={`text-sm font-bold ${isMe ? 'text-[#010B1C]' : 'text-[#00FFFF]'}`}>View Photo</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mb-2 rounded-lg overflow-hidden border border-black/20 cursor-pointer" onClick={() => setFullScreenImage(m.imageUrl)}>
+                                                            <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
+                                                        </div>
+                                                    )
                                                 )}
                                                 {m.audioUrl && (
                                                     <div className="mb-1">
@@ -2341,10 +2507,15 @@ Student Doubt: ${prompt}`
                             </div>
                         )}
                         {pendingImage && (
-                            <div className="mx-4 mt-2 w-fit bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="w-16 h-16 rounded-lg bg-black/50 overflow-hidden border border-[#00FFFF]/30 relative">
+                            <div className="mx-4 mt-2 w-fit bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center gap-3 shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="w-16 h-16 rounded-lg bg-black/50 overflow-hidden border border-[#00FFFF]/30 relative shrink-0">
                                     <img src={pendingImage} className="w-full h-full object-cover" />
-                                    <button onClick={() => setPendingImage(null)} className="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 rounded-bl-lg flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                    <button onClick={() => { setPendingImage(null); setPendingImageMode('normal'); notifyAction(null); }} className="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 rounded-bl-lg flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <button onClick={() => setPendingImageMode('normal')} className={`text-xs px-2 py-1 rounded text-left transition-colors ${pendingImageMode === 'normal' ? 'bg-[#00FFFF] text-[#010B1C] font-bold' : 'text-[#A4DFE6] hover:bg-white/5'}`}>Normal</button>
+                                    <button onClick={() => setPendingImageMode('view_once')} className={`text-xs px-2 py-1 rounded text-left transition-colors ${pendingImageMode === 'view_once' ? 'bg-orange-500 text-white font-bold' : 'text-[#A4DFE6] hover:bg-white/5'}`}><i className="fa-solid fa-eye-slash mr-1"></i> View Once</button>
+                                    <button onClick={() => setPendingImageMode('timed')} className={`text-xs px-2 py-1 rounded text-left transition-colors ${pendingImageMode === 'timed' ? 'bg-purple-500 text-white font-bold' : 'text-[#A4DFE6] hover:bg-white/5'}`}><i className="fa-solid fa-stopwatch mr-1"></i> 10s Timer</button>
                                 </div>
                             </div>
                         )}
@@ -2378,6 +2549,7 @@ Student Doubt: ${prompt}`
                                                 const ctx = canvas.getContext('2d');
                                                 ctx.drawImage(img, 0, 0, width, height);
                                                 setPendingImage(canvas.toDataURL('image/jpeg', 0.5));
+                                                notifyAction('selecting_image');
                                             };
                                             img.src = ev.target.result;
                                         };
@@ -2386,18 +2558,21 @@ Student Doubt: ${prompt}`
                                     }} />
                                     <input
                                         value={dmInput}
-                                        onChange={(e) => setDmInput(e.target.value)}
+                                        onChange={handleDmInputChange}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && dmInput.trim() && canSend) {
                                                 if (editingMsg) {
                                                     handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
                                                     setEditingMsg(null);
                                                 } else {
-                                                    sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo);
+                                                    sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo, null, pendingImageMode);
                                                     setPendingImage(null);
+                                                    setPendingImageMode('normal');
+                                                    notifyAction(null);
                                                     setReplyingTo(null);
                                                 }
                                                 setDmInput('');
+                                                notifyAction(null);
                                             }
                                         }}
                                         placeholder={isFriend ? "Type a message..." : (canSend ? `Type a message... (${3 - mySentCount} left)` : "Waiting for friend request approval")}
@@ -2423,11 +2598,13 @@ Student Doubt: ${prompt}`
                                                 handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
                                                 setEditingMsg(null);
                                             } else {
-                                                sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo);
+                                                sendPrivateDM(targetId, dmInput.trim(), pendingImage, replyingTo, null, pendingImageMode);
                                                 setPendingImage(null);
+                                                setPendingImageMode('normal');
                                                 setReplyingTo(null);
                                             }
                                             setDmInput('');
+                                            notifyAction(null);
                                         }
                                     }}
                                     disabled={!canSend || (!dmInput.trim() && !pendingImage)}
@@ -2473,6 +2650,7 @@ Student Doubt: ${prompt}`
                                 </div>
                             </div>
                         )}
+                        {ephemeralActiveMsg && <EphemeralImageOverlay msg={ephemeralActiveMsg} onClose={() => setEphemeralActiveMsg(null)} markAsViewed={markMessageAsViewed} />}
                         {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
 
                         {/* NEW: Full Screen Chat Profile Settings Modal */}
@@ -3375,7 +3553,7 @@ Student Doubt: ${prompt}`
             );
         };
 
-        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab }) => {
+        const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab, vcChatOpen, onChatOpen, chatActions }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
             const currentUserPhoto = tgUser?.photo_url || "";
@@ -3667,6 +3845,28 @@ Student Doubt: ${prompt}`
                         sendDirectMessage(senderId, { type: 'MESSAGE_STATUS', status: 'delivered', targetId: currentUserId, msgId: data.id });
                     }
 
+                } else if (data.type === 'CHAT_ACTION') {
+                    const senderId = String(data.senderId);
+                    setChatActions(prev => {
+                        const newActions = { ...prev };
+                        if (data.action) {
+                            newActions[senderId] = data.action;
+                            // Clear action after 5s
+                            setTimeout(() => {
+                                setChatActions(current => {
+                                    if (current[senderId] === data.action) {
+                                        const updated = { ...current };
+                                        delete updated[senderId];
+                                        return updated;
+                                    }
+                                    return current;
+                                });
+                            }, 5000);
+                        } else {
+                            delete newActions[senderId];
+                        }
+                        return newActions;
+                    });
                 } else if (data.type === 'MESSAGE_STATUS') {
                     const chatUserId = String(data.targetId);
                     setDms(currDms => {
@@ -3686,6 +3886,14 @@ Student Doubt: ${prompt}`
                             return { ...currDms, [chatUserId]: updated };
                         }
                         return currDms;
+                    });
+                } else if (data.type === 'EPHEMERAL_VIEWED') {
+                    const senderId = peerId;
+                    setDms(currDms => {
+                        const history = currDms[senderId] || [];
+                        const updated = history.map(m => m.id === data.msgId ? { ...m, viewed: true } : m);
+                        saveDmToStorage(senderId, updated);
+                        return { ...currDms, [senderId]: updated };
                     });
                 } else if (data.type === 'PRIVATE_MESSAGE_ACTION') {
                     const senderId = String(data.senderId);
@@ -3965,6 +4173,15 @@ Student Doubt: ${prompt}`
                 });
             };
 
+            const markEphemeralAsViewed = (targetId, msgId) => {
+                setDms(prev => {
+                    const history = prev[targetId] || [];
+                    const updated = history.map(m => m.id === msgId ? { ...m, viewed: true } : m);
+                    saveDmToStorage(targetId, updated);
+                    return { ...prev, [targetId]: updated };
+                });
+            };
+
             const handlePrivateAction = (targetId, action, msgId, text = null) => {
                 const payload = { type: 'PRIVATE_MESSAGE_ACTION', action, msgId, text, senderId: currentUserId, targetId };
                 sendDirectMessage(targetId, payload);
@@ -3994,7 +4211,7 @@ Student Doubt: ${prompt}`
                 });
             };
 
-            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null, audioUrl = null) => {
+            const sendPrivateDM = (targetId, text, imageUrl = null, replyTo = null, audioUrl = null, imageMode = 'normal') => {
                 const isFriend = Array.isArray(friends) ? friends.some(f => String(f.id || f) === String(targetId)) : false;
                 const history = dms[targetId] || [];
                 const mySentCount = history.filter(m => String(m.sender) === String(currentUserId)).length;
@@ -4003,12 +4220,18 @@ Student Doubt: ${prompt}`
                     safeAlert("Privacy Guard: You can only send 3 messages until they accept your friend request.");
                     return;
                 }
+                
+                const isEphemeral = imageMode === 'view_once' || imageMode === 'timed';
+                const viewLimit = imageMode === 'timed' ? 10 : null; // 10 seconds for timed mode
 
                 const msgId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
                 const newMsg = {
                     id: msgId, sender: currentUserId, text: text, imageUrl, replyTo, audioUrl, time: Date.now(),
                     targetName: activeChatUserRef.current?.name || `User ${targetId}`,
                     targetPhoto: activeChatUserRef.current?.photo || '',
+                    isEphemeral,
+                    viewLimit,
+                    viewed: false,
                     status: 'sent'
                 };
                 const updatedHistory = [...history, newMsg];
@@ -4016,7 +4239,7 @@ Student Doubt: ${prompt}`
                 setDms(prev => ({ ...prev, [targetId]: updatedHistory }));
                 saveDmToStorage(targetId, updatedHistory);
 
-                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo, audioUrl };
+                const payload = { type: 'PRIVATE_MESSAGE', id: msgId, senderId: currentUserId, senderName: currentUserName, senderPhoto: currentUserPhoto, text: text, imageUrl, replyTo, audioUrl, isEphemeral, viewLimit };
                 sendDirectMessage(targetId, payload);
             };
 
@@ -4625,7 +4848,7 @@ Student Doubt: ${prompt}`
                         <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
                             
                             <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} />
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} sendDirectMessage={sendDirectMessage} chatActions={chatActions} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} markEphemeralAsViewed={markEphemeralAsViewed} />
                             </div>
                         </div>
                     );
@@ -9865,6 +10088,7 @@ INSTRUCTIONS:
                 }
             }, [currentTab]);
             const [vcChatOpen, setVcChatOpen] = useState(false);
+            const [chatActions, setChatActions] = useState({});
             const [activePracticeBatch, setActivePracticeBatch] = useState(null);
 
             const [activeSatheeExam, setActiveSatheeExam] = useState(null);
@@ -13940,7 +14164,8 @@ INSTRUCTIONS:
                         {showTopNav && <TopNavBar />}
 
                         <div className={`h-[100dvh] w-full overflow-y-auto relative ${(vcRoomActive && !vcRoomMinimized) ? "z-[2000000]" : "z-10"} ${showTopNav ? "pt-[calc(60px+var(--safe-top))]" : "pt-safe-top"}`}>
-                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} voiceState={voiceState} />
+                            <VCVoiceRoomTab tgUser={tgUser} isVisible={currentTab === 'vc' || currentTab === 'chats'} currentTab={currentTab} onRoomStateChange={(active, minimized) => { setVcRoomActive(active); setVcRoomMinimized(minimized); }} onNavigate={(tab) => setCurrentTab(tab)} onChatOpen={setVcChatOpen} vcChatOpen={vcChatOpen} chatActions={chatActions} voiceState={voiceState} />
+                            
                             {activePracticeChapter && currentTab === 'questions' ? renderQuestionsView() : (
                                 <>
                                     {currentTab === 'home' && renderHomeView()}
