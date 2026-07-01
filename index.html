@@ -8382,7 +8382,7 @@ INSTRUCTIONS:
                     img: 'assets/characters/mia_spritesheet_16.png',
                     spriteIndex: 0,
                     text: "Welcome to ATAXY! I'm ASENA. Let me give you a complete deep-dive tour!",
-                    btn: "Let's Go!",
+                    btn: "Start Tour",
                     targetSelector: null
                 },
                 {
@@ -8391,7 +8391,7 @@ INSTRUCTIONS:
                     img: 'assets/characters/jack_spritesheet_16.png',
                     spriteIndex: 2, // Will dynamically adjust left/right
                     text: "First, let's head into the Practice tab. This is your core hub.",
-                    btn: "Open Practice",
+                    btn: "Let's Open Practice",
                     targetSelector: '#nav-btn-practice',
                     action: 'click'
                 },
@@ -8428,8 +8428,8 @@ INSTRUCTIONS:
                     character: 'male',
                     name: 'ATAXY',
                     img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 8, // Hyped
-                    text: "This Custom Test Generator is NOT AI-generated. It pulls curated, high-yield questions directly from my expert database!",
+                    spriteIndex: 8,
+                    text: "This Custom Test Generator pulls curated, high-yield questions directly from my expert database (Not AI-generated!).",
                     btn: "Wow!",
                     targetSelector: '#btn-generate-test'
                 },
@@ -8437,7 +8437,7 @@ INSTRUCTIONS:
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 4, // Clicking/Action
+                    spriteIndex: 4,
                     text: "After you submit a test, you can use the Target Weakness feature to instantly generate a DPP of your weakest topics!",
                     btn: "Amazing",
                     targetSelector: null
@@ -8456,7 +8456,7 @@ INSTRUCTIONS:
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 5, // Strict
+                    spriteIndex: 5,
                     text: "This is your Daily Targets board. You must set your daily goals here.",
                     btn: "Okay",
                     targetSelector: '#tour-target-list'
@@ -8465,7 +8465,7 @@ INSTRUCTIONS:
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 6, // Furious
+                    spriteIndex: 6,
                     text: "If you set a target and miss the time limit, I WILL get extremely angry and block the app until you finish it!",
                     btn: "I promise I won't be late!",
                     targetSelector: null
@@ -8484,7 +8484,7 @@ INSTRUCTIONS:
                     character: 'female',
                     name: 'ASENA',
                     img: 'assets/characters/mia_spritesheet_16.png',
-                    spriteIndex: 8, // Hyped
+                    spriteIndex: 8,
                     text: "Finally, check out Voice Rooms! You can join interactive group studies and make friends with batchmates here.",
                     btn: "Open Voice Rooms",
                     targetSelector: '#nav-btn-vc',
@@ -8494,7 +8494,7 @@ INSTRUCTIONS:
                     character: 'male',
                     name: 'ATAXY',
                     img: 'assets/characters/jack_spritesheet_16.png',
-                    spriteIndex: 1, // Happy
+                    spriteIndex: 1,
                     text: "That's everything! Head back Home and start your preparation. We believe in you!",
                     btn: "Go Home & Finish",
                     targetSelector: '#nav-btn-home',
@@ -8544,28 +8544,63 @@ INSTRUCTIONS:
                 }, 400);
             };
 
-            // FOOLPROOF POSITIONING LOGIC
-            // Character always stands on the bottom of the screen.
+            // FOOLPROOF HOVER POINTING
             let charStyle = { bottom: '-20px', left: '50%', transform: 'translateX(-50%)' };
             let bubbleStyle = { bottom: '380px', left: '50%', transform: 'translateX(-50%)' };
             let tailClass = 'left-1/2 -translate-x-1/2 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[20px] border-t-white';
             let finalSpriteIndex = current.spriteIndex;
-
+            let finalTop = 0; // Fix ReferenceError
+            
             if (targetRect) {
-                const targetOnLeft = targetRect.left < windowSize.w / 2;
+                const charW = windowSize.w < 640 ? 260 : 320;
+                const charH = charW;
                 
-                if (targetOnLeft) {
-                    // Character stands on the Right, pointing Left
-                    charStyle = { bottom: '-20px', right: '10px', left: 'auto' };
-                    bubbleStyle = { bottom: '380px', right: '20px', left: 'auto' };
-                    tailClass = 'right-[60px] border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white';
-                    if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 3; // Point Left
+                // Finger offsets
+                const fingerYOffset = charH * 0.4;
+                // Sprite 3 = Pointing Right (finger is on the right)
+                const fingerRightXOffset = charW * 0.80; 
+                // Sprite 2 = Pointing Left (finger is on the left)
+                const fingerLeftXOffset = charW * 0.20; 
+                
+                // We want the finger tip to touch the TOP CENTER of the target button
+                const targetCenterX = targetRect.left + (targetRect.width / 2);
+                const targetTop = targetRect.top - 10;
+                
+                let rightPointLeft = targetCenterX - fingerRightXOffset;
+                let rightPointTop = targetTop - fingerYOffset;
+                
+                let leftPointLeft = targetCenterX - fingerLeftXOffset;
+                let leftPointTop = targetTop - fingerYOffset;
+                
+                let useRightPoint = true;
+                if (rightPointLeft < 0) {
+                    useRightPoint = false; // off left screen, must point left
+                } else if (leftPointLeft + charW > windowSize.w) {
+                    useRightPoint = true; // off right screen, must point right
                 } else {
-                    // Character stands on the Left, pointing Right
-                    charStyle = { bottom: '-20px', left: '10px', right: 'auto' };
-                    bubbleStyle = { bottom: '380px', left: '20px', right: 'auto' };
-                    tailClass = 'left-[60px] border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white';
-                    if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 2; // Point Right
+                    // if both fit, pick the one that has more space for the bubble!
+                    useRightPoint = targetCenterX > windowSize.w / 2;
+                }
+                
+                let finalLeft = useRightPoint ? rightPointLeft : leftPointLeft;
+                finalTop = useRightPoint ? rightPointTop : leftPointTop;
+                
+                // CLAMP SO IT DOESN'T GO OFF SCREEN!
+                finalTop = Math.max(0, Math.min(windowSize.h - charH, finalTop));
+                finalLeft = Math.max(0, Math.min(windowSize.w - charW, finalLeft));
+
+                charStyle = { left: `${finalLeft}px`, top: `${finalTop}px` };
+                finalSpriteIndex = useRightPoint ? 3 : 2; 
+
+                // Bubble goes above or below based on space
+                if (finalTop > windowSize.h / 2) {
+                    // Bubble Above
+                    bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, bottom: `${windowSize.h - finalTop + 10}px` };
+                    tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-t-[20px] border-t-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-t-[20px] border-t-white';
+                } else {
+                    // Bubble Below
+                    bubbleStyle = { left: `${Math.max(10, Math.min(windowSize.w - 320, finalLeft))}px`, top: `${finalTop + charH + 10}px` };
+                    tailClass = useRightPoint ? 'left-[80px] border-l-transparent border-r-[20px] border-r-white border-b-[20px] border-b-white' : 'right-[80px] border-r-transparent border-l-[20px] border-l-white border-b-[20px] border-b-white';
                 }
             } else {
                 if (current.spriteIndex === 2 || current.spriteIndex === 3) finalSpriteIndex = 0; // Neutral if center
@@ -8581,18 +8616,36 @@ INSTRUCTIONS:
                             top: targetRect ? targetRect.top - 8 : windowSize.h / 2,
                             width: targetRect ? targetRect.width + 16 : 0,
                             height: targetRect ? targetRect.height + 16 : 0,
-                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.8)',
+                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.85)',
                             opacity: visible ? 1 : 0
                         }}
                     />
+                    
+                    {/* Make the spotlight hole clickable to advance the tutorial automatically! */}
+                    {targetRect && visible && (
+                        <div 
+                            className="absolute z-20 cursor-pointer pointer-events-auto flex items-center justify-center animate-pulse"
+                            style={{
+                                left: targetRect.left - 8,
+                                top: targetRect.top - 8,
+                                width: targetRect.width + 16,
+                                height: targetRect.height + 16,
+                                borderRadius: '1rem',
+                                border: '3px solid #a3e635'
+                            }}
+                            onClick={handleNext}
+                        >
+                            <span className="absolute -top-6 text-[#a3e635] font-black text-xs uppercase tracking-widest whitespace-nowrap bg-black/50 px-2 py-1 rounded">Click to Auto-Advance</span>
+                        </div>
+                    )}
 
                     {/* Speech Bubble */}
                     <div 
-                        className={`absolute w-[280px] sm:w-[320px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-500 border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20 flex flex-col items-center text-center`}
+                        className={`absolute w-[280px] sm:w-[320px] bg-white rounded-3xl p-5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-500 border-4 border-gray-100 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} z-20 flex flex-col items-center text-center pointer-events-auto`}
                         style={targetRect ? bubbleStyle : { ...bubbleStyle, transform: 'translateX(-50%)' }}
                     >
                         {/* Tail */}
-                        <div className={`absolute -bottom-4 ${tailClass} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
+                        <div className={`absolute ${finalTop > windowSize.h / 2 ? '-bottom-4' : '-top-4'} ${tailClass} border-b-transparent w-0 h-0 filter drop-shadow-md`}></div>
                         
                         <p className="font-black text-gray-800 text-[16px] leading-snug mb-5 tracking-tight w-full">{current.text}</p>
                         
@@ -8620,7 +8673,7 @@ INSTRUCTIONS:
                             <ChromaImage src={current.img} alt={current.name} spriteIndex={finalSpriteIndex} gridSize={4} className="w-full h-auto object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]" />
                             
                             {/* Adjusted chest logo overlay coordinates for the pocket */}
-                            <div className={`absolute ${current.character === 'female' ? 'top-[49%] left-[67%]' : 'top-[47%] left-[64%]'} transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10`}>
+                            <div className={`absolute ${current.character === 'female' ? 'top-[60%] left-[65%]' : 'top-[60%] left-[65%]'} transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10`}>
                                 <AtaxyLogo className="w-full h-full rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.4)] border border-[#00FFFF]/50 mix-blend-normal" />
                             </div>
                         </div>
