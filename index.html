@@ -2354,29 +2354,29 @@ Student Doubt: ${prompt}`
                 const canSend = isFriend || mySentCount < 3;
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#010B1C] h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
+                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#0b141a] h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
                         <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
-                        <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 shadow-md">
-                            <button onClick={() => setActiveChatUser(null)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-8 h-8 flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
-                            <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => setShowChatProfile(true)}>
+                        <div className="flex items-center gap-3 p-4 bg-[#202c33] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 shadow-sm border-b border-[#222d34]">
+                            <button onClick={() => setActiveChatUser(null)} className="text-[#aebac1] hover:text-[#d1d7db] text-xl transition-colors w-8 h-8 flex items-center justify-center mr-1"><i className="fa-solid fa-arrow-left"></i></button>
+                            <div className="w-10 h-10 rounded-full bg-[#6a7175] flex items-center justify-center font-medium text-white overflow-hidden shrink-0 cursor-pointer" onClick={() => setShowChatProfile(true)}>
                                 {activeChatUser?.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : String(activeChatUser?.name || activeChatUser?.user_name || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                <h3 className="font-bold text-[#00FFFF] text-lg cursor-pointer hover:underline leading-tight truncate" onClick={() => setShowChatProfile(true)}>
+                                <h3 className="font-medium text-[#e9edef] text-[17px] cursor-pointer leading-tight truncate" onClick={() => setShowChatProfile(true)}>
                                     <UserName name={activeChatUser?.name || activeChatUser?.user_name || "Unknown User"} id={activeChatUser.id} className="max-w-[150px] sm:max-w-[200px]" />
                                 </h3>
                                 {chatActions && chatActions[activeChatUser.id] ? (
-                                    <p className="text-[11px] text-[#0AE0D0] font-semibold flex items-center gap-1.5 mt-0.5 animate-pulse truncate">
-                                        {chatActions[activeChatUser.id] === 'typing' && <><i className="fa-solid fa-pen"></i> typing...</>}
-                                        {chatActions[activeChatUser.id] === 'recording' && <><i className="fa-solid fa-microphone"></i> recording audio...</>}
-                                        {chatActions[activeChatUser.id] === 'selecting_image' && <><i className="fa-regular fa-image"></i> selecting image...</>}
+                                    <p className="text-[13px] text-[#00a884] font-medium flex items-center gap-1.5 mt-0.5 animate-pulse truncate">
+                                        {chatActions[activeChatUser.id] === 'typing' && <>typing...</>}
+                                        {chatActions[activeChatUser.id] === 'recording' && <>recording audio...</>}
+                                        {chatActions[activeChatUser.id] === 'selecting_image' && <>selecting image...</>}
                                     </p>
                                 ) : (
-                                    <p className="text-[10px] text-[#A4DFE6] font-mono cursor-pointer w-fit mt-0.5 hover:text-white transition-colors flex items-center gap-1 truncate" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {activeChatUser.id} <i className="fa-regular fa-copy"></i></p>
+                                    <p className="text-[12px] text-[#8696a0] cursor-pointer w-fit mt-0.5 hover:text-[#d1d7db] transition-colors flex items-center gap-1 truncate" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(activeChatUser.id); safeAlert('ID Copied!'); }} title="Copy ID">ID: {activeChatUser.id} <i className="fa-regular fa-copy"></i></p>
                                 )}
                             </div>
-                            <button onClick={() => setShowChatProfile(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white transition-colors active:scale-95 shrink-0 ml-auto bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full">
-                                <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
+                            <button onClick={() => setShowChatProfile(true)} className="relative w-8 h-8 flex items-center justify-center text-[#aebac1] hover:text-[#d1d7db] transition-colors active:scale-95 shrink-0 ml-auto rounded-full">
+                                <i className="fa-solid fa-ellipsis-vertical text-[19px]"></i>
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-4">
@@ -2392,7 +2392,7 @@ Student Doubt: ${prompt}`
                                 return (
                                     <div
                                         key={idx} id={`msg-${m.id}`}
-                                        className={`flex items-end gap-2.5 ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 group mb-1`}
+                                        className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 group mb-0.5`}
                                         onTouchStart={(e) => handleTouchStart(e, m)}
                                         onTouchMove={handleTouchMove}
                                         onTouchEnd={handleTouchEnd}
@@ -2402,136 +2402,118 @@ Student Doubt: ${prompt}`
                                         onMouseLeave={handleTouchEnd}
                                         onContextMenu={(e) => { e.preventDefault(); setMsgMenu(m); }}
                                     >
-                                        {!isMe && (
-                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: activeChatUser.id, user_name: activeChatUser.name, photo_url: activeChatUser.photo })}>
-                                                {activeChatUser.photo ? <img src={activeChatUser.photo} className="w-full h-full object-cover" /> : (activeChatUser.name || 'U').charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
                                         <div className={`flex items-center gap-2 w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                            {!isMe && (
-                                                <div id={`reply-icon-${m.id}`} className="w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 opacity-0 transform scale-50 transition-none pointer-events-none">
-                                                    <i className="fa-solid fa-reply text-xs"></i>
-                                                </div>
-                                            )}
-                                            <div id={`msg-bubble-${m.id}`} className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm relative z-10 ${isMe ? 'bg-[#00FFFF] text-[#010B1C] rounded-br-none ml-auto' : 'bg-[#021633] text-white border border-[#0AE0D0]/30 rounded-bl-none mr-auto'} max-w-[85%]`}>
+                                            <div id={`msg-bubble-${m.id}`} className={`px-2 pt-1.5 pb-1 rounded-lg text-[14px] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] relative z-10 ${isMe ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-none ml-auto' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none mr-auto'} max-w-[85%]`}>
                                                 {m.isAutoMsg && (
-                                                    <div className={`text-[10px] font-black uppercase tracking-wider mb-1 flex items-center gap-1 ${isMe ? 'text-[#010B1C]/60' : 'text-[#00FFFF]/80'}`}>
+                                                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1 text-[#8696a0]`}>
                                                         <i className="fa-solid fa-robot"></i> Auto Message
                                                     </div>
                                                 )}
                                                 {m.replyTo && (
-                                                    <div className={`mb-2 p-2 rounded-lg text-xs border-l-2 opacity-80 ${isMe ? 'bg-[#00d8d8] border-[#010B1C] text-[#010B1C]' : 'bg-[#010B1C] border-[#00FFFF] text-[#A4DFE6]'}`} onClick={() => { }}>
-                                                        <p className="font-bold truncate">{m.replyTo.senderName || 'User'}</p>
-                                                        <p className="truncate">{m.replyTo.text || (m.replyTo.audioUrl ? '🎤 Voice Note' : (m.replyTo.imageUrl ? '📷 Photo' : ''))}</p>
+                                                    <div className={`mb-1.5 p-1.5 rounded text-xs border-l-[4px] bg-black/10 flex flex-col gap-0.5 ${isMe ? 'border-[#53bdeb]' : 'border-[#00a884]'}`} onClick={() => { }}>
+                                                        <p className={`font-semibold truncate ${isMe ? 'text-[#53bdeb]' : 'text-[#00a884]'}`}>{m.replyTo.senderName || 'User'}</p>
+                                                        <p className="truncate text-[#8696a0]">{m.replyTo.text || (m.replyTo.audioUrl ? '🎤 Voice Note' : (m.replyTo.imageUrl ? '📷 Photo' : ''))}</p>
                                                     </div>
                                                 )}
                                                 {m.imageUrl && (
                                                     m.isEphemeral ? (
-                                                        <div className={`mb-2 rounded-lg overflow-hidden border border-black/20 p-4 flex flex-col items-center justify-center gap-2 ${m.viewed ? (isMe ? 'bg-[#00d8d8] opacity-70' : 'bg-gray-800 opacity-60') : (isMe ? 'bg-[#00d8d8] cursor-pointer' : 'bg-[#010B1C] cursor-pointer')} min-w-[120px]`} onClick={() => {
+                                                        <div className={`mb-1 rounded-lg overflow-hidden flex flex-col items-center justify-center gap-2 p-4 ${m.viewed ? 'bg-[#2a3942] opacity-70' : 'bg-[#2a3942] cursor-pointer'} min-w-[120px]`} onClick={() => {
                                                             if (!m.viewed || isMe) {
                                                                 setEphemeralActiveMsg(m);
                                                             }
                                                         }}>
                                                             {m.viewed ? (
                                                                 <>
-                                                                    <i className={`fa-solid fa-check text-2xl ${isMe ? 'text-[#010B1C]' : 'text-gray-500'}`}></i>
-                                                                    <span className={`text-xs font-bold ${isMe ? 'text-[#010B1C]' : 'text-gray-400'}`}>Opened</span>
+                                                                    <i className={`fa-solid fa-check text-2xl text-[#8696a0]`}></i>
+                                                                    <span className={`text-xs font-medium text-[#8696a0]`}>Opened</span>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <i className={`fa-solid ${m.viewLimit ? 'fa-stopwatch text-purple-500' : 'fa-eye-slash text-orange-500'} text-3xl mb-1`}></i>
-                                                                    <span className={`text-sm font-bold ${isMe ? 'text-[#010B1C]' : 'text-[#00FFFF]'}`}>View Photo</span>
+                                                                    <i className={`fa-solid ${m.viewLimit ? 'fa-stopwatch text-[#00a884]' : 'fa-eye-slash text-[#00a884]'} text-3xl mb-1`}></i>
+                                                                    <span className={`text-sm font-medium text-[#00a884]`}>View Photo</span>
                                                                 </>
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <div className="mb-2 rounded-lg overflow-hidden border border-black/20 cursor-pointer" onClick={() => setFullScreenImage(m.imageUrl)}>
-                                                            <img src={m.imageUrl} className="max-w-full max-h-48 object-cover" />
+                                                        <div className="mb-1 rounded overflow-hidden cursor-pointer -mx-1 -mt-0.5" onClick={() => setFullScreenImage(m.imageUrl)}>
+                                                            <img src={m.imageUrl} className="max-w-full max-h-[300px] object-cover" />
                                                         </div>
                                                     )
                                                 )}
                                                 {m.audioUrl && (
-                                                    <div className="mb-1">
+                                                    <div className="mb-1 w-[240px]">
                                                         <AudioPlayer url={m.audioUrl} isMe={isMe} />
                                                     </div>
                                                 )}
-                                                {m.text && (
-                                                    <p className={`whitespace-pre-wrap break-words ${m.isAutoMsg ? 'italic font-medium' : ''}`}>
-                                                        {m.text}
-                                                        {m.isEdited && <span className="text-[10px] text-[#0AE0D0] italic ml-1">(edited)</span>}
-                                                    </p>
-                                                )}
-                                                <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-[#010B1C]/70' : 'text-[#A4DFE6]/70'}`}>
-                                                    {new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    {isMe && (
-                                                        <span>
-                                                            {m.status === 'read' ? <i className="fa-solid fa-check-double text-blue-600"></i> :
-                                                                m.status === 'delivered' ? <i className="fa-solid fa-check-double text-gray-500"></i> :
-                                                                    <i className="fa-solid fa-check text-gray-500"></i>}
-                                                        </span>
+                                                <div className="flex flex-wrap items-end gap-1.5 justify-end mt-[-2px] float-right ml-3 pl-2">
+                                                    {m.text && (
+                                                        <p className={`whitespace-pre-wrap break-words leading-snug float-left mr-1 ${m.isAutoMsg ? 'italic' : ''}`} style={{wordBreak: "break-word"}}>
+                                                            {m.text}
+                                                            {m.isEdited && <span className="text-[11px] text-[#8696a0] italic ml-1">Edited</span>}
+                                                        </p>
                                                     )}
+                                                    <div className={`text-[10px] flex items-center justify-end gap-1 font-medium text-[#8696a0] translate-y-0.5 pb-0.5`}>
+                                                        {new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {isMe && (
+                                                            <span>
+                                                                {m.status === 'read' ? <i className="fa-solid fa-check-double text-[#53bdeb]"></i> :
+                                                                    m.status === 'delivered' ? <i className="fa-solid fa-check-double text-[#8696a0]"></i> :
+                                                                        <i className="fa-solid fa-check text-[#8696a0]"></i>}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            {isMe && (
-                                                <div id={`reply-icon-${m.id}`} className="w-8 h-8 rounded-full bg-[#021633] text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 shrink-0 opacity-0 transform scale-50 transition-none pointer-events-none">
-                                                    <i className="fa-solid fa-reply text-xs"></i>
-                                                </div>
-                                            )}
                                         </div>
-                                        {isMe && (
-                                            <div className="w-7 h-7 rounded-full bg-[#00FFFF]/20 border border-[#00FFFF]/40 flex items-center justify-center font-bold text-[#00FFFF] overflow-hidden shrink-0 cursor-pointer" onClick={() => handleAvatarClick({ user_id: currentUserId, user_name: currentUserName, photo_url: currentUserPhoto })}>
-                                                {currentUserPhoto ? <img src={currentUserPhoto} className="w-full h-full object-cover" /> : (currentUserName || 'U').charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
                                     </div>
                                 );
                             })}
                             <div ref={chatEndRef} />
                         </div>
                         {replyingTo && (
-                            <div className="mx-4 mt-2 bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="flex-1 overflow-hidden border-l-2 border-[#00FFFF] pl-2">
-                                    <p className="text-xs font-bold text-[#00FFFF] truncate">{replyingTo.senderName || (String(replyingTo.sender) === String(currentUserId) ? 'You' : 'User')}</p>
-                                    <p className="text-[10px] text-[#A4DFE6] truncate">{replyingTo.text || (replyingTo.audioUrl ? '🎤 Voice Note' : (replyingTo.imageUrl ? '📷 Photo' : ''))}</p>
+                            <div className="mx-3 mt-2 bg-[#2a3942] rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-[4px] border-[#53bdeb] bg-black/10 p-2 rounded-r">
+                                    <p className="text-[13px] font-semibold text-[#53bdeb] truncate">{replyingTo.senderName || (String(replyingTo.sender) === String(currentUserId) ? 'You' : 'User')}</p>
+                                    <p className="text-[12px] text-[#8696a0] truncate">{replyingTo.text || (replyingTo.audioUrl ? '🎤 Voice Note' : (replyingTo.imageUrl ? '📷 Photo' : ''))}</p>
                                 </div>
-                                <button onClick={() => setReplyingTo(null)} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                                <button onClick={() => setReplyingTo(null)} className="w-10 h-10 flex items-center justify-center text-[#8696a0] hover:text-[#d1d7db] shrink-0"><i className="fa-solid fa-xmark text-lg"></i></button>
                             </div>
                         )}
                         {editingMsg && (
-                            <div className="mx-4 mt-2 bg-[#021633] border border-orange-500/50 rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="flex-1 overflow-hidden border-l-2 border-orange-500 pl-2">
-                                    <p className="text-xs font-bold text-orange-500 truncate">Editing Message</p>
-                                    <p className="text-[10px] text-[#A4DFE6] truncate">{editingMsg.text}</p>
+                            <div className="mx-3 mt-2 bg-[#2a3942] rounded-xl p-2 flex items-center justify-between shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="flex-1 overflow-hidden border-l-[4px] border-orange-500 bg-black/10 p-2 rounded-r">
+                                    <p className="text-[13px] font-semibold text-orange-500 truncate">Editing Message</p>
+                                    <p className="text-[12px] text-[#8696a0] truncate">{editingMsg.text}</p>
                                 </div>
-                                <button onClick={() => { setEditingMsg(null); setDmInput(''); }} className="w-8 h-8 text-[#0AE0D0] hover:text-[#00FFFF] shrink-0"><i className="fa-solid fa-xmark"></i></button>
+                                <button onClick={() => { setEditingMsg(null); setDmInput(''); }} className="w-10 h-10 flex items-center justify-center text-[#8696a0] hover:text-[#d1d7db] shrink-0"><i className="fa-solid fa-xmark text-lg"></i></button>
                             </div>
                         )}
                         {pendingImage && (
-                            <div className="mx-4 mt-2 w-fit bg-[#021633] border border-[#00FFFF]/50 rounded-xl p-2 flex items-center gap-3 shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
-                                <div className="w-16 h-16 rounded-lg bg-black/50 overflow-hidden border border-[#00FFFF]/30 relative shrink-0">
+                            <div className="mx-3 mt-2 w-fit bg-[#2a3942] rounded-xl p-3 flex items-center gap-4 shadow-sm animate-in slide-in-from-bottom-2 shrink-0">
+                                <div className="w-20 h-20 rounded-lg bg-black/50 overflow-hidden relative shrink-0">
                                     <img src={pendingImage} className="w-full h-full object-cover" />
-                                    <button onClick={() => { setPendingImage(null); setPendingImageMode('normal'); notifyAction(null); }} className="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 rounded-bl-lg flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                    <button onClick={() => { setPendingImage(null); setPendingImageMode('normal'); notifyAction(null); }} className="absolute top-0 right-0 bg-black/60 text-white w-6 h-6 rounded-bl-lg flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <button onClick={() => setPendingImageMode('normal')} className={`text-xs px-2 py-1 rounded text-left transition-colors ${pendingImageMode === 'normal' ? 'bg-[#00FFFF] text-[#010B1C] font-bold' : 'text-[#A4DFE6] hover:bg-white/5'}`}>Normal</button>
-                                    <button onClick={() => setPendingImageMode('view_once')} className={`text-xs px-2 py-1 rounded text-left transition-colors ${pendingImageMode === 'view_once' ? 'bg-orange-500 text-white font-bold' : 'text-[#A4DFE6] hover:bg-white/5'}`}><i className="fa-solid fa-eye-slash mr-1"></i> View Once</button>
-                                    <button onClick={() => setPendingImageMode('timed')} className={`text-xs px-2 py-1 rounded text-left transition-colors ${pendingImageMode === 'timed' ? 'bg-purple-500 text-white font-bold' : 'text-[#A4DFE6] hover:bg-white/5'}`}><i className="fa-solid fa-stopwatch mr-1"></i> 10s Timer</button>
+                                <div className="flex flex-col gap-1.5">
+                                    <button onClick={() => setPendingImageMode('normal')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors ${pendingImageMode === 'normal' ? 'bg-[#00a884] text-[#111b21] font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}>Normal</button>
+                                    <button onClick={() => setPendingImageMode('view_once')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors flex items-center ${pendingImageMode === 'view_once' ? 'bg-orange-500 text-white font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}><i className="fa-solid fa-eye-slash mr-2"></i> View Once</button>
+                                    <button onClick={() => setPendingImageMode('timed')} className={`text-[13px] px-3 py-1.5 rounded-lg text-left transition-colors flex items-center ${pendingImageMode === 'timed' ? 'bg-purple-500 text-white font-medium' : 'text-[#e9edef] hover:bg-white/5'}`}><i className="fa-solid fa-stopwatch mr-2"></i> 10s Timer</button>
                                 </div>
                             </div>
                         )}
-                        <div className="p-3 bg-[#021633] border-t border-[#0AE0D0]/30 flex gap-2 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shrink-0 items-center">
+                        <div className="p-2.5 bg-[#202c33] flex gap-2.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] shrink-0 items-end">
                             {isRecording ? (
-                                <div className="flex-1 bg-[#010B1C] border border-red-500/50 rounded-full px-4 py-2 flex items-center justify-between shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                                <div className="flex-1 bg-[#2a3942] rounded-full px-4 py-2 flex items-center justify-between min-h-[44px]">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                                        <span className="text-white font-mono text-sm">{Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
+                                        <div className="w-2.5 h-2.5 bg-[#ef4444] rounded-full animate-pulse"></div>
+                                        <span className="text-[#e9edef] font-mono text-[15px]">{Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
                                     </div>
-                                    <button onClick={cancelRecording} className="text-red-400 hover:text-red-500 text-sm font-bold px-2 active:scale-95 transition-transform">Cancel</button>
+                                    <button onClick={cancelRecording} className="text-[#aebac1] hover:text-[#e9edef] text-sm font-medium px-2 active:scale-95 transition-transform">Cancel</button>
                                 </div>
                             ) : (
-                                <>
-                                    <button onClick={() => document.getElementById('dm-image-upload').click()} disabled={!canSend} className="w-10 h-10 shrink-0 bg-[#0AE0D0]/10 text-[#00FFFF] rounded-full flex items-center justify-center hover:bg-[#0AE0D0]/30 transition-colors disabled:opacity-50">
-                                        <i className="fa-solid fa-image"></i>
+                                <div className="flex-1 flex items-center bg-[#2a3942] rounded-3xl overflow-hidden min-h-[44px]">
+                                    <button onClick={() => document.getElementById('dm-image-upload').click()} disabled={!canSend} className="w-11 h-11 shrink-0 text-[#8696a0] flex items-center justify-center hover:text-[#d1d7db] transition-colors disabled:opacity-50 rounded-full">
+                                        <i className="fa-solid fa-paperclip text-[19px]"></i>
                                     </button>
                                     <input type="file" id="dm-image-upload" accept="image/*" className="hidden" onChange={(e) => {
                                         const file = e.target.files[0];
@@ -2556,11 +2538,12 @@ Student Doubt: ${prompt}`
                                         reader.readAsDataURL(file);
                                         e.target.value = '';
                                     }} />
-                                    <input
+                                    <textarea
                                         value={dmInput}
                                         onChange={handleDmInputChange}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && dmInput.trim() && canSend) {
+                                            if (e.key === 'Enter' && !e.shiftKey && dmInput.trim() && canSend) {
+                                                e.preventDefault();
                                                 if (editingMsg) {
                                                     handlePrivateAction(targetId, 'edit', editingMsg.id, dmInput.trim());
                                                     setEditingMsg(null);
@@ -2575,20 +2558,22 @@ Student Doubt: ${prompt}`
                                                 notifyAction(null);
                                             }
                                         }}
-                                        placeholder={isFriend ? "Type a message..." : (canSend ? `Type a message... (${3 - mySentCount} left)` : "Waiting for friend request approval")}
+                                        placeholder={isFriend ? "Message" : (canSend ? `Message (${3 - mySentCount} left)` : "Waiting for friend request approval")}
                                         disabled={!canSend}
-                                        className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-full px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors disabled:opacity-50"
+                                        rows={Math.min(5, Math.max(1, dmInput.split('\n').length))}
+                                        className="flex-1 bg-transparent py-3 text-[#e9edef] focus:outline-none transition-colors disabled:opacity-50 text-[15px] resize-none leading-snug no-scrollbar"
+                                        style={{maxHeight: '120px'}}
                                     />
-                                </>
+                                </div>
                             )}
                             
                             {isRecording ? (
-                                <button onClick={stopRecording} className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">
-                                    <i className="fa-solid fa-paper-plane"></i>
+                                <button onClick={stopRecording} className="w-12 h-12 shrink-0 bg-[#00a884] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform mb-[-2px]">
+                                    <i className="fa-solid fa-paper-plane text-xl translate-x-[-1px] translate-y-[1px]"></i>
                                 </button>
                             ) : (!dmInput.trim() && !pendingImage && canSend && !editingMsg) ? (
-                                <button onClick={startRecording} disabled={isUploadingAudio} className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform disabled:opacity-50">
-                                    {isUploadingAudio ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-microphone"></i>}
+                                <button onClick={startRecording} disabled={isUploadingAudio} className="w-12 h-12 shrink-0 bg-[#00a884] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 mb-[-2px]">
+                                    {isUploadingAudio ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-microphone text-xl"></i>}
                                 </button>
                             ) : (
                                 <button
@@ -2608,9 +2593,9 @@ Student Doubt: ${prompt}`
                                         }
                                     }}
                                     disabled={!canSend || (!dmInput.trim() && !pendingImage)}
-                                    className="w-10 h-10 shrink-0 bg-[#00FFFF] text-[#010B1C] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
+                                    className="w-12 h-12 shrink-0 bg-[#00a884] text-[#111b21] rounded-full flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 mb-[-2px]"
                                 >
-                                    <i className="fa-solid fa-paper-plane"></i>
+                                    <i className="fa-solid fa-paper-plane text-xl translate-x-[-1px] translate-y-[1px]"></i>
                                 </button>
                             )}
                         </div>
@@ -2784,20 +2769,20 @@ Student Doubt: ${prompt}`
             }
 
             return (
-                <div className="flex-1 overflow-y-auto pb-20 p-4 h-full animate-in fade-in">
-                    <div className="flex justify-between items-center mb-4 pr-[90px] lg:pr-0">
-                        <h4 className="text-[#A4DFE6] font-bold uppercase tracking-wider text-xs">Direct Messages</h4>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setShowSearch(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-search text-sm"></i>
+                <div className="flex-1 overflow-y-auto pb-20 h-full animate-in fade-in bg-[#111b21]">
+                    <div className="flex justify-between items-center px-4 py-3 bg-[#202c33] pr-[90px] lg:pr-4 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
+                        <h4 className="text-[#e9edef] font-bold text-[17px] lg:text-[20px]">Chats</h4>
+                        <div className="flex items-center gap-5 text-[#aebac1]">
+                            <button onClick={() => setShowSearch(true)} className="hover:text-[#d1d7db] transition-colors">
+                                <i className="fa-solid fa-search text-[18px]"></i>
                             </button>
-                            <button onClick={() => setShowFriendsList(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-users text-sm"></i>
+                            <button onClick={() => setShowFriendsList(true)} className="hover:text-[#d1d7db] transition-colors">
+                                <i className="fa-solid fa-users text-[18px]"></i>
                             </button>
-                            <button onClick={() => setShowRequestsInbox(true)} className="relative w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-white bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full transition-colors active:scale-95">
-                                <i className="fa-solid fa-user-plus text-sm"></i>
+                            <button onClick={() => setShowRequestsInbox(true)} className="hover:text-[#d1d7db] transition-colors relative">
+                                <i className="fa-solid fa-user-plus text-[18px]"></i>
                                 {pendingRequests.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]">
+                                    <span className="absolute -top-2 -right-2 bg-[#00a884] text-[#111b21] text-[10px] font-bold min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full">
                                         {pendingRequests.length}
                                     </span>
                                 )}
@@ -2836,27 +2821,28 @@ Student Doubt: ${prompt}`
                     )}
 
                     {/* Pinned ATAXY Mentor Button */}
-                    <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-2xl p-4 shadow-[0_10px_30px_rgba(139,92,246,0.2)] border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-colors duration-300 group flex items-center justify-between mb-4">
-                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
-                        <div className="relative z-10 flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-[2px] border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.4)] shrink-0 animate-pulse">
-                                <AtaxyLogo className="w-full h-full rounded-full border border-gray-900/50" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-black text-base text-white tracking-wide">ATAXY Mentor</h3>
-                                    <VerifiedBadge className="w-[14px] h-[14px] shadow-sm" />
-                                    <i className="fa-solid fa-thumbtack text-[11px] text-gray-300 opacity-80 rotate-45 ml-1"></i>
+                    <div className="px-3 pt-3">
+                        <div id="nav-btn-mentor" onClick={() => { if (onNavigate) onNavigate('ai'); }} className="bg-gradient-to-r from-indigo-900 to-purple-900 dark:from-[#0f0c29] dark:via-[#302b63] dark:to-[#24243e] rounded-xl p-3 shadow-md border border-purple-500/30 text-white relative overflow-hidden cursor-pointer hover:border-purple-400 transition-colors duration-300 group flex items-center justify-between mb-2">
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0)_100%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]"></div>
+                            <div className="relative z-10 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-[2px] border border-purple-400/50 shadow-[0_0_10px_rgba(168,85,247,0.4)] shrink-0 animate-pulse">
+                                    <AtaxyLogo className="w-full h-full rounded-full border border-gray-900/50" />
                                 </div>
-                                <p className="text-[10px] text-purple-200/70 font-medium">Your personal study mentor</p>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-[15px] text-white tracking-wide">ATAXY Mentor</h3>
+                                        <VerifiedBadge className="w-[12px] h-[12px] shadow-sm" />
+                                    </div>
+                                    <p className="text-[11px] text-purple-200/70 font-medium">Your personal study mentor</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="relative z-10 text-purple-300 group-hover:text-white transition-colors">
-                            <i className="fa-solid fa-chevron-right text-sm"></i>
+                            <div className="relative z-10 text-purple-300 group-hover:text-white transition-colors pr-2">
+                                <i className="fa-solid fa-chevron-right text-sm"></i>
+                            </div>
                         </div>
                     </div>
 
-                    {Object.keys(dms).length === 0 && <p className="text-gray-500 text-center py-6 italic text-sm border border-gray-800 rounded-2xl border-dashed">No conversations yet.</p>}
+                    {Object.keys(dms).length === 0 && <p className="text-[#8696a0] text-center py-6 text-[14px]">No chats.</p>}
                     {Object.entries(dms).sort(([, a], [, b]) => (b[b.length - 1]?.time || 0) - (a[a.length - 1]?.time || 0)).map(([uid, msgs]) => {
                         const lastMsg = msgs[msgs.length - 1];
 
@@ -2887,35 +2873,32 @@ Student Doubt: ${prompt}`
                         const unreadCount = unreadCounts[uid] || 0;
 
                         return (
-                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#021633] p-4 rounded-2xl border border-[#0AE0D0]/20 flex items-center gap-4 cursor-pointer hover:border-[#00FFFF] transition-colors mb-3 shadow-sm group relative">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00A7A7] to-blue-600 text-white flex items-center justify-center font-black text-xl border border-[#00FFFF]/40 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+                            <div key={uid} onClick={() => setActiveChatUser({ id: uid, name: finalName, photo: finalPhoto })} className="bg-[#111b21] hover:bg-[#202c33] flex items-center gap-3 cursor-pointer transition-colors group">
+                                <div className="w-[49px] h-[49px] rounded-full bg-[#6a7175] text-[#e9edef] flex items-center justify-center font-medium text-lg shrink-0 overflow-hidden ml-3">
                                     {finalPhoto ? <img src={finalPhoto} className="w-full h-full object-cover" /> : String(finalName).charAt(0).toUpperCase()}
                                 </div>
-                                <div className="flex-1 overflow-hidden">
+                                <div className="flex-1 overflow-hidden border-b border-[#222d34] h-[72px] flex flex-col justify-center pr-4">
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className={`font-bold pr-2 ${unreadCount > 0 ? 'text-[#00FFFF]' : 'text-white'}`}>
+                                        <h4 className={`text-[17px] truncate pr-2 ${unreadCount > 0 ? 'font-semibold text-[#e9edef]' : 'text-[#e9edef]'}`}>
                                             <UserName name={finalName} id={uid} className="max-w-[140px]" />
                                         </h4>
-                                        {lastMsg && <span className={`text-[9px] shrink-0 ${unreadCount > 0 ? 'text-[#00FFFF] font-bold' : 'text-gray-500'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                                        {lastMsg && <span className={`text-[12px] shrink-0 ${unreadCount > 0 ? 'text-[#00a884] font-medium' : 'text-[#8696a0]'}`}>{new Date(lastMsg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
                                     </div>
-                                    <p className="text-[10px] text-[#00FFFF] mb-1 font-mono cursor-pointer hover:text-white transition-colors flex items-center gap-1 w-fit" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(uid); safeAlert('ID Copied!'); }} title="Copy ID">ID: {String(uid)} <i className="fa-regular fa-copy"></i></p>
                                     <div className="flex justify-between items-center">
-                                        <p className={`text-xs truncate opacity-80 ${unreadCount > 0 ? 'text-white font-bold' : 'text-[#A4DFE6]'}`}>
-                                            {lastMsg ? (
-                                                <>
-                                                    {String(lastMsg.sender) === String(currentUserId) && (
-                                                        <span className="mr-1 opacity-70">
-                                                            {lastMsg.status === 'read' ? <i className="fa-solid fa-check-double text-blue-500"></i> :
-                                                                lastMsg.status === 'delivered' ? <i className="fa-solid fa-check-double"></i> :
-                                                                    <i className="fa-solid fa-check"></i>}
-                                                        </span>
-                                                    )}
-                                                    {lastMsg.text || (lastMsg.imageUrl ? '📷 Photo' : '')}
-                                                </>
-                                            ) : 'No messages'}
-                                        </p>
+                                        <div className="flex items-center gap-1 overflow-hidden">
+                                            {lastMsg && String(lastMsg.sender) === String(currentUserId) && (
+                                                <span className="text-[13px] shrink-0">
+                                                    {lastMsg.status === 'read' ? <i className="fa-solid fa-check-double text-[#53bdeb]"></i> :
+                                                        lastMsg.status === 'delivered' ? <i className="fa-solid fa-check-double text-[#8696a0]"></i> :
+                                                            <i className="fa-solid fa-check text-[#8696a0]"></i>}
+                                                </span>
+                                            )}
+                                            <p className={`text-[14px] truncate leading-tight ${unreadCount > 0 ? 'text-[#e9edef] font-medium' : 'text-[#8696a0]'}`}>
+                                                {lastMsg ? (lastMsg.text || (lastMsg.imageUrl ? '📷 Photo' : '')) : 'No messages'}
+                                            </p>
+                                        </div>
                                         {unreadCount > 0 && (
-                                            <span className="bg-[#00FFFF] text-[#010B1C] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shrink-0 shadow-[0_0_8px_rgba(0,255,255,0.6)] animate-pulse">
+                                            <span className="bg-[#00a884] text-[#111b21] text-[12px] font-medium min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full shrink-0">
                                                 {unreadCount}
                                             </span>
                                         )}
