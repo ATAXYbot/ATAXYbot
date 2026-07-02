@@ -1196,7 +1196,7 @@ Student Doubt: ${prompt}`
                             <h3 className="text-2xl font-black mb-2 text-red-600 uppercase tracking-widest">System Crash</h3>
                             <p className="text-gray-600 text-sm mb-6 font-bold">Please screenshot this and send to ATAXY Admin.</p>
 
-                            <div className="text-left text-red-900 text-xs mb-8 bg-red-50 p-4 rounded-xl border-2 border-red-200 overflow-auto max-h-[50vh] whitespace-pre-wrap break-words w-full md:max-w-screen-xl max-w-md shadow-inner font-mono">
+                            <div className="text-left text-red-900 text-xs mb-8 bg-red-50 p-4 rounded-xl border-2 border-red-200 overflow-auto max-h-[50vh] whitespace-pre-wrap break-words w-full md:max-w-screen-xl max-w-md mx-auto shadow-inner font-mono">
                                 <span className="font-black text-red-600 block mb-2">ERROR MESSAGE:</span>
                                 {String(this.state.error?.message || "Unknown Error")}
                                 <span className="font-black text-red-600 block mt-4 mb-2">STACK TRACE:</span>
@@ -1747,7 +1747,7 @@ Student Doubt: ${prompt}`
             };
 
             return (
-                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-[#FBFBFB] dark:bg-[#021633] border-b border-[#F0F0F0] dark:border-[#010B1C] z-[40] px-4 pr-[90px] h-[calc(60px+var(--safe-top))] pt-safe-top flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md mx-auto bg-[#FBFBFB] dark:bg-[#021633] border-b border-[#F0F0F0] dark:border-[#010B1C] z-[40] px-4 pr-[90px] h-[calc(60px+var(--safe-top))] pt-safe-top flex justify-between items-center shadow-[0_4px_20px_-10px_rgba(0,167,167,0.2)] dark:shadow-[0_4px_20px_-10px_rgba(0,255,255,0.15)]">
                     <div className="flex items-center gap-2">
                         <AtaxyLogo className="w-8 h-8 rounded-full shadow-[0_0_8px_rgba(0,167,167,0.4)] border border-cyan-300/50" />
                         <span className="font-black text-lg tracking-wider text-ataxy-text-primary drop-shadow-[0_0_8px_rgba(0,167,167,0.3)] dark:drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">ATAXY</span>
@@ -2384,8 +2384,8 @@ Student Doubt: ${prompt}`
                 const canSend = isFriend || mySentCount < 3;
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#0b141a] h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl">
-                        <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
+                    <div className="fixed inset-0 z-[2000000] flex flex-col bg-[#0b141a] h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto mx-auto shadow-2xl">
+                        <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md mx-auto.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
                         <div className="flex items-center gap-3 p-4 bg-[#202c33] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))] z-10 shadow-sm border-b border-[#222d34]">
                             <button onClick={() => setActiveChatUser(null)} className="text-[#aebac1] hover:text-[#d1d7db] text-xl transition-colors w-8 h-8 flex items-center justify-center mr-1"><i className="fa-solid fa-arrow-left"></i></button>
                             <div className="w-10 h-10 rounded-full bg-[#6a7175] flex items-center justify-center font-medium text-white overflow-hidden shrink-0 cursor-pointer" onClick={() => setShowChatProfile(true)}>
@@ -2632,7 +2632,7 @@ Student Doubt: ${prompt}`
                         </div>
                         {showRequestsInbox && (
                             <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
-                                <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                                <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                     <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                         <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
                                         <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -2744,7 +2744,7 @@ Student Doubt: ${prompt}`
                         {/* Advanced Messaging Action Modals */}
                         {msgMenu && (
                             <div className="fixed inset-0 bg-black/80 z-[6000] flex items-end justify-center animate-in fade-in" onClick={() => setMsgMenu(null)}>
-                                <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30 animate-in slide-in-from-bottom-2" onClick={e => e.stopPropagation()}>
+                                <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30 animate-in slide-in-from-bottom-2" onClick={e => e.stopPropagation()}>
                                     <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                         <h3 className="text-lg font-bold text-white">Message Options</h3>
                                         <button onClick={() => setMsgMenu(null)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -2770,7 +2770,7 @@ Student Doubt: ${prompt}`
 
                         {forwardMsg && (
                             <div className="fixed inset-0 bg-black/80 z-[6000] flex items-end justify-center animate-in fade-in" onClick={() => setForwardMsg(null)}>
-                                <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30 animate-in slide-in-from-bottom-2" onClick={e => e.stopPropagation()}>
+                                <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30 animate-in slide-in-from-bottom-2" onClick={e => e.stopPropagation()}>
                                     <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                         <h3 className="text-lg font-bold text-white">Forward to...</h3>
                                         <button onClick={() => setForwardMsg(null)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -2823,7 +2823,7 @@ Student Doubt: ${prompt}`
 
                     {showSearch && (
                         <div className="fixed inset-0 bg-black/80 flex items-start justify-center p-4 pt-20 z-[3000]" onClick={() => { setShowSearch(false); setSearchInput(''); setSearchResult(null); }}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md rounded-2xl p-4 flex flex-col shadow-[0_10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto rounded-2xl p-4 flex flex-col shadow-[0_10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4"><i className="fa-solid fa-search text-[#00FFFF]"></i> Find User by ID</h3>
                                 <div className="flex gap-2">
                                     <input value={searchInput} onChange={e => setSearchInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Enter user ID..." className="flex-1 bg-[#010B1C] border border-[#0AE0D0]/30 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[#00FFFF] transition-colors" />
@@ -2941,7 +2941,7 @@ Student Doubt: ${prompt}`
 
                     {showRequestsInbox && (
                         <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRequestsInbox(false)}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                     <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
                                     <button onClick={() => setShowRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -2978,7 +2978,7 @@ Student Doubt: ${prompt}`
 
                     {showFriendsList && (
                         <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => { setShowFriendsList(false); setFriendsSearchQuery(''); }}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                     <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-users text-[#00FFFF]"></i> My Friends ({(friends || []).length}/120)</h3>
                                     <button onClick={() => { setShowFriendsList(false); setFriendsSearchQuery(''); }} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -5307,7 +5307,7 @@ Student Doubt: ${prompt}`
                     )}
                     {showActionModal && showActionModal.type === 'invite_to_seat' && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-t-3xl p-4 w-full md:max-w-screen-xl max-w-md h-[60vh] flex flex-col border border-[#0AE0D0]/30 shadow-[0_-10px_40px_rgba(0,255,255,0.15)]" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] rounded-t-3xl p-4 w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] flex flex-col border border-[#0AE0D0]/30 shadow-[0_-10px_40px_rgba(0,255,255,0.15)]" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-bold text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Invite to Seat {showActionModal.seatNum}</h3>
                                 <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
                                     {(() => {
@@ -5394,7 +5394,7 @@ Student Doubt: ${prompt}`
 
                     {showParticipantsModal && (
                         <div className="fixed inset-0 bg-black/80 flex justify-center items-end z-[2000] animate-in fade-in slide-in-from-bottom" onClick={() => setShowParticipantsModal(false)}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md rounded-t-3xl p-5 h-[75vh] flex flex-col shadow-[0_-10px_40px_rgba(0,255,255,0.15)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto rounded-t-3xl p-5 h-[75vh] flex flex-col shadow-[0_-10px_40px_rgba(0,255,255,0.15)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3 shrink-0">
                                     <h3 className="font-bold text-lg text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Room Participants ({totalParticipants})</h3>
                                     <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white transition-colors"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -5514,7 +5514,7 @@ Student Doubt: ${prompt}`
                     )}
                     {showRoomRequestsInbox && (
                         <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRoomRequestsInbox(false)}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                     <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
                                     <button onClick={() => setShowRoomRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -5852,7 +5852,7 @@ INSTRUCTIONS:
 
             return (
                 <div className="pb-[80px] animate-in fade-in flex flex-col h-full">
-                    <div className="fixed top-0 pt-safe-top w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
+                    <div className="fixed top-0 pt-safe-top w-full md:max-w-screen-xl max-w-md mx-auto bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between shadow-sm border-b border-gray-200 dark:border-gray-800 z-20">
                         <div className="flex items-center gap-3">
                             <AtaxyLogo className="w-10 h-10 rounded-full border border-gray-200 shadow-sm" />
                             <div>
@@ -5879,7 +5879,7 @@ INSTRUCTIONS:
                         <div ref={chatEndRef} />
                     </div>
 
-                    <form onSubmit={sendMsg} className="fixed bottom-[calc(65px+var(--safe-bottom))] w-full md:max-w-screen-xl max-w-md bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
+                    <form onSubmit={sendMsg} className="fixed bottom-[calc(65px+var(--safe-bottom))] w-full md:max-w-screen-xl max-w-md mx-auto bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800 flex gap-2 z-20">
                         <input
                             value={msg}
                             onChange={e => setMsg(e.target.value)}
@@ -7847,7 +7847,7 @@ const myParticipant = participants.find(p => String(p.user_id) === currentUserId
 
                     {showRequestsModal && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowRequestsModal(false)}>
-                            <div className="bg-[#021633] rounded-t-2xl p-4 w-full md:max-w-screen-xl max-w-md h-[50vh] flex flex-col border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] rounded-t-2xl p-4 w-full md:max-w-screen-xl max-w-md mx-auto h-[50vh] flex flex-col border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-bold text-white mb-4">Mic Requests</h3>
                                 <div className="flex-1 overflow-y-auto space-y-2">
                                     {micRequests.length === 0 && <p className="text-gray-400 text-center py-10">No pending requests.</p>}
@@ -7872,7 +7872,7 @@ const myParticipant = participants.find(p => String(p.user_id) === currentUserId
                     )}
                     {showParticipantsModal && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom" onClick={() => setShowParticipantsModal(false)}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[70vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
                                     <h3 className="text-lg font-bold text-white">Participants ({participants.length})</h3>
                                     <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -8072,7 +8072,7 @@ const myParticipant = participants.find(p => String(p.user_id) === currentUserId
             };
 
             return ReactDOM.createPortal(
-                <div className="fixed inset-0 z-[4000000] flex flex-col bg-white dark:bg-gray-950 h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto shadow-2xl animate-in fade-in zoom-in-95">
+                <div className="fixed inset-0 z-[4000000] flex flex-col bg-white dark:bg-gray-950 h-[100dvh] w-full md:max-w-screen-xl max-w-md mx-auto mx-auto shadow-2xl animate-in fade-in zoom-in-95">
                         <style>{`div.fixed.bottom-0.w-full.md\\:max-w-screen-xl.max-w-md.glass-panel { display: none !important; } body { overflow: hidden !important; }`}</style>
 
                     {/* Sidebar Drawer */}
@@ -8291,7 +8291,7 @@ const myParticipant = participants.find(p => String(p.user_id) === currentUserId
         // ==========================================
         const GlobalStatusBar = ({ isVoiceRoom }) => {
             return (
-                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md h-safe-top z-[9999999] transition-colors duration-300 ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-blue-600 dark:bg-[#021633] shadow-md'}`}></div>
+                <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md mx-auto h-safe-top z-[9999999] transition-colors duration-300 ${isVoiceRoom ? 'bg-[#010B1C]' : 'bg-blue-600 dark:bg-[#021633] shadow-md'}`}></div>
             );
         };
 
@@ -10592,7 +10592,7 @@ React.useEffect(() => {
                             
                             {/* Detailed Analyzer Modal */}
                             {showDetailedAnalyzer && ReactDOM.createPortal(
-                                <div className="fixed inset-0 z-[3000000] bg-[#010B1C]/95 backdrop-blur-xl flex flex-col w-full md:max-w-screen-xl max-w-md mx-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
+                                <div className="fixed inset-0 z-[3000000] bg-[#010B1C]/95 backdrop-blur-xl flex flex-col w-full md:max-w-screen-xl max-w-md mx-auto mx-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
                                     <div className="flex items-center gap-3 p-5 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(20px+max(env(safe-area-inset-top),_24px))] shadow-lg relative overflow-hidden">
                                         <div className="absolute top-0 right-0 w-40 h-40 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
                                         <button onClick={() => setShowDetailedAnalyzer(false)} className="text-[#A4DFE6] hover:text-white text-xl transition-colors w-10 h-10 flex items-center justify-center bg-[#0AE0D0]/10 hover:bg-[#0AE0D0]/30 rounded-full z-10">
@@ -11578,7 +11578,7 @@ React.useEffect(() => {
                                     )}
                                 </div>
                                 {/* CBT Bottom Bar */}
-                                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-safe-bottom">
+                                <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md mx-auto bg-gray-100 border-t border-gray-300 px-2 py-3 z-[45] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] pb-safe-bottom">
                                     <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-between items-center">
                                         <div className="flex gap-2 flex-1 md:flex-none">
                                             <button onClick={() => handleClear(currentQuestion?.id)} className="flex-1 md:flex-none bg-white border border-gray-400 text-gray-800 hover:bg-gray-50 text-[10px] sm:text-xs font-semibold px-2 sm:px-4 py-2.5 rounded-sm shadow-sm transition-colors uppercase tracking-wide active:scale-95">
@@ -12980,7 +12980,7 @@ React.useEffect(() => {
                 }[historyViewType];
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-0 pt-safe-top z-[2000000] bg-white/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-gray-200 dark:border-gray-800">
+                    <div className="fixed inset-x-0 bottom-0 top-0 pt-safe-top z-[2000000] bg-white/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col animate-slide-up duration-300 md:max-w-screen-xl max-w-md mx-auto mx-auto shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-gray-200 dark:border-gray-800">
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setHistoryViewType(null)} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-800 dark:text-gray-200 active:scale-90">
@@ -13172,7 +13172,7 @@ React.useEffect(() => {
                 });
 
                 return ReactDOM.createPortal(
-                    <div className="fixed inset-x-0 bottom-0 top-0 pt-safe-top z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+                    <div className="fixed inset-x-0 bottom-0 top-0 pt-safe-top z-[2000000] bg-gray-50 dark:bg-gray-950 flex flex-col animate-slide-up overflow-hidden md:max-w-screen-xl max-w-md mx-auto mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
                         {/* HEADER */}
                         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm z-10">
                             <div className="flex items-center gap-3">
@@ -13912,7 +13912,7 @@ return (
                     />
                     {!showSplash && showCoCTutorial && <CinematicDemoEngine onComplete={handleTourComplete} />}
 
-                    <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto relative overflow-hidden">
+                    <div className="min-h-[100dvh] font-sans md:max-w-screen-xl max-w-md mx-auto mx-auto relative overflow-hidden">
 
                         {/* Addictive Animated Ambient Background for Blank Spaces */}
                         <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gray-50 dark:bg-gray-950">
@@ -13945,7 +13945,7 @@ return (
 
                                     {/* Main Bottom Navigation (Hidden in Quiz View and Voice Room) */}
                                     {!(activePracticeChapter && currentTab === 'questions') && !(voiceState.activeRoom && !voiceState.isMinimized) && !(vcRoomActive && !vcRoomMinimized) && (
-                                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md glass-panel border-t border-ataxy-border flex justify-center gap-8 sm:gap-12 md:gap-24 pb-[calc(12px+var(--safe-bottom))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
+                                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-screen-xl max-w-md mx-auto glass-panel border-t border-ataxy-border flex justify-center gap-8 sm:gap-12 md:gap-24 pb-[calc(12px+var(--safe-bottom))] pt-3 z-[45] overflow-x-auto shadow-[0_-10px_40px_rgba(0,167,167,0.15)] dark:shadow-[0_-10px_40px_rgba(0,255,255,0.1)] px-4">
                                             <button id="nav-btn-home" onClick={() => { resetDeepState(); setCurrentTab('home'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'home' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-rocket text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">Home</span></button>
 
                                             <button id="nav-btn-vc" onClick={() => { resetDeepState(); setCurrentTab('vc'); }} className={`flex flex-col items-center gap-1 p-2 transition-all duration-300 shrink-0 ${currentTab === 'vc' ? 'text-ataxy-accent-primary active-tab-glow nav-icon-active' : 'text-ataxy-text-secondary hover:text-ataxy-accent-primary hover:-translate-y-1 active:scale-90'}`}><i className="fa-solid fa-headset text-[20px]"></i><span className="text-[10px] font-bold uppercase tracking-wider">VC</span></button>
@@ -13964,7 +13964,7 @@ return (
 
                         {/* Voice Room Global Overlay */}
                         {voiceState.activeRoom && !voiceState.isMinimized && (
-                            <div className="fixed inset-0 z-[1500000] bg-[#010B1C] flex flex-col animate-in slide-in-from-bottom duration-300">
+                            <div className="fixed inset-0 z-[1500000] bg-black/80 backdrop-blur-sm flex flex-col animate-in slide-in-from-bottom duration-300">
                                 <ActiveVoiceRoom tgUser={tgUser} voiceState={voiceState} onMinimize={() => voiceState.setIsMinimized(true)} />
                             </div>
                         )}
