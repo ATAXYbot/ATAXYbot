@@ -2668,8 +2668,8 @@ Student Doubt: ${prompt}`
                         )}
                         {ephemeralActiveMsg && <EphemeralImageOverlay msg={ephemeralActiveMsg} onClose={() => setEphemeralActiveMsg(null)} markAsViewed={markMessageAsViewed} />}
                         {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
+                        
 
-                        {/* NEW: Full Screen Chat Profile Settings Modal */}
                         {showChatProfile && activeChatUser && (
                             <div className="fixed inset-0 bg-[#010B1C] z-[5000] flex flex-col animate-in slide-in-from-right duration-300">
                                 <div className="flex items-center gap-3 p-4 border-b border-[#0AE0D0]/20 bg-[#021633] shrink-0 pt-[calc(16px+max(env(safe-area-inset-top),_24px))]">
@@ -5551,6 +5551,7 @@ Student Doubt: ${prompt}`
 
                     {/* Full Screen Image Overlay */}
                     {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
+                    {showRoomInfoModal && <RoomInfoModal activeRoom={activeRoom} isOwner={String(tgUser?.id || "1001") === String(activeRoom.owner_id)} isAdmin={false} onClose={() => setShowRoomInfoModal(false)} roomAdmins={voiceState?.roomAdmins || []} handleSetAdmin={()=>{}} currentUserId={String(tgUser?.id || "1001")} participants={voiceState?.participants || []} safeAlert={typeof safeAlert !== 'undefined' ? safeAlert : alert} />}
                 </div>
             );
 
@@ -5910,6 +5911,7 @@ INSTRUCTIONS:
 
                     {/* Full Screen Image Overlay */}
                     {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
+                    {showRoomInfoModal && <RoomInfoModal activeRoom={activeRoom} isOwner={isOwner} isAdmin={isAdmin} onClose={() => setShowRoomInfoModal(false)} roomAdmins={voiceState?.roomAdmins || []} handleSetAdmin={handleSetAdmin} currentUserId={currentUserId} participants={voiceState?.participants || []} safeAlert={typeof safeAlert !== 'undefined' ? safeAlert : alert} />}
                 </div>
             )
         };
@@ -6096,8 +6098,9 @@ INSTRUCTIONS:
             const speakerMutedRef = useRef(false);
             useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
 
-                        const [availableRooms, setAvailableRooms] = useState([]);
+                                    const [availableRooms, setAvailableRooms] = useState([]);
             const [chatMessages, setChatMessages] = useState([]);
+            const [roomAdmins, setRoomAdmins] = useState([]);
             const [roomAdmins, setRoomAdmins] = useState([]);
             const [micRequests, setMicRequests] = useState([]);
             const [pendingInvite, setPendingInvite] = useState(null);
@@ -6339,6 +6342,7 @@ INSTRUCTIONS:
                     }
 
                     
+                    setRoomAdmins(roomData.admins || []);
                     setRoomAdmins(roomData.admins || []);
                     if (roomData.room_type === 'temporary') {
                         // Bypass Agora entirely, use basic Supabase presence only
@@ -6598,6 +6602,9 @@ INSTRUCTIONS:
                                 } else {
                                     setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: false } : p));
                                 }
+                            })
+                            .on('broadcast', { event: 'update_admins' }, ({ payload }) => {
+                                setRoomAdmins(payload.admins || []);
                             })
                             .on('broadcast', { event: 'update_admins' }, ({ payload }) => {
                                 setRoomAdmins(payload.admins || []);
@@ -7299,8 +7306,6 @@ INSTRUCTIONS:
                             )}
 
                         </div>
-                    </div>
-                    {showRoomInfoModal && <RoomInfoModal activeRoom={activeRoom} isOwner={String(tgUser?.id || "1001") === String(activeRoom.owner_id)} isAdmin={false} onClose={() => setShowRoomInfoModal(false)} roomAdmins={voiceState?.roomAdmins || []} handleSetAdmin={()=>{}} currentUserId={String(tgUser?.id || "1001")} participants={voiceState.participants} safeAlert={safeAlert} />}
                 </div>
             );
         };
@@ -7531,6 +7536,7 @@ INSTRUCTIONS:
 
         const ActiveVoiceRoom = ({ tgUser, voiceState, onMinimize }) => {
             const { activeRoom, participants, isMuted, isSpeakerMuted, toggleSpeaker, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, leaveRoom, takeSeat, stepDown, toggleMute, sendHostAction, sendBroadcast, sendChat, updateRoomSettings, triggerSFX, lockedSeats = {}, setLockedSeats = () => { }, mutedSeats = {}, setMutedSeats = () => { }, isProcessing, currentMusic, setCurrentMusic } = voiceState;
+            const [showRoomInfoModal, setShowRoomInfoModal] = useState(false);
             const chatEndRef = React.useRef(null);
             React.useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceState.chatMessages]);
             const [showActionModal, setShowActionModal] = useState(null);
@@ -7561,7 +7567,7 @@ INSTRUCTIONS:
             const isOwner = String(activeRoom.owner_id) === currentUserId;
             const isAdmin = isOwner || (voiceState?.roomAdmins && voiceState.roomAdmins.includes(currentUserId));
             const canManageRoom = isHost || isAdmin;
-            const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
+const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
             const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
             const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
             const mySeatMuted = myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined ? !!mutedSeats[myParticipant.seat_number] : false;
