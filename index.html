@@ -3125,11 +3125,6 @@ Student Doubt: ${prompt}`
             const intensity = Math.min(Math.max((volume - 5) / 95, 0), 1);
 
             const baseScale = 1;
-            const dynamicScale = speaking ? baseScale + (intensity * 0.5) : baseScale;
-            const ring1Scale = speaking ? dynamicScale * 1.3 : baseScale;
-            const ring2Scale = speaking ? dynamicScale * 1.7 : baseScale;
-            const glowOpacity = speaking ? 0.3 + (intensity * 0.7) : 0;
-            const transitionStyle = speaking ? 'transform 400ms ease-out, opacity 200ms ease-in' : 'transform 4000ms ease-out, opacity 5000ms ease-out';
             return (
                 <div onClick={(e) => {
                     e.stopPropagation();
@@ -3151,39 +3146,39 @@ Student Doubt: ${prompt}`
                             safeAlert("This seat is locked by the host.");
                         }
                     }
-                }} className={`flex flex-col items-center gap-1.5 cursor-pointer ${isHostSeat ? 'w-[84px]' : 'w-[68px]'}`} style={{ transform: `scale(${speaking ? baseScale + 0.05 : baseScale})`, transition: 'transform 0.1s ease-out' }}>
+                }} className={`flex flex-col items-center gap-1.5 cursor-pointer ${isHostSeat ? 'w-[84px]' : 'w-[68px]'}`} style={{ transform: `scale(${speaking ? baseScale + 0.05 : baseScale})`, transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
                     {isOccupied ? (
                         <div className="relative w-full aspect-square flex items-center justify-center">
-                            {/* WePlay Speaking Ripple */}
-                            <div className="absolute inset-0 rounded-full border-[3px] border-[#ff3b8f] pointer-events-none transition-all duration-75 ease-out z-0" style={{ transform: `scale(${volume > 0 ? 1.1 + (volume / 100) * 0.25 : 1})`, opacity: volume > 0 ? 0.6 + (volume / 100) * 0.4 : 0, boxShadow: volume > 0 ? `0 0 ${20 + (volume / 100) * 30}px rgba(255,59,143,${0.6 + (volume / 100) * 0.4})` : 'none' }}></div>
+                            {/* Premium Speaking Pod Ripple */}
+                            <div className={`absolute inset-0 rounded-full transition-all duration-300 z-0 ${speaking ? 'speaking-pod' : ''}`} style={{ border: speaking ? '2px solid transparent' : 'none' }}></div>
                             
-                            <div className={`relative z-10 w-full h-full rounded-full flex items-center justify-center font-bold bg-[#1a1a24] overflow-hidden border-[3px] ${speaking ? 'border-[#ff3b8f]' : 'border-white'} shadow-lg`}>
+                            <div className={`relative z-10 w-full h-full rounded-full flex items-center justify-center font-bold bg-[#01050b] overflow-hidden border-2 ${speaking ? 'border-[#00FFFF]' : 'border-white/20'} shadow-lg transition-colors`}>
                                 {seat.photo_url ? <img src={seat.photo_url} alt="DP" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} /> : null}
                                 <span className={`w-full h-full flex items-center justify-center text-white ${seat.photo_url ? 'hidden' : 'flex'} ${isHostSeat ? 'text-3xl' : 'text-2xl'}`}>{(seat.user_name ? seat.user_name : String(seat.user_id)).charAt(0).toUpperCase()}</span>
                             </div>
                             
                             {(seat.is_muted_by_host || (isMe && isLocalMuted)) && (
-                                <div className="absolute -bottom-1 -right-1 bg-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-200 z-20 shadow-md">
-                                    <i className="fa-solid fa-microphone-slash text-[10px] text-gray-500"></i>
+                                <div className="absolute -bottom-1 -right-1 bg-[#021633] rounded-full w-7 h-7 flex items-center justify-center border border-[#FF007F]/50 z-20 shadow-[0_0_10px_rgba(255,0,127,0.4)]">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-[#FF007F]"></i>
                                 </div>
                             )}
                             {isHostSeat && (
-                                <div className="absolute -bottom-2 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black text-[9px] font-black px-2 py-0.5 rounded-full z-20 shadow-[0_2px_5px_rgba(255,215,0,0.5)] border border-white tracking-wider whitespace-nowrap">HOST</div>
+                                <div className="absolute -bottom-2 bg-gradient-to-r from-[#FF007F] to-[#7F00FF] text-white text-[9px] font-black px-2.5 py-0.5 rounded-full z-20 shadow-[0_2px_10px_rgba(255,0,127,0.6)] border border-white/20 tracking-wider whitespace-nowrap">HOST</div>
                             )}
                         </div>
                     ) : (
                         <div className="relative w-full aspect-square flex items-center justify-center group">
-                            <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-white/40 bg-black/30 backdrop-blur-md group-hover:bg-white/20 group-hover:border-white transition-all z-10 flex items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]">
-                                <i className={`fa-solid ${isLocked ? 'fa-lock text-white/50 text-lg' : 'fa-plus text-white/80 text-xl drop-shadow-md'}`}></i>
+                            <div className="absolute inset-0 rounded-full border border-dashed border-[#00FFFF]/30 bg-[#00FFFF]/5 backdrop-blur-md group-hover:bg-[#00FFFF]/10 group-hover:border-[#00FFFF] group-hover:shadow-[0_0_15px_rgba(0,255,255,0.3)] transition-all z-10 flex items-center justify-center">
+                                <i className={`fa-solid ${isLocked ? 'fa-lock text-[#FF007F]/60 text-lg' : 'fa-plus text-[#00FFFF]/60 text-xl group-hover:scale-110 transition-transform'}`}></i>
                             </div>
                             {seat && seat.is_muted_by_host && (
-                                <div className="absolute -bottom-1 -right-1 bg-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-gray-200 z-20 shadow-md">
-                                    <i className="fa-solid fa-microphone-slash text-[10px] text-gray-500"></i>
+                                <div className="absolute -bottom-1 -right-1 bg-[#021633] rounded-full w-7 h-7 flex items-center justify-center border border-[#FF007F]/50 z-20 shadow-[0_0_10px_rgba(255,0,127,0.4)]">
+                                    <i className="fa-solid fa-microphone-slash text-[10px] text-[#FF007F]"></i>
                                 </div>
                             )}
                         </div>
                     )}
-                    <span className="text-[10px] text-center font-bold text-white truncate max-w-[130%] px-2.5 py-0.5 mt-1 bg-black/50 backdrop-blur-md rounded-full shadow-md border border-white/10">{occupantName}</span>
+                    <span className="text-[10px] text-center font-bold text-white truncate max-w-[130%] px-3 py-1 mt-1 glass-panel-premium rounded-full">{occupantName}</span>
                 </div>
             );
         };
@@ -5076,24 +5071,23 @@ Student Doubt: ${prompt}`
             };
 
             const renderActiveRoom = () => (
-                <div className="fixed inset-0 z-[2000000] bg-[#1A1A24] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 font-sans" onClick={() => setShowRoomMenu(false)}>
-                    <style>{`div.fixed.bottom-0.w-full.md:max-w-screen-xl max-w-md.glass-panel { display: none !important; }`}</style>
+                <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 font-sans" onClick={() => setShowRoomMenu(false)}>
                     
-                    {/* WePlay Full Screen Immersive Background */}
-                    <div className="absolute inset-0 z-0 bg-[#1A1A24]">
-                        <img src={activeRoom.host_photo || "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop"} alt="bg" className="w-full h-full object-cover opacity-80 scale-[1.05]" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90 pointer-events-none"></div>
-                        <div className="absolute inset-0 backdrop-blur-[4px] pointer-events-none"></div>
+                    {/* Premium Space Immersive Background */}
+                    <div className="absolute inset-0 z-0 bg-[#010B1C]">
+                        <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2000&auto=format&fit=crop" alt="bg" className="w-full h-full object-cover opacity-40 scale-[1.05] mix-blend-screen" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#010B1C]/80 via-transparent to-[#010B1C]/90 pointer-events-none"></div>
+                        <div className="absolute inset-0 backdrop-blur-[6px] pointer-events-none"></div>
                     </div>
 
                     {/* WePlay Top Header */}
                     <div className="px-4 py-3 flex items-center justify-between z-20 relative pt-[calc(30px+env(safe-area-inset-top,0px))]">
                         <div className="flex items-center gap-3">
-                            <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors shadow-lg border border-white/20">
+                            <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors shadow-lg border border-[#0AE0D0]/30">
                                 <i className="fa-solid fa-chevron-left text-sm"></i>
                             </button>
-                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-white/20 shadow-lg">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff3b8f] to-[#9147ff] p-[1px] flex items-center justify-center overflow-hidden shrink-0">
+                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-[#0AE0D0]/30 shadow-lg">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 p-[1px] flex items-center justify-center overflow-hidden shrink-0">
                                     <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
                                         {activeRoom.host_photo ? <img src={activeRoom.host_photo} className="w-full h-full object-cover" /> : <i className="fa-solid fa-hashtag text-white/50 text-xs"></i>}
                                     </div>
@@ -5101,36 +5095,37 @@ Student Doubt: ${prompt}`
                                 <div className="flex flex-col min-w-0 max-w-[120px]">
                                     <span className="text-[11px] font-black text-white truncate">{activeRoom.room_name}</span>
                                     <div className="flex items-center gap-1 opacity-80 cursor-pointer" onClick={() => handleCopy(activeRoom.room_id_5_digit, 'Room ID')}>
-                                        <i className="fa-solid fa-id-badge text-[8px] text-[#ff3b8f]"></i>
+                                        <i className="fa-solid fa-id-badge text-[8px] text-[#00FFFF]"></i>
                                         <span className="text-[9px] font-medium text-white/90 truncate">ID: {activeRoom.room_id_5_digit}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-white/20">
+                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors border border-[#0AE0D0]/30 shadow-lg">
                                 <i className="fa-solid fa-user-plus text-[11px]"></i>
-                                {pendingRequests.length > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#ff3b8f] rounded-full border border-black shadow-[0_0_5px_rgba(255,59,143,0.8)] animate-pulse"></span>}
+                                {pendingRequests.length > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#00FFFF] rounded-full border border-black shadow-[0_0_5px_rgba(0,255,255,0.8)] animate-pulse"></span>}
                             </button>
-                            <button onClick={() => setShowParticipantsModal(true)} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-white/20">
-                                <i className="fa-solid fa-users text-[11px]"></i>
-                            </button>
+                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-[#0AE0D0]/30 shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowParticipantsModal(true)}>
+                                <i className="fa-solid fa-users text-[#00FFFF] text-[11px]"></i>
+                                <span className="text-xs font-black text-white">{activeRoom.audience_count + activeRoom.occupants_count}</span>
+                            </div>
                             
                             <div className="relative">
-                                <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-white/20">
-                                    <i className="fa-solid fa-power-off text-[11px] text-[#ff3b8f]"></i>
+                                <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-[#0AE0D0]/30 shadow-lg">
+                                    <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
                                 </button>
                                 {showRoomMenu && (
-                                    <div className="absolute right-0 top-full mt-2 bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[3000] flex flex-col gap-1 min-w-[120px] animate-in zoom-in-95 duration-100" onClick={e => e.stopPropagation()}>
+                                    <div className="absolute right-0 top-full mt-2 bg-[#021633] backdrop-blur-2xl border border-[#0AE0D0]/30 rounded-2xl shadow-[0_0_30px_rgba(0,255,255,0.3)] p-2 z-[3000] flex flex-col gap-1 min-w-[120px] animate-in zoom-in-95 duration-100" onClick={e => e.stopPropagation()}>
                                         {isHost && (
-                                            <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl transition-all text-left w-full active:scale-95">
-                                                <i className="fa-solid fa-gear text-white/80 w-4 text-center"></i>
+                                            <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex items-center gap-3 p-3 hover:bg-[#00FFFF]/10 rounded-xl transition-all text-left w-full active:scale-95">
+                                                <i className="fa-solid fa-gear text-[#A4DFE6] w-4 text-center"></i>
                                                 <span className="text-xs font-bold text-white">Settings</span>
                                             </button>
                                         )}
-                                        <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex items-center gap-3 p-3 hover:bg-[#ff3b8f]/20 rounded-xl transition-all text-left w-full active:scale-95 group">
-                                            <i className="fa-solid fa-arrow-right-from-bracket text-[#ff3b8f] group-hover:text-red-400 w-4 text-center transition-colors"></i>
-                                            <span className="text-xs font-bold text-[#ff3b8f] group-hover:text-red-400 transition-colors">Leave Room</span>
+                                        <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex items-center gap-3 p-3 hover:bg-[#FF007F]/20 rounded-xl transition-all text-left w-full active:scale-95 group">
+                                            <i className="fa-solid fa-arrow-right-from-bracket text-[#FF007F] group-hover:text-red-400 w-4 text-center transition-colors"></i>
+                                            <span className="text-xs font-bold text-[#FF007F] group-hover:text-red-400 transition-colors">Leave Room</span>
                                         </button>
                                     </div>
                                 )}
@@ -5201,40 +5196,40 @@ Student Doubt: ${prompt}`
                         </div>
                     </div>
 
-                    {/* WePlay Bottom Floating Toolbar */}
-                    <div className="px-4 py-3 pb-[calc(8px+env(safe-area-inset-bottom,0px))] relative z-10 flex flex-col gap-2 shrink-0">
+                    {/* Premium Floating Pill Toolbar */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-30 floating-element flex flex-col gap-2 shrink-0">
                         {/* Pending Image Preview Overlay */}
                         {pendingImage && (
-                            <div className="w-full bg-black/60 border border-white/20 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom-2 backdrop-blur-md">
+                            <div className="w-full bg-[#021633] border border-[#0AE0D0]/30 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2 backdrop-blur-md">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-white/10">
+                                    <div className="w-12 h-12 rounded-lg bg-[#010B1C] flex items-center justify-center overflow-hidden border border-[#0AE0D0]/10">
                                         <img src={pendingImage} className="max-w-full max-h-full object-cover" />
                                     </div>
-                                    <span className="text-xs font-bold text-white/80">Image selected</span>
+                                    <span className="text-xs font-bold text-[#A4DFE6]">Image selected</span>
                                 </div>
-                                <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
+                                <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-[#FF007F]/20 text-[#FF007F] rounded-full flex items-center justify-center hover:bg-[#FF007F] hover:text-white transition-colors">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         )}
-                        <div className="flex items-center gap-3">
+                        <div className="glass-panel-premium rounded-[2rem] p-2 flex items-center gap-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] border border-cyan-500/20">
                             <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim() || pendingImage) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className="flex-1 relative">
-                                <div className="bg-black/50 backdrop-blur-xl rounded-full pl-5 pr-12 py-3 flex items-center gap-3 border border-white/20 focus-within:border-[#ff3b8f]/80 focus-within:bg-black/60 transition-all shadow-[0_5px_15px_rgba(0,0,0,0.3)] w-full">
-                                    <i className="fa-regular fa-comment-dots text-white/60 text-sm"></i>
-                                    <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Say something nice..." className="bg-transparent border-none outline-none text-sm text-white placeholder-white/50 flex-1 font-medium w-full" />
+                                <div className="bg-[#01050b]/80 rounded-full pl-4 pr-16 py-2.5 flex items-center gap-2 border border-[#0AE0D0]/30 focus-within:border-[#00FFFF] transition-all shadow-inner w-full">
+                                    <i className="fa-regular fa-comment-dots text-[#A4DFE6] text-sm"></i>
+                                    <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Say something nice..." className="bg-transparent border-none outline-none text-sm text-[#E0F7FA] placeholder-[#A4DFE6]/50 flex-1 font-medium w-full" />
                                 </div>
-                                <button type="button" onClick={() => document.getElementById('vc-chat-img').click()} className="absolute right-[46px] top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/60 hover:text-white transition-colors z-10"><i className="fa-solid fa-image text-[11px]"></i></button>
-                                <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-[#0072FF] text-[#010a17] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">
+                                <button type="button" onClick={() => document.getElementById('vc-chat-img').click()} className="absolute right-[40px] top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] transition-colors z-10"><i className="fa-solid fa-image text-[12px]"></i></button>
+                                <button type="submit" className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-[#0072FF] text-[#010B1C] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform hover:scale-110">
                                     <i className="fa-solid fa-paper-plane text-[11px]"></i>
                                 </button>
                             </form>
                             
-                            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 backdrop-blur-xl border border-white/20 shadow-xl transition-all active:scale-90 ${isSpeakerMuted ? 'bg-black/50 text-white/30' : 'bg-white/20 text-white'}`}>
-                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-lg`}></i>
+                            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all active:scale-90 shadow-lg ${isSpeakerMuted ? 'bg-[#01050b] border-[#FF007F]/50 text-[#FF007F]' : 'bg-[#021633] border-[#0AE0D0]/30 text-[#00FFFF] hover:border-[#00FFFF]'}`}>
+                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
                             </button>
                             
-                            <button onClick={() => { if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else if (isHost) takeSeat(0); else safeAlert('Take a seat to use the mic!'); }} className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 backdrop-blur-xl border border-white/20 shadow-xl transition-all active:scale-90 ${(mySeatIndex === null && !isHost) ? 'bg-black/50 text-white/30' : (isLocalMuted || isMutedByHost) ? 'bg-white text-black' : 'bg-gradient-to-br from-[#ff3b8f] to-[#9147ff] text-white shadow-[0_0_20px_rgba(255,59,143,0.5)]'}`}>
-                                <i className={`fa-solid ${(isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost)) ? 'fa-microphone-slash' : 'fa-microphone'} text-lg`}></i>
+                            <button onClick={() => { if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else if (isHost) takeSeat(0); else safeAlert('Take a seat to use the mic!'); }} className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all active:scale-90 shadow-lg ${(mySeatIndex === null && !isHost) ? 'bg-[#01050b] border-gray-600/50 text-gray-500' : (isLocalMuted || isMutedByHost) ? 'bg-[#01050b] border-[#FF007F]/50 text-[#FF007F]' : 'bg-gradient-to-br from-[#FF007F] to-[#7F00FF] border-transparent text-white shadow-[0_0_20px_rgba(255,0,127,0.5)]'}`}>
+                                <i className={`fa-solid ${(isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost)) ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
                             </button>
                         </div>
                     </div>
@@ -7543,11 +7538,11 @@ INSTRUCTIONS:
 
             return (
                 <div className="flex-1 flex flex-col relative z-10 bg-[#1A1A24] min-h-screen overflow-hidden">
-                    {/* WePlay Full Screen Immersive Background */}
-                    <div className="absolute inset-0 z-0 bg-[#1A1A24]">
-                        <img src={activeRoom.room_dp_url || "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop"} alt="bg" className="w-full h-full object-cover opacity-80 scale-[1.05]" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90 pointer-events-none"></div>
-                        <div className="absolute inset-0 backdrop-blur-[4px] pointer-events-none"></div>
+                    {/* Premium Space Immersive Background */}
+                    <div className="absolute inset-0 z-0 bg-[#010B1C]">
+                        <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2000&auto=format&fit=crop" alt="bg" className="w-full h-full object-cover opacity-40 scale-[1.05] mix-blend-screen" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#010B1C]/80 via-transparent to-[#010B1C]/90 pointer-events-none"></div>
+                        <div className="absolute inset-0 backdrop-blur-[6px] pointer-events-none"></div>
                     </div>
 
                     {/* WePlay Top Header */}
@@ -7573,17 +7568,17 @@ INSTRUCTIONS:
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/20 shadow-lg cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowParticipantsModal(true)}>
-                                <i className="fa-solid fa-users text-white/90 text-[10px]"></i>
-                                <span className="text-[11px] font-black text-white">{(activeRoom.seats_occupied || 0) + (activeRoom.room_audience?.length || 0)}</span>
+                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-[#0AE0D0]/30 shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowParticipantsModal(true)}>
+                                <i className="fa-solid fa-users text-[#00FFFF] text-[11px]"></i>
+                                <span className="text-xs font-black text-white">{(activeRoom.seats_occupied || 0) + (activeRoom.room_audience?.length || 0)}</span>
                             </div>
                             {isHost && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && (
                                 <button onClick={() => setShowSettingsModal(true)} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors border border-white/20 shadow-lg">
                                     <i className="fa-solid fa-gear text-sm"></i>
                                 </button>
                             )}
-                            <button onClick={() => { if (!isProcessing) leaveRoom(); }} disabled={isProcessing} className="w-8 h-8 rounded-full bg-red-500/30 backdrop-blur-md flex items-center justify-center text-red-100 hover:bg-red-500/50 transition-colors border border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]">
-                                <i className="fa-solid fa-power-off text-sm"></i>
+                            <button onClick={() => { if (!isProcessing) safeConfirm("Are you sure you want to leave the room?", leaveRoom); }} disabled={isProcessing} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors border border-white/20 shadow-lg">
+                                <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
                             </button>
                         </div>
                     </div>
