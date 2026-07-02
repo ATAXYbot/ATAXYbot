@@ -1,0 +1,209 @@
+            const renderDashboard = () => {
+                if (currentView === 'chats') {
+                    return (
+                        <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
+
+                            <div className="flex-1 overflow-hidden relative">
+                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} sendDirectMessage={sendDirectMessage} chatActions={chatActions} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} markEphemeralAsViewed={markEphemeralAsViewed} />
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010714] text-white space-y-0">
+
+
+                        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
+                            {/* Official Room Section */}
+                            <div className="px-6 py-6 relative overflow-hidden bg-gradient-to-b from-[#021A40] to-transparent shrink-0">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[80px] opacity-20 animate-pulse"></div>
+                                <div className="relative z-10 bg-gradient-to-r from-[#010B1C]/80 to-[#021A40]/80 p-5 rounded-2xl border border-[#00FFFF]/40 shadow-[0_0_20px_rgba(0,255,255,0.2)] backdrop-blur-md mb-2">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <AtaxyLogo className="w-14 h-14 rounded-full shadow-[0_0_15px_rgba(0,255,255,0.4)] border-2 border-[#00FFFF]/50 shrink-0" />
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <h2 className="text-[18px] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00FFFF] to-blue-400 uppercase tracking-wider leading-tight">ATAXY Official Room</h2>
+                                                <i className="fa-solid fa-circle-check text-[#00FFFF] text-sm" title="Official Room"></i>
+                                            </div>
+                                            <p className="text-[#A4DFE6] text-[10px] font-bold">Room ID: 2431 • Permanent Voice Lounge</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={async () => {
+                                        if (voiceState && voiceState.joinRoom) {
+                                            const roomObj = { id: '2431', channel_name: 'ATAXY Official Room', host_user_id: '5182808926', owner_id: '5182808926', room_type: 'permanent', is_live: true };
+                                            if (window.supabase) {
+                                                try { await window.supabase.from('voice_rooms').insert(roomObj); } catch (e) { }
+                                            }
+                                            voiceState.joinRoom(roomObj);
+                                        } else {
+                                            safeAlert("Voice service is unavailable.");
+                                        }
+                                    }} className="w-full bg-gradient-to-br from-[#00FFFF] to-blue-600 text-[#010714] py-3.5 rounded-xl font-black shadow-[0_5px_15px_rgba(0,255,255,0.3)] hover:shadow-[0_8px_20px_rgba(0,255,255,0.5)] hover:-translate-y-0.5 transition-all text-sm flex items-center justify-center gap-2 group relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                        <i className="fa-solid fa-satellite-dish text-lg"></i>
+                                        <span>JOIN OFFICIAL ROOM</span>
+                                    </button>
+                                </div>
+
+                                {roomError && (
+                                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-xl w-full text-xs font-bold text-center animate-in fade-in mt-4 backdrop-blur-sm">
+                                        <i className="fa-solid fa-triangle-exclamation mr-1.5"></i> {roomError}
+                                    </div>
+                                )}
+
+                                <div className="w-full flex gap-3 mt-4">
+                                    <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} disabled={isCreating} className="flex-1 bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/30 text-[#00FFFF] py-3 rounded-xl font-black shadow-md hover:border-[#00FFFF]/60 hover:-translate-y-0.5 transition-all text-xs disabled:opacity-50 flex flex-col items-center justify-center gap-1">
+                                        {isCreating ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <i className="fa-solid fa-plus text-lg"></i>}
+                                        <span>CREATE VOICE ROOM</span>
+                                    </button>
+                                    <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/30 text-[#00FFFF] py-3 rounded-xl font-black shadow-md hover:border-[#00FFFF]/60 hover:-translate-y-0.5 transition-all text-xs flex flex-col items-center justify-center gap-1">
+                                        <i className="fa-solid fa-hashtag text-lg"></i>
+                                        <span>JOIN BY ID</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Active Rooms List */}
+                            <div className="px-4 pb-6 flex-1">
+                                
+                            {/* Categories Header like WePlay */}
+                            <div className="flex items-center gap-6 px-4 py-2 overflow-x-auto no-scrollbar border-b border-white/5 mb-4">
+                                <div className="text-[15px] font-black text-white border-b-2 border-[#00FFFF] pb-1 shrink-0 cursor-pointer">All</div>
+                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Study</div>
+                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Chill</div>
+                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Music</div>
+                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Doubt</div>
+                            </div>
+<div className="flex items-center justify-between mb-4 px-2">
+                                    <h3 className="font-black text-white text-base flex items-center gap-2 drop-shadow-md">
+                                        Live Rooms <span className="bg-[#00FFFF] text-[#010714] text-[10px] px-2 py-0.5 rounded-full font-black">{sortedActiveRooms.length}</span>
+                                    </h3>
+                                    <button onClick={async () => { setIsRefreshingLobby(true); await fetchInitialRooms(); setTimeout(() => setIsRefreshingLobby(false), 500); }} className="text-[#A4DFE6] hover:text-[#00FFFF] p-2 rounded-full hover:bg-[#00FFFF]/10 transition-colors">
+                                        <i className={`fa-solid fa-rotate-right ${isRefreshingLobby ? 'animate-spin' : ''} text-lg`}></i>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {sortedActiveRooms.length === 0 ? (
+                                        <div className="bg-[#021A40]/50 border border-blue-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                                            <div className="w-16 h-16 bg-[#00FFFF]/10 rounded-full flex items-center justify-center mb-3">
+                                                <i className="fa-solid fa-microphone-slash text-[#00FFFF] text-2xl opacity-80"></i>
+                                            </div>
+                                            <p className="text-[#A4DFE6] font-bold">No active rooms right now.</p>
+                                            <p className="text-gray-500 text-xs mt-1">Start a room to study with others!</p>
+                                        </div>
+                                    ) : (
+                                        sortedActiveRooms.map(room => (
+                                            <div key={room.id} onClick={() => {
+                                                if (room.password) { setRoomToJoinWithPassword(room); }
+                                                else { joinRoom(room); }
+                                            }} className="bg-transparent border-b border-white/5 py-3 flex flex-row gap-3 items-center cursor-pointer hover:bg-white/[0.02] transition-all group">
+                                                
+                                                {/* Left: Avatar (Squircle) */}
+                                                <div className="relative w-[56px] h-[56px] shrink-0">
+                                                    <div className="w-full h-full rounded-[18px] bg-[#021A40] bg-cover bg-center text-[#00FFFF] font-black text-2xl flex items-center justify-center border border-[#0AE0D0]/20 overflow-hidden shadow-md" style={room.host_photo ? { backgroundImage: `url(${room.host_photo})` } : {}}>
+                                                        {!room.host_photo && (room.host_name ? room.host_name[0].toUpperCase() : 'H')}
+                                                    </div>
+                                                </div>
+
+                                                {/* Center: Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-[14px] font-bold text-white/90 leading-tight truncate mb-1 flex items-center gap-1">
+                                                        {room.password && <i className="fa-solid fa-lock text-[#FF007F] text-[10px] shrink-0"></i>}
+                                                        {room.room_name}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
+                                                            <i className="fa-solid fa-microphone-lines text-[8px]"></i> {room.room_type === 'permanent' ? 'Study' : 'Chat'}
+                                                        </span>
+                                                        <span className="text-[11px] text-white/40 flex items-center gap-1 font-semibold truncate">
+                                                            <i className="fa-solid fa-user text-[9px]"></i> {room.total_capacity || 1}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Right: Badges */}
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <div className="w-6 h-6 rounded-full bg-[#FFD700]/10 flex items-center justify-center border border-[#FFD700]/30 shadow-sm text-[#FFD700]">
+                                                        <i className="fa-solid fa-crown text-[10px]"></i>
+                                                    </div>
+                                                    <div className="w-6 h-6 rounded-full bg-[#00FFFF]/10 flex items-center justify-center border border-[#00FFFF]/30 shadow-sm text-[#00FFFF]">
+                                                        <i className="fa-solid fa-fire text-[10px]"></i>
+                                                    </div>
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/30 shadow-sm text-blue-400">
+                                                        <i className="fa-solid fa-ranking-star text-[10px]"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {showJoinModal && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
+                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Enter 5-digit Room ID</h3>
+                                    <input type="number" value={joinRoomId} onChange={e => setJoinRoomId(e.target.value)} placeholder="e.g. 12345" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-xl text-center font-black tracking-[0.5em] focus:outline-none focus:border-[#00FFFF]" />
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setShowJoinModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={() => joinRoomBy5Digit(joinRoomId)} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {roomToJoinWithPassword && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300]" onClick={() => setRoomToJoinWithPassword(null)}>
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
+                                    <h3 className="text-xl font-black mb-2 text-[#00FFFF]"><i className="fa-solid fa-lock mr-2"></i>Private Room</h3>
+                                    <p className="text-sm text-[#A4DFE6] mb-4">Enter the password to join <strong>{roomToJoinWithPassword.room_name}</strong></p>
+                                    <input type="text" value={joinPasswordInput} onChange={e => setJoinPasswordInput(e.target.value)} placeholder="Password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setRoomToJoinWithPassword(null)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={() => {
+                                            if (joinPasswordInput === roomToJoinWithPassword.password) {
+                                                joinRoom(roomToJoinWithPassword);
+                                                setRoomToJoinWithPassword(null);
+                                                setJoinPasswordInput('');
+                                            } else { safeAlert("Incorrect password."); }
+                                        }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {showVCCreateModal && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
+                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
+                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Create Voice Lounge</h3>
+                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                                    <input type="text" value={vcCreateName} onChange={e => setVcCreateName(e.target.value)} placeholder={`${currentUserName}'s Room`} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
+                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
+                                    <div className="flex gap-2 mb-4">
+                                        <button type="button" className="flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]">Temporary</button>
+                                    </div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => setVcCreatePassEnabled(!vcCreatePassEnabled)}>Enable Password</label>
+                                        <div
+                                            onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if (vcCreatePassEnabled) setVcCreatePass(''); }}
+                                            className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${vcCreatePassEnabled ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
+                                        >
+                                            <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${vcCreatePassEnabled ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
+                                        </div>
+                                    </div>
+                                    {vcCreatePassEnabled && (
+                                        <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
+                                    )}
+                                    <div className="flex gap-3 mt-6">
+                                        <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
+                                        <button onClick={executeCreateRoom} disabled={isCreating} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isCreating ? 'Creating...' : 'Create'}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };

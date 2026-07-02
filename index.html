@@ -4872,700 +4872,544 @@ Student Doubt: ${prompt}`
                 });
             };
 
-            const renderDashboard = () => {
-                if (currentView === 'chats') {
-                    return (
-                        <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
-
-                            <div className="flex-1 overflow-hidden relative">
-                                <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} sendDirectMessage={sendDirectMessage} chatActions={chatActions} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} markEphemeralAsViewed={markEphemeralAsViewed} />
-                            </div>
-                        </div>
-                    );
-                }
-
-                return (
-                    <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010714] text-white space-y-0">
-
-
-                        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col mt-4">
-                            {/* Official Room Section */}
-                            <div className="px-6 py-6 relative overflow-hidden bg-gradient-to-b from-[#021A40] to-transparent shrink-0">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-[#00FFFF] rounded-full mix-blend-screen filter blur-[80px] opacity-20 animate-pulse"></div>
-                                <div className="relative z-10 bg-gradient-to-r from-[#010B1C]/80 to-[#021A40]/80 p-5 rounded-2xl border border-[#00FFFF]/40 shadow-[0_0_20px_rgba(0,255,255,0.2)] backdrop-blur-md mb-2">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <AtaxyLogo className="w-14 h-14 rounded-full shadow-[0_0_15px_rgba(0,255,255,0.4)] border-2 border-[#00FFFF]/50 shrink-0" />
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                                <h2 className="text-[18px] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00FFFF] to-blue-400 uppercase tracking-wider leading-tight">ATAXY Official Room</h2>
-                                                <i className="fa-solid fa-circle-check text-[#00FFFF] text-sm" title="Official Room"></i>
-                                            </div>
-                                            <p className="text-[#A4DFE6] text-[10px] font-bold">Room ID: 2431 • Permanent Voice Lounge</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={async () => {
-                                        if (voiceState && voiceState.joinRoom) {
-                                            const roomObj = { id: '2431', channel_name: 'ATAXY Official Room', host_user_id: '5182808926', owner_id: '5182808926', room_type: 'permanent', is_live: true };
-                                            if (window.supabase) {
-                                                try { await window.supabase.from('voice_rooms').insert(roomObj); } catch (e) { }
-                                            }
-                                            voiceState.joinRoom(roomObj);
-                                        } else {
-                                            safeAlert("Voice service is unavailable.");
-                                        }
-                                    }} className="w-full bg-gradient-to-br from-[#00FFFF] to-blue-600 text-[#010714] py-3.5 rounded-xl font-black shadow-[0_5px_15px_rgba(0,255,255,0.3)] hover:shadow-[0_8px_20px_rgba(0,255,255,0.5)] hover:-translate-y-0.5 transition-all text-sm flex items-center justify-center gap-2 group relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                                        <i className="fa-solid fa-satellite-dish text-lg"></i>
-                                        <span>JOIN OFFICIAL ROOM</span>
-                                    </button>
-                                </div>
-
-                                {roomError && (
-                                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-xl w-full text-xs font-bold text-center animate-in fade-in mt-4 backdrop-blur-sm">
-                                        <i className="fa-solid fa-triangle-exclamation mr-1.5"></i> {roomError}
-                                    </div>
-                                )}
-
-                                <div className="w-full flex gap-3 mt-4">
-                                    <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} disabled={isCreating} className="flex-1 bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/30 text-[#00FFFF] py-3 rounded-xl font-black shadow-md hover:border-[#00FFFF]/60 hover:-translate-y-0.5 transition-all text-xs disabled:opacity-50 flex flex-col items-center justify-center gap-1">
-                                        {isCreating ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <i className="fa-solid fa-plus text-lg"></i>}
-                                        <span>CREATE VOICE ROOM</span>
-                                    </button>
-                                    <button onClick={() => setShowJoinModal(true)} className="flex-1 bg-gradient-to-r from-[#021A40] to-[#010F24] border border-[#0AE0D0]/30 text-[#00FFFF] py-3 rounded-xl font-black shadow-md hover:border-[#00FFFF]/60 hover:-translate-y-0.5 transition-all text-xs flex flex-col items-center justify-center gap-1">
-                                        <i className="fa-solid fa-hashtag text-lg"></i>
-                                        <span>JOIN BY ID</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Active Rooms List */}
-                            <div className="px-4 pb-6 flex-1">
-                                
-                            {/* Categories Header like WePlay */}
-                            <div className="flex items-center gap-6 px-4 py-2 overflow-x-auto no-scrollbar border-b border-white/5 mb-4">
-                                <div className="text-[15px] font-black text-white border-b-2 border-[#00FFFF] pb-1 shrink-0 cursor-pointer">All</div>
-                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Study</div>
-                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Chill</div>
-                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Music</div>
-                                <div className="text-sm font-bold text-white/50 pb-1 shrink-0 cursor-pointer hover:text-white/80">Doubt</div>
-                            </div>
-<div className="flex items-center justify-between mb-4 px-2">
-                                    <h3 className="font-black text-white text-base flex items-center gap-2 drop-shadow-md">
-                                        Live Rooms <span className="bg-[#00FFFF] text-[#010714] text-[10px] px-2 py-0.5 rounded-full font-black">{sortedActiveRooms.length}</span>
-                                    </h3>
-                                    <button onClick={async () => { setIsRefreshingLobby(true); await fetchInitialRooms(); setTimeout(() => setIsRefreshingLobby(false), 500); }} className="text-[#A4DFE6] hover:text-[#00FFFF] p-2 rounded-full hover:bg-[#00FFFF]/10 transition-colors">
-                                        <i className={`fa-solid fa-rotate-right ${isRefreshingLobby ? 'animate-spin' : ''} text-lg`}></i>
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {sortedActiveRooms.length === 0 ? (
-                                        <div className="bg-[#021A40]/50 border border-blue-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center backdrop-blur-sm">
-                                            <div className="w-16 h-16 bg-[#00FFFF]/10 rounded-full flex items-center justify-center mb-3">
-                                                <i className="fa-solid fa-microphone-slash text-[#00FFFF] text-2xl opacity-80"></i>
-                                            </div>
-                                            <p className="text-[#A4DFE6] font-bold">No active rooms right now.</p>
-                                            <p className="text-gray-500 text-xs mt-1">Start a room to study with others!</p>
-                                        </div>
-                                    ) : (
-                                        sortedActiveRooms.map(room => (
-                                            <div key={room.id} onClick={() => {
-                                                if (room.password) { setRoomToJoinWithPassword(room); }
-                                                else { joinRoom(room); }
-                                            }} className="bg-transparent border-b border-white/5 py-3 flex flex-row gap-3 items-center cursor-pointer hover:bg-white/[0.02] transition-all group">
-                                                
-                                                {/* Left: Avatar (Squircle) */}
-                                                <div className="relative w-[56px] h-[56px] shrink-0">
-                                                    <div className="w-full h-full rounded-[18px] bg-[#021A40] bg-cover bg-center text-[#00FFFF] font-black text-2xl flex items-center justify-center border border-[#0AE0D0]/20 overflow-hidden shadow-md" style={room.host_photo ? { backgroundImage: `url(${room.host_photo})` } : {}}>
-                                                        {!room.host_photo && (room.host_name ? room.host_name[0].toUpperCase() : 'H')}
-                                                    </div>
-                                                </div>
-
-                                                {/* Center: Info */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-[14px] font-bold text-white/90 leading-tight truncate mb-1 flex items-center gap-1">
-                                                        {room.password && <i className="fa-solid fa-lock text-[#FF007F] text-[10px] shrink-0"></i>}
-                                                        {room.room_name}
-                                                    </h4>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
-                                                            <i className="fa-solid fa-microphone-lines text-[8px]"></i> {room.room_type === 'permanent' ? 'Study' : 'Chat'}
-                                                        </span>
-                                                        <span className="text-[11px] text-white/40 flex items-center gap-1 font-semibold truncate">
-                                                            <i className="fa-solid fa-user text-[9px]"></i> {room.total_capacity || 1}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                
-                                                {/* Right: Badges */}
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                    <div className="w-6 h-6 rounded-full bg-[#FFD700]/10 flex items-center justify-center border border-[#FFD700]/30 shadow-sm text-[#FFD700]">
-                                                        <i className="fa-solid fa-crown text-[10px]"></i>
-                                                    </div>
-                                                    <div className="w-6 h-6 rounded-full bg-[#00FFFF]/10 flex items-center justify-center border border-[#00FFFF]/30 shadow-sm text-[#00FFFF]">
-                                                        <i className="fa-solid fa-fire text-[10px]"></i>
-                                                    </div>
-                                                    <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/30 shadow-sm text-blue-400">
-                                                        <i className="fa-solid fa-ranking-star text-[10px]"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {showJoinModal && (
-                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
-                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
-                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Enter 5-digit Room ID</h3>
-                                    <input type="number" value={joinRoomId} onChange={e => setJoinRoomId(e.target.value)} placeholder="e.g. 12345" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-xl text-center font-black tracking-[0.5em] focus:outline-none focus:border-[#00FFFF]" />
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setShowJoinModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
-                                        <button onClick={() => joinRoomBy5Digit(joinRoomId)} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {roomToJoinWithPassword && (
-                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300]" onClick={() => setRoomToJoinWithPassword(null)}>
-                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                    <h3 className="text-xl font-black mb-2 text-[#00FFFF]"><i className="fa-solid fa-lock mr-2"></i>Private Room</h3>
-                                    <p className="text-sm text-[#A4DFE6] mb-4">Enter the password to join <strong>{roomToJoinWithPassword.room_name}</strong></p>
-                                    <input type="text" value={joinPasswordInput} onChange={e => setJoinPasswordInput(e.target.value)} placeholder="Password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-white focus:outline-none focus:border-[#00FFFF]" />
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setRoomToJoinWithPassword(null)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
-                                        <button onClick={() => {
-                                            if (joinPasswordInput === roomToJoinWithPassword.password) {
-                                                joinRoom(roomToJoinWithPassword);
-                                                setRoomToJoinWithPassword(null);
-                                                setJoinPasswordInput('');
-                                            } else { safeAlert("Incorrect password."); }
-                                        }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Join</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {showVCCreateModal && (
-                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200]">
-                                <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
-                                    <h3 className="text-xl font-black mb-4 text-[#00FFFF]">Create Voice Lounge</h3>
-                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
-                                    <input type="text" value={vcCreateName} onChange={e => setVcCreateName(e.target.value)} placeholder={`${currentUserName}'s Room`} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
-                                    <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
-                                    <div className="flex gap-2 mb-4">
-                                        <button type="button" className="flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00FFFF]/20 border-[#00FFFF] text-[#00FFFF]">Temporary</button>
-                                    </div>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => setVcCreatePassEnabled(!vcCreatePassEnabled)}>Enable Password</label>
-                                        <div
-                                            onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if (vcCreatePassEnabled) setVcCreatePass(''); }}
-                                            className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${vcCreatePassEnabled ? 'bg-[#00FFFF]' : 'bg-[#010B1C] border border-[#0AE0D0]/30'}`}
-                                        >
-                                            <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${vcCreatePassEnabled ? 'bg-[#010B1C] translate-x-6' : 'bg-gray-500 translate-x-0'}`}></div>
-                                        </div>
-                                    </div>
-                                    {vcCreatePassEnabled && (
-                                        <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
-                                    )}
-                                    <div className="flex gap-3 mt-6">
-                                        <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
-                                        <button onClick={executeCreateRoom} disabled={isCreating} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50">{isCreating ? 'Creating...' : 'Create'}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            };
-
-            const renderActiveRoom = () => (
-                <div className="fixed inset-0 z-[2000000] bg-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 font-sans" onClick={() => setShowRoomMenu(false)}>
-                    
-                    {/* Premium Space Immersive Background */}
-                    <div className="absolute inset-0 z-0 bg-[#010B1C]">
-                        <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2000&auto=format&fit=crop" alt="bg" className="w-full h-full object-cover opacity-40 scale-[1.05] mix-blend-screen" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#010B1C]/80 via-transparent to-[#010B1C]/90 pointer-events-none"></div>
-                        <div className="absolute inset-0 backdrop-blur-[6px] pointer-events-none"></div>
-                    </div>
-
-                    {/* WePlay Top Header */}
-                    <div className="px-4 py-3 flex items-center justify-between z-20 relative pt-[calc(20px+var(--tg-content-safe-area-inset-top,env(safe-area-inset-top,0px)))]">
-                        <div className="flex items-center gap-3">
-                            <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors shadow-lg border border-[#0AE0D0]/30">
-                                <i className="fa-solid fa-chevron-left text-sm"></i>
-                            </button>
-                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-[#0AE0D0]/30 shadow-lg cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowRoomInfoModal(true)}>
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 p-[1px] flex items-center justify-center overflow-hidden shrink-0">
-                                    <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
-                                        {activeRoom.host_photo ? <img src={activeRoom.host_photo} className="w-full h-full object-cover" /> : <i className="fa-solid fa-hashtag text-white/50 text-xs"></i>}
-                                    </div>
-                                </div>
-                                <div className="flex flex-col min-w-0 max-w-[120px]">
-                                    <span className="text-[11px] font-black text-white truncate">{activeRoom.room_name}</span>
-                                    <div className="flex items-center gap-1 opacity-80 cursor-pointer" onClick={() => handleCopy(activeRoom.room_id_5_digit, 'Room ID')}>
-                                        <i className="fa-solid fa-id-badge text-[8px] text-[#00FFFF]"></i>
-                                        <span className="text-[9px] font-medium text-white/90 truncate">ID: {activeRoom.room_id_5_digit}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 mr-[90px] md:mr-0">
-                            <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors border border-[#0AE0D0]/30 shadow-lg">
-                                <i className="fa-solid fa-user-plus text-[11px]"></i>
-                                {pendingRequests.length > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#00FFFF] rounded-full border border-black shadow-[0_0_5px_rgba(0,255,255,0.8)] animate-pulse"></span>}
-                            </button>
-                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-[#0AE0D0]/30 shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowParticipantsModal(true)}>
-                                <i className="fa-solid fa-users text-[#00FFFF] text-[11px]"></i>
-                                <span className="text-xs font-black text-white">{activeRoom.audience_count + activeRoom.occupants_count}</span>
-                            </div>
-                            
-                            <div className="relative">
-                                <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors border border-[#0AE0D0]/30 shadow-lg">
-                                    <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
-                                </button>
-                                {showRoomMenu && (
-                                    <div className="absolute right-0 top-full mt-2 bg-[#021633] backdrop-blur-2xl border border-[#0AE0D0]/30 rounded-2xl shadow-[0_0_30px_rgba(0,255,255,0.3)] p-2 z-[3000] flex flex-col gap-1 min-w-[120px] animate-in zoom-in-95 duration-100" onClick={e => e.stopPropagation()}>
-                                        {isHost && (
-                                            <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex items-center gap-3 p-3 hover:bg-[#00FFFF]/10 rounded-xl transition-all text-left w-full active:scale-95">
-                                                <i className="fa-solid fa-gear text-[#A4DFE6] w-4 text-center"></i>
-                                                <span className="text-xs font-bold text-white">Settings</span>
-                                            </button>
-                                        )}
-                                        <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex items-center gap-3 p-3 hover:bg-[#FF007F]/20 rounded-xl transition-all text-left w-full active:scale-95 group">
-                                            <i className="fa-solid fa-arrow-right-from-bracket text-[#FF007F] group-hover:text-red-400 w-4 text-center transition-colors"></i>
-                                            <span className="text-xs font-bold text-[#FF007F] group-hover:text-red-400 transition-colors">Leave Room</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stage */}
-                    <div className="shrink-0 px-4 pt-4 pb-2 relative z-10">
-                        <div className="grid grid-cols-2 gap-y-5 gap-x-4 justify-items-center">
-                            {seats.map((seat, idx) => (
-                                <VCSeatNode
-                                    key={idx}
-                                    seat={seat}
-                                    idx={idx}
-                                    currentUserId={currentUserId}
-                                    isHost={isHost}
-                                    setShowActionModal={setShowActionModal}
-                                    takeSeat={takeSeat}
-                                    remoteStream={seat?.user_id ? remoteStreams[seat.user_id] : null}
-                                    localStream={localStream}
-                                    isLocalMuted={isLocalMuted}
-                                    handleAvatarClick={handleAvatarClick}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* WePlay Audience Strip */}
-                    <div className="mt-1 mb-2 pl-4 flex gap-3 overflow-x-auto no-scrollbar relative z-10 shrink-0">
-                        {audience.length === 0 ? (
-                            <p className="text-xs text-white/40 italic py-1 font-medium">No audience members yet.</p>
-                        ) : (
-                            audience.map((a, i) => (
-                                <div key={i} onClick={(e) => { e.stopPropagation(); handleAvatarClick(a); }} className="flex flex-col items-center gap-1 cursor-pointer shrink-0 w-[42px] group">
-                                    <div className="w-[38px] h-[38px] rounded-full bg-black/40 border border-white/20 flex items-center justify-center overflow-hidden shadow-md group-hover:border-[#ff3b8f] group-hover:scale-105 transition-all">
-                                        {a.photo_url ? <img src={a.photo_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-user text-white/30 text-xs"></i>}
-                                    </div>
-                                    <span className="text-[8px] font-medium text-white/80 truncate w-full text-center">{a.user_name || String(a.user_id).substring(0, 4)}</span>
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    {/* WePlay Chat Messages */}
-                    <div className="flex-1 overflow-y-auto mx-4 mb-2 flex flex-col relative z-10 pointer-events-auto overscroll-contain">
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pr-1 flex flex-col pb-2">
-                            <div className="mt-auto flex flex-col gap-2.5">
-                                {messages.map(m => {
-                                    const isMeMsg = (m.user_id || m.senderId) === currentUserId;
-                                    return (
-                                        <div key={m.id} className="bg-black/40 backdrop-blur-md rounded-2xl rounded-tl-sm px-4 py-2.5 w-max max-w-[85%] self-start border border-white/10 shadow-md animate-in slide-in-from-bottom-2">
-                                            <div className="flex items-center gap-2 mb-1" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.senderId || "unknown", user_name: m?.user_name || m?.senderName || "User", photo_url: m?.image_url || m?.senderPhoto }); }}>
-                                                {(m.image_url || m.senderPhoto) && <img src={m.image_url || m.senderPhoto} className="w-5 h-5 rounded-full object-cover border border-white/20" />}
-                                                <span className={`text-[11px] font-black cursor-pointer ${isMeMsg ? 'text-[#00FFFF]' : 'text-[#ff3b8f] drop-shadow-[0_0_2px_rgba(255,59,143,0.5)]'}`}>{m?.user_name || m?.senderName || "User"}</span>
-                                            </div>
-                                            <p className="text-sm text-white/95 break-words font-medium drop-shadow-sm">{m.message}</p>
-                                            {m.image_url && (
-                                                <div className="mt-2 rounded-lg overflow-hidden border border-white/20 max-w-[80px] max-h-[80px] w-fit h-fit cursor-pointer inline-block shadow-sm bg-black/30 flex items-center justify-center" onClick={() => setFullScreenImage(m.image_url)}>
-                                                    <img src={m.image_url} alt="attached" className="max-w-full max-h-[80px] w-auto h-auto object-contain" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                                <div ref={chatEndRef} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Premium Floating Pill Toolbar */}
-                    <div className="absolute bottom-[calc(24px+var(--tg-safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-30 floating-element flex flex-col gap-2 shrink-0">
-                        {/* Pending Image Preview Overlay */}
-                        {pendingImage && (
-                            <div className="w-full bg-[#021633] border border-[#0AE0D0]/30 rounded-xl p-2 flex items-center justify-between shadow-[0_0_15px_rgba(0,255,255,0.2)] animate-in slide-in-from-bottom-2 backdrop-blur-md">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-lg bg-[#010B1C] flex items-center justify-center overflow-hidden border border-[#0AE0D0]/10">
-                                        <img src={pendingImage} className="max-w-full max-h-full object-cover" />
-                                    </div>
-                                    <span className="text-xs font-bold text-[#A4DFE6]">Image selected</span>
-                                </div>
-                                <button onClick={() => setPendingImage(null)} className="w-8 h-8 bg-[#FF007F]/20 text-[#FF007F] rounded-full flex items-center justify-center hover:bg-[#FF007F] hover:text-white transition-colors">
-                                    <i className="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                        )}
-                        <div className="glass-panel-premium rounded-[2rem] p-2 flex items-center gap-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] border border-cyan-500/20">
-                            <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim() || pendingImage) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className="flex-1 relative">
-                                <input type="file" id="vc-chat-img" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => setPendingImage(ev.target.result); reader.readAsDataURL(e.target.files[0]); } }} />
-                                <div className="bg-[#01050b]/80 rounded-full pl-4 pr-16 py-2.5 flex items-center gap-2 border border-[#0AE0D0]/30 focus-within:border-[#00FFFF] transition-all shadow-inner w-full">
-                                    <i className="fa-regular fa-face-smile text-[#A4DFE6] text-sm cursor-pointer hover:text-[#00FFFF] transition-colors"></i>
-                                    <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Say something nice..." className="bg-transparent border-none outline-none text-sm text-[#E0F7FA] placeholder-[#A4DFE6]/50 flex-1 font-medium w-full" />
-                                </div>
-                                <button type="button" onClick={() => document.getElementById('vc-chat-img').click()} className="absolute right-[40px] top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#A4DFE6] hover:text-[#00FFFF] transition-colors z-10"><i className="fa-solid fa-image text-[12px]"></i></button>
-                                <button type="submit" className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-[#0072FF] text-[#010B1C] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.4)] active:scale-95 transition-transform hover:scale-110">
-                                    <i className="fa-solid fa-paper-plane text-[11px]"></i>
-                                </button>
-                            </form>
-                            
-                            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all active:scale-90 shadow-lg ${isSpeakerMuted ? 'bg-[#01050b] border-[#FF007F]/50 text-[#FF007F]' : 'bg-[#021633] border-[#0AE0D0]/30 text-[#00FFFF] hover:border-[#00FFFF]'}`}>
-                                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-sm`}></i>
-                            </button>
-                            
-                            <button onClick={() => { if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else if (isHost) takeSeat(0); else safeAlert('Take a seat to use the mic!'); }} className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all active:scale-90 shadow-lg ${(mySeatIndex === null && !isHost) ? 'bg-[#01050b] border-gray-600/50 text-gray-500' : (isLocalMuted || isMutedByHost) ? 'bg-[#01050b] border-[#FF007F]/50 text-[#FF007F]' : 'bg-gradient-to-br from-[#FF007F] to-[#7F00FF] border-transparent text-white shadow-[0_0_20px_rgba(255,0,127,0.5)]'}`}>
-                                <i className={`fa-solid ${(isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost)) ? 'fa-microphone-slash' : 'fa-microphone'} text-sm`}></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Action Modals */}
-                    {showActionModal && showActionModal.type === 'self' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={() => { moveToAudience(currentUserId, showActionModal.idx, currentUserName, currentUserPhoto); setShowActionModal(null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Move to Audience</button>
-                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showActionModal && showActionModal.type === 'host_target' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal?.occupant?.user_name || showActionModal?.occupant?.name || "User"}</h3>
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
-                                        {showActionModal.seat.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
-                                    </button>
-                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.idx, oldOccupant: showActionModal.seat }); }} className="py-3 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-xl font-bold transition-colors border border-indigo-500/50">Change User</button>
-                                    <button onClick={() => { moveToAudience(showActionModal.seat.user_id, showActionModal.idx, showActionModal.seat.user_name, showActionModal.seat.photo_url); setShowActionModal(null); }} className="py-3 bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/50">Move to Audience</button>
-                                    <button onClick={() => { handleKick(showActionModal.seat.user_id, showActionModal.idx); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
-                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showActionModal && showActionModal.type === 'empty_seat_host' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.idx}</h3>
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.idx }); }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Seat</button>
-                                    <button onClick={() => { toggleSeatLock(showActionModal.idx, showActionModal.seat?.is_locked); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat?.is_locked ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white border-red-500/50'}`}>
-                                        {showActionModal.seat?.is_locked ? 'Unlock Seat' : 'Lock Seat'}
-                                    </button>
-                                    <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat?.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors border ${showActionModal.seat?.is_muted_by_host ? 'bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white border-green-500/50' : 'bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white border-orange-500/50'}`}>
-                                        {showActionModal.seat?.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
-                                    </button>
-                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showActionModal && showActionModal.type === 'invite' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal?.target?.user_name || showActionModal?.target?.name || "User"}</h3>
-                                <div className="flex flex-col gap-3">
-                                    <button onClick={() => {
-                                        const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
-                                        if (emptySeatIdx !== -1) {
-                                            broadcastToPeers('invite', { room_id: activeRoom.id, target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName });
-                                            if (voiceState?.lockedSeats?.[showActionModal.seatNum]) {
-                                                voiceState?.sendBroadcast?.('seat_lock', { seatNum: showActionModal.seatNum, isLocked: false });
-                                                voiceState?.setLockedSeats?.(prev => ({ ...prev, [showActionModal.seatNum]: false }));
-                                            }
-                                            safeAlert(`Invitation sent to ${showActionModal.target.user_name}`);
-                                        } else {
-                                            safeAlert("No empty unlocked seats available!");
-                                        }
-                                        setShowActionModal(null);
-                                    }} className="py-3 bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors border border-blue-500/50">Invite to Stage</button>
-                                    <button onClick={() => { handleKick(showActionModal.target.user_id, null); }} className="py-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/50">Kick from Room</button>
-                                    <button onClick={() => setShowActionModal(null)} className="py-3 bg-[#010B1C] text-white rounded-xl font-bold transition-colors border border-gray-600">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showActionModal && showActionModal.type === 'invite_to_seat' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-t-3xl p-4 w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] flex flex-col border border-[#0AE0D0]/30 shadow-[0_-10px_40px_rgba(0,255,255,0.15)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-lg font-bold text-[#00FFFF] mb-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Invite to Seat {showActionModal.seatNum}</h3>
-                                <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
-                                    {(() => {
-                                        const candidates = [
-                                            ...seats.filter(s => s && s.user_id && s.user_id !== currentUserId && s.user_id !== showActionModal.oldOccupant?.user_id).map(s => ({ ...s, isSeated: true })),
-                                            ...audience.map(a => ({ ...a, isSeated: false }))
-                                        ];
-
-                                        if (candidates.length === 0) return <p className="text-gray-400 text-center py-10 italic">No eligible users to invite.</p>;
-
-                                        return candidates.map((c, i) => (
-                                            <div key={i} className="flex items-center justify-between bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/10 hover:border-[#0AE0D0]/40 transition-colors">
-                                                <div className="flex items-center gap-3 text-white font-bold text-sm">
-                                                    {c.photo_url || c.user_avatar ? (
-                                                        <img src={c.photo_url || c.user_avatar} className="w-10 h-10 rounded-full object-cover border border-[#00FFFF]/30" />
-                                                    ) : (
-                                                        <div className="w-10 h-10 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] flex items-center justify-center border border-[#00FFFF]/30 text-lg">{String(c.user_name || 'U').charAt(0).toUpperCase()}</div>
-                                                    )}
-                                                    <div className="flex flex-col">
-                                                        <span className="truncate max-w-[150px]">{String(c.user_name || 'User')}</span>
-                                                        <span className="text-[10px] text-[#A4DFE6] font-normal">{c.isSeated ? `Currently on Seat ${c.seat_index}` : 'In Audience'}</span>
-                                                    </div>
-                                                </div>
-                                                <button onClick={() => {
-                                                    if (showActionModal.oldOccupant) {
-                                                        moveToAudience(showActionModal.oldOccupant.user_id, showActionModal.seatNum, showActionModal.oldOccupant.user_name, showActionModal.oldOccupant.photo_url);
-                                                    }
-                                                    broadcastToPeers('invite', { room_id: activeRoom.id, target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName });
-                                                    safeAlert('Invite sent!');
-                                                    setShowActionModal(null);
-                                                }} className="bg-[#00FFFF] text-[#010B1C] px-4 py-1.5 rounded-lg text-xs font-black shadow-[0_0_10px_rgba(0,255,255,0.4)] active:scale-95 transition-transform">Invite</button>
-                                            </div>
-                                        ));
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showActionModal && showActionModal.type === 'change_seat_self' && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-chair"></i></div>
-                                <h3 className="text-xl font-bold text-white mb-2">Change Seat?</h3>
-                                <p className="text-sm text-[#A4DFE6] mb-6">Do you want to move to Seat {showActionModal.seatNum}?</p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setShowActionModal(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Cancel</button>
-                                    <button onClick={() => { takeSeat(showActionModal.seatNum); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Move</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {pendingInvite && (
-                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPendingInvite(null)}>
-                            <div className="bg-[#021633] rounded-2xl p-6 w-full max-w-xs text-center border border-[#0AE0D0]/30 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <div className="w-16 h-16 rounded-full bg-[#00FFFF]/20 text-[#00FFFF] mx-auto flex items-center justify-center text-2xl mb-4 border border-[#00FFFF]/50"><i className="fa-solid fa-microphone"></i></div>
-                                <h3 className="text-xl font-bold text-white mb-2">Stage Invitation</h3>
-                                <p className="text-sm text-[#A4DFE6] mb-6">{pendingInvite.hostName} invited you to take Seat {pendingInvite.seatIndex}.</p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-[#010B1C] border border-[#0AE0D0]/20 text-white rounded-xl font-bold transition-colors">Decline</button>
-                                    <button onClick={() => {
-                                        const sIdx = pendingInvite.seatIndex;
-                                        takeSeat(sIdx, activeRoom.id, true);
-                                        setPendingInvite(null);
-                                    }} className="flex-1 py-3 bg-[#00FFFF] text-[#010B1C] rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]">Accept</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {entryNotification && (
-                        <div className="fixed bottom-[33%] left-1/2 z-[3000] pointer-events-none flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black shadow-[0_0_15px_rgba(0,255,255,0.6)] bg-gradient-to-r from-[#00FFFF]/90 to-blue-600/90 text-[#010B1C] border border-[#00FFFF]/50"
-                            style={{ animation: 'entrySlideRight 3s ease-in-out forwards' }}>
-                            <style>{`
-                        @keyframes entrySlideRight {
-                            0% { opacity: 0; transform: translateX(-50%) scale(0.9); }
-                            10% { opacity: 1; transform: translateX(-40%) scale(1); }
-                            80% { opacity: 1; transform: translateX(20%) scale(1); }
-                            100% { opacity: 0; transform: translateX(100vw) scale(0.9); }
-                        }
-                    `}</style>
-                            👋 {entryNotification} entered the room
-                        </div>
-                    )}
-
-                    {showParticipantsModal && (
-                        <div className="fixed inset-0 bg-black/80 flex justify-center items-end z-[2000] animate-in fade-in slide-in-from-bottom" onClick={() => setShowParticipantsModal(false)}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto rounded-t-3xl p-5 h-[75vh] flex flex-col shadow-[0_-10px_40px_rgba(0,255,255,0.15)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3 shrink-0">
-                                    <h3 className="font-bold text-lg text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,255,255,0.3)]">Room Participants ({totalParticipants})</h3>
-                                    <button onClick={() => setShowParticipantsModal(false)} className="text-gray-400 hover:text-white transition-colors"><i className="fa-solid fa-xmark text-xl"></i></button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
-                                    {[...seats.filter(s => s && s.user_id), ...audience].map((p, i) => {
-                                        const isHostUser = p.seat_index === 0;
-                                        const isSeatedUser = p.seat_index !== undefined && p.seat_index !== null && p.seat_index > 0;
-                                        const statusLabel = isHostUser ? "Host" : (isSeatedUser ? `Seat ${p.seat_index}` : "Audience");
-                                        const statusColor = isHostUser ? "text-[#010B1C] bg-[#F9D33A] border-[#F9D33A]" : (isSeatedUser ? "text-[#00FFFF] bg-[#00FFFF]/10 border-[#00FFFF]/30" : "text-gray-400 bg-gray-800 border-gray-700");
-
-                                        return (
-                                            <div key={i} className="flex items-center gap-3 bg-[#010B1C] p-3 rounded-xl border border-[#0AE0D0]/20 shadow-sm hover:border-[#0AE0D0]/50 transition-colors">
-                                                {p.photo_url || p.user_avatar ? (
-                                                    <img src={p.photo_url || p.user_avatar} className={`w-12 h-12 rounded-full object-cover border-2 shrink-0 ${isHostUser ? 'border-[#F9D33A]' : 'border-[#00FFFF]/50'}`} />
-                                                ) : (
-                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black shrink-0 text-xl border-2 ${isHostUser ? 'bg-gradient-to-br from-[#D4AF37] to-[#F9D33A] text-[#010B1C] border-[#F9D33A]' : 'bg-[#00FFFF]/10 text-[#00FFFF] border-[#00FFFF]/30'}`}>
-                                                        {String(p?.user_name || p?.userName || p?.name || 'U').charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <div className="flex-1 overflow-hidden">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <p className="font-bold text-sm text-white truncate max-w-[140px]">{p?.user_name || p?.userName || p?.name || `User ${String(p?.user_id).substring(0, 4)}`}</p>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${statusColor} uppercase tracking-wider shrink-0`}>{statusLabel}</span>
-                                                            {isHost && p.user_id !== currentUserId && (
-                                                                <div className="flex gap-1.5 shrink-0">
-                                                                    {isSeatedUser && (
-                                                                        <button onClick={(e) => { e.stopPropagation(); toggleSeatMuteByHost(p.seat_index, p.is_muted_by_host); setShowParticipantsModal(false); }} className="px-2 py-1 rounded bg-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center gap-1 text-[10px] font-bold" title={p.is_muted_by_host ? "Unmute Seat" : "Mute Seat"}>
-                                                                            <i className={`fa-solid ${p.is_muted_by_host ? 'fa-microphone' : 'fa-microphone-slash'}`}></i>
-                                                                            {p.is_muted_by_host ? "Unmute" : "Mute"}
-                                                                        </button>
-                                                                    )}
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleKick(p.user_id, p.seat_index); }} className="px-2 py-1 rounded bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-1 text-[10px] font-bold" title="Kick User">
-                                                                        <i className="fa-solid fa-ban"></i> Kick
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <p onClick={() => handleCopy(p.user_id, 'User ID')} className="text-[10px] text-[#A4DFE6] font-mono truncate cursor-pointer active:scale-95 transition-transform inline-flex items-center gap-1 w-fit">UID: {p.user_id} <i className="fa-regular fa-copy text-[10px]"></i></p>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showRoomSettingsModal && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300]" onClick={() => setShowRoomSettingsModal(false)}>
-                            <div className="bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-white border border-[#0AE0D0]/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-black mb-4 text-[#00FFFF]"><i className="fa-solid fa-gear mr-2"></i>Room Settings</h3>
-
-                                <div className="mb-4 flex items-center gap-4">
-                                    <div className="w-16 h-16 rounded-full bg-[#010B1C] border-2 border-[#0AE0D0]/50 overflow-hidden flex items-center justify-center shrink-0">
-                                        <img id="edit-room-photo-preview" src={activeRoom.host_photo || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} className="w-full h-full object-cover" style={{ display: activeRoom.host_photo ? 'block' : 'none' }} />
-                                        {!activeRoom.host_photo && <i id="edit-room-photo-icon" className="fa-solid fa-image text-gray-500 text-2xl"></i>}
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Profile Picture</label>
-                                        <input type="file" accept="image/*" id="edit-room-photo" onChange={(e) => {
-                                            const f = e.target.files[0]; if (!f) return;
-                                            const r = new FileReader(); r.onload = (ev) => {
-                                                const img = new Image(); img.onload = () => {
-                                                    const c = document.createElement('canvas'); let w = img.width, h = img.height; const m = 400;
-                                                    if (w > h && w > m) { h *= m / w; w = m; } else if (h > m) { w *= m / h; h = m; }
-                                                    c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
-                                                    const base64 = c.toDataURL('image/jpeg', 0.8);
-                                                    document.getElementById('edit-room-photo').dataset.b64 = base64;
-                                                    document.getElementById('edit-room-photo-preview').src = base64;
-                                                    document.getElementById('edit-room-photo-preview').style.display = 'block';
-                                                    if (document.getElementById('edit-room-photo-icon')) document.getElementById('edit-room-photo-icon').style.display = 'none';
-                                                }; img.src = ev.target.result;
-                                            }; r.readAsDataURL(f);
-                                        }} className="text-[10px] w-full file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#00FFFF]/20 file:text-[#00FFFF] hover:file:bg-[#00FFFF]/30 cursor-pointer" />
-                                    </div>
-                                </div>
-
-                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
-                                <input type="text" id="edit-room-name" defaultValue={activeRoom.room_name} className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-white focus:outline-none focus:border-[#00FFFF]" />
-
-                                <label className="text-xs text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Password (Optional)</label>
-                                <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" id="edit-room-pass" defaultValue={activeRoom.password || ''} placeholder="4-digit PIN" className="w-full bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black text-white focus:outline-none focus:border-[#00FFFF]" />
-
-                                <div className="flex items-center justify-between bg-[#010B1C] border border-[#0AE0D0]/30 p-3 rounded-xl mb-6">
-                                    <span className="text-sm font-bold text-white">Disable Text Chat</span>
-                                    <input type="checkbox" id="edit-chat-disabled" defaultChecked={activeRoom.chat_disabled || false} className="w-5 h-5 accent-[#00FFFF]" />
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button onClick={() => setShowRoomSettingsModal(false)} className="flex-1 bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-700">Cancel</button>
-                                    <button onClick={async (e) => {
-                                        const btn = e.target; btn.innerText = 'Saving...'; btn.disabled = true;
-                                        const newName = document.getElementById('edit-room-name').value;
-                                        const newPass = document.getElementById('edit-room-pass').value;
-                                        const chatOff = document.getElementById('edit-chat-disabled').checked;
-                                        const photoInput = document.getElementById('edit-room-photo');
-                                        const photo = photoInput.dataset.b64 || activeRoom.host_photo || '';
-
-                                        await supabase.from('active_rooms').update({ room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }).eq('id', activeRoom.id);
-                                        broadcastToPeers('room_updated', { room_id: activeRoom.id, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo });
-
-                                        if (photo !== activeRoom.host_photo) {
-                                            await supabase.from('room_seats').update({ photo_url: photo }).eq('room_id', activeRoom.id).eq('user_id', currentUserId);
-                                            const expectedSeat = { ...seats[0], photo_url: photo };
-                                            setSeats(prev => { const n = [...prev]; n[0] = expectedSeat; return n; });
-                                            broadcastToPeers('state_change', { type: 'SEAT_UPDATE', data: expectedSeat });
-                                        }
-
-                                        setActiveRoom(prev => ({ ...prev, room_name: newName, password: newPass || null, chat_disabled: chatOff, host_photo: photo }));
-                                        setShowRoomSettingsModal(false); safeAlert("Room settings updated successfully!");
-                                    }} className="flex-1 bg-[#00FFFF] text-[#010B1C] py-3 rounded-xl font-black shadow-[0_0_15px_rgba(0,255,255,0.4)]">Save</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showRoomRequestsInbox && (
-                        <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in slide-in-from-bottom z-[3000]" onClick={() => setShowRoomRequestsInbox(false)}>
-                            <div className="bg-[#021633] w-full md:max-w-screen-xl max-w-md mx-auto h-[60vh] sm:rounded-2xl rounded-t-2xl p-4 flex flex-col shadow-[0_-10px_30px_rgba(0,255,255,0.1)] border border-[#0AE0D0]/30" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-4 border-b border-[#0AE0D0]/20 pb-3">
-                                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><i className="fa-solid fa-user-plus text-[#00FFFF]"></i> Friend Requests</h3>
-                                    <button onClick={() => setShowRoomRequestsInbox(false)} className="text-gray-400 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
-                                    {pendingRequests.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
-                                            <i className="fa-solid fa-inbox text-4xl mb-3 opacity-50"></i>
-                                            <p className="text-sm font-bold">No pending requests</p>
-                                        </div>
-                                    ) : (
-                                        pendingRequests.map(req => (
-                                            <div key={req.id} className="flex justify-between items-center bg-[#010B1C] p-3 rounded-xl border border-yellow-500/20 shadow-sm mb-2">
-                                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowRoomRequestsInbox(false); handleAvatarClick({ user_id: req.id, user_name: req.name, photo_url: req.photo }); }}>
-                                                    {req.photo ? <img src={req.photo} className="w-10 h-10 rounded-full object-cover border border-yellow-500/30" /> : <div className="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-black border border-yellow-500/30">{String(req.name || 'U').charAt(0).toUpperCase()}</div>}
-                                                    <div className="flex flex-col">
-                                                        <span className="text-white font-bold text-sm">
-                                                            <UserName name={req.name || `User ${String(req.id).substring(0, 8)}`} id={req.id} className="max-w-[120px]" />
-                                                        </span>
-                                                        <span className="text-[10px] text-[#00FFFF] font-mono mt-0.5">ID: {String(req.id)}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => rejectFriendRequest(req.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center hover:bg-gray-700 transition-colors"><i className="fa-solid fa-xmark"></i></button>
-                                                    <button onClick={() => acceptFriendRequest(req)} className="px-4 py-1.5 rounded-full bg-yellow-500 text-black text-xs font-black shadow-md hover:bg-yellow-400 transition-colors">Accept</button>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Full Screen Image Overlay */}
-                    {fullScreenImage && <ZoomableImageOverlay src={fullScreenImage} onClose={() => setFullScreenImage(null)} />}
-                    
+const renderDashboard = () => {
+    if (currentView === 'chats') {
+        return (
+            <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-[#010B1C] text-white">
+                <div className="flex-1 overflow-hidden relative">
+                    <VCPersonalChats friends={friends} pendingRequests={pendingRequests} sentRequests={sentRequests} dms={dms} currentUserId={currentUserId} currentUserName={currentUserName} currentUserPhoto={currentUserPhoto} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} acceptFriendRequest={acceptFriendRequest} rejectFriendRequest={rejectFriendRequest} sendPrivateDM={sendPrivateDM} sendDirectMessage={sendDirectMessage} chatActions={chatActions} handleAvatarClick={handleAvatarClick} syncFriendStatus={syncFriendStatus} markChatAsRead={markChatAsRead} deleteChatHistory={deleteChatHistory} removeFriend={removeFriend} cancelFriendRequest={cancelFriendRequest} sendFriendRequest={sendFriendRequest} handlePrivateAction={handlePrivateAction} handleLocalDelete={handleLocalDelete} acceptAllFriendRequests={acceptAllFriendRequests} rejectAllFriendRequests={rejectAllFriendRequests} onNavigate={onNavigate} markEphemeralAsViewed={markEphemeralAsViewed} />
                 </div>
-            );
+            </div>
+        );
+    }
+
+    // Prepare rooms array including the Official Room
+    const officialRoomObj = {
+        id: '2431',
+        room_name: 'ATAXY Official Room',
+        channel_name: 'ATAXY Official Room',
+        host_user_id: '5182808926',
+        owner_id: '5182808926',
+        room_type: 'permanent',
+        is_live: true,
+        host_name: 'ATAXY',
+        total_capacity: 12,
+        is_official: true
+    };
+    
+    // Mix official room in if not already present
+    const displayRooms = sortedActiveRooms.some(r => r.id === '2431') ? sortedActiveRooms : [officialRoomObj, ...sortedActiveRooms];
+
+    return (
+        <div className="pb-[80px] animate-in fade-in flex flex-col h-full bg-white dark:bg-[#010714] text-black dark:text-white space-y-0">
+            {/* Top Navigation Bar - WePlay Style */}
+            <div className="flex items-center justify-between px-4 pt-[calc(16px+var(--tg-safe-area-inset-top,env(safe-area-inset-top,0px)))] pb-3 bg-white dark:bg-[#010714] z-10 shrink-0">
+                <div className="flex items-end gap-5">
+                    <span className="text-[17px] font-bold text-gray-400">Related</span>
+                    <span className="text-[22px] font-black text-black dark:text-white leading-none">All</span>
+                    <span className="text-[17px] font-bold text-gray-400">Popular</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button onClick={() => setShowJoinModal(true)} className="text-black dark:text-white transition-transform active:scale-90">
+                        <i className="fa-solid fa-magnifying-glass text-xl"></i>
+                    </button>
+                    <button onClick={() => { setVcCreateName(`${currentUserName}'s Room`); setShowVCCreateModal(true); }} className="w-8 h-8 rounded-full bg-[#00e5ff] text-white flex items-center justify-center transition-transform active:scale-90 shadow-md">
+                        <i className="fa-solid fa-plus text-xl font-bold"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col pb-6">
+                {/* Banner Section - WePlay Style */}
+                <div className="px-4 py-2 shrink-0">
+                    <div className="w-full h-[100px] rounded-2xl relative overflow-hidden bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-600 shadow-lg flex items-center p-4">
+                        {/* Decorative elements for the banner */}
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-yellow-300 rounded-full blur-xl opacity-40"></div>
+                        
+                        <div className="relative z-10">
+                            <h2 className="text-white text-3xl font-black italic drop-shadow-md tracking-wider">Gold <span className="text-yellow-200">Tycoon</span></h2>
+                            <p className="text-white/90 text-xs font-bold mt-1 drop-shadow-sm">Recharge Bonus & Surprise Rewards!</p>
+                        </div>
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            <div className="w-4 h-1.5 rounded-full bg-white"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Categories Header like WePlay */}
+                <div className="flex items-center gap-6 px-4 py-3 overflow-x-auto no-scrollbar border-b border-gray-100 dark:border-white/5 mb-2 sticky top-0 bg-white dark:bg-[#010714] z-10 shadow-sm">
+                    <div className="flex flex-col items-center gap-1 shrink-0 cursor-pointer">
+                        <span className="text-[15px] font-black text-black dark:text-white">All</span>
+                        <div className="w-6 h-1 rounded-full bg-[#00e5ff]"></div>
+                    </div>
+                    <div className="text-[15px] font-bold text-gray-400 shrink-0 cursor-pointer hover:text-black dark:hover:text-white transition-colors">Friends</div>
+                    <div className="text-[15px] font-bold text-gray-400 shrink-0 cursor-pointer hover:text-black dark:hover:text-white transition-colors">PK</div>
+                    <div className="text-[15px] font-bold text-gray-400 shrink-0 cursor-pointer hover:text-black dark:hover:text-white transition-colors">Music</div>
+                    <div className="text-[15px] font-bold text-gray-400 shrink-0 cursor-pointer hover:text-black dark:hover:text-white transition-colors">Video</div>
+                    <div className="text-[15px] font-bold text-gray-400 shrink-0 cursor-pointer hover:text-black dark:hover:text-white transition-colors">Game</div>
+                    <div className="text-[15px] font-bold text-gray-400 shrink-0 cursor-pointer hover:text-black dark:hover:text-white transition-colors">Chat</div>
+                </div>
+
+                {/* Pull to refresh equivalent action - Hidden but functional via button earlier, WePlay does swipe-to-refresh but we can just auto-refresh */}
+                
+                {/* Active Rooms List - WePlay exact replica */}
+                <div className="px-4 space-y-1">
+                    {displayRooms.length === 0 ? (
+                        <div className="py-20 flex flex-col items-center justify-center text-center">
+                            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-3">
+                                <i className="fa-solid fa-microphone-slash text-gray-400 text-2xl opacity-80"></i>
+                            </div>
+                            <p className="text-gray-500 font-bold">No active rooms right now.</p>
+                            <p className="text-gray-400 text-xs mt-1">Tap + to start a room!</p>
+                        </div>
+                    ) : (
+                        displayRooms.map(room => (
+                            <div key={room.id} onClick={() => {
+                                if (room.is_official) {
+                                    if(voiceState && voiceState.joinRoom) voiceState.joinRoom(room);
+                                    else safeAlert("Voice service is unavailable.");
+                                } else if (room.password) { 
+                                    setRoomToJoinWithPassword(room); 
+                                } else { 
+                                    joinRoom(room); 
+                                }
+                            }} className="bg-transparent py-3 flex flex-row gap-3 items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-all group border-b border-gray-50 dark:border-white/5 last:border-0">
+                                
+                                {/* Left: Avatar (Squircle WePlay style) */}
+                                <div className="relative w-[60px] h-[60px] shrink-0">
+                                    <div className="w-full h-full rounded-[20px] bg-gray-200 dark:bg-[#021A40] bg-cover bg-center text-gray-600 dark:text-[#00FFFF] font-black text-2xl flex items-center justify-center border border-gray-200 dark:border-[#0AE0D0]/20 overflow-hidden shadow-sm" style={room.host_photo ? { backgroundImage: `url(${room.host_photo})` } : (room.is_official ? { background: 'linear-gradient(135deg, #00FFFF, #0072FF)' } : {})}>
+                                        {room.is_official && !room.host_photo ? <i className="fa-solid fa-bolt text-white"></i> : (!room.host_photo && (room.host_name ? room.host_name[0].toUpperCase() : 'H'))}
+                                    </div>
+                                    {room.is_official && (
+                                        <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-[2px] border-white dark:border-[#010714] shadow-sm"></div>
+                                    )}
+                                </div>
+
+                                {/* Center: Info */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                    <h4 className="text-[16px] font-black text-black dark:text-white/95 leading-tight truncate mb-1.5 flex items-center gap-1.5">
+                                        {room.password && <i className="fa-solid fa-lock text-[#FF007F] text-[11px] shrink-0"></i>}
+                                        {room.room_name}
+                                    </h4>
+                                    <div className="flex items-center gap-2">
+                                        {room.is_official ? (
+                                            <span className="bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
+                                                <i className="fa-solid fa-headphones text-[9px]"></i> Official
+                                            </span>
+                                        ) : (
+                                            <span className="bg-[#e0f7fa] dark:bg-cyan-500/20 text-[#00b8d4] dark:text-cyan-400 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0">
+                                                <i className="fa-solid fa-music text-[9px]"></i> {room.room_type === 'permanent' ? 'Study' : 'Music'}
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] text-gray-400 flex items-center gap-1 font-semibold truncate">
+                                            <i className="fa-solid fa-user text-[9px]"></i> {room.total_capacity || (room.is_official ? '∞' : 1)}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Right: Badges (WePlay style) */}
+                                <div className="shrink-0 flex items-center gap-1">
+                                    {room.is_official ? (
+                                        <>
+                                            <div className="w-5 h-5 rounded flex items-center justify-center text-yellow-500">
+                                                <i className="fa-solid fa-shield-halved text-[14px]"></i>
+                                            </div>
+                                            <div className="w-5 h-5 rounded flex items-center justify-center text-[#00e5ff]">
+                                                <i className="fa-solid fa-certificate text-[14px]"></i>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-5 h-5 flex items-center justify-center text-yellow-500 drop-shadow-sm">
+                                                <i className="fa-solid fa-ranking-star text-[14px]"></i>
+                                            </div>
+                                            <div className="w-5 h-5 flex items-center justify-center text-orange-400 drop-shadow-sm">
+                                                <i className="fa-solid fa-award text-[14px]"></i>
+                                            </div>
+                                            <div className="w-5 h-5 flex items-center justify-center text-[#ff6b6b] drop-shadow-sm">
+                                                <i className="fa-solid fa-medal text-[14px]"></i>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* Modals remain mostly the same structurally */}
+            {showJoinModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200] animate-in fade-in">
+                    <div className="bg-white dark:bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-black dark:text-white border border-gray-200 dark:border-[#0AE0D0]/30 shadow-2xl">
+                        <h3 className="text-xl font-black mb-4 text-[#00e5ff]">Enter 5-digit Room ID</h3>
+                        <input type="number" value={joinRoomId} onChange={e => setJoinRoomId(e.target.value)} placeholder="e.g. 12345" className="w-full bg-gray-50 dark:bg-[#010B1C] border border-gray-200 dark:border-[#0AE0D0]/30 p-4 rounded-xl mb-6 text-xl text-center font-black tracking-[0.5em] focus:outline-none focus:border-[#00e5ff]" />
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowJoinModal(false)} className="flex-1 bg-gray-100 dark:bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-200 dark:border-gray-700">Cancel</button>
+                            <button onClick={() => joinRoomBy5Digit(joinRoomId)} className="flex-1 bg-[#00e5ff] text-white dark:text-[#010B1C] py-3 rounded-xl font-black shadow-[0_4px_15px_rgba(0,229,255,0.4)]">Join</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {roomToJoinWithPassword && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[300] animate-in fade-in" onClick={() => setRoomToJoinWithPassword(null)}>
+                    <div className="bg-white dark:bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-black dark:text-white border border-gray-200 dark:border-[#0AE0D0]/30 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-black mb-2 text-[#00e5ff]"><i className="fa-solid fa-lock mr-2"></i>Private Room</h3>
+                        <p className="text-sm text-gray-500 dark:text-[#A4DFE6] mb-4">Enter the password to join <strong>{roomToJoinWithPassword.room_name}</strong></p>
+                        <input type="text" value={joinPasswordInput} onChange={e => setJoinPasswordInput(e.target.value)} placeholder="Password" className="w-full bg-gray-50 dark:bg-[#010B1C] border border-gray-200 dark:border-[#0AE0D0]/30 p-4 rounded-xl mb-6 focus:outline-none focus:border-[#00e5ff]" />
+                        <div className="flex gap-3">
+                            <button onClick={() => setRoomToJoinWithPassword(null)} className="flex-1 bg-gray-100 dark:bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-200 dark:border-gray-700">Cancel</button>
+                            <button onClick={() => {
+                                if (joinPasswordInput === roomToJoinWithPassword.password) {
+                                    joinRoom(roomToJoinWithPassword);
+                                    setRoomToJoinWithPassword(null);
+                                    setJoinPasswordInput('');
+                                } else { safeAlert("Incorrect password."); }
+                            }} className="flex-1 bg-[#00e5ff] text-white dark:text-[#010B1C] py-3 rounded-xl font-black shadow-[0_4px_15px_rgba(0,229,255,0.4)]">Join</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showVCCreateModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[200] animate-in fade-in">
+                    <div className="bg-white dark:bg-[#021633] p-6 rounded-3xl w-full max-w-sm text-black dark:text-white border border-gray-200 dark:border-[#0AE0D0]/30 shadow-2xl">
+                        <h3 className="text-xl font-black mb-4 text-[#00e5ff]">Create Voice Lounge</h3>
+                        <label className="text-xs text-gray-500 dark:text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Name</label>
+                        <input type="text" value={vcCreateName} onChange={e => setVcCreateName(e.target.value)} placeholder={`${currentUserName}'s Room`} className="w-full bg-gray-50 dark:bg-[#010B1C] border border-gray-200 dark:border-[#0AE0D0]/30 p-3 rounded-xl mb-4 focus:outline-none focus:border-[#00e5ff]" />
+                        <label className="text-xs text-gray-500 dark:text-[#A4DFE6] font-bold uppercase tracking-wider mb-1 block">Room Type</label>
+                        <div className="flex gap-2 mb-4">
+                            <button type="button" className="flex-1 py-2 rounded-xl text-sm font-bold transition-all border bg-[#00e5ff]/10 dark:bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]">Temporary</button>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-xs text-gray-500 dark:text-[#A4DFE6] font-bold uppercase tracking-wider cursor-pointer" onClick={() => setVcCreatePassEnabled(!vcCreatePassEnabled)}>Enable Password</label>
+                            <div
+                                onClick={() => { setVcCreatePassEnabled(!vcCreatePassEnabled); if (vcCreatePassEnabled) setVcCreatePass(''); }}
+                                className={`w-12 h-6 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 shadow-inner ${vcCreatePassEnabled ? 'bg-[#00e5ff]' : 'bg-gray-200 dark:bg-[#010B1C] border border-gray-300 dark:border-[#0AE0D0]/30'}`}
+                            >
+                                <div className={`w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${vcCreatePassEnabled ? 'bg-white dark:bg-[#010B1C] translate-x-6' : 'bg-white dark:bg-gray-500 translate-x-0'}`}></div>
+                            </div>
+                        </div>
+                        {vcCreatePassEnabled && (
+                            <input type="text" inputMode="numeric" pattern="\d*" maxLength="4" value={vcCreatePass} onChange={e => setVcCreatePass(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Enter 4-digit password" className="w-full bg-gray-50 dark:bg-[#010B1C] border border-gray-200 dark:border-[#0AE0D0]/30 p-3 rounded-xl mb-4 text-center text-xl tracking-[0.5em] font-black focus:outline-none focus:border-[#00e5ff] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm" />
+                        )}
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => setShowVCCreateModal(false)} className="flex-1 bg-gray-100 dark:bg-[#010B1C] py-3 rounded-xl font-bold border border-gray-200 dark:border-gray-700">Cancel</button>
+                            <button onClick={executeCreateRoom} disabled={isCreating} className="flex-1 bg-[#00e5ff] text-white dark:text-[#010B1C] py-3 rounded-xl font-black shadow-[0_4px_15px_rgba(0,229,255,0.4)] disabled:opacity-50">{isCreating ? 'Creating...' : 'Create'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const renderActiveRoom = () => (
+    <div className="fixed inset-0 z-[2000000] bg-[#010B1C] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#021A40] via-[#010F24] to-[#010B1C] text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 font-sans" onClick={() => setShowRoomMenu(false)}>
+        {/* Hide default navigation if any */}
+        <style>{`div.fixed.bottom-0.w-full.md\\:max-w-screen-xl.max-w-md.glass-panel { display: none !important; }`}</style>
+        
+        {/* Top Header */}
+        <div className="shrink-0 flex justify-between items-center px-4 py-3 pt-[calc(12px+max(env(safe-area-inset-top),_24px))] z-20 bg-gradient-to-b from-black/50 to-transparent">
+            <div className="flex items-center gap-3 overflow-hidden flex-1">
+                <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/10 transition-colors shrink-0">
+                    <i className="fa-solid fa-angle-left text-xl"></i>
+                </button>
+                <div className="flex items-center bg-black/20 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 gap-2 cursor-pointer active:scale-95 shadow-sm" onClick={() => handleCopy(activeRoom.room_id_5_digit, 'Room ID')}>
+                    <span className="text-[13px] font-black truncate max-w-[100px] text-[#00FFFF] drop-shadow-md">{activeRoom.room_name}</span>
+                    <div className="w-1 h-1 rounded-full bg-white/30"></div>
+                    <span className="text-[10px] text-[#A4DFE6] font-bold">ID: {activeRoom.room_id_5_digit}</span>
+                </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => setShowRoomRequestsInbox(true)} className="relative w-8 h-8 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+                    <i className="fa-solid fa-bell text-sm"></i>
+                    {pendingRequests.length > 0 && <span className="absolute -top-1 -right-1 bg-[#FF007F] text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-[#010B1C] shadow-[0_0_8px_rgba(255,0,127,0.8)] animate-pulse">{pendingRequests.length}</span>}
+                </button>
+                <div className="flex items-center justify-center px-2.5 h-8 rounded-full bg-black/20 backdrop-blur-md border border-white/10 text-[11px] font-black text-white gap-1.5 shadow-sm">
+                    <i className="fa-solid fa-fire text-[#FF007F]"></i> {totalParticipants}
+                </div>
+                <div className="relative">
+                    <button onClick={(e) => { e.stopPropagation(); setShowRoomMenu(!showRoomMenu); }} className="text-white hover:text-gray-300 transition-colors">
+                        <i className="fa-solid fa-ellipsis text-lg"></i>
+                    </button>
+                    {showRoomMenu && (
+                        <div className="absolute right-0 top-full mt-2 bg-[#2a2b33] border border-white/10 rounded-xl shadow-xl p-2 z-[3000] flex flex-col min-w-[120px]" onClick={e => e.stopPropagation()}>
+                            {isHost && (
+                                <button onClick={() => { setShowRoomMenu(false); setShowRoomSettingsModal(true); }} className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-left text-sm text-white font-bold">
+                                    <i className="fa-solid fa-gear w-5 text-center"></i> Settings
+                                </button>
+                            )}
+                            <button onClick={() => { setShowRoomMenu(false); safeAlert("Room reported."); }} className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-left text-sm text-white font-bold">
+                                <i className="fa-solid fa-flag w-5 text-center"></i> Report
+                            </button>
+                            <button onClick={() => { setShowRoomMenu(false); handleExitRoom(); }} className="flex items-center gap-3 p-3 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors text-left text-sm font-bold mt-1">
+                                <i className="fa-solid fa-power-off w-5 text-center"></i> Exit
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+
+        {/* Central Host Area */}
+        <div className="flex flex-col items-center mt-4 mb-2 z-10 shrink-0">
+            <VCSeatNode
+                key={0}
+                seat={seats[0]}
+                idx={0}
+                currentUserId={currentUserId}
+                isHost={isHost}
+                setShowActionModal={setShowActionModal}
+                takeSeat={takeSeat}
+                mySeatIndex={mySeatIndex}
+                remoteStream={seats[0]?.user_id ? remoteStreams[seats[0].user_id] : null}
+                localStream={localStream}
+                isLocalMuted={isLocalMuted}
+                handleAvatarClick={handleAvatarClick}
+            />
+        </div>
+
+        {/* Grid of 8 Seats (WePlay uses 2 rows of 4) */}
+        <div className="shrink-0 px-4 pt-4 pb-2 z-10">
+            <div className="grid grid-cols-4 gap-y-7 gap-x-2 justify-items-center">
+                {seats.slice(1, 9).map((seat, idx) => {
+                    const realIdx = idx + 1; // 1 to 8
+                    return (
+                        <VCSeatNode
+                            key={realIdx}
+                            seat={seat}
+                            idx={realIdx}
+                            currentUserId={currentUserId}
+                            isHost={isHost}
+                            setShowActionModal={setShowActionModal}
+                            takeSeat={takeSeat}
+                            remoteStream={seat?.user_id ? remoteStreams[seat.user_id] : null}
+                            localStream={localStream}
+                            isLocalMuted={isLocalMuted}
+                            handleAvatarClick={handleAvatarClick}
+                        />
+                    );
+                })}
+            </div>
+        </div>
+
+        {/* Chat Feed */}
+        <div className="flex-1 overflow-y-auto px-3 mb-2 flex flex-col relative z-10 pointer-events-auto overscroll-contain">
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 flex flex-col pb-2 mask-image-[linear-gradient(to_bottom,transparent,black_5%,black_100%)]">
+                <div className="mt-auto flex flex-col gap-2">
+                    {/* System Welcome Message */}
+                    <div className="bg-[#FF007F]/10 backdrop-blur-md rounded-xl px-3 py-2 w-full max-w-[90%] self-start border border-[#FF007F]/20 shadow-[0_4px_15px_rgba(255,0,127,0.1)]">
+                        <p className="text-[11px] text-[#A4DFE6] leading-snug">
+                            <i className="fa-solid fa-bullhorn text-[#FF007F] mr-1.5"></i>
+                            <span className="text-[#FF007F] font-black tracking-wider uppercase">System </span>
+                            Welcome to ATAXY Voice Room. Erotic, cursing and illegal contents are strictly forbidden. We advocate a healthy environment. Enjoy your stay!
+                        </p>
+                    </div>
+
+                    {/* Messages */}
+                    {messages.map(m => {
+                        const isMeMsg = (m.user_id || m.senderId) === currentUserId;
+                        const isHostMsg = (m.user_id || m.senderId) === activeRoom.host_user_id || (m.user_id || m.senderId) === activeRoom.owner_id;
+                        return (
+                            <div key={m.id} className="bg-black/20 backdrop-blur-md rounded-xl rounded-tl-sm px-3 py-1.5 w-max max-w-[85%] self-start border border-white/5 animate-in slide-in-from-bottom-2 flex flex-col shadow-sm">
+                                <div className="flex items-center gap-1.5" onClick={(e) => { e.stopPropagation(); handleAvatarClick({ user_id: m?.user_id || m?.senderId || "unknown", user_name: m?.user_name || m?.senderName || "User", photo_url: m?.image_url || m?.senderPhoto }); }}>
+                                    {isHostMsg && <span className="bg-[#FF007F] text-white text-[8px] font-black px-1 rounded-sm leading-tight">HOST</span>}
+                                    <span className={`text-[12px] font-black cursor-pointer ${isMeMsg ? 'text-[#00FFFF] drop-shadow-[0_0_2px_rgba(0,255,255,0.8)]' : 'text-[#A4DFE6]'}`}>{m?.user_name || m?.senderName || "User"}:</span>
+                                    <span className="text-[13px] text-white break-words font-semibold">{m.message}</span>
+                                </div>
+                                {m.image_url && (
+                                    <div className="mt-1.5 rounded-xl overflow-hidden border border-[#00FFFF]/20 max-w-[120px] max-h-[120px] w-fit h-fit cursor-pointer bg-black/40 flex items-center justify-center shadow-lg" onClick={() => setFullScreenImage(m.image_url)}>
+                                        <img src={m.image_url} alt="attached" className="max-w-full max-h-[120px] w-auto h-auto object-cover rounded-xl" />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                    <div ref={chatEndRef} />
+                </div>
+            </div>
+        </div>
+
+        {/* Bottom Action Bar (WePlay dock) */}
+        <div className="shrink-0 w-full bg-[#010714]/80 backdrop-blur-xl p-3 flex items-center gap-2.5 z-20 pb-[calc(12px+env(safe-area-inset-bottom,0px))] border-t border-[#00FFFF]/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+            <button onClick={() => setIsSpeakerMuted(!isSpeakerMuted)} className={`w-[42px] h-[42px] rounded-full flex items-center justify-center shrink-0 transition-all border ${isSpeakerMuted ? 'bg-black/40 border-gray-600 text-gray-500' : 'bg-[#00FFFF]/10 border-[#00FFFF]/30 text-[#00FFFF] hover:bg-[#00FFFF]/20'}`}>
+                <i className={`fa-solid ${isSpeakerMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-[18px]`}></i>
+            </button>
+            <button onClick={() => { if (mySeatIndex !== null) setIsLocalMuted(!isLocalMuted); else if (isHost) takeSeat(0); else safeAlert('Take a seat to use the mic!'); }} className={`w-[42px] h-[42px] rounded-full flex items-center justify-center shrink-0 transition-all shadow-lg ${mySeatIndex === null && !isHost ? 'bg-black/40 text-gray-600 cursor-not-allowed border border-gray-800' : (isLocalMuted || isMutedByHost) ? 'bg-[#FF007F]/10 border border-[#FF007F]/50 text-[#FF007F]' : 'bg-[#00FFFF] text-[#010B1C] border border-[#00FFFF]'}`}>
+                <i className={`fa-solid ${(isLocalMuted || isMutedByHost || (mySeatIndex === null && !isHost)) ? 'fa-microphone-slash' : 'fa-microphone'} text-[18px]`}></i>
+            </button>
+
+            <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim() || pendingImage) { sendPeerChatMessage(chatInput.trim() || (pendingImage ? '📸 Sent an image' : ''), pendingImage); setChatInput(''); setPendingImage(null); } }} className="flex-1 relative flex items-center h-[42px]">
+                <input type="file" id="vc-chat-img" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => setPendingImage(ev.target.result); reader.readAsDataURL(e.target.files[0]); } }} />
+                <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Type a message..." className="w-full h-full bg-black/40 border border-white/10 rounded-full pl-4 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00FFFF]/50 focus:bg-black/60 transition-colors font-semibold" />
+                {chatInput.trim() ? (
+                    <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#00FFFF] text-[#010B1C] flex items-center justify-center shadow-md"><i className="fa-solid fa-arrow-up font-black"></i></button>
+                ) : (
+                    <button type="button" onClick={() => document.getElementById('vc-chat-img').click()} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#00FFFF] transition-colors"><i className="fa-solid fa-image text-lg"></i></button>
+                )}
+            </form>
+
+            <button className="w-[42px] h-[42px] rounded-full flex items-center justify-center shrink-0 transition-all bg-gradient-to-tr from-[#FF007F] to-[#FF5E00] text-white shadow-[0_4px_15px_rgba(255,0,127,0.4)] hover:scale-105 active:scale-95">
+                <i className="fa-solid fa-gift text-[20px]"></i>
+            </button>
+            <button className="w-[42px] h-[42px] rounded-full flex items-center justify-center shrink-0 transition-all bg-black/40 border border-white/10 text-[#00FFFF] hover:bg-white/10">
+                <i className="fa-solid fa-gamepad text-[18px]"></i>
+            </button>
+        </div>
+
+        {/* Pending Image Preview Overlay */}
+        {pendingImage && (
+            <div className="absolute bottom-[80px] left-4 right-4 bg-[#2a2b33] border border-white/10 rounded-xl p-3 flex items-center justify-between shadow-xl animate-in slide-in-from-bottom-2 z-30">
+                <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-lg bg-black flex items-center justify-center overflow-hidden border border-white/10">
+                        <img src={pendingImage} className="max-w-full max-h-full object-cover" />
+                    </div>
+                    <span className="text-sm font-bold text-white">Image selected</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => setPendingImage(null)} className="w-9 h-9 bg-gray-700 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors">
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                    <button onClick={() => { sendPeerChatMessage('📸 Sent an image', pendingImage); setPendingImage(null); }} className="w-9 h-9 bg-[#00e5ff] text-black rounded-full flex items-center justify-center shadow-lg font-bold">
+                        <i className="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {/* Modals remain structurally similar but omitted for brevity in template - they are in index.html already */}
+        {/* The Action Modals code (showActionModal, pendingInvite, etc.) goes here */}
+        {showActionModal && showActionModal.type === 'self' && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                <div className="bg-[#2a2b33] rounded-2xl p-6 w-full max-w-xs text-center border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-xl font-bold text-white mb-4">Manage Seat</h3>
+                    <div className="flex flex-col gap-3">
+                        <button onClick={() => { moveToAudience(currentUserId, showActionModal.idx, currentUserName, currentUserPhoto); setShowActionModal(null); }} className="py-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors">Move to Audience</button>
+                        <button onClick={() => setShowActionModal(null)} className="py-3 bg-white/5 text-white rounded-xl font-bold transition-colors border border-white/10">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {showActionModal && showActionModal.type === 'host_target' && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                <div className="bg-[#2a2b33] rounded-2xl p-6 w-full max-w-xs text-center border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-xl font-bold text-white mb-4">Manage {showActionModal?.occupant?.user_name || showActionModal?.occupant?.name || "User"}</h3>
+                    <div className="flex flex-col gap-3">
+                        <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors bg-white/5 text-white border border-white/10`}>
+                            {showActionModal.seat.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                        </button>
+                        <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.idx, oldOccupant: showActionModal.seat }); }} className="py-3 bg-white/5 text-white rounded-xl font-bold transition-colors border border-white/10">Change User</button>
+                        <button onClick={() => { moveToAudience(showActionModal.seat.user_id, showActionModal.idx, showActionModal.seat.user_name, showActionModal.seat.photo_url); setShowActionModal(null); }} className="py-3 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-white rounded-xl font-bold transition-colors border border-yellow-500/30">Move to Audience</button>
+                        <button onClick={() => { handleKick(showActionModal.seat.user_id, showActionModal.idx); }} className="py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors border border-red-500/30">Kick from Room</button>
+                        <button onClick={() => setShowActionModal(null)} className="py-3 bg-transparent text-gray-400 rounded-xl font-bold transition-colors">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {showActionModal && showActionModal.type === 'empty_seat_host' && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                <div className="bg-[#2a2b33] rounded-2xl p-6 w-full max-w-xs text-center border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-xl font-bold text-white mb-4">Seat {showActionModal.idx}</h3>
+                    <div className="flex flex-col gap-3">
+                        <button onClick={() => { setShowActionModal({ type: 'invite_to_seat', seatNum: showActionModal.idx }); }} className="py-3 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors">Invite to Seat</button>
+                        <button onClick={() => { toggleSeatLock(showActionModal.idx, showActionModal.seat?.is_locked); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors bg-white/5 text-white border border-white/10`}>
+                            {showActionModal.seat?.is_locked ? 'Unlock Seat' : 'Lock Seat'}
+                        </button>
+                        <button onClick={() => { toggleSeatMuteByHost(showActionModal.idx, showActionModal.seat?.is_muted_by_host); setShowActionModal(null); }} className={`py-3 rounded-xl font-bold transition-colors bg-white/5 text-white border border-white/10`}>
+                            {showActionModal.seat?.is_muted_by_host ? 'Unmute Seat' : 'Mute Seat'}
+                        </button>
+                        <button onClick={() => setShowActionModal(null)} className="py-3 bg-transparent text-gray-400 rounded-xl font-bold transition-colors">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {showActionModal && showActionModal.type === 'invite' && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                <div className="bg-[#2a2b33] rounded-2xl p-6 w-full max-w-xs text-center border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-xl font-bold text-white mb-4">Invite {showActionModal?.target?.user_name || showActionModal?.target?.name || "User"}</h3>
+                    <div className="flex flex-col gap-3">
+                        <button onClick={() => {
+                            const emptySeatIdx = seats.findIndex((s, i) => i !== 0 && s && !s.user_id && !s.is_locked);
+                            if (emptySeatIdx !== -1) {
+                                broadcastToPeers('invite', { room_id: activeRoom.id, target: showActionModal.target.user_id, seatIndex: emptySeatIdx, hostName: currentUserName });
+                                if (lockedSeats[showActionModal.seatNum]) { sendBroadcast('seat_lock', { seatNum: showActionModal.seatNum, isLocked: false }); setLockedSeats(prev => ({ ...prev, [showActionModal.seatNum]: false })); }
+                                safeAlert(`Invitation sent to ${showActionModal.target.user_name}`);
+                            } else { safeAlert("No empty unlocked seats available!"); }
+                            setShowActionModal(null);
+                        }} className="py-3 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-colors">Invite to Stage</button>
+                        <button onClick={() => { handleKick(showActionModal.target.user_id, null); }} className="py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-colors">Kick from Room</button>
+                        <button onClick={() => setShowActionModal(null)} className="py-3 bg-transparent text-gray-400 rounded-xl font-bold transition-colors">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {showActionModal && showActionModal.type === 'invite_to_seat' && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-end justify-center p-0 animate-in slide-in-from-bottom" onClick={() => setShowActionModal(null)}>
+                <div className="bg-[#2a2b33] rounded-t-3xl p-4 w-full md:max-w-screen-xl max-w-md h-[60vh] flex flex-col border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-lg font-bold text-white mb-4">Invite to Seat {showActionModal.seatNum}</h3>
+                    <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-2">
+                        {(() => {
+                            const candidates = [...seats.filter(s => s && s.user_id && s.user_id !== currentUserId && s.user_id !== showActionModal.oldOccupant?.user_id).map(s => ({ ...s, isSeated: true })), ...audience.map(a => ({ ...a, isSeated: false }))];
+                            if (candidates.length === 0) return <p className="text-gray-400 text-center py-10 italic">No eligible users to invite.</p>;
+                            return candidates.map((c, i) => (
+                                <div key={i} className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-3 text-white font-bold text-sm">
+                                        {c.photo_url || c.user_avatar ? <img src={c.photo_url || c.user_avatar} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-gray-700 text-white flex items-center justify-center text-lg">{String(c.user_name || 'U').charAt(0).toUpperCase()}</div>}
+                                        <div className="flex flex-col">
+                                            <span className="truncate max-w-[150px]">{String(c.user_name || 'User')}</span>
+                                            <span className="text-[10px] text-gray-400 font-normal">{c.isSeated ? `Currently on Seat ${c.seat_index}` : 'In Audience'}</span>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => {
+                                        if (showActionModal.oldOccupant) { moveToAudience(showActionModal.oldOccupant.user_id, showActionModal.seatNum, showActionModal.oldOccupant.user_name, showActionModal.oldOccupant.photo_url); }
+                                        broadcastToPeers('invite', { room_id: activeRoom.id, target: c.user_id, seatIndex: showActionModal.seatNum, hostName: currentUserName });
+                                        safeAlert('Invite sent!');
+                                        setShowActionModal(null);
+                                    }} className="bg-[#00e5ff] text-black px-4 py-1.5 rounded-lg text-xs font-black shadow-md active:scale-95 transition-transform">Invite</button>
+                                </div>
+                            ));
+                        })()}
+                    </div>
+                </div>
+            </div>
+        )}
+        {showActionModal && showActionModal.type === 'change_seat_self' && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowActionModal(null)}>
+                <div className="bg-[#2a2b33] rounded-2xl p-6 w-full max-w-xs text-center border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 mx-auto flex items-center justify-center text-2xl mb-4"><i className="fa-solid fa-chair"></i></div>
+                    <h3 className="text-xl font-bold text-white mb-2">Change Seat?</h3>
+                    <p className="text-sm text-gray-400 mb-6">Do you want to move to Seat {showActionModal.seatNum}?</p>
+                    <div className="flex gap-3">
+                        <button onClick={() => setShowActionModal(null)} className="flex-1 py-3 bg-white/5 border border-white/10 text-white rounded-xl font-bold transition-colors">Cancel</button>
+                        <button onClick={() => { takeSeat(showActionModal.seatNum); setShowActionModal(null); }} className="flex-1 py-3 bg-[#00e5ff] text-black rounded-xl font-bold transition-colors">Move</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {pendingInvite && (
+            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setPendingInvite(null)}>
+                <div className="bg-[#2a2b33] rounded-2xl p-6 w-full max-w-xs text-center border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 mx-auto flex items-center justify-center text-2xl mb-4"><i className="fa-solid fa-microphone"></i></div>
+                    <h3 className="text-xl font-bold text-white mb-2">Stage Invitation</h3>
+                    <p className="text-sm text-gray-400 mb-6">{pendingInvite.hostName} invited you to take Seat {pendingInvite.seatIndex}.</p>
+                    <div className="flex gap-3">
+                        <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-white/5 border border-white/10 text-white rounded-xl font-bold transition-colors">Decline</button>
+                        <button onClick={() => { const sIdx = pendingInvite.seatIndex; takeSeat(sIdx, activeRoom.password); setPendingInvite(null); }} className="flex-1 py-3 bg-[#00e5ff] text-black rounded-xl font-bold transition-colors">Accept</button>
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+);
+
 
             // Component return handler
             if (!isVisible && !activeRoom) return null;
