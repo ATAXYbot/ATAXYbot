@@ -3559,6 +3559,7 @@ Student Doubt: ${prompt}`
         const VCVoiceRoomTab = ({ tgUser, isVisible, onNavigate, onRoomStateChange, voiceState, currentTab, vcChatOpen, onChatOpen, chatActions, setChatActions }) => {
             const currentUserId = String(tgUser?.id || "1001");
             const currentUserName = tgUser?.first_name || tgUser?.username || "Student";
+            const [showRoomInfoModal, setShowRoomInfoModal] = useState(false);
             const currentUserPhoto = tgUser?.photo_url || "";
             const activeChannelRef = useRef(null);
 
@@ -5086,7 +5087,7 @@ Student Doubt: ${prompt}`
                             <button onClick={() => { setIsMinimized(true); }} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors shadow-lg border border-[#0AE0D0]/30">
                                 <i className="fa-solid fa-chevron-left text-sm"></i>
                             </button>
-                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-[#0AE0D0]/30 shadow-lg">
+                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-[#0AE0D0]/30 shadow-lg cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowRoomInfoModal(true)}>
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00FFFF] to-blue-600 p-[1px] flex items-center justify-center overflow-hidden shrink-0">
                                     <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
                                         {activeRoom.host_photo ? <img src={activeRoom.host_photo} className="w-full h-full object-cover" /> : <i className="fa-solid fa-hashtag text-white/50 text-xs"></i>}
@@ -6095,8 +6096,9 @@ INSTRUCTIONS:
             const speakerMutedRef = useRef(false);
             useEffect(() => { speakerMutedRef.current = isSpeakerMuted; }, [isSpeakerMuted]);
 
-            const [availableRooms, setAvailableRooms] = useState([]);
+                        const [availableRooms, setAvailableRooms] = useState([]);
             const [chatMessages, setChatMessages] = useState([]);
+            const [roomAdmins, setRoomAdmins] = useState([]);
             const [micRequests, setMicRequests] = useState([]);
             const [pendingInvite, setPendingInvite] = useState(null);
 
@@ -6337,6 +6339,7 @@ INSTRUCTIONS:
                     }
 
                     
+                    setRoomAdmins(roomData.admins || []);
                     if (roomData.room_type === 'temporary') {
                         // Bypass Agora entirely, use basic Supabase presence only
                         setIsProcessing(false);
@@ -6595,6 +6598,9 @@ INSTRUCTIONS:
                                 } else {
                                     setParticipants(prev => prev.map(p => String(p.user_id) === String(payload.target_uid) ? { ...p, is_muted: false } : p));
                                 }
+                            })
+                            .on('broadcast', { event: 'update_admins' }, ({ payload }) => {
+                                setRoomAdmins(payload.admins || []);
                             })
                             .on('broadcast', { event: 'kick' }, ({ payload }) => {
                                 if (payload.target_uid === String(tgUser.id)) {
@@ -7052,6 +7058,16 @@ INSTRUCTIONS:
                 }
             };
 
+            const handleSetAdmin = async (userId, isAdding) => {
+                if (!roomRef.current) return;
+                const newAdmins = isAdding ? [...roomAdmins, String(userId)] : roomAdmins.filter(id => id !== String(userId));
+                setRoomAdmins(newAdmins);
+                sendBroadcast('update_admins', { admins: newAdmins });
+                if (window.supabase) {
+                    try { await window.supabase.from('voice_rooms').update({ admins: newAdmins }).eq('id', roomRef.current.id); } catch(e) {}
+                }
+            };
+
             const sendHostAction = (action, targetUid) => {
                 try {
                     if (channelRef.current && String(roomRef.current?.host_user_id) === String(tgUser.id)) {
@@ -7103,7 +7119,7 @@ INSTRUCTIONS:
                 }
             };
 
-            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isProcessing, currentMusic, setCurrentMusic };
+            return { client, activeRoom, availableRooms, participants, isMuted, isSpeakerMuted, activeSpeakers, chatMessages, micRequests, setMicRequests, pendingInvite, setPendingInvite, joinRoom, leaveRoom, createRoom, takeSeat, stepDown, toggleMute, toggleSpeaker, sendHostAction, sendBroadcast, fetchRooms, sendChat, updateRoomSettings, triggerSFX, lockedSeats, setLockedSeats, mutedSeats, setMutedSeats, isMinimized, setIsMinimized, isProcessing, currentMusic, setCurrentMusic, roomAdmins, handleSetAdmin };
         };
 
         const FloatingVoiceWidget = ({ voiceState, onRestore }) => {
@@ -7173,12 +7189,129 @@ INSTRUCTIONS:
             );
         };
 
+
+        const RoomInfoModal = ({ activeRoom, isOwner, isAdmin, onClose, roomAdmins, handleSetAdmin, currentUserId, participants, safeAlert }) => {
+            if (!activeRoom) return null;
+            
+            // Format participants to exclude duplicates if any
+            const uniqueParticipants = Array.from(new Map(participants.map(p => [p.user_id, p])).values());
+
+            const handleCopyID = () => {
+                navigator.clipboard.writeText(String(activeRoom.room_id_5_digit || '')).then(() => {
+                    safeAlert("Room ID copied!");
+                });
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/60 z-[3000000] flex items-end justify-center sm:items-center sm:p-4 animate-in fade-in duration-200" onClick={onClose}>
+                    <div className="bg-white w-full max-w-md sm:rounded-[32px] rounded-t-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+                        
+                        {/* Top Handle for mobile */}
+                        <div className="w-full flex justify-center pt-3 pb-1 sm:hidden">
+                            <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                        </div>
+
+                        <div className="p-5 flex flex-col relative overflow-y-auto no-scrollbar">
+                            {/* Top right actions */}
+                            <div className="absolute top-5 right-5 flex gap-3">
+                                <button className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 transition-colors">
+                                    <i className="fa-solid fa-gear"></i>
+                                </button>
+                                <button onClick={handleCopyID} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 transition-colors">
+                                    <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                                </button>
+                            </div>
+
+                            {/* Back button */}
+                            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center text-gray-800 -ml-2 mb-4 hover:bg-gray-100 rounded-full transition-colors">
+                                <i className="fa-solid fa-chevron-left text-lg"></i>
+                            </button>
+
+                            {/* Room Identity */}
+                            <div className="flex flex-col items-center mt-2 mb-6">
+                                <div className="w-24 h-24 rounded-full border-[3px] border-gray-100 shadow-md overflow-hidden mb-4 relative bg-gray-800">
+                                    {activeRoom.host_photo || activeRoom.room_dp_url ? (
+                                        <img src={activeRoom.host_photo || activeRoom.room_dp_url} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-white text-3xl font-bold w-full h-full flex items-center justify-center">{(activeRoom.room_name || activeRoom.channel_name || '#').charAt(0).toUpperCase()}</span>
+                                    )}
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900 text-center mb-1">{activeRoom.room_name || activeRoom.channel_name}</h2>
+                                <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium cursor-pointer hover:text-gray-700" onClick={handleCopyID}>
+                                    <span>ID: {activeRoom.room_id_5_digit}</span>
+                                    <i className="fa-regular fa-copy"></i>
+                                </div>
+                                <div className="mt-3 px-3 py-1 bg-yellow-50 text-yellow-600 rounded-full text-[10px] font-bold flex items-center gap-1 border border-yellow-200 shadow-sm">
+                                    <i className="fa-solid fa-user-tie"></i> {activeRoom.room_type === 'temporary' ? 'Host' : 'Owner'}
+                                </div>
+                            </div>
+
+                            {/* Online Stats Box */}
+                            <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-green-100 transition-colors mb-6 group shadow-sm">
+                                <div className="flex flex-col">
+                                    <span className="text-green-600 font-bold text-sm mb-1">Online</span>
+                                    <span className="text-green-700 font-black text-xl leading-none">{(activeRoom.seats_occupied || 0) + (activeRoom.room_audience?.length || 0) || activeRoom.occupants_count || uniqueParticipants.length}</span>
+                                </div>
+                                <i className="fa-solid fa-chevron-right text-green-400 group-hover:text-green-600 transition-colors"></i>
+                            </div>
+
+                            {/* Announcement */}
+                            {(activeRoom.announcement || activeRoom.description) && (
+                                <div className="flex flex-col gap-2 mb-6">
+                                    <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">Announcement</span>
+                                    <p className="text-gray-700 text-sm font-medium leading-relaxed bg-gray-50 p-4 rounded-2xl border border-gray-100">{activeRoom.announcement || activeRoom.description}</p>
+                                </div>
+                            )}
+
+                            {/* Admin Management for Permanent Rooms */}
+                            {activeRoom.room_type !== 'temporary' && isOwner && (
+                                <div className="flex flex-col gap-3 mt-2 border-t border-gray-100 pt-6">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-gray-900 font-bold text-sm">Manage Admins</span>
+                                        <span className="text-gray-400 text-xs font-medium">{roomAdmins.length} Admins</span>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {uniqueParticipants.map(p => {
+                                            if (String(p.user_id) === String(activeRoom.owner_id) || String(p.user_id) === currentUserId) return null;
+                                            const isUserAdmin = roomAdmins.includes(String(p.user_id));
+                                            return (
+                                                <div key={p.user_id} className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+                                                            {p.photo_url || p.image_url ? <img src={p.photo_url || p.image_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-user text-gray-400 flex items-center justify-center h-full text-xs"></i>}
+                                                        </div>
+                                                        <span className="text-sm font-bold text-gray-700">{p.user_name || p.name || `User ${String(p.user_id).substring(0,4)}`}</span>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleSetAdmin(p.user_id, !isUserAdmin)}
+                                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-colors ${isUserAdmin ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'}`}
+                                                    >
+                                                        {isUserAdmin ? 'Remove Admin' : 'Make Admin'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                        {uniqueParticipants.filter(p => String(p.user_id) !== String(activeRoom.owner_id) && String(p.user_id) !== currentUserId).length === 0 && (
+                                            <p className="text-gray-400 text-xs text-center py-4">No other users online to promote.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                    {showRoomInfoModal && <RoomInfoModal activeRoom={activeRoom} isOwner={String(tgUser?.id || "1001") === String(activeRoom.owner_id)} isAdmin={false} onClose={() => setShowRoomInfoModal(false)} roomAdmins={voiceState?.roomAdmins || []} handleSetAdmin={()=>{}} currentUserId={String(tgUser?.id || "1001")} participants={voiceState.participants} safeAlert={safeAlert} />}
+                </div>
+            );
+        };
+
         const VoiceRoomsTab = ({ tgUser, voiceState }) => {
             const { activeRoom, leaveRoom, availableRooms, fetchRooms, createRoom, joinRoom, isProcessing } = voiceState;
             const [showCreateModal, setShowCreateModal] = useState(false);
             const [selectedRoomToJoin, setSelectedRoomToJoin] = useState(null);
             const [isRefreshing, setIsRefreshing] = useState(false);
             const [dashboardFilter, setDashboardFilter] = useState('active');
+            const [showRoomInfoModal, setShowRoomInfoModal] = useState(false);
 
             const tgUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
             const verifiedUserId = "5182808926";
@@ -7425,6 +7558,9 @@ INSTRUCTIONS:
 
             const currentUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || tgUser?.id || "1001");
             const isHost = String(activeRoom.host_user_id) === currentUserId;
+            const isOwner = String(activeRoom.owner_id) === currentUserId;
+            const isAdmin = isOwner || (voiceState?.roomAdmins && voiceState.roomAdmins.includes(currentUserId));
+            const canManageRoom = isHost || isAdmin;
             const myParticipant = participants.find(p => String(p.user_id) === currentUserId);
             const isSpeaker = isHost || (myParticipant?.seat_number !== null && myParticipant?.seat_number !== undefined);
             const audience = participants.filter(p => p.seat_number === null || p.seat_number === undefined);
@@ -7551,7 +7687,7 @@ INSTRUCTIONS:
                             <button onClick={onMinimize} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors shadow-lg border border-white/20">
                                 <i className="fa-solid fa-chevron-left text-sm"></i>
                             </button>
-                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-white/20 shadow-lg">
+                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full pr-3 pl-1 py-1 border border-white/20 shadow-lg cursor-pointer hover:bg-black/60 transition-colors" onClick={() => setShowRoomInfoModal(true)}>
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff3b8f] to-[#9147ff] p-[1px] flex items-center justify-center overflow-hidden">
                                     <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
                                         {activeRoom.room_dp_url ? <img src={activeRoom.room_dp_url} className="w-full h-full object-cover" /> : <i className="fa-solid fa-hashtag text-white/50 text-xs"></i>}
@@ -7572,7 +7708,7 @@ INSTRUCTIONS:
                                 <i className="fa-solid fa-users text-[#00FFFF] text-[11px]"></i>
                                 <span className="text-xs font-black text-white">{(activeRoom.seats_occupied || 0) + (activeRoom.room_audience?.length || 0)}</span>
                             </div>
-                            {isHost && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && (
+                            {canManageRoom && (activeRoom.room_type === 'advance' || activeRoom.room_type === 'permanent') && (
                                 <button onClick={() => setShowSettingsModal(true)} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/90 hover:bg-black/60 transition-colors border border-white/20 shadow-lg">
                                     <i className="fa-solid fa-gear text-sm"></i>
                                 </button>
