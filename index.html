@@ -4311,6 +4311,28 @@ Student Doubt: ${prompt}`
                         }
                     });
                     peerRef.current = peer;
+                    window.vcPeerRef = peer;
+
+                    peer.on('call', (call) => {
+                        // Answer incoming audio calls automatically
+                        if (trackRef.current && trackRef.current.getMediaStreamTrack) {
+                            const ms = new MediaStream([trackRef.current.getMediaStreamTrack()]);
+                            call.answer(ms);
+                        } else if (localMediaStreamRef.current) {
+                            call.answer(localMediaStreamRef.current);
+                        } else {
+                            call.answer(); // Answer without stream if listening only
+                        }
+                        
+                        call.on('stream', (remoteStream) => {
+                            const audio = new Audio();
+                            audio.srcObject = remoteStream;
+                            audio.play().catch(e => console.error("PeerJS Audio play failed:", e));
+                            
+                            // To manage volume indicator for PeerJS, you can set up AudioContext here
+                            // but for now, just play it
+                        });
+                    });
 
                     peer.on('connection', (conn) => {
                         dataConnectionsRef.current.push(conn);
@@ -6033,6 +6055,8 @@ INSTRUCTIONS:
             // 🚀 INSTANT SYNC REFS: Eliminates 1-render desync crashes on fast seat hopping
             const [localAudioTrackState, setLocalAudioTrackState] = useState(null);
             const trackRef = useRef(null);
+            const localMediaStreamRef = useRef(null);
+            const mediaCallsRef = useRef({});
             const setLocalAudioTrack = (val) => { trackRef.current = val; setLocalAudioTrackState(val); };
             const localAudioTrack = localAudioTrackState;
 
@@ -6088,6 +6112,64 @@ INSTRUCTIONS:
             // Hardware follows state strictly, never the other way around.
             useEffect(() => {
                 const syncHardwareWithState = async () => {
+                    const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
+                    const userIdString = String(tgData?.id || "1001");
+                    const myParticipant = participants.find(p => String(p.user_id) === userIdString);
+                    const hasSeat = myParticipant && myParticipant.seat_number !== null && myParticipant.seat_number !== undefined;
+                    
+                    const isTempRoom = activeRoom && activeRoom.room_type !== 'permanent' && activeRoom.room_type !== 'advance';
+
+                    if (isTempRoom) {
+                        // WEBRTC PEERJS LOGIC FOR TEMPORARY ROOMS
+                        try {
+                            const seatIsMuted = myParticipant ? (mutedSeats[myParticipant.seat_number] || false) : false;
+                            const effectiveMute = isMutedRef.current || seatIsMuted;
+
+                            if (hasSeat) {
+                                if (!localMediaStreamRef.current) {
+                                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                                    localMediaStreamRef.current = stream;
+                                    setLocalAudioTrack({ isPeerJs: true }); // Dummy object just to signify we are live
+                                    
+                                    // Call all other seated peers
+                                    const activePeer = window.vcPeerRef;
+                                    if (activePeer) {
+                                        [...participants.filter(p => p && p.seat_number !== null && p.seat_number !== undefined)].forEach(p => {
+                                            if (String(p.user_id) !== userIdString) {
+                                                const targetPeerId = `ataxy-vc-${p.user_id}`;
+                                                const call = activePeer.call(targetPeerId, stream);
+                                                if (call) {
+                                                    mediaCallsRef.current[targetPeerId] = call;
+                                                    call.on('stream', (remoteStream) => {
+                                                        const audio = new Audio();
+                                                        audio.srcObject = remoteStream;
+                                                        audio.play().catch(e => {});
+                                                    });
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                                
+                                // Apply mute
+                                if (localMediaStreamRef.current) {
+                                    localMediaStreamRef.current.getAudioTracks().forEach(t => t.enabled = !effectiveMute);
+                                }
+                            } else {
+                                if (localMediaStreamRef.current) {
+                                    localMediaStreamRef.current.getTracks().forEach(t => t.stop());
+                                    localMediaStreamRef.current = null;
+                                    setLocalAudioTrack(null);
+                                    
+                                    Object.values(mediaCallsRef.current).forEach(call => call.close());
+                                    mediaCallsRef.current = {};
+                                }
+                            }
+                        } catch (e) { console.error("WebRTC Error:", e); }
+                        return;
+                    }
+
+                    // AGORA LOGIC FOR OFFICIAL ROOMS
                     if (!clientRef.current) return;
                     const tgData = window.Telegram?.WebApp?.initDataUnsafe?.user || tgUser;
                     const userIdString = String(tgData?.id || "1001");
@@ -6210,12 +6292,13 @@ INSTRUCTIONS:
                 if (!supabase) return;
                 fetchRooms();
 
-                const channel = supabase.channel('voice_rooms_sync')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_rooms' }, () => {
-                        fetchRooms();
-                    })
-                    .subscribe();
-                return () => { supabase.removeChannel(channel); };
+                // 🔄 POLLING INSTEAD OF REALTIME TO SAVE CONCURRENT LIMITS
+                // Automatically fetch rooms every 10 seconds instead of keeping a WebSocket open
+                const intervalId = setInterval(() => {
+                    fetchRooms();
+                }, 10000);
+                
+                return () => { clearInterval(intervalId); };
             }, []);
 
             const joinRoom = async (roomData, password = null, bypassLock = false) => {

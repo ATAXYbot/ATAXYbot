@@ -5819,12 +5819,11 @@ INSTRUCTIONS:
                 if (!supabase) return;
                 fetchRooms();
 
-                const channel = supabase.channel('voice_rooms_sync')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_rooms' }, () => {
-                        fetchRooms();
-                    })
-                    .subscribe();
-                return () => { supabase.removeChannel(channel); };
+                const intervalId = setInterval(() => {
+                    fetchRooms();
+                }, 10000);
+                
+                return () => { clearInterval(intervalId); };
             }, []);
 
             const joinRoom = async (roomData, password = null, bypassLock = false) => {
